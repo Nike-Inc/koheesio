@@ -1,0 +1,8 @@
+foo = "bar"
+
+[nested]
+bar = "baz"
+
+[nested.listed]
+first_item = true
+deeply_nested = "lorem ipsum"

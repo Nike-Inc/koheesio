@@ -1,0 +1,7 @@
+input:
+  a: foo
+  b: 2
+output:
+  a: foo
+  b: 2
+  c: foofoo

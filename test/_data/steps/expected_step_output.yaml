@@ -1,0 +1,11 @@
+description: Dummy step for testing purposes.
+input:
+  a: foo
+  b: 2
+name: DummyStep
+output:
+  a: foo
+  b: 2
+  c: foofoo
+  description: Output for DummyStep
+  name: DummyStep.Output

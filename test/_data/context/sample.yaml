@@ -1,0 +1,6 @@
+foo: bar
+nested:
+  bar: baz
+listed:
+- first_item
+- deeply_nested: lorem ipsum

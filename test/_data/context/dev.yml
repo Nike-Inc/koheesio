@@ -1,0 +1,7 @@
+env: dev
+top_level:
+  sources:
+    foo_table:
+      database: foo_db_dev
+    bar_table:
+      database: bar_db_dev

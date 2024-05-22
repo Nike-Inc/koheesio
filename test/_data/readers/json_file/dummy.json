@@ -1,0 +1,20 @@
+[
+    {
+        "string": "string1",
+        "int": 1,
+        "array": [
+            1,
+            11,
+            111
+        ]
+    },
+    {
+        "string": "string2",
+        "int": 2,
+        "array": [
+            2,
+            22,
+            222
+        ]
+    }
+]

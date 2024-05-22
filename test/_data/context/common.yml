@@ -1,0 +1,11 @@
+top_level:
+  sources:
+    foo_table:
+      database: foo_db
+      table_name: foo_table
+    bar_table:
+      database: bar_db
+      table_name: bar_table
+    baz_table:
+      database: baz_db
+      table_name: baz_table

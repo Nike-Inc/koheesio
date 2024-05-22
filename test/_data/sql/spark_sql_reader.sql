@@ -1,0 +1,1 @@
+SELECT * FROM table_A JOIN table_B ON table_A.id = table_B.id WHERE table_A.id = 1
