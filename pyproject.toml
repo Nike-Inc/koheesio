@@ -26,7 +26,7 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
-  "Topic :: Software Development :: Data Pipeline Tools",
+  "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
   "cryptography>=42.0.4", # to address CVE-2024-26130
