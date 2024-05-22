@@ -59,7 +59,7 @@ jobs:
     #   run: hatch run types:check
 
     - name: Run tests
-      run: hatch run test.py${{ matrix.python-version }}-pyspark${{ matrix.pyspark-version }}:all_tests --cover-quiet --randomize --parallel --retries 5 --retry-delay 3
+      run: hatch run test.py${{ matrix.python-version }}-pyspark${{ matrix.pyspark-version }}:all-tests --cover-quiet --randomize --parallel --retries 5 --retry-delay 3
 
     - name: Disambiguate coverage filename
       run: mv .coverage ".coverage.${{ matrix.os }}.${{ matrix.python-version }}"
