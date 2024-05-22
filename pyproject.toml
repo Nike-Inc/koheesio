@@ -169,10 +169,10 @@ fix = "fmt"
 lint = ["- ruff-fmt", "- mypy-check", "pylint-check"]
 # Testing and Coverage commands
 log-versions = "python --version && {env:HATCH_UV} pip freeze | grep pyspark"
-all-tests = "- pytest test/ {env:HATCH_TEST_ARGS:} {args}"
-spark-tests = "- pytest test/spark {env:HATCH_TEST_ARGS:} {args}"
-non-spark-tests = "- pytest test/ {env:HATCH_TEST_ARGS:} {args} -k 'not spark'"
-coverage = "- pytest test/ {env:HATCH_TEST_ARGS:} {args} --cov=koheesio --cov-report=html --cov-report=term-missing --cov-fail-under=90"
+all-tests = "pytest test/ {env:HATCH_TEST_ARGS:} {args}"
+spark-tests = "pytest test/spark {env:HATCH_TEST_ARGS:} {args}"
+non-spark-tests = "pytest test/ {env:HATCH_TEST_ARGS:} {args} -k 'not spark'"
+coverage = "pytest test/ {env:HATCH_TEST_ARGS:} {args} --cov=koheesio --cov-report=html --cov-report=term-missing --cov-fail-under=90"
 cov = "coverage"
 
 [tool.black]
