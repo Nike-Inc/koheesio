@@ -5,13 +5,19 @@ description = 'The steps-based Koheesio framework'
 readme = "README.md"
 requires-python = ">=3.9, <3.13" # 3.10 is the minimum recommended version
 license = "Apache-2.0"
-keywords = []
+keywords = [
+  # TODO: add keywords
+]
 authors = [
   # TODO: add other contributors
   { name = "Danny Meijer", email = "danny.meijer@nike.com" },
 ]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Natural Language :: English",
+  "Operating System :: OS Independent",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
@@ -20,6 +26,7 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
+  "Topic :: Software Development :: Data Pipeline Tools",
 ]
 dependencies = [
   "cryptography>=42.0.4", # to address CVE-2024-26130
@@ -49,6 +56,7 @@ dev = ["black", "isort", "ruff", "mypy", "pylint", "colorama", "types-PyYAML"]
 Documentation = "https://github.com/Nike-Inc/koheesio#readme"
 Issues = "https://github.com/Nike-Inc/koheesio/issues"
 Source = "https://github.com/Nike-Inc/koheesio"
+# TODO: add project board
 
 
 ###  ~~~~~~~~~~~~~~~  ###
