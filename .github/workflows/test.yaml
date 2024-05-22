@@ -28,6 +28,13 @@ jobs:
         # os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ['3.9', '3.10', '3.11']
         pyspark-version: ['33','34','35']
+        exclude:
+          - python-version: '3.9'
+            pyspark-version: '35'
+          - python-version: '3.11'
+            pyspark-version: '33'
+          - python-version: '3.11'
+            pyspark-version: '34'
 
     steps:
     - uses: actions/checkout@v4
