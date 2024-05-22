@@ -5,12 +5,13 @@ Module for creating and managing Delta tables.
 import warnings
 from typing import Dict, List, Optional, Union
 
-from koheesio.models import Field, field_validator, model_validator
-from koheesio.steps.spark import AnalysisException, SparkStep
-from koheesio.utils import on_databricks
 from py4j.protocol import Py4JJavaError  # type: ignore
 from pyspark.sql import DataFrame
 from pyspark.sql.types import DataType
+
+from koheesio.models import Field, field_validator, model_validator
+from koheesio.steps.spark import AnalysisException, SparkStep
+from koheesio.utils import on_databricks
 
 
 class DeltaTableStep(SparkStep):
