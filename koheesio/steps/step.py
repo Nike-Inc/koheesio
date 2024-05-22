@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import inspect
 import json
+import sys
 import warnings
 from abc import abstractmethod
 from functools import partialmethod, wraps
@@ -13,13 +14,6 @@ from typing import Any
 
 import yaml
 from koheesio.models import BaseModel, ConfigDict, ModelMetaclass
-
-
-# Solution to overcome issue with python>=3.11,
-# when partialmethod in wrap is not passing self
-class partialmethod_with_self(partialmethod):
-    def __get__(self, obj, cls=None):
-        return self._make_unbound_method().__get__(obj, cls)
 
 
 class StepOutput(BaseModel):
@@ -55,6 +49,14 @@ class StepMetaClass(ModelMetaclass):
     StepMetaClass has to be set up as a Metaclass extending ModelMetaclass to allow Pydantic to be unaffected while
     allowing for the execute method to be auto-decorated with do_execute
     """
+
+    # Solution to overcome issue with python>=3.11,
+    # When partialmethod is forgetting that _execute_wrapper
+    # is a method of wrapper, and it needs to pass that in as the first arg.
+    # https://github.com/python/cpython/issues/99152
+    class _partialmethod_with_self(partialmethod):
+        def __get__(self, obj, cls=None):
+            return self._make_unbound_method().__get__(obj, cls)
 
     # Unique object to mark a function as wrapped
     _step_execute_wrapper_sentinel = object()
@@ -129,8 +131,9 @@ class StepMetaClass(ModelMetaclass):
         if not is_already_wrapped:
             # Create a partial method with the execute_method as one of the arguments.
             # This is the new function that will be called instead of the original execute_method.
-            # wrapper = partialmethod(cls._execute_wrapper, execute_method=execute_method)
-            wrapper = partialmethod_with_self(cls._execute_wrapper, execute_method=execute_method)
+
+            partial_impl = partialmethod if sys.version_info < (3, 11) else mcs._partialmethod_with_self
+            wrapper = partial_impl(cls._execute_wrapper, execute_method=execute_method)
 
             # Updating the attributes of the wrapping function to those of the original function.
             wraps(execute_method)(wrapper)  # type: ignore
