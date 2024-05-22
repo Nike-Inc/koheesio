@@ -20,11 +20,12 @@ from os import linesep
 from tempfile import SpooledTemporaryFile
 from typing import Literal, Optional
 
-from koheesio.models import ExtraParamsMixin, Field, constr
-from koheesio.steps.writers import Writer
 from pandas._typing import CompressionOptions as PandasCompressionOptions
 from pydantic import InstanceOf
 from pyspark import pandas
+
+from koheesio.models import ExtraParamsMixin, Field, constr
+from koheesio.steps.writers import Writer
 
 
 # pylint: disable=E1101

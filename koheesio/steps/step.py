@@ -13,6 +13,7 @@ from functools import partialmethod, wraps
 from typing import Any
 
 import yaml
+
 from koheesio.models import BaseModel, ConfigDict, ModelMetaclass
 
 
