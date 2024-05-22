@@ -1,8 +1,4 @@
-from pathlib import Path
-
 import pytest
-from pyspark.sql.utils import AnalysisException
-
 from koheesio.steps.readers.file_loader import (
     AvroReader,
     CsvReader,
@@ -12,6 +8,7 @@ from koheesio.steps.readers.file_loader import (
     OrcReader,
     ParquetReader,
 )
+from koheesio.steps.spark import AnalysisException
 
 
 @pytest.fixture()

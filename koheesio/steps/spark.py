@@ -8,9 +8,23 @@ from abc import ABC
 from typing import Optional
 
 from pydantic import Field
-from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql import Column
+from pyspark.sql import DataFrame as PySparkSQLDataFrame
+from pyspark.sql import SparkSession as OriginalSparkSession
+from pyspark.sql import functions as F
+
+try:
+    from pyspark.sql.utils import AnalysisException as SparkAnalysisException
+except ImportError:
+    from pyspark.errors.exceptions.base import AnalysisException as SparkAnalysisException
 
 from koheesio.steps.step import Step, StepOutput
+
+# TODO: Move to spark/__init__.py after reorganizing the code
+# Will be used for typing checks and consistency, specifically for PySpark >=3.5
+DataFrame = PySparkSQLDataFrame
+SparkSession = OriginalSparkSession
+AnalysisException = SparkAnalysisException
 
 
 class SparkStep(Step, ABC):
@@ -30,3 +44,9 @@ class SparkStep(Step, ABC):
     def spark(self) -> Optional[SparkSession]:
         """Get active SparkSession instance"""
         return SparkSession.getActiveSession()
+
+
+# TODO: Move to spark/functions/__init__.py after reorganizing the code
+def current_timestamp_utc(spark: SparkSession) -> Column:
+    """Get the current timestamp in UTC"""
+    return F.to_utc_timestamp(F.current_timestamp(), spark.conf.get("spark.sql.session.timeZone"))

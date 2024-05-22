@@ -6,10 +6,6 @@ import datetime
 from decimal import Decimal
 
 import pytest
-from pydantic import ValidationError
-from pyspark.sql import DataFrame
-from pyspark.sql import functions as f
-
 from koheesio.logger import LoggingFactory
 from koheesio.steps.transformations.cast_to_datatype import (
     CastToBinary,
@@ -26,6 +22,9 @@ from koheesio.steps.transformations.cast_to_datatype import (
     CastToTimestamp,
 )
 from koheesio.utils import SparkDatatype
+from pydantic import ValidationError
+from pyspark.sql import DataFrame
+from pyspark.sql import functions as f
 
 
 @pytest.mark.parametrize(

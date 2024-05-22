@@ -1,9 +1,7 @@
 import pytest
-from pyspark.sql.dataframe import DataFrame
-from pyspark.sql.functions import col
-from pyspark.sql.utils import AnalysisException
-
 from koheesio.steps.readers.delta import DeltaTableReader
+from koheesio.steps.spark import AnalysisException
+from pyspark.sql.dataframe import DataFrame
 
 
 def test_delta_table_reader(spark):
