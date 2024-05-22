@@ -4,6 +4,7 @@ about: Create a report to help us improve
 title: "[BUG] Please add your bug title here"
 labels: bug
 assignees: ''
+
 ---
 
 <!-- Please provide as much detail as possible to help us understand and reproduce the issue. This will enable us to address it more effectively. -->
