@@ -46,7 +46,8 @@ async_http = [
   "nest-asyncio>=1.6.0",
 ]
 box = ["boxsdk[jwt]==3.8.1"]
-pyspark = ["pyspark>=3.2.0", "pyarrow>13", "pandas<2.0.0"]
+pandas = ["pandas<2.0.0", "setuptools"]
+pyspark = ["pyspark>=3.2.0", "pyarrow>13"]
 se = ["spark-expectations>=1.1.0"]
 sftp = ["paramiko>=2.6.0"]
 delta = ["delta-spark>=2.2"]
@@ -137,6 +138,7 @@ features = [
   "async",
   "async_http",
   "pyspark",
+  "pandas",
   "sftp",
   "delta",
   "se",
@@ -447,6 +449,7 @@ features = [
   "async",
   "async_http",
   "box",
+  "pandas",
   "pyspark",
   "se",
   "sftp",
