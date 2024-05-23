@@ -4,7 +4,7 @@ import pytest
 
 from pyspark.sql import SparkSession
 
-from koheesio.steps.readers.jdbc import JdbcReader
+from koheesio.spark.readers.jdbc import JdbcReader
 
 
 class TestJdbcReader:

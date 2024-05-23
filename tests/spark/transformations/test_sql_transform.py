@@ -4,7 +4,7 @@ import pytest
 from conftest import TEST_DATA_PATH
 
 from koheesio.logger import LoggingFactory
-from koheesio.steps.transformations.sql_transform import SqlTransform
+from koheesio.spark.transformations.sql_transform import SqlTransform
 
 log = LoggingFactory.get_logger(name="test_sql_transform")
 

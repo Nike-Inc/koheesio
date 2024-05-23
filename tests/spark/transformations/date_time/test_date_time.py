@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 
 from koheesio.logger import LoggingFactory
-from koheesio.steps.transformations.date_time import (
+from koheesio.spark.transformations.date_time import (
     ChangeTimeZone,
     DateFormat,
     ToTimestamp,

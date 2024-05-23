@@ -4,7 +4,7 @@ import pytest
 
 from pyspark.sql import SparkSession
 
-from koheesio.steps.integrations.dq.spark_expectations import (
+from koheesio.integrations.spark.dq.spark_expectations import (
     SparkExpectationsTransformation,
 )
 from koheesio.utils import get_project_root

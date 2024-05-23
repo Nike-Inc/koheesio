@@ -2,7 +2,7 @@ from unittest import mock
 
 from pyspark.sql import SparkSession
 
-from koheesio.steps.readers.hana import HanaReader
+from koheesio.spark.readers.hana import HanaReader
 
 
 class TestHanaReader:

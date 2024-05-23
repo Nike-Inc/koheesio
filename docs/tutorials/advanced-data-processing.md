@@ -10,12 +10,14 @@ Here's an example of a custom transformation that normalizes a column in a DataF
 
 ```python
 from pyspark.sql import DataFrame
-from koheesio.steps.transformations.transform import Transform
+from koheesio.steps.transformations import Transform
+
 
 def normalize_column(df: DataFrame, column: str) -> DataFrame:
     max_value = df.agg({column: "max"}).collect()[0][0]
     min_value = df.agg({column: "min"}).collect()[0][0]
     return df.withColumn(column, (df[column] - min_value) / (max_value - min_value))
+
 
 class NormalizeColumnTransform(Transform):
     column: str
@@ -45,7 +47,8 @@ Caching is another technique that can improve performance by storing the result 
 doesn't have to be recomputed each time it's used. You can use the cache method to cache the result of a transformation.
 
 ```python
-from koheesio.steps.transformations.cache import CacheTransformation
+from koheesio.steps.transformations import CacheTransformation
+
 
 class MyTask(EtlTask):
     transformations = [NormalizeColumnTransform(column="my_column"), CacheTransformation()]

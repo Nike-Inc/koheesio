@@ -1,6 +1,6 @@
 from pyspark.sql.dataframe import DataFrame
 
-from koheesio.steps.readers.metastore import MetastoreReader
+from koheesio.spark.readers.metastore import MetastoreReader
 
 
 def test_metastore_reader(spark):

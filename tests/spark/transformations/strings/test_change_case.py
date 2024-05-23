@@ -5,7 +5,7 @@ Test the UpperCase columns transformation
 import pytest
 
 from koheesio.logger import LoggingFactory
-from koheesio.steps.transformations.strings.change_case import (
+from koheesio.spark.transformations.strings.change_case import (
     InitCap,
     LowerCase,
     TitleCase,

@@ -3,7 +3,7 @@ from chispa import assert_df_equality
 
 from pyspark.sql.types import StructType
 
-from koheesio.steps.readers.memory import DataFormat, InMemoryDataReader
+from koheesio.spark.readers.memory import DataFormat, InMemoryDataReader
 
 
 class TestInMemoryDataReader:

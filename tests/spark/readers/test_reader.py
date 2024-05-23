@@ -1,4 +1,4 @@
-from koheesio.steps.readers.dummy import DummyReader
+from koheesio.spark.readers.dummy import DummyReader
 
 
 def test_reader(spark):

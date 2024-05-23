@@ -9,7 +9,7 @@ from pydantic import ValidationError
 from pyspark.sql.types import LongType
 
 from koheesio.logger import LoggingFactory
-from koheesio.steps.delta import DeltaTableStep
+from koheesio.spark.delta import DeltaTableStep
 
 log = LoggingFactory.get_logger(name="test_delta")
 

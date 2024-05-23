@@ -4,14 +4,14 @@ from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.functions import col, lit
 
 from koheesio.logger import LoggingFactory
-from koheesio.steps.delta import DeltaTableStep
-from koheesio.steps.readers.delta import DeltaTableReader, DeltaTableStreamReader
-from koheesio.steps.readers.dummy import DummyReader
-from koheesio.steps.transformations.sql_transform import SqlTransform
-from koheesio.steps.transformations.transform import Transform
-from koheesio.steps.writers.delta import DeltaTableStreamWriter, DeltaTableWriter
-from koheesio.steps.writers.dummy import DummyWriter
-from koheesio.tasks.etl_task import EtlTask
+from koheesio.spark.readers.delta import DeltaTableReader, DeltaTableStreamReader
+from koheesio.spark.readers.dummy import DummyReader
+from koheesio.spark.transformations.sql_transform import SqlTransform
+from koheesio.spark.transformations.transform import Transform
+from koheesio.spark.writers.delta import DeltaTableStreamWriter, DeltaTableWriter
+from koheesio.spark.writers.dummy import DummyWriter
+from koheesio.spark.delta import DeltaTableStep
+from koheesio.spark.etl_task import EtlTask
 
 
 def dummy_function(df: DataFrame):

@@ -13,7 +13,7 @@ from pyspark.sql.types import (
     TimestampType,
 )
 
-from koheesio.steps.writers.buffer import PandasCsvBufferWriter, PandasJsonBufferWriter
+from koheesio.spark.writers.buffer import PandasCsvBufferWriter, PandasJsonBufferWriter
 
 # Test data has two columns: email and sha256_email
 test_data = [
