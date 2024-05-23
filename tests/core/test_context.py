@@ -10,7 +10,7 @@ test_dict = dict(foo="bar", nested=dict(bar="baz"), listed=["first_item", dict(d
 test_context = Context(test_dict)
 
 PROJECT_ROOT = get_project_root()
-CONTEXT_FOLDER = PROJECT_ROOT / "test" / "_data" / "context"
+CONTEXT_FOLDER = PROJECT_ROOT / "tests" / "_data" / "context"
 SAMPLE_YAML = CONTEXT_FOLDER / "sample.yaml"
 SAMPLE_JSON = CONTEXT_FOLDER / "sample.json"
 
