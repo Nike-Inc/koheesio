@@ -6,7 +6,7 @@ from aiohttp_retry import ExponentialRetry
 from pydantic import ValidationError
 from yarl import URL
 
-from koheesio.steps.asyncio.http import AsyncHttpStep
+from koheesio.asyncio.http import AsyncHttpStep
 from koheesio.steps.http import HttpMethod
 
 ASYNC_BASE_URL = "http://httpbin.org"
