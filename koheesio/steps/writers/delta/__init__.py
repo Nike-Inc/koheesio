@@ -9,6 +9,7 @@ Classes:
 """
 
 from koheesio.steps.writers.delta.batch import DeltaTableWriter
+from koheesio.steps.writers.delta.scd import SCD2DeltaTableWriter
 from koheesio.steps.writers.delta.stream import DeltaTableStreamWriter
 
-__all__ = ["DeltaTableWriter", "DeltaTableStreamWriter"]
+__all__ = ["DeltaTableWriter", "DeltaTableStreamWriter", "SCD2DeltaTableWriter"]
