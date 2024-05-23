@@ -25,7 +25,7 @@ from koheesio.models import (
     field_serializer,
     field_validator,
 )
-from koheesio.steps import Step
+from koheesio import Step
 
 __all__ = [
     "HttpMethod",
