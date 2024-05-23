@@ -34,7 +34,7 @@ from koheesio.models import (
     model_validator,
 )
 from koheesio.spark.readers import Reader
-from koheesio.steps import Step, StepOutput
+from koheesio import Step, StepOutput
 
 
 class BoxFolderNotFoundError(Exception):

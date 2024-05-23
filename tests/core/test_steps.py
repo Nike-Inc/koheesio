@@ -14,7 +14,7 @@ from pyspark.sql.functions import lit
 from koheesio.models import Field
 from koheesio.spark.transformations.transform import Transform
 from koheesio.steps.dummy import DummyOutput, DummyStep
-from koheesio.steps.step import Step, StepMetaClass, StepOutput
+from koheesio.steps import Step, StepMetaClass, StepOutput
 from koheesio.utils import get_project_root
 
 

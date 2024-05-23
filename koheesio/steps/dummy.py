@@ -15,7 +15,7 @@ In this case, `s.output` will be equivalent to the following dictionary:
 ```
 """
 
-from koheesio.steps import Step, StepOutput
+from koheesio import Step, StepOutput
 
 
 class DummyOutput(StepOutput):

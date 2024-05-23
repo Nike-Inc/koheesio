@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional
 
 from koheesio.models import ConfigDict, Field
 from koheesio.steps.http import HttpPostStep
-from koheesio.steps.integrations.notifications import NotificationSeverity
+from koheesio.notifications import NotificationSeverity
 
 
 class SlackNotification(HttpPostStep):

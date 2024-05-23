@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
 from koheesio.models import ExtraParamsMixin, Field, model_validator
-from koheesio.steps import Step
+from koheesio import Step
 
 
 class SqlBaseStep(Step, ExtraParamsMixin, ABC):

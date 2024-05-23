@@ -5,7 +5,7 @@ import pytest
 from pydantic import SecretStr
 from requests_mock.mocker import Mocker
 
-from koheesio.steps.integrations.sso import okta as o
+from koheesio.sso import okta as o
 
 
 class TestOktaToken:
