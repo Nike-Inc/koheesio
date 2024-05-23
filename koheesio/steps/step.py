@@ -51,14 +51,6 @@ class StepMetaClass(ModelMetaclass):
     allowing for the execute method to be auto-decorated with do_execute
     """
 
-    # Solution to overcome issue with python>=3.11,
-    # When partialmethod is forgetting that _execute_wrapper
-    # is a method of wrapper, and it needs to pass that in as the first arg.
-    # https://github.com/python/cpython/issues/99152
-    class _partialmethod_with_self(partialmethod):
-        def __get__(self, obj, cls=None):
-            return self._make_unbound_method().__get__(obj, cls)
-
     # Unique object to mark a function as wrapped
     _step_execute_wrapper_sentinel = object()
 
@@ -132,9 +124,7 @@ class StepMetaClass(ModelMetaclass):
         if not is_already_wrapped:
             # Create a partial method with the execute_method as one of the arguments.
             # This is the new function that will be called instead of the original execute_method.
-
-            partial_impl = partialmethod if sys.version_info < (3, 11) else mcs._partialmethod_with_self
-            wrapper = partial_impl(cls._execute_wrapper, execute_method=execute_method)
+            wrapper = mcs._partialmethod_impl(cls=cls, execute_method=execute_method)
 
             # Updating the attributes of the wrapping function to those of the original function.
             wraps(execute_method)(wrapper)  # type: ignore
@@ -175,6 +165,50 @@ class StepMetaClass(ModelMetaclass):
 
         base_class = caller_self.__class__.__bases__[0]
         return caller_name in base_class.__dict__
+
+    @classmethod
+    def _partialmethod_impl(mcs, cls: type, execute_method) -> partialmethod:
+        """
+        This method creates a partial method implementation for a given class and execute method.
+        It handles a specific issue with python>=3.11 where partialmethod forgets that _execute_wrapper
+        is a method of wrapper, and it needs to pass that in as the first argument.
+
+        Args:
+            mcs: The metaclass instance.
+            cls (type): The class for which the partial method is being created.
+            execute_method: The method to be executed.
+
+        Returns:
+            wrapper: The partial method implementation.
+        """
+
+        # Solution to overcome issue with python>=3.11,
+        # When partialmethod is forgetting that _execute_wrapper
+        # is a method of wrapper, and it needs to pass that in as the first arg.
+        # https://github.com/python/cpython/issues/99152
+        class _partialmethod_with_self(partialmethod):
+            """
+            This class is a workaround for the issue with python>=3.11 where partialmethod forgets that
+            _execute_wrapper is a method of wrapper, and it needs to pass that in as the first argument.
+            """
+
+            def __get__(self, obj, cls=None):
+                """
+                This method returns the unbound method for the given object and class.
+
+                Args:
+                    obj: The object instance.
+                    cls (Optional): The class for which the method is being retrieved. Defaults to None.
+
+                Returns:
+                    The unbound method.
+                """
+                return self._make_unbound_method().__get__(obj, cls)
+
+        _partialmethod_impl = partialmethod if sys.version_info < (3, 11) else _partialmethod_with_self
+        wrapper = _partialmethod_impl(cls._execute_wrapper, execute_method=execute_method)
+
+        return wrapper
 
     @classmethod
     def _execute_wrapper(mcs, step: Step, execute_method, *args, **kwargs) -> StepOutput:

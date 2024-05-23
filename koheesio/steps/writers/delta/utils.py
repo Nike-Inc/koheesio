@@ -6,8 +6,6 @@ from typing import Optional
 
 from py4j.java_gateway import JavaObject
 
-# rest of your code
-
 
 def log_clauses(clauses: JavaObject, source_alias: str, target_alias: str) -> Optional[str]:
     """
