@@ -1,9 +1,9 @@
 import pytest
+from pyspark.sql import functions as F
 from pyspark.sql.dataframe import DataFrame
-from pyspark.sql.functions import col
-from pyspark.sql.utils import AnalysisException
 
 from koheesio.steps.readers.delta import DeltaTableReader
+from koheesio.steps.spark import AnalysisException
 
 
 def test_delta_table_reader(spark):
@@ -95,8 +95,8 @@ def test_string_filter_cond(spark, select_and_filter_table):
 @pytest.mark.parametrize(
     "filter_cond,expected",
     [
-        ("""col("rings") == 3""", {"name": "Tony", "rings": 3, "role": "F"}),
-        ("""(col("rings") > 3) & (col("name").startswith("St"))""", {"name": "Steve", "rings": 5, "role": "SG"}),
+        ("""F.col("rings").eqNullSafe(3)""", {"name": "Tony", "rings": 3, "role": "F"}),
+        ("""(F.col("rings") > 3) & (F.col("name").startswith("St"))""", {"name": "Steve", "rings": 5, "role": "SG"}),
     ],
 )
 def test_filter_cond(spark, select_and_filter_table, filter_cond, expected):
@@ -104,6 +104,7 @@ def test_filter_cond(spark, select_and_filter_table, filter_cond, expected):
     reader = DeltaTableReader(table="select_and_filter_test", filter_cond=filter_cond)
     actual = reader.read().head().asDict()
     assert actual == expected
+    assert reader.df.select(F.col("name")).head().asDict() == {"name": expected["name"]}
 
 
 @pytest.mark.parametrize(

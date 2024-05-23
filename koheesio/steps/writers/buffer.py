@@ -21,6 +21,7 @@ from tempfile import SpooledTemporaryFile
 from typing import Literal, Optional
 
 from pandas._typing import CompressionOptions as PandasCompressionOptions
+from pydantic import InstanceOf
 from pyspark import pandas
 
 from koheesio.models import ExtraParamsMixin, Field, constr
@@ -46,7 +47,9 @@ class BufferWriter(Writer, ABC):
     class Output(Writer.Output, ABC):
         """Output class for BufferWriter"""
 
-        buffer: SpooledTemporaryFile = Field(default_factory=partial(SpooledTemporaryFile, mode="w+b", max_size=0))
+        buffer: InstanceOf[SpooledTemporaryFile] = Field(
+            default_factory=partial(SpooledTemporaryFile, mode="w+b", max_size=0), exclude=True
+        )
 
         def read(self):
             """Read the buffer"""

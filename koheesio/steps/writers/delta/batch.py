@@ -1,6 +1,6 @@
 """
-This module defines the DeltaTableWriter and DeltaTableStreamWriter class, which is used to write both batch and
-streaming dataframes to Delta tables.
+This module defines the DeltaTableWriter class, which is used to write both batch and streaming dataframes
+to Delta tables.
 
 DeltaTableWriter supports two output modes: `MERGEALL` and `MERGE`.
 
@@ -38,14 +38,13 @@ from functools import partial
 from typing import List, Optional, Set, Type, Union
 
 from delta.tables import DeltaMergeBuilder, DeltaTable
-from py4j.java_gateway import JavaObject
 from py4j.protocol import Py4JError
 from pyspark.sql import DataFrameWriter
 
 from koheesio.models import ExtraParamsMixin, Field, field_validator
 from koheesio.steps.delta import DeltaTableStep
 from koheesio.steps.writers import BatchOutputMode, StreamingOutputMode, Writer
-from koheesio.steps.writers.stream import StreamWriter
+from koheesio.steps.writers.delta.utils import log_clauses
 from koheesio.utils import on_databricks
 
 
@@ -166,7 +165,7 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
                     self.log.debug(
                         f"The following aliases are used during Merge operation: source={source_alias}, target={target_alias}"
                     )
-                    patched__log_clauses = partial(_log_clauses, source_alias=source_alias, target_alias=target_alias)
+                    patched__log_clauses = partial(log_clauses, source_alias=source_alias, target_alias=target_alias)
                     self.log.debug(
                         patched__log_clauses(clauses=merge_builder._jbuilder.getMergePlan().matchedClauses())
                     )
@@ -252,7 +251,7 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
             if isinstance(merge_builder, DeltaMergeBuilder):
                 return merge_builder
 
-            if isinstance(merge_builder, list) and "merge_cond" in self.params:
+            if isinstance(merge_builder, list) and "merge_cond" in self.params:  # type: ignore
                 return self._merge_builder_from_args()
 
         raise ValueError(
@@ -364,81 +363,3 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
                 # should we add options only if mode is not merge?
                 _writer = _writer.options(**options)
             _writer.saveAsTable(self.table.table_name)
-
-
-class DeltaTableStreamWriter(StreamWriter, DeltaTableWriter):
-    """Delta table stream writer"""
-
-    class Options:
-        """Options for DeltaTableStreamWriter"""
-
-        allow_population_by_field_name = True  # To do convert to Field and pass as .options(**config)
-        maxBytesPerTrigger = None  # How much data to be processed per trigger. The default is 1GB
-        maxFilesPerTrigger = 1000  # How many new files to be considered in every micro-batch. The default is 1000
-
-    def execute(self):
-        if self.batch_function:
-            self.streaming_query = self.writer.start()
-        else:
-            self.streaming_query = self.writer.toTable(tableName=self.table.table_name)
-
-
-def _log_clauses(clauses: JavaObject, source_alias: str, target_alias: str) -> Optional[str]:
-    """
-    Prepare log message for clauses of DeltaMergePlan statement.
-
-    Parameters
-    ----------
-    clauses : JavaObject
-        The clauses of the DeltaMergePlan statement.
-    source_alias : str
-        The source alias.
-    target_alias : str
-        The target alias.
-
-    Returns
-    -------
-    Optional[str]
-        The log message if there are clauses, otherwise None.
-
-    Notes
-    -----
-    This function prepares a log message for the clauses of a DeltaMergePlan statement. It iterates over the clauses,
-    processes the conditions, and constructs the log message based on the clause type and columns.
-
-    If the condition is a value, it replaces the source and target aliases in the condition string. If the condition is
-    None, it sets the condition_clause to "No conditions required".
-
-    The log message includes the clauses type, the clause type, the columns, and the condition.
-    """
-    log_message = None
-
-    if not clauses.isEmpty():
-        clauses_type = clauses.last().nodeName().replace("DeltaMergeInto", "")
-        _processed_clauses = {}
-
-        for i in range(0, clauses.length()):
-            clause = clauses.apply(i)
-            condition = clause.condition()
-
-            if "value" in dir(condition):
-                condition_clause = (
-                    condition.value()
-                    .toString()
-                    .replace(f"'{source_alias}", source_alias)
-                    .replace(f"'{target_alias}", target_alias)
-                )
-            elif condition.toString() == "None":
-                condition_clause = "No conditions required"
-
-            clause_type: str = clause.clauseType().capitalize()
-            columns = "ALL" if clause_type == "Delete" else clause.actions().toList().apply(0).toString()
-
-            if clause_type.lower() not in _processed_clauses:
-                _processed_clauses[clause_type.lower()] = []
-
-            log_message = (
-                f"{clauses_type} will perform action:{clause_type} columns ({columns}) if `{condition_clause}`"
-            )
-
-    return log_message

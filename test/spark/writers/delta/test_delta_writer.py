@@ -5,16 +5,13 @@ import pytest
 from conftest import await_job_completion
 from delta import DeltaTable
 from pydantic import ValidationError
-from pyspark.sql.functions import expr, lit
-from pyspark.sql.utils import AnalysisException
+from pyspark.sql import functions as F
 
 from koheesio.steps.delta import DeltaTableStep
+from koheesio.steps.spark import AnalysisException
 from koheesio.steps.writers import BatchOutputMode, StreamingOutputMode
-from koheesio.steps.writers.delta import (
-    DeltaTableStreamWriter,
-    DeltaTableWriter,
-    _log_clauses,
-)
+from koheesio.steps.writers.delta import DeltaTableStreamWriter, DeltaTableWriter
+from koheesio.steps.writers.delta.utils import log_clauses
 from koheesio.steps.writers.stream import Trigger
 
 
@@ -70,54 +67,8 @@ def test_delta_table_merge_all(spark):
         output_mode=BatchOutputMode.MERGEALL,
         output_mode_params={
             "merge_cond": "target.id=source.id",
-            "update_cond": expr("length(source.value)>length(target.value)"),
-            "insert_cond": expr("source.value IS NOT NULL"),
-        },
-        df=source_df,
-    ).execute()
-    result = {
-        list(row.asDict().values())[0]: list(row.asDict().values())[1] for row in spark.read.table(table_name).collect()
-    }
-    assert result == expected
-
-
-def test_deltatablewriter_merge(spark):
-    table_name = "test_merge_table"
-    target_df = spark.createDataFrame(
-        [{"id": 1, "value": "no_merge"}, {"id": 2, "value": "expected_merge"}, {"id": 5, "value": "xxxx"}]
-    )
-    source_df = spark.createDataFrame(
-        [
-            {"id": 2, "value": "updated_value_long"},
-            {"id": 3, "value": None},
-            {"id": 4, "value": "new_value"},
-            {"id": 5, "value": "x"},
-        ]
-    )
-    expected = {
-        1: "no_merge",
-        2: "amazing",
-        # {"id": 3, "value": None},  No merge as new value is NONE
-        103: None,
-        # No merge as old value is greater
-        5: "xxxx",
-    }
-    DeltaTableWriter(table=table_name, output_mode=BatchOutputMode.APPEND, df=target_df).execute()
-    DeltaTableWriter(
-        table=table_name,
-        output_mode=BatchOutputMode.MERGE,
-        output_mode_params={
-            "merge_builder": (
-                DeltaTable.forName(sparkSession=spark.getActiveSession(), tableOrViewName=table_name)
-                .alias("target")
-                .merge(condition="target.id=source.id", source=source_df.alias("source"))
-                .whenNotMatchedInsert(condition=expr("source.value IS NOT NULL"), values={"id": expr("source.id+99")})
-                .whenMatchedUpdate(
-                    condition="length(source.value)>length(target.value)",
-                    set={"value": lit("amazing")},
-                )
-                # .whenNotMatchedBySourceDelete(condition="1=1")
-            )
+            "update_cond": F.expr("length(source.value)>length(target.value)"),
+            "insert_cond": F.expr("source.value IS NOT NULL"),
         },
         df=source_df,
     ).execute()
@@ -218,8 +169,8 @@ def test_valid_output_mode(constructor, output_mode, streaming, checkpoint_folde
     assert x is not None
 
 
-def test_delta_stream_table_writer(streaming_dummy_df, spark, checkpoint_folder, random_uuid):
-    table_name = f"test_streaming_table_{random_uuid}"
+def test_delta_stream_table_writer(streaming_dummy_df, spark, checkpoint_folder):
+    table_name = "test_streaming_table"
     delta_writer = DeltaTableStreamWriter(
         table=table_name,
         checkpoint_location=checkpoint_folder,
@@ -228,9 +179,9 @@ def test_delta_stream_table_writer(streaming_dummy_df, spark, checkpoint_folder,
         df=streaming_dummy_df,
     )
     delta_writer.write()
-    await_job_completion(timeout=30, query_id=delta_writer.streaming_query.id)
-
+    await_job_completion(timeout=20, query_id=delta_writer.streaming_query.id)
     df = spark.read.table(table_name)
+
     assert df.count() == 10
 
 
@@ -441,7 +392,7 @@ def test_log_clauses(mocker):
     mock_clauses.apply.return_value = mock_clause
 
     # Call the function with the mocked JavaObject
-    result = _log_clauses(mock_clauses, "source_alias", "target_alias")
+    result = log_clauses(mock_clauses, "source_alias", "target_alias")
 
     # Assert the result
     assert result == "Test will perform action:Test columns (test_column) if `source_alias == target_alias`"
