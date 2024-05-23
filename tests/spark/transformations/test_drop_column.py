@@ -1,6 +1,6 @@
 import pytest
 
-from koheesio.steps.transformations.drop_column import DropColumn
+from koheesio.spark.transformations.drop_column import DropColumn
 
 
 @pytest.mark.parametrize(

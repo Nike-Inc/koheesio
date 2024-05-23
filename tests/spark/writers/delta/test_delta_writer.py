@@ -7,12 +7,12 @@ from delta import DeltaTable
 from pydantic import ValidationError
 from pyspark.sql import functions as F
 
-from koheesio.steps.delta import DeltaTableStep
-from koheesio.steps.spark import AnalysisException
-from koheesio.steps.writers import BatchOutputMode, StreamingOutputMode
-from koheesio.steps.writers.delta import DeltaTableStreamWriter, DeltaTableWriter
-from koheesio.steps.writers.delta.utils import log_clauses
-from koheesio.steps.writers.stream import Trigger
+from koheesio.spark import AnalysisException
+from koheesio.spark.writers import BatchOutputMode, StreamingOutputMode
+from koheesio.spark.writers.delta import DeltaTableStreamWriter, DeltaTableWriter
+from koheesio.spark.writers.delta.utils import log_clauses
+from koheesio.spark.writers.stream import Trigger
+from koheesio.spark.delta import DeltaTableStep
 
 
 @pytest.mark.parametrize(
@@ -240,7 +240,7 @@ def test_delta_with_options(spark):
     """
     sample_df = spark.createDataFrame([{"id": 1, "value": "test_value"}])
 
-    with patch("koheesio.steps.writers.delta.DeltaTableWriter.writer", new_callable=MagicMock) as mock_writer:
+    with patch("koheesio.spark.writers.delta.DeltaTableWriter.writer", new_callable=MagicMock) as mock_writer:
         delta_writer = DeltaTableWriter(
             table="test_table",
             output_mode=BatchOutputMode.APPEND,
@@ -251,7 +251,7 @@ def test_delta_with_options(spark):
         delta_writer.execute()
         mock_writer.options.assert_called_once_with(testParam1="testValue1", testParam2="testValue2")
 
-    with patch("koheesio.steps.writers.delta.DeltaTableWriter.writer", new_callable=MagicMock) as mock_writer:
+    with patch("koheesio.spark.writers.delta.DeltaTableWriter.writer", new_callable=MagicMock) as mock_writer:
         delta_writer = DeltaTableWriter(
             table="test_table",
             output_mode=BatchOutputMode.OVERWRITE,

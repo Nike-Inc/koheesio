@@ -30,11 +30,11 @@ from pyspark.sql.types import (
 )
 
 from koheesio.logger import LoggingFactory
-from koheesio.steps.readers.dummy import DummyReader
+from koheesio.spark.readers.dummy import DummyReader
 from koheesio.utils import get_project_root
 
 PROJECT_ROOT = get_project_root()
-TEST_DATA_PATH = Path(PROJECT_ROOT / "test" / "_data")
+TEST_DATA_PATH = Path(PROJECT_ROOT / "tests" / "_data")
 DELTA_FILE = Path(TEST_DATA_PATH / "readers" / "delta_file")
 
 

@@ -12,9 +12,9 @@ from pyspark.sql import DataFrame
 from pyspark.sql.functions import lit
 
 from koheesio.models import Field
+from koheesio.spark.transformations.transform import Transform
 from koheesio.steps.dummy import DummyOutput, DummyStep
 from koheesio.steps.step import Step, StepMetaClass, StepOutput
-from koheesio.steps.transformations.transform import Transform
 from koheesio.utils import get_project_root
 
 
@@ -197,7 +197,7 @@ class TestStep:
 
         # execute the step
         test_step.execute()
-        expected_output_path = PROJECT_ROOT / "test" / "_data" / "steps"
+        expected_output_path = PROJECT_ROOT / "tests" / "_data" / "steps"
 
         # using .strip() to avoid the test failing on leading or trailing whitespaces
         expected = (expected_output_path / "expected_step_output.yaml").read_text().strip()

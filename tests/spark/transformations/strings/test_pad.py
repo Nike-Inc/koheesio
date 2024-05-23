@@ -6,7 +6,7 @@ import pytest
 
 from koheesio.logger import LoggingFactory
 from koheesio.models import ValidationError
-from koheesio.steps.transformations.strings.pad import LPad, Pad, RPad
+from koheesio.spark.transformations.strings.pad import LPad, Pad, RPad
 
 log = LoggingFactory.get_logger(name=__file__, inherit_from_koheesio=True)
 

@@ -257,8 +257,8 @@ from pyspark.sql import DataFrame, SparkSession
 
 # Step 1: import Koheesio dependencies
 from koheesio.context import Context
-from koheesio.steps.readers.dummy import DummyReader
-from koheesio.steps.transformations.camel_to_snake import CamelToSnakeTransformation
+from koheesio.spark.readers.dummy import DummyReader
+from koheesio.steps.transformations import CamelToSnakeTransformation
 from koheesio.steps.writers.dummy import DummyWriter
 from koheesio.tasks.etl_task import EtlTask
 
@@ -273,6 +273,7 @@ context = Context({
     "my_favorite_movie": "inception",
 })
 
+
 # Step 4: Create a Task
 class MyFavoriteMovieTask(EtlTask):
     my_favorite_movie: str
@@ -280,6 +281,7 @@ class MyFavoriteMovieTask(EtlTask):
     def transform(self, df: DataFrame = None) -> DataFrame:
         df = df.withColumn("MyFavoriteMovie", lit(self.my_favorite_movie))
         return super().transform(df)
+
 
 # Step 5: Run your Task
 task = MyFavoriteMovieTask(**context)

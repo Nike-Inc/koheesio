@@ -1,7 +1,7 @@
 import pytest
 from pyspark.sql import SparkSession
 
-from koheesio.steps.transformations.lookup import (
+from koheesio.spark.transformations.lookup import (
     DataframeLookup,
     JoinHint,
     JoinMapping,

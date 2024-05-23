@@ -2,7 +2,7 @@ from unittest import mock
 
 from pyspark.sql import SparkSession
 
-from koheesio.steps.readers.teradata import TeradataReader
+from koheesio.spark.readers.teradata import TeradataReader
 
 
 class TestTeradataReader:

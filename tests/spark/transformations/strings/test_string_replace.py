@@ -5,7 +5,7 @@ Test the Replace columns transformation
 import pytest
 
 from koheesio.logger import LoggingFactory
-from koheesio.steps.transformations.strings.replace import Replace
+from koheesio.spark.transformations.strings.replace import Replace
 
 log = LoggingFactory.get_logger(name=__file__, inherit_from_koheesio=True)
 

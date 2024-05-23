@@ -5,7 +5,7 @@ from pathlib import PurePath
 import pytest
 from pydantic import ValidationError
 
-from koheesio.steps.integrations.box import (
+from koheesio.integrations.box import (
     Box,
     BoxCsvFileReader,
     BoxCsvPathReader,
@@ -112,8 +112,8 @@ def dummy_box(mocker):
             if kwargs["file_id"] == "30":
                 return self._mock_file(name="upload.csv", object_id="30", content=b"foo,bar\nA,2")
 
-    mocker.patch("koheesio.steps.integrations.box.JWTAuth", spec=JWTAuth)
-    mocker.patch("koheesio.steps.integrations.box.Client", new=DummyBox)
+    mocker.patch("koheesio.integrations.box.JWTAuth", spec=JWTAuth)
+    mocker.patch("koheesio.integrations.box.Client", new=DummyBox)
 
 
 class TestBox:

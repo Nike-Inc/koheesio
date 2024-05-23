@@ -2,7 +2,7 @@ import json
 
 from requests_mock.mocker import Mocker
 
-from koheesio.steps.integrations.notifications.slack import (
+from koheesio.notifications.slack import (
     NotificationSeverity,
     SlackNotification,
     SlackNotificationWithSeverity,

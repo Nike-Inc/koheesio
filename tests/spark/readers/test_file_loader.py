@@ -1,6 +1,7 @@
 import pytest
 
-from koheesio.steps.readers.file_loader import (
+from koheesio.spark import AnalysisException
+from koheesio.spark.readers.file_loader import (
     AvroReader,
     CsvReader,
     FileFormat,
@@ -9,7 +10,6 @@ from koheesio.steps.readers.file_loader import (
     OrcReader,
     ParquetReader,
 )
-from koheesio.steps.spark import AnalysisException
 
 
 @pytest.fixture()

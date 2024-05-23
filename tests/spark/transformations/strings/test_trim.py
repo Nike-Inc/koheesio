@@ -6,7 +6,7 @@ import pytest
 from pydantic import ValidationError
 
 from koheesio.logger import LoggingFactory
-from koheesio.steps.transformations.strings.trim import LTrim, RTrim, Trim
+from koheesio.spark.transformations.strings.trim import LTrim, RTrim, Trim
 
 log = LoggingFactory.get_logger(name=__file__, inherit_from_koheesio=True)
 

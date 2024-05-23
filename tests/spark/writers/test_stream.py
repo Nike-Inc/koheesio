@@ -2,7 +2,7 @@
 
 import pytest
 
-from koheesio.steps.writers.stream import Trigger
+from koheesio.spark.writers.stream import Trigger
 
 
 @pytest.mark.parametrize(

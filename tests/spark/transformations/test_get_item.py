@@ -1,6 +1,6 @@
 import pytest
 
-from koheesio.steps.transformations.get_item import GetItem
+from koheesio.spark.transformations.get_item import GetItem
 
 
 @pytest.mark.parametrize(

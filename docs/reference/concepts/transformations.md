@@ -161,13 +161,13 @@ Koheesio provides a variety of `Transformation` subclasses for transforming data
 examples:
 
 - `DataframeLookup`: This transformation joins two dataframes together based on a list of join mappings. It allows you
-    to specify the join type and join hint, and it supports selecting specific target columns from the right dataframe.
+  to specify the join type and join hint, and it supports selecting specific target columns from the right dataframe.
 
     Here's an example of how to use the `DataframeLookup` transformation:
 
     ```python
     from pyspark.sql import SparkSession
-    from koheesio.steps.transformations.lookup import DataframeLookup, JoinMapping, TargetColumn, JoinType
+    from koheesio.steps.transformations import DataframeLookup, JoinMapping, TargetColumn, JoinType
 
     spark = SparkSession.builder.getOrCreate()
     left_df = spark.createDataFrame([(1, "A"), (2, "B")], ["id", "value"])
@@ -246,7 +246,7 @@ how to chain transformations:
 ```python
 from pyspark.sql import SparkSession
 from koheesio.steps.transformations import HashUUID5
-from koheesio.steps.transformations.lookup import DataframeLookup, JoinMapping, TargetColumn, JoinType
+from koheesio.steps.transformations import DataframeLookup, JoinMapping, TargetColumn, JoinType
 
 # Create a SparkSession
 spark = SparkSession.builder.getOrCreate()

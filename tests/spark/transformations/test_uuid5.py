@@ -1,7 +1,7 @@
 import pytest
 
 from koheesio.logger import LoggingFactory
-from koheesio.steps.transformations.uuid5 import HashUUID5
+from koheesio.spark.transformations.uuid5 import HashUUID5
 
 log = LoggingFactory.get_logger(name="test_uuid5")
 

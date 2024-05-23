@@ -1,6 +1,6 @@
 import pytest
 
-from koheesio.steps.writers.dummy import DummyWriter
+from koheesio.spark.writers.dummy import DummyWriter
 
 expected = {"id": 0}
 

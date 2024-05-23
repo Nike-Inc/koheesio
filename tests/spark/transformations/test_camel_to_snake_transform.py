@@ -1,8 +1,8 @@
 import pytest
 from pyspark.sql import functions as F
 
-from koheesio.steps.readers.dummy import DummyReader
-from koheesio.steps.transformations.camel_to_snake import CamelToSnakeTransformation
+from koheesio.spark.readers.dummy import DummyReader
+from koheesio.spark.transformations.camel_to_snake import CamelToSnakeTransformation
 
 
 class TestCamelToSnakeTransformation:

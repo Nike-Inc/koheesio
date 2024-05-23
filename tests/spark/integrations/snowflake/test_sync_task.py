@@ -9,16 +9,16 @@ import pytest
 from conftest import await_job_completion
 from pyspark.sql import DataFrame
 
-from koheesio.steps.delta import DeltaTableStep
-from koheesio.steps.integrations.snowflake import (
+from koheesio.spark.readers.delta import DeltaTableReader
+from koheesio.spark.writers import BatchOutputMode, StreamingOutputMode
+from koheesio.spark.writers.delta import DeltaTableWriter
+from koheesio.spark.writers.stream import ForEachBatchStreamWriter
+from koheesio.spark.delta import DeltaTableStep
+from koheesio.spark.snowflake import (
     RunQuery,
     SnowflakeWriter,
     SynchronizeDeltaToSnowflakeTask,
 )
-from koheesio.steps.readers.delta import DeltaTableReader
-from koheesio.steps.writers import BatchOutputMode, StreamingOutputMode
-from koheesio.steps.writers.delta import DeltaTableWriter
-from koheesio.steps.writers.stream import ForEachBatchStreamWriter
 
 COMMON_OPTIONS = {
     "source_table": DeltaTableStep(table=""),
