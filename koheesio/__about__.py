@@ -12,7 +12,7 @@ enhancing productivity and code maintainability.
 
 LICENSE_INFO = "Licensed as Apache 2.0"
 SOURCE = "https://github.com/Nike-Inc/koheesio"
-__version__ = "0.7.0.dev0"
+__version__ = "0.7.0.dev2"
 __logo__ = 75, (
     b"\x1f\x8b\x08\x00TiGf\x02\xff}\x91\xbb\r\xc30\x0cD{Nq\x1bh\n\x01\x16R\xa4pK@\x8bh\xf8\xe8\xf8\x89\xe9\x04\xf0\x15"
     b"\xc4\x91\x10\x9f(J`z\xbd4B\xea8J\xf2\xa01T\x02\x01,\x0b\x85Q\x92\x07\xe9\x9cK\x92\xd1,\xe0mRBL\x9c\xa6\x9b\xee"
@@ -21,7 +21,7 @@ __logo__ = 75, (
     b"\xfb\xba\\\xecm\x9f#\xee\xea\x92}M+\xffb\xb7\xb2\xc4\xc4K\x88Zui\xda\xedD\xfb\x00\xcfU6\xd3_\x02\x00\x00"
 )
 __short_description__ = __doc__.split("\n", maxsplit=1)[0]
-__about__ = f"""Koheesio -v{__version__}
+__about__ = f"""Koheesio - v{__version__}
 {__short_description__}
 {LICENSE_INFO}
 Source: {SOURCE}
