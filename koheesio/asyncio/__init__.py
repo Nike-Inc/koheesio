@@ -1,11 +1,11 @@
 """
 This module provides classes for asynchronous steps in the koheesio package.
 """
-
-from typing import Dict, Union
+from abc import ABC
 from asyncio import iscoroutine
+from typing import Dict, Union
 
-from koheesio.steps.step import Step, StepMetaClass, StepOutput
+from koheesio.steps import Step, StepMetaClass, StepOutput
 
 
 class AsyncStepMetaClass(StepMetaClass):
@@ -29,13 +29,14 @@ class AsyncStepMetaClass(StepMetaClass):
         This method is called when an asynchronous step is executed. It wraps the
         execution of the step with additional functionality.
 
-        Args:
+        Parameters
+        ----------
             *args: Variable length argument list.
             **kwargs: Arbitrary keyword arguments.
 
-        Returns:
+        Returns
+        -------
             The result of executing the asynchronous step.
-
         """
 
         return super()._execute_wrapper(*args, **kwargs)
@@ -55,16 +56,18 @@ class AsyncStepOutput(Step.Output):
     -------
     merge(other: Union[Dict, StepOutput])
         Merge key-value map with self.
-
     """
 
     def merge(self, other: Union[Dict, StepOutput]):
         """Merge key,value map with self
 
-        For example:
+        Examples
+        --------
         ```python
         step_output = StepOutput(foo="bar")
-        step_output.merge({"lorem": "ipsum"})  # step_output will now contain {'foo': 'bar', 'lorem': 'ipsum'}
+        step_output.merge(
+            {"lorem": "ipsum"}
+        )  # step_output will now contain {'foo': 'bar', 'lorem': 'ipsum'}
         ```
 
         Functionally similar to adding two dicts together; like running `{**dict_a, **dict_b}`.
@@ -84,13 +87,14 @@ class AsyncStepOutput(Step.Output):
         return self
 
 
-class AsyncStep(Step, metaclass=AsyncStepMetaClass):
+class AsyncStep(Step, ABC, metaclass=AsyncStepMetaClass):
     """
     Asynchronous step class that inherits from Step and uses the AsyncStepMetaClass metaclass.
 
-    Attributes:
-        Output (AsyncStepOutput): The output class for the asynchronous step.
-
+    Attributes
+    ----------
+    Output : AsyncStepOutput
+        The output class for the asynchronous step.
     """
 
     class Output(AsyncStepOutput):
@@ -98,16 +102,6 @@ class AsyncStep(Step, metaclass=AsyncStepMetaClass):
         Output class for asyncio step.
 
         This class represents the output of the asyncio step. It inherits from the AsyncStepOutput class.
-
-        Attributes:
-            None
-
-        Methods:
-            None
         """
-
-        ...
-
-    ...
 
     __output__: Output
