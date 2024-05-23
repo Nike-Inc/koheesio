@@ -492,7 +492,7 @@ matrix.version.extra-dependencies = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "-q --color=yes --order-scope=module"
+addopts = "-q --color=yes --order-scope=module --randomize"
 log_level = "CRITICAL"
 testpaths = ["test"]
 
