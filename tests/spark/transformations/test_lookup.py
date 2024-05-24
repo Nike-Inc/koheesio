@@ -1,4 +1,5 @@
 import pytest
+
 from pyspark.sql import SparkSession
 
 from koheesio.steps.transformations.lookup import (

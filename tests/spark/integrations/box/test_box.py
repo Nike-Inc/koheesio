@@ -3,6 +3,7 @@ from io import BytesIO
 from pathlib import PurePath
 
 import pytest
+
 from pydantic import ValidationError
 
 from koheesio.steps.integrations.box import (

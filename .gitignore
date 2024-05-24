@@ -126,16 +126,16 @@ spark-warehouse
 out/**
 *.iml
 
-/test/integration/**/task_definition/*.yaml
+/tests/integration/**/task_definition/*.yaml
 /.vscode/settings.json
 /.vscode/launch.json
 
 .databricks
 
 # PYTEST
-/test/data/spark-warehouse
-/test/data/checkpoint
-/test/data/snowflake_staging.parq/
+/tests/data/spark-warehouse
+/tests/data/checkpoint
+/tests/data/snowflake_staging.parq/
 
 # DevContainer
 .devcontainer

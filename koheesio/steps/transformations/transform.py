@@ -6,8 +6,8 @@ is a function that accepts a DataFrame (df) and any number of keyword args.
 
 from __future__ import annotations
 
-from functools import partial
 from typing import Callable, Dict
+from functools import partial
 
 from pyspark.sql import DataFrame
 

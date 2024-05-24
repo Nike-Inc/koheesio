@@ -203,6 +203,7 @@ extend-exclude = '''
 )/
 '''
 
+
 [tool.isort]
 profile = "black"
 skip = [
@@ -229,7 +230,20 @@ skip = [
   "node_modules",
   "venv",
 ]
-force_to_top = ["*"]
+force_to_top = ["__future__", "typing"]
+sections = [
+  "FUTURE",
+  "STDLIB",
+  "THIRDPARTY",
+  "PYDANTIC",
+  "PYSPARK",
+  "KOHEESIO",
+  "FIRSTPARTY",
+  "LOCALFOLDER",
+]
+known_pydantic = ["pydantic"]
+known_pyspark = ["pyspark"]
+known_koheesio = ["koheesio"]
 
 [tool.ruff]
 # https://docs.astral.sh/ruff/configuration/#using-pyprojecttoml
@@ -329,10 +343,6 @@ unfixable = []
 
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
-
-[tool.ruff.lint.isort.sections]
-"koheesio" = ["koheesio"]
-"pyspark" = ["pyspark"]
 
 [tool.mypy]
 check_untyped_defs = false

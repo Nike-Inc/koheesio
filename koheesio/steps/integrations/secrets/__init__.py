@@ -3,8 +3,8 @@
 Contains abstract class for various secret integrations also known as SecretContext.
 """
 
-from abc import ABC, abstractmethod
 from typing import Optional
+from abc import ABC, abstractmethod
 
 from koheesio.context import Context
 from koheesio.models import Field, SecretStr

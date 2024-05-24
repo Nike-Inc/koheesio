@@ -8,6 +8,7 @@ from unittest.mock import Mock
 
 import pytest
 from delta import configure_spark_with_delta_pip
+
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.types import (
     ArrayType,
@@ -34,7 +35,7 @@ from koheesio.steps.readers.dummy import DummyReader
 from koheesio.utils import get_project_root
 
 PROJECT_ROOT = get_project_root()
-TEST_DATA_PATH = Path(PROJECT_ROOT / "test" / "_data")
+TEST_DATA_PATH = Path(PROJECT_ROOT / "tests" / "_data")
 DELTA_FILE = Path(TEST_DATA_PATH / "readers" / "delta_file")
 
 
@@ -67,6 +68,8 @@ def spark(warehouse_path, random_uuid):
         .config("spark.sql.warehouse.dir", warehouse_path)
         .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
         .config("spark.sql.session.timeZone", "UTC")
+        .config("spark.sql.execution.arrow.pyspark.enabled", "true")
+        .config("spark.sql.execution.arrow.pyspark.fallback.enabled", "true")
     )
 
     spark_session = configure_spark_with_delta_pip(builder).getOrCreate()

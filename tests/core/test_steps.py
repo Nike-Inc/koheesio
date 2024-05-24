@@ -7,7 +7,9 @@ from unittest import mock
 from unittest.mock import call, patch
 
 import pytest
+
 from pydantic import ValidationError
+
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import lit
 
@@ -197,7 +199,7 @@ class TestStep:
 
         # execute the step
         test_step.execute()
-        expected_output_path = PROJECT_ROOT / "test" / "_data" / "steps"
+        expected_output_path = PROJECT_ROOT / "tests" / "_data" / "steps"
 
         # using .strip() to avoid the test failing on leading or trailing whitespaces
         expected = (expected_output_path / "expected_step_output.yaml").read_text().strip()

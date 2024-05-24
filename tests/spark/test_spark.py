@@ -27,6 +27,6 @@ class TestSparkImportFailures:
             with pytest.raises(ImportError):
                 from pyspark.sql import SparkSession
 
-                SparkSession.builder.appName("test").getOrCreate()
+                SparkSession.builder.appName("tests").getOrCreate()
 
             pass

@@ -1,4 +1,5 @@
 from conftest import await_job_completion
+
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.functions import col, lit
 

@@ -4,9 +4,11 @@ from datetime import datetime
 from unittest import mock
 
 import chispa
-import pydantic
 import pytest
 from conftest import await_job_completion
+
+import pydantic
+
 from pyspark.sql import DataFrame
 
 from koheesio.steps.delta import DeltaTableStep
@@ -40,7 +42,7 @@ COMMON_OPTIONS = {
 
 @pytest.fixture
 def snowflake_staging_file():
-    filename = "test/data/snowflake_staging.parq"
+    filename = "tests/data/snowflake_staging.parq"
     if os.path.exists(filename):
         shutil.rmtree(filename)
 

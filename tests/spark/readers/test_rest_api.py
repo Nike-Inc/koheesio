@@ -2,8 +2,9 @@ import pytest
 import requests_mock
 from aiohttp import ClientSession, TCPConnector
 from aiohttp_retry import ExponentialRetry
-from pyspark.sql.types import MapType, StringType, StructField, StructType
 from yarl import URL
+
+from pyspark.sql.types import MapType, StringType, StructField, StructType
 
 from koheesio.steps.asyncio.http import AsyncHttpStep
 from koheesio.steps.http import PaginatedHtppGetStep

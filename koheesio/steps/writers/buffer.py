@@ -14,14 +14,16 @@ to more arbitrary file systems (e.g., SFTP).
 """
 
 import gzip
+from typing import Literal, Optional
 from abc import ABC
 from functools import partial
 from os import linesep
 from tempfile import SpooledTemporaryFile
-from typing import Literal, Optional
 
 from pandas._typing import CompressionOptions as PandasCompressionOptions
+
 from pydantic import InstanceOf
+
 from pyspark import pandas
 
 from koheesio.models import ExtraParamsMixin, Field, constr
@@ -129,7 +131,7 @@ class PandasCsvBufferWriter(BufferWriter, ExtraParamsMixin):
     |------------------|-----------------|-----------------|----------------|-------------------|------------------|-------|
     | maxRecordsPerFile| ...             | chunksize       | None           | max_records_per_file | ...           | Spark property name: spark.sql.files.maxRecordsPerFile |
     | sep              | ,               | sep             | ,              | sep               | ,                |       |
-    | lineSep          | `\\n `            | line_terminator | os.linesep     | lineSep (alias=line_terminator) | \\n |      |
+    | lineSep          | `\\n `          | line_terminator | os.linesep     | lineSep (alias=line_terminator) | \\n |      |
     | N/A              | ...             | index           | True           | index             | False            | Determines whether row labels (index) are included in the output |
     | header           | False           | header          | True           | header            | True             |       |
     | quote            | "               | quotechar       | "              | quote (alias=quotechar) | "          |       |
@@ -258,8 +260,19 @@ class PandasCsvBufferWriter(BufferWriter, ExtraParamsMixin):
 
         pandas_df: Optional[pandas.DataFrame] = Field(None, description="The Pandas DataFrame that was written")
 
-    def get_options(self):
+    def get_options(self, options_type: str = "csv"):
         """Returns the options to pass to Pandas' to_csv() method."""
+        try:
+            import pandas as _pd
+
+            # Get the pandas version as a tuple of integers
+            pandas_version = tuple(int(i) for i in _pd.__version__.split("."))
+        except ImportError:
+            raise ImportError("Pandas is required to use this writer")
+
+        # Use line_separator for pandas 2.0.0 and later
+        line_sep_option_naming = "line_separator" if pandas_version >= (2, 0, 0) else "line_terminator"
+
         csv_options = {
             "header": self.header,
             "sep": self.sep,
@@ -267,12 +280,18 @@ class PandasCsvBufferWriter(BufferWriter, ExtraParamsMixin):
             "doublequote": self.quoteAll,
             "escapechar": self.escape,
             "na_rep": self.emptyValue or self.nullValue,
-            "line_terminator": self.lineSep,
+            line_sep_option_naming: self.lineSep,
             "index": self.index,
             "date_format": self.timestampFormat,
             "compression": self.compression,
             **self.params,
         }
+
+        if options_type == "spark":
+            csv_options["lineterminator"] = csv_options.pop(line_sep_option_naming)
+        elif options_type == "kohesio_pandas_buffer_writer":
+            csv_options["line_terminator"] = csv_options.pop(line_sep_option_naming)
+
         return csv_options
 
     def execute(self):
@@ -284,7 +303,7 @@ class PandasCsvBufferWriter(BufferWriter, ExtraParamsMixin):
 
         # create csv file in memory
         file_buffer = self.output.buffer
-        self.output.pandas_df.to_csv(file_buffer, **self.get_options())
+        self.output.pandas_df.to_csv(file_buffer, **self.get_options(options_type="spark"))
 
 
 # pylint: disable=C0301

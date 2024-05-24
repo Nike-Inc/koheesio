@@ -1,6 +1,6 @@
 import json
-from textwrap import dedent
 from typing import Optional
+from textwrap import dedent
 
 import pytest
 import yaml
@@ -10,7 +10,6 @@ from koheesio.models import BaseModel, ExtraParamsMixin
 
 
 class TestBaseModel:
-
     class SimpleModel(BaseModel):
         a: int
         b: str = "default"

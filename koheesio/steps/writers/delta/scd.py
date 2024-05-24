@@ -15,11 +15,13 @@ and seamless integration with Delta tables in Spark.
 
 """
 
-from logging import Logger
 from typing import List, Optional
+from logging import Logger
 
 from delta.tables import DeltaMergeBuilder, DeltaTable
+
 from pydantic import InstanceOf
+
 from pyspark.sql import Column
 from pyspark.sql import functions as F
 from pyspark.sql.types import DateType, TimestampType

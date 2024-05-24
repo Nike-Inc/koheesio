@@ -3,8 +3,9 @@ import warnings
 import pytest
 from aiohttp import ClientResponseError, ClientSession, TCPConnector
 from aiohttp_retry import ExponentialRetry
-from pydantic import ValidationError
 from yarl import URL
+
+from pydantic import ValidationError
 
 from koheesio.steps.asyncio.http import AsyncHttpStep
 from koheesio.steps.http import HttpMethod

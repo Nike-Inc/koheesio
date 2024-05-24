@@ -2,8 +2,9 @@ import logging
 from io import StringIO
 
 import pytest
-from pydantic import SecretStr
 from requests_mock.mocker import Mocker
+
+from pydantic import SecretStr
 
 from koheesio.steps.integrations.sso import okta as o
 
@@ -45,7 +46,7 @@ class TestOktaToken:
         log_capture_string = StringIO()
         ch = logging.StreamHandler(log_capture_string)
         ch.setLevel(logging.DEBUG)
-        logger = logging.getLogger("test")
+        logger = logging.getLogger("tests")
         logger.addHandler(ch)
         secret_val = "secret_value"
         oat = o.OktaAccessToken(

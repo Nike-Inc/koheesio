@@ -9,8 +9,8 @@ JoinHint
 DataframeLookup
 """
 
-from enum import Enum
 from typing import List, Optional, Union
+from enum import Enum
 
 import pyspark.sql.functions as f
 from pyspark.sql import Column, DataFrame
@@ -102,9 +102,7 @@ class DataframeLookup(Transformation):
         df=left_df,
         other=right_df,
         on=JoinMapping(source_column="id", joined_column="id"),
-        targets=TargetColumn(
-            target_column="value", target_column_alias="right_value"
-        ),
+        targets=TargetColumn(target_column="value", target_column_alias="right_value"),
         how=JoinType.LEFT,
     )
 

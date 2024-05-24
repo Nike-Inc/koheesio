@@ -27,10 +27,10 @@ def test_spark_sql_reader(spark, data_path):
 
 def test_spark_sql_reader_failed():
     with pytest.raises(ValueError):
-        SparkSqlReader(sql="SELECT 1", sql_path="test/resources/sql/none_existent_path.sql")
+        SparkSqlReader(sql="SELECT 1", sql_path="tests/resources/sql/none_existent_path.sql")
 
     with pytest.raises(FileNotFoundError):
-        SparkSqlReader(sql_path="test/resources/sql/none_existent_path.sql")
+        SparkSqlReader(sql_path="tests/resources/sql/none_existent_path.sql")
 
     with pytest.raises(ValueError):
         SparkSqlReader(sql=None)

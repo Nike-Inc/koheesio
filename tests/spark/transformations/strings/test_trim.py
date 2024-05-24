@@ -3,6 +3,7 @@ Test the Trim columns transformation
 """
 
 import pytest
+
 from pydantic import ValidationError
 
 from koheesio.logger import LoggingFactory

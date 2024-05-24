@@ -30,9 +30,9 @@ For more information about the available options, see Spark's
 [official documentation](https://spark.apache.org/docs/latest/sql-data-sources.html).
 """
 
+from typing import Optional, Union
 from enum import Enum
 from pathlib import Path
-from typing import Optional, Union
 
 from pyspark.sql.types import StructType
 
@@ -80,9 +80,7 @@ class FileLoader(Reader, ExtraParamsMixin):
 
     Example:
     ```python
-    reader = FileLoader(
-        path="path/to/textfile.txt", format="text", header=True, lineSep="\n"
-    )
+    reader = FileLoader(path="path/to/textfile.txt", format="text", header=True, lineSep="\n")
     ```
 
     For more information about the available options, see Spark's

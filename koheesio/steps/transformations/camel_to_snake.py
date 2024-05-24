@@ -48,9 +48,7 @@ class CamelToSnakeTransformation(ColumnsTransformation):
     | ...                | ...               |
 
     ```python
-    output_df = CamelToSnakeTransformation(column="camelCaseColumn").transform(
-        input_df
-    )
+    output_df = CamelToSnakeTransformation(column="camelCaseColumn").transform(input_df)
     ```
 
     __output_df:__

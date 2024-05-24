@@ -1,6 +1,7 @@
 from typing import List, Union
 
 import pytest
+
 from pyspark.sql import SparkSession
 
 from koheesio.steps.integrations.dq.spark_expectations import (

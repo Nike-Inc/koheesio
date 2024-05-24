@@ -11,15 +11,16 @@ Prerequisites
 """
 
 import re
+from typing import Any, Dict, Optional, Union
 from abc import ABC, abstractmethod
 from datetime import datetime
 from io import BytesIO
 from pathlib import PurePath
-from typing import Any, Dict, Optional, Union
 
 from boxsdk import Client, JWTAuth
 from boxsdk.object.file import File
 from boxsdk.object.folder import Folder
+
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import expr, lit
 from pyspark.sql.types import StructType
@@ -609,16 +610,12 @@ class BoxFileWriter(BoxFolderBase):
     from koheesio.steps.integrations.box import BoxFileWriter
 
     auth_params = {...}
-    f1 = BoxFileWriter(
-        **auth_params, path="/foo/bar", file="path/to/my/file.ext"
-    ).execute()
+    f1 = BoxFileWriter(**auth_params, path="/foo/bar", file="path/to/my/file.ext").execute()
     # or
     import io
 
     b = io.BytesIO(b"my-sample-data")
-    f2 = BoxFileWriter(
-        **auth_params, path="/foo/bar", file=b, name="file.ext"
-    ).execute()
+    f2 = BoxFileWriter(**auth_params, path="/foo/bar", file=b, name="file.ext").execute()
     ```
     """
 

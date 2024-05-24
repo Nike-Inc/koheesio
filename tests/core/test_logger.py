@@ -90,7 +90,7 @@ def test_log_masked(foo, bar, baz, params):
     log_capture_string = StringIO()
     ch = logging.StreamHandler(log_capture_string)
     ch.setLevel(logging.DEBUG)
-    logger = logging.getLogger("test")
+    logger = logging.getLogger("tests")
     logger.setLevel(logging.DEBUG)
     logger.addHandler(ch)
 

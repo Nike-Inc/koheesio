@@ -1,6 +1,7 @@
 import math
 
 import pytest
+
 from pyspark.sql.types import (
     ArrayType,
     FloatType,

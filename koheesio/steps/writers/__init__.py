@@ -1,8 +1,8 @@
 """The Writer class is used to write the DataFrame to a target."""
 
+from typing import Optional
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Optional
 
 from pyspark.sql import DataFrame
 
