@@ -4,8 +4,8 @@ from typing import Any, Dict, Optional, Union
 from abc import ABC
 from pathlib import Path
 
-from koheesio.models import ExtraParamsMixin, Field, model_validator
 from koheesio import Step
+from koheesio.models import ExtraParamsMixin, Field, model_validator
 
 
 class SqlBaseStep(Step, ExtraParamsMixin, ABC):

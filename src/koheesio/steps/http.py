@@ -18,6 +18,7 @@ from enum import Enum
 
 import requests
 
+from koheesio import Step
 from koheesio.models import (
     ExtraParamsMixin,
     Field,
@@ -25,7 +26,6 @@ from koheesio.models import (
     field_serializer,
     field_validator,
 )
-from koheesio import Step
 
 __all__ = [
     "HttpMethod",

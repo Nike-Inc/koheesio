@@ -67,7 +67,7 @@ def get_args_for_func(func: Callable, params: Dict) -> Tuple[Callable, Dict[str,
 def get_project_root() -> Path:
     """Returns project root path."""
     cmd = Path(__file__)
-    return Path([i for i in cmd.parents if i.as_uri().endswith("koheesio")][0]).parent
+    return Path([i for i in cmd.parents if i.as_uri().endswith("src")][0]).parent
 
 
 def import_class(module_class: str) -> Any:

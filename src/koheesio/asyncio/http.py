@@ -15,8 +15,8 @@ from aiohttp_retry import ExponentialRetry, RetryClient, RetryOptionsBase
 
 from pydantic import Field, SecretStr, field_validator, model_validator
 
-from koheesio.models import ExtraParamsMixin
 from koheesio.asyncio import AsyncStep, AsyncStepOutput
+from koheesio.models import ExtraParamsMixin
 from koheesio.steps.http import HttpMethod
 
 

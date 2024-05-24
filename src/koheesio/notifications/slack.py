@@ -8,8 +8,8 @@ from datetime import datetime
 from textwrap import dedent
 
 from koheesio.models import ConfigDict, Field
-from koheesio.steps.http import HttpPostStep
 from koheesio.notifications import NotificationSeverity
+from koheesio.steps.http import HttpPostStep
 
 
 class SlackNotification(HttpPostStep):

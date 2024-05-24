@@ -28,8 +28,8 @@ from pyspark.sql.types import DateType, TimestampType
 
 from koheesio.models import Field
 from koheesio.spark import DataFrame, SparkSession, current_timestamp_utc
-from koheesio.spark.writers import Writer
 from koheesio.spark.delta import DeltaTableStep
+from koheesio.spark.writers import Writer
 
 
 class SCD2DeltaTableWriter(Writer):

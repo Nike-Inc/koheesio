@@ -7,7 +7,6 @@ import pytest
 from pyspark.sql import SparkSession
 from pyspark.sql import types as t
 
-from koheesio.spark.writers import BatchOutputMode
 from koheesio.spark.snowflake import (
     AddColumn,
     CreateOrReplaceTableFromDataFrame,
@@ -26,6 +25,7 @@ from koheesio.spark.snowflake import (
     TagSnowflakeQuery,
     map_spark_type,
 )
+from koheesio.spark.writers import BatchOutputMode
 
 COMMON_OPTIONS = {
     "url": "url",

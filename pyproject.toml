@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "koheesio"
 dynamic = ["version"]
@@ -38,6 +42,12 @@ dependencies = [
   "tomli>=2.0.1",
 ]
 
+[project.urls]
+Documentation = "https://github.com/Nike-Inc/koheesio#readme"
+Issues = "https://github.com/Nike-Inc/koheesio/issues"
+Source = "https://github.com/Nike-Inc/koheesio"
+Project = "https://github.com/orgs/Nike-Inc/projects/4"
+
 [project.optional-dependencies]
 async = ["nest-asyncio>=1.6.0"]
 async_http = [
@@ -46,10 +56,10 @@ async_http = [
   "nest-asyncio>=1.6.0",
 ]
 box = ["boxsdk[jwt]==3.8.1"]
-# SFTP dependencies in to_csv line_iterator
 pandas = ["pandas>=1.3", "setuptools"]
 pyspark = ["pyspark>=3.2.0", "pyarrow>13"]
 se = ["spark-expectations>=1.1.0"]
+# SFTP dependencies in to_csv line_iterator
 sftp = ["paramiko>=2.6.0"]
 delta = ["delta-spark>=2.2"]
 dev = ["black", "isort", "ruff", "mypy", "pylint", "colorama", "types-PyYAML"]
@@ -68,20 +78,10 @@ test = [
 ]
 
 
-[project.urls]
-Documentation = "https://github.com/Nike-Inc/koheesio#readme"
-Issues = "https://github.com/Nike-Inc/koheesio/issues"
-Source = "https://github.com/Nike-Inc/koheesio"
-# TODO: add project board
-
-
 ###  ~~~~~~~~~~~~~~~  ###
 #  Hatch Configuration  #
 ###  ~~~~~~~~~~~~~~~  ###
 #
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
 
 [tool.hatch.version]
 description = """
@@ -97,7 +97,7 @@ Bump by running `hatch version` with one of the following release types:
 - `r` `rev` or `post`         - post release, i.e. 1.0.0.post1
 - `dev`                       - development release, i.e. 1.0.0.dev1
 """
-path = "koheesio/__about__.py"
+path = "src/koheesio/__about__.py"
 
 [tool.hatch.envs.hatch-static-analysis.scripts]
 #TODO: move scripts from linting and style here
@@ -548,13 +548,25 @@ filterwarnings = [
   "ignore:RankDedup is deprecated. Use RowNumberDedup instead.:UserWarning:koheesio.steps.transformations.*",
 ]
 
-#FIXME: Is it duplication of hatch coverage ?
 [tool.coverage.run]
+source_pkgs = ["koheesio", "tests"]
 branch = true
-source = ["koheesio"]
+parallel = true
+omit = [
+  "src/koheesio/__about__.py",
+  "src/koheesio/__init__.py",
+]
+
+[tool.coverage.paths]
+koheesio = ["src/koheesio", "*/koheesio/src/koheesio"]
+tests = ["tests", "*/koheesio/tests"]
 
 [tool.coverage.report]
-exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
 omit = ["tests/*"]
 
 ###  ~~~~  ###

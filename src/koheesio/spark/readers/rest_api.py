@@ -15,8 +15,8 @@ from pydantic import Field, InstanceOf
 
 from pyspark.sql.types import AtomicType, StructType
 
-from koheesio.spark.readers import Reader
 from koheesio.asyncio.http import AsyncHttpGetStep
+from koheesio.spark.readers import Reader
 from koheesio.steps.http import HttpGetStep
 
 

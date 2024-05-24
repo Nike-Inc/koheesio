@@ -20,9 +20,9 @@ from abc import ABC, abstractmethod
 
 from pyspark.sql.streaming import DataStreamWriter, StreamingQuery
 
+from koheesio import Step
 from koheesio.models import ConfigDict, Field, field_validator, model_validator
 from koheesio.spark.writers import StreamingOutputMode, Writer
-from koheesio import Step
 from koheesio.utils import convert_str_to_bool
 
 
