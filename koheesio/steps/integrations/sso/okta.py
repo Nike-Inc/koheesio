@@ -4,8 +4,8 @@ This module contains Okta integration steps.
 
 from __future__ import annotations
 
-from logging import Filter
 from typing import Dict, Optional, Union
+from logging import Filter
 
 from requests import HTTPError
 

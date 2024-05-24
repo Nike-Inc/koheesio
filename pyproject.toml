@@ -11,6 +11,7 @@ keywords = [
 authors = [
   # TODO: add other contributors
   { name = "Danny Meijer", email = "danny.meijer@nike.com" },
+  { name = "Mikita Sakalouski", email = "mikita.sakalouski@nike.com" },
 ]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
@@ -19,7 +20,6 @@ classifiers = [
   "Natural Language :: English",
   "Operating System :: OS Independent",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
@@ -46,12 +46,30 @@ async_http = [
   "nest-asyncio>=1.6.0",
 ]
 box = ["boxsdk[jwt]==3.8.1"]
-pandas = ["pandas<2.0.0", "setuptools"]
+# SFTP dependencies in to_csv line_iterator
+pandas = ["pandas>=1.3", "setuptools"]
 pyspark = ["pyspark>=3.2.0", "pyarrow>13"]
-se = ["spark-expectations>=1.1.0"]
+#FIXME: loose versioning in spark_excpectations for pluggy module
+# se = ["spark-expectations>=1.1.0"]
+se = []
 sftp = ["paramiko>=2.6.0"]
 delta = ["delta-spark>=2.2"]
 dev = ["black", "isort", "ruff", "mypy", "pylint", "colorama", "types-PyYAML"]
+test = [
+  "chispa",
+  "coverage[toml]",
+  "pytest",
+  "pytest-asyncio",
+  "pytest-cov",
+  "pytest-mock",
+  "pytest-order",
+  "pytest-sftpserver",
+  "pytest-xdist",
+  "pytest-randomly",
+  "requests_mock",
+  "time_machine",
+]
+
 
 [project.urls]
 Documentation = "https://github.com/Nike-Inc/koheesio#readme"
@@ -68,114 +86,6 @@ Source = "https://github.com/Nike-Inc/koheesio"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.hatch.version]
-description = """
-The version of the package is dynamically set and is maintained in the top-level `__init__.py` file of the package.
----
-Bump by running `hatch version` with one of the following release types:
-- `major`                     - breaking changes, i.e. 2.0.0
-- `minor`                     - new features, i.e. 1.1.0
-- `micro` `fix` or `patch`    - bug fixes, i.e. 1.0.1
-- `a` or `alpha`              - alpha release, i.e. 1.0.0a1
-- `b` or `beta`               - beta release, i.e. 1.0.0b1
-- `c` `rc` `pre` or `preview` - release candidate, i.e. 1.0.0rc1
-- `r` `rev` or `post`         - post release, i.e. 1.0.0.post1
-- `dev`                       - development release, i.e. 1.0.0.dev1
-"""
-path = "koheesio/__about__.py"
-
-[tool.hatch.envs.hatch-static-analysis.scripts]
-#TODO: move scripts from linting and style here
-format-check = "black --check --diff ."
-format-fix = "black ."
-lint-check = "ruff check ."
-lint-fix = "echo 'No formatting is required for this project.'"
-
-[tool.hatch.envs.default]
-description = """
-The default environment is used for development and general use.
----
-We use the `uv` installer by default. This is a superfast, Rust-based installer.
-Run `hatch run` to run scripts in the default environment.
-
-# Code Quality
-To check and format the codebase, we use:
- - `black` for code formatting
- - `isort` for import sorting (includes colorama for colored output)
- - `ruff` for linting.
- - `mypy` for static type checking.
- - `pylint` for code quality checks.
----
-There are several ways to run style checks and formatting:
-- `hatch run black-check` will check the codebase with black without applying fixes.
-- `hatch run black-fmt` will format the codebase using black.
-- `hatch run isort-check` will check the codebase with isort without applying fixes.
-- `hatch run isort-fmt` will format the codebase using isort.
-- `hatch run ruff-check` will check the codebase with ruff without applying fixes.
-- `hatch run ruff-fmt` will format the codebase using ruff.
-- `hatch run mypy-check` will check the codebase with mypy.
-- `hatch run pylint-check` will check the codebase with pylint.
-- `hatch run check` will run all the above checks (including pylint and mypy).
-- `hatch run fmt` or `hatch run fix` will format the codebase using black, isort, and ruff.
-- `hatch run lint` will run ruff, mypy, and pylint.
-
-# Testing and Coverage
-To run the test suite, use:
-- `hatch run all-tests` to run the full test suite.
-- `hatch run spark-tests` to run the Spark test suite.
-- `hatch run log-versions` to log the Python and PySpark versions.
-- `hatch run coverage` or `hatch run cov` to run the test suite with coverage.
-
-Note: the full test suite is will run all tests in all specified Python and PySpark versions. If you want to run tests
-against specific versions, you can add `+py=3.10` or `+version=pyspark34` to the command (replace the versions with the
-desired ones).
-
-For lighter / faster testing, use the `dev` environment with `hatch shell dev` and run the tests with `pytest` or use
-the `all-tests` or `spark-tests` command.
-"""
-installer = "uv"
-features = [
-  "async",
-  "async_http",
-  "pyspark",
-  "pandas",
-  "sftp",
-  "delta",
-  "se",
-  "box",
-  "dev",
-]
-
-[tool.hatch.envs.default.scripts]
-# TODO: add scripts section based on Makefile
-# TODO: add bandit
-# TODO: move scripts from linting and style here
-# Code Quality commands
-black-check = "black --check --diff ."
-black-fmt = "black ."
-isort-check = "isort . --check --diff --color"
-isort-fmt = "isort ."
-ruff-check = "ruff check ."
-ruff-fmt = "ruff check . --fix"
-mypy-check = "mypy koheesio"
-pylint-check = "pylint --output-format=colorized -d W0511 koheesio"
-check = [
-  "- black-check",
-  "- isort-check",
-  "- ruff-check",
-  "- mypy-check",
-  "- pylint-check",
-]
-fmt = ["black-fmt", "isort-fmt", "ruff-fmt"]
-fix = "fmt"
-lint = ["- ruff-fmt", "- mypy-check", "pylint-check"]
-# Testing and Coverage commands
-log-versions = "python --version && {env:HATCH_UV} pip freeze | grep pyspark"
-all-tests = "pytest test/ {env:HATCH_TEST_ARGS:} {args}"
-spark-tests = "pytest test/spark {env:HATCH_TEST_ARGS:} {args}"
-non-spark-tests = "pytest test/ {env:HATCH_TEST_ARGS:} {args} -k 'not spark'"
-coverage = "pytest test/ {env:HATCH_TEST_ARGS:} {args} --cov=koheesio --cov-report=html --cov-report=term-missing --cov-fail-under=90"
-cov = "coverage"
 
 [tool.black]
 line-length = 120
@@ -183,11 +93,10 @@ target-version = ['py39', 'py310', 'py311', 'py312']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
-  | __research__
-  | __notebooks__
-  | test/data
+  | tests/_data
 )/
 '''
+
 
 [tool.isort]
 profile = "black"
@@ -215,7 +124,20 @@ skip = [
   "node_modules",
   "venv",
 ]
-force_to_top = ["*"]
+force_to_top = ["__future__", "typing"]
+sections = [
+  "FUTURE",
+  "STDLIB",
+  "THIRDPARTY",
+  "PYDANTIC",
+  "PYSPARK",
+  "KOHEESIO",
+  "FIRSTPARTY",
+  "LOCALFOLDER",
+]
+known_pydantic = ["pydantic"]
+known_pyspark = ["pyspark"]
+known_koheesio = ["koheesio"]
 
 [tool.ruff]
 # https://docs.astral.sh/ruff/configuration/#using-pyprojecttoml
@@ -316,10 +238,6 @@ unfixable = []
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
-[tool.ruff.lint.isort.sections]
-"koheesio" = ["koheesio"]
-"pyspark" = ["pyspark"]
-
 [tool.mypy]
 check_untyped_defs = false
 disallow_untyped_calls = false
@@ -413,17 +331,71 @@ notes = ["FIXME", "TODO"]
 [tool.pylint.refactoring]
 max-nested-blocks = 3
 
+[tool.pytest.ini_options]
+markers = [
+  "default: added to all tests by default if no other marker expect of standard pytest markers is present",
+  "spark: mark a test as a Spark test",
+  # "sftp: mark a test as an SFTP test",
+  # "se: mark a test as a Spark Expectations test",
+  # "box: mark a test as a Box test",
+  # "asyncio: mark a test as an asyncio test",
+  # "asyncio_http: mark a test as an asyncio HTTP test",
+]
+addopts = "-q --color=yes --order-scope=module"
+log_level = "CRITICAL"
+filterwarnings = [
+  # pyspark.pandas warnings
+  "ignore:distutils.*:DeprecationWarning:pyspark.pandas.*",
+  "ignore:'PYARROW_IGNORE_TIMEZONE'.*:UserWarning:pyspark.pandas.*",
+  "ignore:distutils.*:DeprecationWarning:pyspark.sql.pandas.*",
+  "ignore:is_datetime64tz_dtype.*:DeprecationWarning:pyspark.sql.pandas.*",
+  # Koheesio warnings
+  "ignore:DayTimeIntervalType .*:UserWarning:koheesio.steps.integrations.snowflake.*",
+  "ignore:RankDedup is deprecated. Use RowNumberDedup instead.:UserWarning:koheesio.steps.transformations.*",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["koheesio"]
+
+[tool.coverage.report]
+exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
+omit = ["tests/*"]
+
 
 ###  ~~~~~~~~~~~~~~~~~~~~~  ###
 #  Unit Testing and Coverage  #
 ###  ~~~~~~~~~~~~~~~~~~~~~  ###
 #
-#TODO: see if we can make this through hatch-test env (using hatch test command)
-[tool.hatch.envs.test]
+
+[tool.hatch.version]
+description = """
+The version of the package is dynamically set and is maintained in the top-level `__init__.py` file of the package.
+---
+Bump by running `hatch version` with one of the following release types:
+- `major`                     - breaking changes, i.e. 2.0.0
+- `minor`                     - new features, i.e. 1.1.0
+- `micro` `fix` or `patch`    - bug fixes, i.e. 1.0.1
+- `a` or `alpha`              - alpha release, i.e. 1.0.0a1
+- `b` or `beta`               - beta release, i.e. 1.0.0b1
+- `c` `rc` `pre` or `preview` - release candidate, i.e. 1.0.0rc1
+- `r` `rev` or `post`         - post release, i.e. 1.0.0.post1
+- `dev`                       - development release, i.e. 1.0.0.dev1
+"""
+path = "koheesio/__about__.py"
+
+[tool.hatch.envs.hatch-static-analysis.scripts]
+#TODO: move scripts from linting and style here
+format-check = "black --check --diff ."
+format-fix = "black ."
+lint-check = "ruff check ."
+lint-fix = "echo 'No formatting is required for this project.'"
+
+[tool.hatch.envs.hatch-test]
 description = """
 The test environment is used to run the test suite.
 ---
-- Run `hatch run test:all-tests` to run the full test suite.
+- Run `hatch tests` to run the full test suite.
 - Run `hatch run test:spark-tests` to run the Spark test suite.
 - Run `hatch run test:log-versions` to log the Python and PySpark versions.
 - You can test against specific Python and PySpark versions by adding `+py=3.10` or `+version=pyspark34` to the command
@@ -432,19 +404,6 @@ The test environment is used to run the test suite.
 Note: Test env will run against all specified python and pyspark versions. Use the `dev` environment for development
 and general use.
 """
-dependencies = [
-  "chispa",
-  "coverage[toml]",
-  "pytest",
-  "pytest-asyncio",
-  "pytest-cov",
-  "pytest-mock",
-  "pytest-order",
-  "pytest-sftpserver",
-  "pytest-xdist",
-  "requests_mock",
-  "time_machine",
-]
 features = [
   "async",
   "async_http",
@@ -455,30 +414,33 @@ features = [
   "sftp",
   "delta",
   "dev",
-]
-matrix = [
-  { python = [
-    "3.9",
-  ], version = [
-    "pyspark33",
-    "pyspark34",
-  ] },
-  { python = [
-    "3.10",
-  ], version = [
-    "pyspark33",
-    "pyspark34",
-    "pyspark35",
-  ] },
-  { python = [
-    "3.11",
-    "3.12",
-  ], version = [
-    "pyspark35",
-  ] },
+  "test",
 ]
 
-[tool.hatch.envs.test.overrides]
+parallel = true
+retries = 2
+retry-delay = 1
+
+[tool.hatch.envs.hatch-test.scripts]
+run = "pytest{env:HATCH_TEST_ARGS:} {args} -n auto"
+run-cov = "coverage run -m pytest{env:HATCH_TEST_ARGS:} {args}"
+cov-combine = "coverage combine"
+cov-report = "coverage report"
+
+
+[[tool.hatch.envs.hatch-test.matrix]]
+python = ["3.9"]
+version = ["pyspark33", "pyspark34"]
+
+[[tool.hatch.envs.hatch-test.matrix]]
+python = ["3.10"]
+version = ["pyspark33", "pyspark34", "pyspark35"]
+
+[[tool.hatch.envs.hatch-test.matrix]]
+python = ["3.11", "3.12"]
+version = ["pyspark35"]
+
+[tool.hatch.envs.hatch-test.overrides]
 matrix.version.extra-dependencies = [
   { value = "pyspark>=3.3,<3.4", if = [
     "pyspark33",
@@ -491,24 +453,114 @@ matrix.version.extra-dependencies = [
   ] },
 ]
 
-[tool.pytest.ini_options]
-addopts = "-q --color=yes --order-scope=module"
-log_level = "CRITICAL"
-testpaths = ["test"]
-
-#FIXME: Is it duplication of hatch coverage ?
-[tool.coverage.run]
-branch = true
-source = ["koheesio"]
-
-[tool.coverage.report]
-exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
-omit = ["test/*"]
+name.".*".env-vars = [
+  { key = "PYTEST_XDIST_AUTO_NUM_WORKERS", value = "2" },
+  { key = "KOHEESIO__PRINT_LOGO", value = "False" },
+]
 
 ###  ~~~~  ###
 #  Docsite   #
 ###  ~~~~  ###
 #
+[tool.hatch.envs.default]
+description = """
+The default environment is used for development and general use.
+---
+We use the `uv` installer by default. This is a superfast, Rust-based installer.
+Run `hatch run` to run scripts in the default environment.
+
+# Code Quality
+To check and format the codebase, we use:
+ - `black` for code formatting
+ - `isort` for import sorting (includes colorama for colored output)
+ - `ruff` for linting.
+ - `mypy` for static type checking.
+ - `pylint` for code quality checks.
+---
+There are several ways to run style checks and formatting:
+- `hatch run black-check` will check the codebase with black without applying fixes.
+- `hatch run black-fmt` will format the codebase using black.
+- `hatch run isort-check` will check the codebase with isort without applying fixes.
+- `hatch run isort-fmt` will format the codebase using isort.
+- `hatch run ruff-check` will check the codebase with ruff without applying fixes.
+- `hatch run ruff-fmt` will format the codebase using ruff.
+- `hatch run mypy-check` will check the codebase with mypy.
+- `hatch run pylint-check` will check the codebase with pylint.
+- `hatch run check` will run all the above checks (including pylint and mypy).
+- `hatch run fmt` or `hatch run fix` will format the codebase using black, isort, and ruff.
+- `hatch run lint` will run ruff, mypy, and pylint.
+
+# Testing and Coverage
+To run the test suite, use:
+- `hatch run all-tests` to run the full test suite.
+- `hatch run spark-tests` to run the Spark test suite.
+- `hatch run log-versions` to log the Python and PySpark versions.
+- `hatch run coverage` or `hatch run cov` to run the test suite with coverage.
+
+Note: the full test suite is will run all tests in all specified Python and PySpark versions. If you want to run tests
+against specific versions, you can add `+py=3.10` or `+version=pyspark34` to the command (replace the versions with the
+desired ones).
+
+For lighter / faster testing, use the `dev` environment with `hatch shell dev` and run the tests with `pytest` or use
+the `all-tests` or `spark-tests` command.
+"""
+installer = "uv"
+features = [
+  "async",
+  "async_http",
+  "pandas",
+  "pyspark",
+  "sftp",
+  "delta",
+  "se",
+  "box",
+  "dev",
+]
+
+
+[tool.hatch.envs.default.scripts]
+# TODO: add scripts section based on Makefile
+# TODO: add bandit
+# TODO: move scripts from linting and style here
+# Code Quality commands
+black-check = "black --check --diff ."
+black-fmt = "black ."
+isort-check = "isort . --check --diff --color"
+isort-fmt = "isort ."
+ruff-check = "ruff check ."
+ruff-fmt = "ruff check . --fix"
+mypy-check = "mypy koheesio"
+pylint-check = "pylint --output-format=colorized -d W0511 koheesio"
+check = [
+  "- black-check",
+  "- isort-check",
+  "- ruff-check",
+  "- mypy-check",
+  "- pylint-check",
+]
+fmt = ["black-fmt", "isort-fmt", "ruff-fmt"]
+fix = "fmt"
+lint = ["- ruff-fmt", "- mypy-check", "pylint-check"]
+log-versions = "python --version && {env:HATCH_UV} pip freeze | grep pyspark"
+test = "- pytest{env:HATCH_TEST_ARGS:} {args} -n 2"
+spark-tests = "test -m spark"
+non-spark-tests = "test -m \"not spark\""
+
+# scripts.run = "echo bla {env:HATCH_TEST_ARGS:} {args}"
+# scripts.run = "- log-versions && pytest tests/ {env:HATCH_TEST_ARGS:} {args}"
+# run ="echo {args}"
+# run = "- pytest tests/ {env:HATCH_TEST_ARGS:} {args}"
+# run-cov = "coverage run -m pytest{env:HATCH_TEST_ARGS:} {args}"
+# cov-combine = "coverage combine"
+# cov-report = "coverage report"
+# log-versions = "python --version && {env:HATCH_UV} pip freeze | grep pyspark"
+# 
+# 
+# 
+# coverage = "- pytest tests/ {env:HATCH_TEST_ARGS:} {args} --cov=koheesio --cov-report=html --cov-report=term-missing --cov-fail-under=90"
+# cov = "coverage"
+
+
 [tool.hatch.envs.docs]
 description = """
 The docs environment is used to build the documentation.
@@ -572,6 +624,18 @@ Available scripts:
 - `coverage` or `cov` - run the test suite with coverage.
 """
 path = ".venv"
-template = "test"
 python = "3.10"
+template = "default"
+features = [
+  "async",
+  "async_http",
+  "box",
+  "pandas",
+  "pyspark",
+  "se",
+  "sftp",
+  "delta",
+  "dev",
+  "test",
+]
 extra-dependencies = ["pyspark==3.4.*"]

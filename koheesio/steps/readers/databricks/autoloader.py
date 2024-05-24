@@ -3,8 +3,8 @@
 Autoloader can ingest JSON, CSV, PARQUET, AVRO, ORC, TEXT, and BINARYFILE file formats.
 """
 
-from enum import Enum
 from typing import Dict, Optional, Union
+from enum import Enum
 
 from koheesio.models import Field, field_validator
 from koheesio.steps.readers import Reader

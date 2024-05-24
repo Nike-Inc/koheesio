@@ -1,4 +1,4 @@
-""" Models package creates models that can be used to base other classes on.
+"""Models package creates models that can be used to base other classes on.
 
 - Every model should be at least a pydantic BaseModel, but can also be a Step, or a StepOutput.
 - Every model is expected to be an ABC (Abstract Base Class)
@@ -9,26 +9,21 @@ A Model class can be exceptionally handy when you need similar Pydantic models i
 Transformation and Reader classes.
 """
 
-# pylint: disable=redefined-builtin
+from typing import Annotated, Any, Dict, List, Optional, Union
 from abc import ABC
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Any, Dict, List, Optional, Union
 
 # to ensure that koheesio.models is a drop in replacement for pydantic
-from pydantic import *  # noqa
 from pydantic import BaseModel as PydanticBaseModel
-
-# noinspection PyUnresolvedReferences, PyProtectedMember
+from pydantic import *  # noqa
 from pydantic._internal._generics import PydanticGenericMetadata
-
-# noinspection PyUnresolvedReferences, PyProtectedMember
 from pydantic._internal._model_construction import ModelMetaclass
 
 from koheesio.context import Context
 from koheesio.logger import Logger, LoggingFactory
 
-# pylint: enable=redefined-builtin
+__all__ = ["BaseModel", "ExtraParamsMixin", "ListOfColumns", "ModelMetaclass", "PydanticGenericMetadata"]
 
 
 # pylint: disable=function-redefined
@@ -126,9 +121,11 @@ class BaseModel(PydanticBaseModel, ABC):
     ```python
     from koheesio.models import BaseModel
 
+
     class Person(BaseModel):
         name: str
         age: int
+
 
     # Using the lazy method to create an instance without immediate validation
     person = Person.lazy()
@@ -256,6 +253,7 @@ class BaseModel(PydanticBaseModel, ABC):
         ```python
         class SomeStep(BaseModel):
             foo: str
+
 
         context = Context(foo="bar")
         some_step = SomeStep.from_context(context)
@@ -604,6 +602,7 @@ class BaseModel(PydanticBaseModel, ABC):
         class FooModel(BaseModel):
             foo: str
             lorem: str
+
 
         foo_model = FooModel.lazy()
         foo_model.foo = "bar"

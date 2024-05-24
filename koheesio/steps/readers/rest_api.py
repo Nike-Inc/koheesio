@@ -12,6 +12,7 @@ For more details on how to use this class and its methods, refer to the class do
 from typing import List, Tuple, Union
 
 from pydantic import Field, InstanceOf
+
 from pyspark.sql.types import AtomicType, StructType
 
 from koheesio.steps.asyncio.http import AsyncHttpGetStep
@@ -66,9 +67,7 @@ class RestApiReader(Reader):
         pages=3,
         session=session,
     )
-    task = RestApiReader(
-        transport=transport, spark_schema="id: int, page:int, value: string"
-    )
+    task = RestApiReader(transport=transport, spark_schema="id: int, page:int, value: string")
     task.execute()
     all_data = [row.asDict() for row in task.output.df.collect()]
     ```
@@ -93,9 +92,7 @@ class RestApiReader(Reader):
         connector=connector,
     )
 
-    task = RestApiReader(
-        transport=transport, spark_schema="id: int, page:int, value: string"
-    )
+    task = RestApiReader(transport=transport, spark_schema="id: int, page:int, value: string")
     task.execute()
     all_data = [row.asDict() for row in task.output.df.collect()]
     ```

@@ -14,9 +14,9 @@ For a comprehensive guide on the usage, examples, and additional features of the
 from __future__ import annotations
 
 import re
+from typing import Any, Dict, Union
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Dict, Union
 
 import jsonpickle
 import tomli

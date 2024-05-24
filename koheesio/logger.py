@@ -33,8 +33,8 @@ import inspect
 import logging
 import os
 import sys
-from logging import Formatter, Logger, getLogger
 from typing import Any, Dict, Generator, Generic, List, Optional, Tuple, TypeVar
+from logging import Formatter, Logger, getLogger
 from uuid import uuid4
 from warnings import warn
 

@@ -8,9 +8,9 @@ import inspect
 import json
 import sys
 import warnings
+from typing import Any
 from abc import abstractmethod
 from functools import partialmethod, wraps
-from typing import Any
 
 import yaml
 
@@ -50,6 +50,14 @@ class StepMetaClass(ModelMetaclass):
     StepMetaClass has to be set up as a Metaclass extending ModelMetaclass to allow Pydantic to be unaffected while
     allowing for the execute method to be auto-decorated with do_execute
     """
+
+    # Solution to overcome issue with python>=3.11,
+    # When partialmethod is forgetting that _execute_wrapper
+    # is a method of wrapper, and it needs to pass that in as the first arg.
+    # https://github.com/python/cpython/issues/99152
+    class _partialmethod_with_self(partialmethod):
+        def __get__(self, obj, cls=None):
+            return self._make_unbound_method().__get__(obj, cls)
 
     # Unique object to mark a function as wrapped
     _step_execute_wrapper_sentinel = object()

@@ -15,8 +15,8 @@ writer_to_foreachbatch
     function to be used as batch_function for StreamWriter (sub)classes
 """
 
-from abc import ABC, abstractmethod
 from typing import Callable, Dict, Optional, Union
+from abc import ABC, abstractmethod
 
 from pyspark.sql.streaming import DataStreamWriter, StreamingQuery
 
