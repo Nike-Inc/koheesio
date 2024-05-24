@@ -52,11 +52,13 @@ This example demonstrates how to use the `EtlTask` from the `koheesio` library t
 ```python
 from typing import Any
 from pyspark.sql import DataFrame, functions as f
-from koheesio.steps.transformations.transform import Transform
+from koheesio.steps.transformations import Transform
 from koheesio.tasks.etl_task import EtlTask
+
 
 def add_column(df: DataFrame, target_column: str, value: Any):
     return df.withColumn(target_column, f.lit(value))
+
 
 class MyFavoriteMovieTask(EtlTask):
     my_favorite_movie: str
@@ -102,7 +104,7 @@ source:
 ```python
 from pyspark.sql import SparkSession
 from koheesio.context import Context
-from koheesio.steps.readers.dummy import DummyReader
+from koheesio.steps.readers import DummyReader
 from koheesio.steps.writers.dummy import DummyWriter
 
 context = Context.from_yaml("sample.yaml")

@@ -13,7 +13,7 @@ from pyspark.sql import DataFrame
 from pyspark.sql import functions as f
 
 from koheesio.logger import LoggingFactory
-from koheesio.steps.transformations.cast_to_datatype import (
+from koheesio.spark.transformations.cast_to_datatype import (
     CastToBinary,
     CastToBoolean,
     CastToByte,
@@ -27,7 +27,7 @@ from koheesio.steps.transformations.cast_to_datatype import (
     CastToString,
     CastToTimestamp,
 )
-from koheesio.utils import SparkDatatype
+from koheesio.spark.utils import SparkDatatype
 
 pytestmark = pytest.mark.spark
 

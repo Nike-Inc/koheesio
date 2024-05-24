@@ -5,7 +5,7 @@ import pytest
 from pyspark.sql import types as T
 
 from koheesio.logger import LoggingFactory
-from koheesio.steps.transformations.date_time.interval import (
+from koheesio.spark.transformations.date_time.interval import (
     DateTimeAddInterval,
     DateTimeColumn,
     DateTimeSubtractInterval,

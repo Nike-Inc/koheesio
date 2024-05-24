@@ -6,7 +6,7 @@ import pytest
 
 from koheesio.logger import LoggingFactory
 from koheesio.models import ValidationError
-from koheesio.steps.transformations.strings.pad import LPad, Pad, RPad
+from koheesio.spark.transformations.strings.pad import LPad, Pad, RPad
 
 pytestmark = pytest.mark.spark
 

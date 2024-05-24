@@ -6,9 +6,9 @@ from yarl import URL
 
 from pyspark.sql.types import MapType, StringType, StructField, StructType
 
-from koheesio.steps.asyncio.http import AsyncHttpStep
+from koheesio.asyncio.http import AsyncHttpStep
+from koheesio.spark.readers.rest_api import AsyncHttpGetStep, RestApiReader
 from koheesio.steps.http import PaginatedHtppGetStep
-from koheesio.steps.readers.rest_api import AsyncHttpGetStep, RestApiReader
 
 ASYNC_BASE_URL = "http://httpbin.org"
 ASYNC_GET_ENDPOINT = URL(f"{ASYNC_BASE_URL}/get")

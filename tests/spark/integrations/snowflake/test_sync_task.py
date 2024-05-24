@@ -1,5 +1,3 @@
-import os
-import shutil
 from datetime import datetime
 from unittest import mock
 
@@ -11,16 +9,16 @@ import pydantic
 
 from pyspark.sql import DataFrame
 
-from koheesio.steps.delta import DeltaTableStep
-from koheesio.steps.integrations.snowflake import (
+from koheesio.spark.delta import DeltaTableStep
+from koheesio.spark.readers.delta import DeltaTableReader
+from koheesio.spark.snowflake import (
     RunQuery,
     SnowflakeWriter,
     SynchronizeDeltaToSnowflakeTask,
 )
-from koheesio.steps.readers.delta import DeltaTableReader
-from koheesio.steps.writers import BatchOutputMode, StreamingOutputMode
-from koheesio.steps.writers.delta import DeltaTableWriter
-from koheesio.steps.writers.stream import ForEachBatchStreamWriter
+from koheesio.spark.writers import BatchOutputMode, StreamingOutputMode
+from koheesio.spark.writers.delta import DeltaTableWriter
+from koheesio.spark.writers.stream import ForEachBatchStreamWriter
 
 pytestmark = pytest.mark.spark
 
@@ -42,13 +40,11 @@ COMMON_OPTIONS = {
 }
 
 
-@pytest.fixture
-def snowflake_staging_file():
-    filename = "tests/_data/snowflake_staging.parq"
-    if os.path.exists(filename):
-        shutil.rmtree(filename)
-
-    yield filename
+@pytest.fixture(scope="session")
+def snowflake_staging_file(tmp_path_factory, random_uuid, logger):
+    fldr = tmp_path_factory.mktemp("snowflake_staging.parq" + random_uuid)
+    logger.debug(f"Building test checkpoint folder '{fldr}'")
+    yield fldr.as_posix()
 
 
 @pytest.fixture

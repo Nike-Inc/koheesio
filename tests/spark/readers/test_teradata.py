@@ -4,7 +4,7 @@ import pytest
 
 from pyspark.sql import SparkSession
 
-from koheesio.steps.readers.teradata import TeradataReader
+from koheesio.spark.readers.teradata import TeradataReader
 
 pytestmark = pytest.mark.spark
 

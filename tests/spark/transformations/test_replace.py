@@ -1,7 +1,7 @@
 import pytest
 
 from koheesio.logger import LoggingFactory
-from koheesio.steps.transformations.replace import Replace
+from koheesio.spark.transformations.replace import Replace
 
 pytestmark = pytest.mark.spark
 

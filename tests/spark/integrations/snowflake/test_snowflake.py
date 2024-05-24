@@ -7,7 +7,7 @@ import pytest
 from pyspark.sql import SparkSession
 from pyspark.sql import types as t
 
-from koheesio.steps.integrations.snowflake import (
+from koheesio.spark.snowflake import (
     AddColumn,
     CreateOrReplaceTableFromDataFrame,
     DbTableQuery,
@@ -25,7 +25,7 @@ from koheesio.steps.integrations.snowflake import (
     TagSnowflakeQuery,
     map_spark_type,
 )
-from koheesio.steps.writers import BatchOutputMode
+from koheesio.spark.writers import BatchOutputMode
 
 pytestmark = pytest.mark.spark
 
@@ -202,8 +202,8 @@ class TestSnowflakeWriter:
 
 
 class TestSyncTableAndDataFrameSchema:
-    @mock.patch("koheesio.steps.integrations.snowflake.AddColumn")
-    @mock.patch("koheesio.steps.integrations.snowflake.GetTableSchema")
+    @mock.patch("koheesio.spark.snowflake.AddColumn")
+    @mock.patch("koheesio.spark.snowflake.GetTableSchema")
     def test_execute(self, mock_get_table_schema, mock_add_column, spark, caplog):
         from pyspark.sql.types import StringType, StructField, StructType
 
@@ -357,7 +357,7 @@ def test_table_exists(spark):
     mock_query.read.return_value = spark.range(1)
 
     # Patch the Query class to return the mock_query when instantiated
-    with patch("koheesio.steps.integrations.snowflake.Query", return_value=mock_query) as mock_query_class:
+    with patch("koheesio.spark.snowflake.Query", return_value=mock_query) as mock_query_class:
         # Execute the SnowflakeBaseModel instance
         te.execute()
 

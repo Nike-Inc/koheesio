@@ -5,7 +5,7 @@ Test the RegexpExtract and RegexpReplace columns transformations
 import pytest
 
 from koheesio.logger import LoggingFactory
-from koheesio.steps.transformations.strings.regexp import RegexpExtract, RegexpReplace
+from koheesio.spark.transformations.strings.regexp import RegexpExtract, RegexpReplace
 
 pytestmark = pytest.mark.spark
 

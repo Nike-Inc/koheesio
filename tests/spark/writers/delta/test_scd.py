@@ -11,9 +11,9 @@ from pyspark.sql import Column
 from pyspark.sql import functions as F
 from pyspark.sql.types import Row
 
-from koheesio.steps.delta import DeltaTableStep
-from koheesio.steps.spark import DataFrame, current_timestamp_utc
-from koheesio.steps.writers.delta.scd import SCD2DeltaTableWriter
+from koheesio.spark import DataFrame, current_timestamp_utc
+from koheesio.spark.delta import DeltaTableStep
+from koheesio.spark.writers.delta.scd import SCD2DeltaTableWriter
 
 pytestmark = pytest.mark.spark
 

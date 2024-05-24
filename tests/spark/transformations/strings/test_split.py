@@ -5,7 +5,7 @@ Test the Split transformations
 import pytest
 
 from koheesio.logger import LoggingFactory
-from koheesio.steps.transformations.strings.split import SplitAll, SplitAtFirstMatch
+from koheesio.spark.transformations.strings.split import SplitAll, SplitAtFirstMatch
 
 pytestmark = pytest.mark.spark
 

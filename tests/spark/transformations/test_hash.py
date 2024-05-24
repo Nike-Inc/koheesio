@@ -3,7 +3,7 @@ from textwrap import dedent
 import pytest
 
 from koheesio.logger import LoggingFactory
-from koheesio.steps.transformations.hash import Sha2Hash
+from koheesio.spark.transformations.hash import Sha2Hash
 
 pytestmark = pytest.mark.spark
 

@@ -6,7 +6,7 @@ from pyspark.sql import DataFrame
 from pyspark.sql import functions as f
 
 from koheesio.logger import LoggingFactory
-from koheesio.steps.transformations.transform import Transform
+from koheesio.spark.transformations.transform import Transform
 
 pytestmark = pytest.mark.spark
 

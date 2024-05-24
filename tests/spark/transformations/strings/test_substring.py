@@ -5,7 +5,7 @@ Test the Substring columns transformation
 import pytest
 
 from koheesio.logger import LoggingFactory
-from koheesio.steps.transformations.strings.substring import Substring
+from koheesio.spark.transformations.strings.substring import Substring
 
 pytestmark = pytest.mark.spark
 

@@ -3,7 +3,7 @@ from chispa import assert_df_equality
 
 from pyspark.sql.types import *
 
-from koheesio.steps.readers.databricks.autoloader import AutoLoader
+from koheesio.spark.readers.databricks.autoloader import AutoLoader
 
 pytestmark = pytest.mark.spark
 
@@ -25,15 +25,15 @@ def mock_reader(self):
 
 
 def test_read_json(spark, mocker, data_path):
-    mocker.patch("koheesio.steps.readers.databricks.autoloader.AutoLoader.reader", mock_reader)
+    mocker.patch("koheesio.spark.readers.databricks.autoloader.AutoLoader.reader", mock_reader)
 
     options = {"multiLine": "true"}
 
     json_file_path_str = f"{data_path}/readers/json_file/dummy.json"
-    autoLoader = AutoLoader(format="json", location=json_file_path_str, schema_location="dummy_value", options=options)
+    auto_loader = AutoLoader(format="json", location=json_file_path_str, schema_location="dummy_value", options=options)
 
-    autoLoader.execute()
-    result = autoLoader.output.df
+    auto_loader.execute()
+    result = auto_loader.output.df
 
     schema_expected = StructType(
         [

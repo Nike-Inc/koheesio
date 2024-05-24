@@ -1,7 +1,7 @@
 import pytest
 
 from koheesio.models import ValidationError
-from koheesio.steps.transformations.repartition import Repartition
+from koheesio.spark.transformations.repartition import Repartition
 
 pytestmark = pytest.mark.spark
 

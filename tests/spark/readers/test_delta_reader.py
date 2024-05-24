@@ -3,8 +3,8 @@ import pytest
 from pyspark.sql import functions as F
 from pyspark.sql.dataframe import DataFrame
 
-from koheesio.steps.readers.delta import DeltaTableReader
-from koheesio.steps.spark import AnalysisException
+from koheesio.spark import AnalysisException
+from koheesio.spark.readers.delta import DeltaTableReader
 
 pytestmark = pytest.mark.spark
 

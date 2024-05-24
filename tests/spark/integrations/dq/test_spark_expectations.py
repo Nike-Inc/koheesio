@@ -46,7 +46,7 @@ class TestSparkExpectationsTransform:
         )
 
     def test_rows_are_dropped(self, spark: SparkSession, prepare_tables):
-        from koheesio.steps.integrations.dq.spark_expectations import (
+        from koheesio.integrations.spark.dq.spark_expectations import (
             SparkExpectationsTransformation,
         )
 
@@ -71,7 +71,7 @@ class TestSparkExpectationsTransform:
         assert err_table_df.count() == 2
 
     def test_meta_columns_are_not_dropped(self, spark, prepare_tables):
-        from koheesio.steps.integrations.dq.spark_expectations import (
+        from koheesio.integrations.spark.dq.spark_expectations import (
             SparkExpectationsTransformation,
         )
 
@@ -96,7 +96,7 @@ class TestSparkExpectationsTransform:
         assert "meta_dq_run_date" in output_columns or "meta_dq_run_datetime" in output_columns
 
     def test_meta_columns_are_dropped(self, spark, prepare_tables):
-        from koheesio.steps.integrations.dq.spark_expectations import (
+        from koheesio.integrations.spark.dq.spark_expectations import (
             SparkExpectationsTransformation,
         )
 
@@ -130,7 +130,7 @@ class TestSparkExpectationsTransform:
                 spark.sql(content)
 
     def test_with_full_se_user_conf(self):
-        from koheesio.steps.integrations.dq.spark_expectations import (
+        from koheesio.integrations.spark.dq.spark_expectations import (
             SparkExpectationsTransformation,
         )
 
@@ -160,7 +160,7 @@ class TestSparkExpectationsTransform:
         assert instance.se_user_conf == conf
 
     def test_overwrite_error_writer(self):
-        from koheesio.steps.integrations.dq.spark_expectations import (
+        from koheesio.integrations.spark.dq.spark_expectations import (
             SparkExpectationsTransformation,
         )
 
@@ -189,7 +189,7 @@ class TestSparkExpectationsTransform:
         assert error_writer._options == {"mergeSchema": "true"}
 
     def test_overwrite_stats_writer(self):
-        from koheesio.steps.integrations.dq.spark_expectations import (
+        from koheesio.integrations.spark.dq.spark_expectations import (
             SparkExpectationsTransformation,
         )
 

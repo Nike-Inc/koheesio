@@ -10,14 +10,16 @@ Here's an example of how to unit test a Koheesio task:
 
 ```python
 from koheesio.tasks.etl_task import EtlTask
-from koheesio.steps.readers.dummy import DummyReader
+from koheesio.steps.readers import DummyReader
 from koheesio.steps.writers.dummy import DummyWriter
-from koheesio.steps.transformations.transform import Transform
+from koheesio.steps.transformations import Transform
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.functions import col
 
+
 def filter_age(df: DataFrame) -> DataFrame:
     return df.filter(col("Age") > 18)
+
 
 def test_etl_task():
     # Initialize SparkSession
@@ -61,14 +63,16 @@ Here's an example of how to write an integration test for this task:
 ```python
 # my_module.py
 from koheesio.tasks.etl_task import EtlTask
-from koheesio.steps.readers.delta import DeltaReader
+from koheesio.spark.readers.delta import DeltaReader
 from koheesio.steps.writers.delta import DeltaWriter
-from koheesio.steps.transformations.transform import Transform
+from koheesio.steps.transformations import Transform
 from koheesio.context import Context
 from pyspark.sql.functions import col
 
+
 def filter_age(df):
     return df.filter(col("Age") > 18)
+
 
 context = Context({
     "reader_options": {

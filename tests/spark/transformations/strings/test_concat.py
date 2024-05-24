@@ -3,7 +3,7 @@ import datetime
 import pytest
 
 from koheesio.logger import LoggingFactory
-from koheesio.steps.transformations.strings.concat import Concat
+from koheesio.spark.transformations.strings.concat import Concat
 
 pytestmark = pytest.mark.spark
 

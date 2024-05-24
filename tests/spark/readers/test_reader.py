@@ -1,6 +1,6 @@
 import pytest
 
-from koheesio.steps.readers.dummy import DummyReader
+from koheesio.spark.readers.dummy import DummyReader
 
 pytestmark = pytest.mark.spark
 

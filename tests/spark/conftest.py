@@ -31,7 +31,7 @@ from pyspark.sql.types import (
 )
 
 from koheesio.logger import LoggingFactory
-from koheesio.steps.readers.dummy import DummyReader
+from koheesio.spark.readers.dummy import DummyReader
 from koheesio.utils import get_project_root
 
 PROJECT_ROOT = get_project_root()

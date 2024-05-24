@@ -7,7 +7,7 @@ import pytest
 from pydantic import ValidationError
 
 from koheesio.logger import LoggingFactory
-from koheesio.steps.transformations.strings.trim import LTrim, RTrim, Trim
+from koheesio.spark.transformations.strings.trim import LTrim, RTrim, Trim
 
 pytestmark = pytest.mark.spark
 
