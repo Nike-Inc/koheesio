@@ -12,6 +12,8 @@ from koheesio.spark.transformations.strings.change_case import (
     UpperCase,
 )
 
+pytestmark = pytest.mark.spark
+
 log = LoggingFactory.get_logger(name=__file__, inherit_from_koheesio=True)
 data = [
     ["Banana lemon orange", 1000, "USA"],

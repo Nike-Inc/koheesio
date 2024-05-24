@@ -11,6 +11,8 @@ from koheesio.spark.readers.file_loader import (
     ParquetReader,
 )
 
+pytestmark = pytest.mark.spark
+
 
 @pytest.fixture()
 def json_file(data_path):

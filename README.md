@@ -6,7 +6,7 @@
 
 | | |
 | --- | --- |
-| Meta |  [![linting - Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)  [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) |
+| Meta |  [![linting - Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)  [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) [![License - Apache-2.0](https://img.shields.io/github/license/Nike-Inc/kohessio)](LICENSE.txt) |
 
 </div>
 
@@ -224,10 +224,6 @@ Koheesio also provides some additional features that can be useful in certain sc
 - __Box__: Available through the `koheesio.steps.integration.box` module; installable through the `box` extra.
   - Box is a cloud content management and file sharing service for businesses.
 
-- __Cerberus__: Available through the `koheesio.steps.integration.secrets` module; installable through the `cerberus` extra.
-  - Cerberus is a tool for managing secrets in a secure and scalable way.
-  - For more information, refer to the [Cerberus docs](https://engineering.nike.com/cerberus)
-
 > __Note:__  
 > Some of the steps require extra dependencies. See the [Extras](#extras) section for additional info.  
 > Extras can be added to Poetry by adding `extras=['name_of_the_extra']` to the toml entry mentioned above
@@ -245,8 +241,8 @@ from pyspark.sql import DataFrame, SparkSession
 
 # Step 1: import Koheesio dependencies
 from koheesio.context import Context
-from koheesio.spark.readers.dummy import DummyReader
-from koheesio.steps.transformations import CamelToSnakeTransformation
+from koheesio.steps.readers.dummy import DummyReader
+from koheesio.steps.transformations.camel_to_snake import CamelToSnakeTransformation
 from koheesio.steps.writers.dummy import DummyWriter
 from koheesio.tasks.etl_task import EtlTask
 
@@ -261,7 +257,6 @@ context = Context({
     "my_favorite_movie": "inception",
 })
 
-
 # Step 4: Create a Task
 class MyFavoriteMovieTask(EtlTask):
     my_favorite_movie: str
@@ -269,7 +264,6 @@ class MyFavoriteMovieTask(EtlTask):
     def transform(self, df: DataFrame = None) -> DataFrame:
         df = df.withColumn("MyFavoriteMovie", lit(self.my_favorite_movie))
         return super().transform(df)
-
 
 # Step 5: Run your Task
 task = MyFavoriteMovieTask(**context)

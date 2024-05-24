@@ -5,6 +5,8 @@ from pyspark.sql.types import *
 
 from koheesio.spark.readers.databricks.autoloader import AutoLoader
 
+pytestmark = pytest.mark.spark
+
 
 @pytest.mark.parametrize(
     "bad_format",

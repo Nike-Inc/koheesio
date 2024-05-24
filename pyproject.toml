@@ -24,6 +24,7 @@ classifiers = [
   "Natural Language :: English",
   "Operating System :: OS Independent",
   "Programming Language :: Python",
+  "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
@@ -58,7 +59,9 @@ async_http = [
 box = ["boxsdk[jwt]==3.8.1"]
 pandas = ["pandas>=1.3", "setuptools"]
 pyspark = ["pyspark>=3.2.0", "pyarrow>13"]
-se = ["spark-expectations>=1.1.0"]
+#FIXME: loose versioning in spark_excpectations for pluggy module
+# se = ["spark-expectations>=1.1.0"]
+se = []
 # SFTP dependencies in to_csv line_iterator
 sftp = ["paramiko>=2.6.0"]
 delta = ["delta-spark>=2.2"]
@@ -73,6 +76,7 @@ test = [
   "pytest-order",
   "pytest-sftpserver",
   "pytest-xdist",
+  "pytest-randomly",
   "requests_mock",
   "time_machine",
 ]
@@ -99,12 +103,12 @@ Bump by running `hatch version` with one of the following release types:
 """
 path = "src/koheesio/__about__.py"
 
-[tool.hatch.envs.hatch-static-analysis.scripts]
-#TODO: move scripts from linting and style here
-format-check = "black --check --diff ."
-format-fix = "black ."
-lint-check = "ruff check ."
-lint-fix = "echo 'No formatting is required for this project.'"
+#[tool.hatch.envs.hatch-static-analysis.scripts]
+##TODO: move scripts from linting and style here
+#format-check = "black --check --diff ."
+#format-fix = "black ."
+#lint-check = "ruff check ."
+#lint-fix = "echo 'No formatting is required for this project.'"
 
 [tool.hatch.envs.default]
 description = """
@@ -185,13 +189,25 @@ check = [
 fmt = ["black-fmt", "isort-fmt", "ruff-fmt"]
 fix = "fmt"
 lint = ["- ruff-fmt", "- mypy-check", "pylint-check"]
-# Testing and Coverage commands
+log-versions = "python --version && {env:HATCH_UV} pip freeze | grep pyspark"
+test = "- pytest{env:HATCH_TEST_ARGS:} {args} -n 2"
+spark-tests = "test -m spark"
+non-spark-tests = "test -m \"not spark\""
+
+# scripts.run = "echo bla {env:HATCH_TEST_ARGS:} {args}"
+# scripts.run = "- log-versions && pytest tests/ {env:HATCH_TEST_ARGS:} {args}"
+# run ="echo {args}"
+# run = "- pytest tests/ {env:HATCH_TEST_ARGS:} {args}"
+# run-cov = "coverage run -m pytest{env:HATCH_TEST_ARGS:} {args}"
+# cov-combine = "coverage combine"
+# cov-report = "coverage report"
 # log-versions = "python --version && {env:HATCH_UV} pip freeze | grep pyspark"
-# all-tests = "- pytest tests/ {env:HATCH_TEST_ARGS:} {args}"
-# spark-tests = "- pytest tests/spark {env:HATCH_TEST_ARGS:} {args}"
-# non-spark-tests = "- pytest tests/ {env:HATCH_TEST_ARGS:} {args} -k 'not spark'"
+#
+#
+#
 # coverage = "- pytest tests/ {env:HATCH_TEST_ARGS:} {args} --cov=koheesio --cov-report=html --cov-report=term-missing --cov-fail-under=90"
 # cov = "coverage"
+
 
 [tool.black]
 line-length = 120
@@ -199,10 +215,9 @@ target-version = ['py39', 'py310', 'py311', 'py312']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
-  | tests/data
+  | tests/_data
 )/
 '''
-
 
 [tool.isort]
 profile = "black"
@@ -290,7 +305,6 @@ ignore = [
 ]
 # Unlike Flake8, default to a complexity level of 10.
 mccabe.max-complexity = 10
-
 
 # Allow autofix for all enabled rules (when `--fix` is provided).
 fixable = [
@@ -446,7 +460,7 @@ max-nested-blocks = 3
 description = """
 The test environment is used to run the test suite.
 ---
-- Run `hatch tests` to run the full test suite.
+- Run `hatch run test:all-tests` to run the full test suite.
 - Run `hatch run test:spark-tests` to run the Spark test suite.
 - Run `hatch run test:log-versions` to log the Python and PySpark versions.
 - You can test against specific Python and PySpark versions by adding `+py=3.10` or `+version=pyspark34` to the command
@@ -467,34 +481,16 @@ features = [
   "dev",
   "test",
 ]
-#FIXME: Depends on loose versioning in spark_excpectations for pluggy module
-parallel = false
+
+parallel = true
 retries = 2
-
-# scripts.spark-tests = "run -m spark"
-# scrupts.non-spark-tests = "run -m \"not spark\""
-
-# scripts.run = "echo bla {env:HATCH_TEST_ARGS:} {args}"
-# scripts.run = "- log-versions && pytest tests/ {env:HATCH_TEST_ARGS:} {args}"
-# run ="echo {args}"
-# run = "- pytest tests/ {env:HATCH_TEST_ARGS:} {args}"
-# run-cov = "coverage run -m pytest{env:HATCH_TEST_ARGS:} {args}"
-# cov-combine = "coverage combine"
-# cov-report = "coverage report"
-# log-versions = "python --version && {env:HATCH_UV} pip freeze | grep pyspark"
-# 
-# 
-# 
-# coverage = "- pytest tests/ {env:HATCH_TEST_ARGS:} {args} --cov=koheesio --cov-report=html --cov-report=term-missing --cov-fail-under=90"
-# cov = "coverage"
+retry-delay = 1
 
 [tool.hatch.envs.hatch-test.scripts]
-run = "pytest{env:HATCH_TEST_ARGS:} {args}"
+run = "pytest{env:HATCH_TEST_ARGS:} {args} -n auto"
 run-cov = "coverage run -m pytest{env:HATCH_TEST_ARGS:} {args}"
 cov-combine = "coverage combine"
 cov-report = "coverage report"
-spark = "run -m spark"
-non-spark = "run -m \"not spark\""
 
 
 [[tool.hatch.envs.hatch-test.matrix]]
@@ -506,8 +502,7 @@ python = ["3.10"]
 version = ["pyspark33", "pyspark34", "pyspark35"]
 
 [[tool.hatch.envs.hatch-test.matrix]]
-python = ["3.11"]
-# python = ["3.11", "3.12"]
+python = ["3.11", "3.12"]
 version = ["pyspark35"]
 
 [tool.hatch.envs.hatch-test.overrides]
@@ -522,10 +517,16 @@ matrix.version.extra-dependencies = [
     "pyspark35",
   ] },
 ]
-# set number of workes for parallel testing 
-name.".*".env-vars = "PYTEST_XDIST_AUTO_NUM_WORKERS=2"
-
+name.".*".env-vars = [
+    # set number of workes for parallel testing
+    { key = "PYTEST_XDIST_AUTO_NUM_WORKERS", value = "2" },
+    # disables Koheesio logo being printed during testing
+    { key = "KOHEESIO__PRINT_LOGO", value = "False" },
+]
 [tool.pytest.ini_options]
+addopts = "-q --color=yes --order-scope=module"
+log_level = "CRITICAL"
+testpaths = ["tests"]
 markers = [
   "default: added to all tests by default if no other marker expect of standard pytest markers is present",
   "spark: mark a test as a Spark test",
@@ -535,8 +536,6 @@ markers = [
   # "asyncio: mark a test as an asyncio test",
   # "asyncio_http: mark a test as an asyncio HTTP test",
 ]
-addopts = "-q --color=yes --order-scope=module"
-log_level = "CRITICAL"
 filterwarnings = [
   # pyspark.pandas warnings
   "ignore:distutils.*:DeprecationWarning:pyspark.pandas.*",
@@ -544,7 +543,8 @@ filterwarnings = [
   "ignore:distutils.*:DeprecationWarning:pyspark.sql.pandas.*",
   "ignore:is_datetime64tz_dtype.*:DeprecationWarning:pyspark.sql.pandas.*",
   # Koheesio warnings
-  "ignore:DayTimeIntervalType .*:UserWarning:koheesio.spark.snowflake",
+  "ignore:DayTimeIntervalType .*:UserWarning:koheesio.steps.integrations.snowflake.*",
+  "ignore:RankDedup is deprecated. Use RowNumberDedup instead.:UserWarning:koheesio.steps.transformations.*",
 ]
 
 [tool.coverage.run]
@@ -646,4 +646,4 @@ features = [
   "dev",
   "test",
 ]
-extra-dependencies = ["pyspark==3.4.*"]
+extra-dependencies = ["pyspark==3.4.*", "pandas<2.0"]

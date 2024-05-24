@@ -9,6 +9,8 @@ from pydantic import ValidationError
 from koheesio.logger import LoggingFactory
 from koheesio.spark.transformations.strings.trim import LTrim, RTrim, Trim
 
+pytestmark = pytest.mark.spark
+
 log = LoggingFactory.get_logger(name=__file__, inherit_from_koheesio=True)
 
 

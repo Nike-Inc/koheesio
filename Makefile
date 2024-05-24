@@ -105,27 +105,27 @@ coverage: cov
 all-tests:
 	@echo "\033[1mRunning all tests:\033[0m\n\033[35m This will run the full test suite\033[0m"
 	@echo "\033[1;31mWARNING:\033[0;33m This may take upward of 20-30 minutes to complete!\033[0m"
-	@hatch run test:all-tests --no-header --no-summary
+	@hatch test --no-header --no-summary
 .PHONY: spark-tests  ## testing - Run SPARK tests in ALL environments
 spark-tests:
 	@echo "\033[1mRunning Spark tests:\033[0m\n\033[35m This will run the Spark test suite against all specified environments\033[0m"
 	@echo "\033[1;31mWARNING:\033[0;33m This may take upward of 20-30 minutes to complete!\033[0m"
-	@hatch run test:spark-tests --no-header --no-summary
+	@hatch test -m spark --no-header --no-summary
 .PHONY: non-spark-tests  ## testing - Run non-spark tests in ALL environments
 non-spark-tests:
 	@echo "\033[1mRunning non-Spark tests:\033[0m\n\033[35m This will run the non-Spark test suite against all specified environments\033[0m"
-	@hatch run test:non-spark-tests --no-header --no-summary -k "not spark"
+	@hatch test -m "not spark" --no-header --no-summary
 
-.PHONY: pytest ## testing - Run pytest, with all tests in the dev environment
-pytest:
+.PHONY: dev-test ## testing - Run pytest, with all tests in the dev environment
+dev-test:
 	@echo "\033[1mRunning pytest:\033[0m\n\033[35m This will run the full test suite, but only once (in the dev environment)\033[0m"
-	@hatch run dev:all-tests -vv
-.PHONY: pytest-spark  ## testing - Run pytest (just spark) in the dev environment
-pytest-spark:
+	@hatch run dev:test -vv
+.PHONY: dev-test-spark  ## testing - Run pytest (just spark) in the dev environment
+dev-test-spark:
 	@echo "\033[1mRunning pytest for Spark tests:\033[0m\n\033[35m This will run the Spark test suite\033[0m"
 	@hatch run dev:spark-tests -vv
-.PHONY: pytest-non-spark  ## testing - Run pytest without spark in the dev environment
-pytest-non-spark:
+.PHONY: dev-test-non-spark  ## testing - Run pytest without spark in the dev environment
+dev-test-non-spark:
 	@echo "\033[1mRunning pytest for non-Spark tests:\033[0m\n\033[35m This will run the test suite, excluding all spark tests\033[0m"
 	@hatch run dev:non-spark-tests -vv
 

@@ -3,6 +3,8 @@ import pytest
 from koheesio.logger import LoggingFactory
 from koheesio.spark.transformations.uuid5 import HashUUID5
 
+pytestmark = pytest.mark.spark
+
 log = LoggingFactory.get_logger(name="test_uuid5")
 
 

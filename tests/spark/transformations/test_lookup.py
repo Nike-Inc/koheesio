@@ -10,6 +10,8 @@ from koheesio.spark.transformations.lookup import (
     TargetColumn,
 )
 
+pytestmark = pytest.mark.spark
+
 
 def test_join_mapping_column_test() -> None:
     assert str(JoinMapping(source_column="source", other_column="joined").column) == "Column<'joined AS source'>"

@@ -16,6 +16,8 @@ from koheesio.spark.writers.delta import DeltaTableStreamWriter, DeltaTableWrite
 from koheesio.spark.writers.delta.utils import log_clauses
 from koheesio.spark.writers.stream import Trigger
 
+pytestmark = pytest.mark.spark
+
 
 @pytest.mark.parametrize(
     "output_mode,expected_count",

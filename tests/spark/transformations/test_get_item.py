@@ -2,6 +2,8 @@ import pytest
 
 from koheesio.spark.transformations.get_item import GetItem
 
+pytestmark = pytest.mark.spark
+
 
 @pytest.mark.parametrize(
     "input_values,input_data,input_schema,expected",

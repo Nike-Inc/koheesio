@@ -133,9 +133,9 @@ out/**
 .databricks
 
 # PYTEST
-/tests/data/spark-warehouse
-/tests/data/checkpoint
-/tests/data/snowflake_staging.parq/
+/tests/_data/spark-warehouse
+/tests/_data/checkpoint
+/tests/_data/snowflake_staging.parq/
 
 # DevContainer
 .devcontainer

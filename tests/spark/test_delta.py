@@ -11,6 +11,8 @@ from pyspark.sql.types import LongType
 from koheesio.logger import LoggingFactory
 from koheesio.spark.delta import DeltaTableStep
 
+pytestmark = pytest.mark.spark
+
 log = LoggingFactory.get_logger(name="test_delta")
 
 

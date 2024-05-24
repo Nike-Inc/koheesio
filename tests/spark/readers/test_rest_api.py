@@ -13,6 +13,8 @@ from koheesio.steps.http import PaginatedHtppGetStep
 ASYNC_BASE_URL = "http://httpbin.org"
 ASYNC_GET_ENDPOINT = URL(f"{ASYNC_BASE_URL}/get")
 
+pytestmark = pytest.mark.spark
+
 
 @pytest.fixture
 def mock_paginated_api():

@@ -12,6 +12,8 @@ from koheesio.spark.writers.sftp import (
     SFTPWriter,
 )
 
+pytestmark = pytest.mark.spark
+
 
 @pytest.fixture
 def buffer_writer(spark):

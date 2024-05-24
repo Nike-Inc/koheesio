@@ -8,6 +8,8 @@ from koheesio.logger import LoggingFactory
 from koheesio.models import ValidationError
 from koheesio.spark.transformations.strings.pad import LPad, Pad, RPad
 
+pytestmark = pytest.mark.spark
+
 log = LoggingFactory.get_logger(name=__file__, inherit_from_koheesio=True)
 
 data = [[1, 2, "hello"], [3, 4, "world"], [3, 4, None]]

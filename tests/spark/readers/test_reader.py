@@ -1,4 +1,8 @@
+import pytest
+
 from koheesio.spark.readers.dummy import DummyReader
+
+pytestmark = pytest.mark.spark
 
 
 def test_reader(spark):

@@ -6,6 +6,8 @@ from pyspark.sql import SparkSession
 
 from koheesio.spark.readers.jdbc import JdbcReader
 
+pytestmark = pytest.mark.spark
+
 
 class TestJdbcReader:
     common_options = {

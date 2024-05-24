@@ -1,3 +1,4 @@
+import pytest
 from conftest import await_job_completion
 
 from pyspark.sql import DataFrame, SparkSession
@@ -12,6 +13,8 @@ from koheesio.spark.transformations.sql_transform import SqlTransform
 from koheesio.spark.transformations.transform import Transform
 from koheesio.spark.writers.delta import DeltaTableStreamWriter, DeltaTableWriter
 from koheesio.spark.writers.dummy import DummyWriter
+
+pytestmark = pytest.mark.spark
 
 
 def dummy_function(df: DataFrame):

@@ -5,6 +5,8 @@ import pytest
 from koheesio.logger import LoggingFactory
 from koheesio.spark.transformations.hash import Sha2Hash
 
+pytestmark = pytest.mark.spark
+
 log = LoggingFactory.get_logger(name="test_hash")
 
 

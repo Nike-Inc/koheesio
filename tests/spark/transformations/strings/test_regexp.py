@@ -7,6 +7,8 @@ import pytest
 from koheesio.logger import LoggingFactory
 from koheesio.spark.transformations.strings.regexp import RegexpExtract, RegexpReplace
 
+pytestmark = pytest.mark.spark
+
 log = LoggingFactory.get_logger(name=__file__, inherit_from_koheesio=True)
 
 data_year_wk = [["2020 W1"], ["2021 WK2"], ["2022WK3"]]

@@ -2,6 +2,8 @@ import pytest
 
 from koheesio.spark.writers.dummy import DummyWriter
 
+pytestmark = pytest.mark.spark
+
 expected = {"id": 0}
 
 

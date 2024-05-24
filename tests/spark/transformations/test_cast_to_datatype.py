@@ -29,6 +29,8 @@ from koheesio.spark.transformations.cast_to_datatype import (
 )
 from koheesio.spark.utils import SparkDatatype
 
+pytestmark = pytest.mark.spark
+
 
 @pytest.mark.parametrize(
     "input_values,expected",

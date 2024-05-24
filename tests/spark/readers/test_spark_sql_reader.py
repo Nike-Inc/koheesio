@@ -2,6 +2,8 @@ import pytest
 
 from koheesio.spark.readers.spark_sql_reader import SparkSqlReader
 
+pytestmark = pytest.mark.spark
+
 
 def test_spark_sql_reader(spark, data_path):
     spark.sql("CREATE TABLE IF NOT EXISTS table_A (id INT, a_name STRING) USING DELTA")

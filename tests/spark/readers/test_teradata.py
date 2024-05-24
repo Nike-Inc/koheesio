@@ -1,8 +1,12 @@
 from unittest import mock
 
+import pytest
+
 from pyspark.sql import SparkSession
 
 from koheesio.spark.readers.teradata import TeradataReader
+
+pytestmark = pytest.mark.spark
 
 
 class TestTeradataReader:
