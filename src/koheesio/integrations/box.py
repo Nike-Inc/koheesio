@@ -24,6 +24,7 @@ from pyspark.sql import DataFrame
 from pyspark.sql.functions import expr, lit
 from pyspark.sql.types import StructType
 
+from koheesio import Step, StepOutput
 from koheesio.models import (
     Field,
     SecretBytes,
@@ -34,7 +35,6 @@ from koheesio.models import (
     model_validator,
 )
 from koheesio.spark.readers import Reader
-from koheesio import Step, StepOutput
 
 
 class BoxFolderNotFoundError(Exception):

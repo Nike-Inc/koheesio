@@ -8,8 +8,8 @@ from textwrap import dedent
 from typing import Any, Dict, Optional
 
 from koheesio.models import ConfigDict, Field
-from koheesio.steps.http import HttpPostStep
 from koheesio.notifications import NotificationSeverity
+from koheesio.steps.http import HttpPostStep
 
 
 class SlackNotification(HttpPostStep):

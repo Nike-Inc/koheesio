@@ -50,6 +50,7 @@ from pyspark.sql import DataFrame, Window
 from pyspark.sql import functions as f
 from pyspark.sql import types as t
 
+from koheesio import Step, StepOutput
 from koheesio.logger import LoggingFactory, warn
 from koheesio.models import (
     BaseModel,
@@ -61,6 +62,7 @@ from koheesio.models import (
     model_validator,
 )
 from koheesio.spark import SparkStep
+from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.readers.delta import DeltaTableReader, DeltaTableStreamReader
 from koheesio.spark.readers.jdbc import JdbcReader
 from koheesio.spark.transformations import Transformation
@@ -69,8 +71,6 @@ from koheesio.spark.writers.stream import (
     ForEachBatchStreamWriter,
     writer_to_foreachbatch,
 )
-from koheesio import Step, StepOutput
-from koheesio.spark.delta import DeltaTableStep
 
 __all__ = [
     "AddColumn",

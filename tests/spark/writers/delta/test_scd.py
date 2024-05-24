@@ -9,8 +9,8 @@ from pyspark.sql import functions as F
 from pyspark.sql.types import Row
 
 from koheesio.spark import DataFrame, current_timestamp_utc
-from koheesio.spark.writers.delta.scd import SCD2DeltaTableWriter
 from koheesio.spark.delta import DeltaTableStep
+from koheesio.spark.writers.delta.scd import SCD2DeltaTableWriter
 
 
 def test_scd2_custom_logic(spark):

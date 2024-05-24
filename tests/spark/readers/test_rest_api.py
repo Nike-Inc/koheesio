@@ -5,8 +5,8 @@ from aiohttp_retry import ExponentialRetry
 from pyspark.sql.types import MapType, StringType, StructField, StructType
 from yarl import URL
 
-from koheesio.spark.readers.rest_api import AsyncHttpGetStep, RestApiReader
 from koheesio.asyncio.http import AsyncHttpStep
+from koheesio.spark.readers.rest_api import AsyncHttpGetStep, RestApiReader
 from koheesio.steps.http import PaginatedHtppGetStep
 
 ASYNC_BASE_URL = "http://httpbin.org"

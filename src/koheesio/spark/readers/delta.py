@@ -16,8 +16,8 @@ from pyspark.sql.streaming import DataStreamReader
 
 from koheesio.logger import LoggingFactory
 from koheesio.models import Field, ListOfColumns, field_validator, model_validator
-from koheesio.spark.readers import Reader
 from koheesio.spark.delta import DeltaTableStep
+from koheesio.spark.readers import Reader
 from koheesio.utils import get_random_string
 
 __all__ = ["DeltaTableReader", "DeltaTableStreamReader"]

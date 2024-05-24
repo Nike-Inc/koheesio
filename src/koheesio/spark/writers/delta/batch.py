@@ -42,10 +42,10 @@ from py4j.protocol import Py4JError
 from pyspark.sql import DataFrameWriter
 
 from koheesio.models import ExtraParamsMixin, Field, field_validator
-from koheesio.spark.writers import BatchOutputMode, StreamingOutputMode, Writer
-from koheesio.spark.writers.delta.utils import log_clauses
 from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.utils import on_databricks
+from koheesio.spark.writers import BatchOutputMode, StreamingOutputMode, Writer
+from koheesio.spark.writers.delta.utils import log_clauses
 
 
 class DeltaTableWriter(Writer, ExtraParamsMixin):

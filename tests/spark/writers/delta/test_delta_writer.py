@@ -8,11 +8,11 @@ from pydantic import ValidationError
 from pyspark.sql import functions as F
 
 from koheesio.spark import AnalysisException
+from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.writers import BatchOutputMode, StreamingOutputMode
 from koheesio.spark.writers.delta import DeltaTableStreamWriter, DeltaTableWriter
 from koheesio.spark.writers.delta.utils import log_clauses
 from koheesio.spark.writers.stream import Trigger
-from koheesio.spark.delta import DeltaTableStep
 
 
 @pytest.mark.parametrize(

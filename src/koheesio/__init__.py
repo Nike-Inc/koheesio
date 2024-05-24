@@ -1,11 +1,11 @@
 # pragma: no cover
-from os import getenv, environ
+from os import environ, getenv
 
 from koheesio.__about__ import __version__, _about
-from koheesio.models import BaseModel, ExtraParamsMixin
-from koheesio.steps import Step, StepOutput
 from koheesio.context import Context
 from koheesio.logger import LoggingFactory
+from koheesio.models import BaseModel, ExtraParamsMixin
+from koheesio.steps import Step, StepOutput
 
 ABOUT = _about()
 VERSION = __version__

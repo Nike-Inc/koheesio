@@ -8,11 +8,11 @@ from datetime import datetime
 
 from pyspark.sql import DataFrame
 
+from koheesio import Step
 from koheesio.models import Field, InstanceOf, conlist
 from koheesio.spark.readers import Reader
 from koheesio.spark.transformations import Transformation
 from koheesio.spark.writers import Writer
-from koheesio import Step
 
 
 class EtlTask(Step):

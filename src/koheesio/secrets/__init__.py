@@ -6,9 +6,9 @@ Contains abstract class for various secret integrations also known as SecretCont
 from abc import ABC, abstractmethod
 from typing import Optional
 
+from koheesio import Step, StepOutput
 from koheesio.context import Context
 from koheesio.models import Field, SecretStr
-from koheesio import Step, StepOutput
 
 
 class Secret(Step, ABC):
