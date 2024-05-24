@@ -1,6 +1,7 @@
 import datetime
 from typing import List, Optional
 
+import pytest
 from delta import DeltaTable
 from delta.tables import DeltaMergeBuilder
 
@@ -13,6 +14,8 @@ from pyspark.sql.types import Row
 from koheesio.steps.delta import DeltaTableStep
 from koheesio.steps.spark import DataFrame, current_timestamp_utc
 from koheesio.steps.writers.delta.scd import SCD2DeltaTableWriter
+
+pytestmark = pytest.mark.spark
 
 
 def test_scd2_custom_logic(spark):

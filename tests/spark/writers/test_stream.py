@@ -4,6 +4,8 @@ import pytest
 
 from koheesio.steps.writers.stream import Trigger
 
+pytestmark = pytest.mark.spark
+
 
 @pytest.mark.parametrize(
     "args, expected",

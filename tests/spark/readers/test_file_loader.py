@@ -11,6 +11,8 @@ from koheesio.steps.readers.file_loader import (
 )
 from koheesio.steps.spark import AnalysisException
 
+pytestmark = pytest.mark.spark
+
 
 @pytest.fixture()
 def json_file(data_path):

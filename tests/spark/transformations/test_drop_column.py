@@ -2,6 +2,8 @@ import pytest
 
 from koheesio.steps.transformations.drop_column import DropColumn
 
+pytestmark = pytest.mark.spark
+
 
 @pytest.mark.parametrize(
     "input_values,expected",

@@ -5,6 +5,8 @@ from pyspark.sql import functions as F
 from koheesio.steps.readers.dummy import DummyReader
 from koheesio.steps.transformations.camel_to_snake import CamelToSnakeTransformation
 
+pytestmark = pytest.mark.spark
+
 
 class TestCamelToSnakeTransformation:
     @pytest.fixture

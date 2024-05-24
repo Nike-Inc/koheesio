@@ -4,6 +4,8 @@ import pytest
 
 from koheesio.steps.writers import BatchOutputMode
 
+pytestmark = pytest.mark.spark
+
 
 @pytest.mark.parametrize("output_mode", [(BatchOutputMode.APPEND)])
 def test_muted_warnings(output_mode, dummy_df, spark):

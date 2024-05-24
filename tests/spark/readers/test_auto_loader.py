@@ -1,11 +1,11 @@
-from pathlib import Path
-
 import pytest
 from chispa import assert_df_equality
 
 from pyspark.sql.types import *
 
 from koheesio.steps.readers.databricks.autoloader import AutoLoader
+
+pytestmark = pytest.mark.spark
 
 
 @pytest.mark.parametrize(

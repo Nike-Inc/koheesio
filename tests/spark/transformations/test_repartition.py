@@ -3,6 +3,8 @@ import pytest
 from koheesio.models import ValidationError
 from koheesio.steps.transformations.repartition import Repartition
 
+pytestmark = pytest.mark.spark
+
 
 @pytest.mark.parametrize(
     "input_values,expected",

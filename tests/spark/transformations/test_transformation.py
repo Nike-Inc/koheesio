@@ -10,6 +10,8 @@ from koheesio.steps.transformations import (
 from koheesio.steps.transformations.dummy import DummyTransformation
 from koheesio.utils import SparkDatatype
 
+pytestmark = pytest.mark.spark
+
 
 def test_transform(dummy_df):
     tf = DummyTransformation()

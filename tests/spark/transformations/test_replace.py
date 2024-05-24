@@ -3,6 +3,8 @@ import pytest
 from koheesio.logger import LoggingFactory
 from koheesio.steps.transformations.replace import Replace
 
+pytestmark = pytest.mark.spark
+
 
 @pytest.mark.parametrize(
     "input_values,expected",

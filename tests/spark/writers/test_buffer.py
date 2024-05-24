@@ -15,6 +15,8 @@ from pyspark.sql.types import (
 
 from koheesio.steps.writers.buffer import PandasCsvBufferWriter, PandasJsonBufferWriter
 
+pytestmark = pytest.mark.spark
+
 # Test data has two columns: email and sha256_email
 test_data = [
     (

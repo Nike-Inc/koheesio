@@ -9,6 +9,8 @@ from koheesio.steps.transformations.date_time import (
     ToTimestamp,
 )
 
+pytestmark = pytest.mark.spark
+
 log = LoggingFactory.get_logger(name="test_date_time")
 
 

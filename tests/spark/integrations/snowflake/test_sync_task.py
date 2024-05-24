@@ -22,6 +22,8 @@ from koheesio.steps.writers import BatchOutputMode, StreamingOutputMode
 from koheesio.steps.writers.delta import DeltaTableWriter
 from koheesio.steps.writers.stream import ForEachBatchStreamWriter
 
+pytestmark = pytest.mark.spark
+
 COMMON_OPTIONS = {
     "source_table": DeltaTableStep(table=""),
     "target_table": "foo.bar",

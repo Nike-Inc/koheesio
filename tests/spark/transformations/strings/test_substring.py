@@ -7,6 +7,8 @@ import pytest
 from koheesio.logger import LoggingFactory
 from koheesio.steps.transformations.strings.substring import Substring
 
+pytestmark = pytest.mark.spark
+
 log = LoggingFactory.get_logger(name=__file__, inherit_from_koheesio=True)
 
 data_with_strings = [[1, 2, "hello"], [3, 4, "world"], [3, 4, None]]

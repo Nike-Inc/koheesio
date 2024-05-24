@@ -1,8 +1,12 @@
 from unittest import mock
 
+import pytest
+
 from pyspark.sql import SparkSession
 
 from koheesio.steps.readers.hana import HanaReader
+
+pytestmark = pytest.mark.spark
 
 
 class TestHanaReader:

@@ -6,6 +6,8 @@ from pyspark.sql.dataframe import DataFrame
 from koheesio.steps.readers.delta import DeltaTableReader
 from koheesio.steps.spark import AnalysisException
 
+pytestmark = pytest.mark.spark
+
 
 def test_delta_table_reader(spark):
     df = DeltaTableReader(table="delta_test_table").read()

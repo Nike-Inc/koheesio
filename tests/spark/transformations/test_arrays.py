@@ -26,6 +26,8 @@ from koheesio.steps.transformations.arrays import (
     ExplodeDistinct,
 )
 
+pytestmark = pytest.mark.spark
+
 input_data = [
     (1, [1, 2, 2, 3, 3, 3], ["a", "b", "b", "c", "c", " ", None], [1.0, 2.0, 2.0, 3.0, 3.0, 3.0, float("nan")]),
     (2, [4, 4, 5, 5, 6, 6, None], ["d", "e", "e", "f", "f", "f"], [4.0, 5.0, 5.0, 6.0, 6.0, 6.0]),

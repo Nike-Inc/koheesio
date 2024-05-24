@@ -27,6 +27,8 @@ from koheesio.steps.integrations.snowflake import (
 )
 from koheesio.steps.writers import BatchOutputMode
 
+pytestmark = pytest.mark.spark
+
 COMMON_OPTIONS = {
     "url": "url",
     "user": "user",

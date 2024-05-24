@@ -13,6 +13,8 @@ import pytest
 
 from koheesio.models import SecretStr
 
+pytestmark = pytest.mark.spark
+
 
 class TestSparkImportFailures:
     def test_import_error_no_error(self):

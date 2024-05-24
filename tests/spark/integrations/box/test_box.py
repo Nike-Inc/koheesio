@@ -25,6 +25,8 @@ from koheesio.steps.integrations.box import (
     StructType,
 )
 
+pytestmark = pytest.mark.spark
+
 COMMON_PARAMS = {
     "client_id": SecretStr("client_id"),
     "client_secret": SecretStr("client_secret"),

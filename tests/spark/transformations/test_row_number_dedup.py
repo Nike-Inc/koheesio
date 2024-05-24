@@ -8,6 +8,8 @@ from pyspark.sql import functions as F
 from koheesio.steps.transformations.rank_dedup import RankDedup
 from koheesio.steps.transformations.row_number_dedup import RowNumberDedup
 
+pytestmark = pytest.mark.spark
+
 
 @pytest.mark.parametrize("target_column", ["col_row_nuber"])
 def test_row_number_dedup(spark: SparkSession, target_column: str) -> None:

@@ -7,6 +7,8 @@ import pytest
 from koheesio.logger import LoggingFactory
 from koheesio.steps.transformations.strings.split import SplitAll, SplitAtFirstMatch
 
+pytestmark = pytest.mark.spark
+
 log = LoggingFactory.get_logger(name=__file__, inherit_from_koheesio=True)
 
 string_data = [
