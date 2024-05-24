@@ -44,7 +44,7 @@ COMMON_OPTIONS = {
 
 @pytest.fixture
 def snowflake_staging_file():
-    filename = "tests/data/snowflake_staging.parq"
+    filename = "tests/_data/snowflake_staging.parq"
     if os.path.exists(filename):
         shutil.rmtree(filename)
 

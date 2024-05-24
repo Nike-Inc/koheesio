@@ -224,10 +224,6 @@ Koheesio also provides some additional features that can be useful in certain sc
 - __Box__: Available through the `koheesio.steps.integration.box` module; installable through the `box` extra.
   - Box is a cloud content management and file sharing service for businesses.
 
-- __Cerberus__: Available through the `koheesio.steps.integration.secrets` module; installable through the `cerberus` extra.
-  - Cerberus is a tool for managing secrets in a secure and scalable way.
-  - For more information, refer to the [Cerberus docs](https://engineering.nike.com/cerberus)
-
 > __Note:__  
 > Some of the steps require extra dependencies. See the [Extras](#extras) section for additional info.  
 > Extras can be added to Poetry by adding `extras=['name_of_the_extra']` to the toml entry mentioned above
