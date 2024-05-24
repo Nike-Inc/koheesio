@@ -299,8 +299,7 @@ filterwarnings = [
   "ignore:distutils.*:DeprecationWarning:pyspark.sql.pandas.*",
   "ignore:is_datetime64tz_dtype.*:DeprecationWarning:pyspark.sql.pandas.*",
   # Koheesio warnings
-  "ignore:DayTimeIntervalType .*:UserWarning:koheesio.steps.integrations.snowflake.*",
-  "ignore:RankDedup is deprecated. Use RowNumberDedup instead.:UserWarning:koheesio.steps.transformations.*",
+  "ignore:DayTimeIntervalType .*:UserWarning:koheesio.spark.snowflake.*",
 ]
 
 [tool.coverage.run]
