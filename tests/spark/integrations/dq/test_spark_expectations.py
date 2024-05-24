@@ -133,6 +133,7 @@ class TestSparkExpectationsTransform:
         from koheesio.integrations.spark.dq.spark_expectations import (
             SparkExpectationsTransformation,
         )
+
         conf = {
             "spark.expectations.notifications.email.enabled": False,
             "spark.expectations.notifications.email.smtp_host": "mailhost.email.com",
