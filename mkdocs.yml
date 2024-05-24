@@ -24,7 +24,7 @@ extra:
   social:
     - icon: material/github
       link: https://github.com/Nike-Inc/koheesio.git
-    - icon: fontawesome/brands/jira
+    - icon: fontawesome/list-check
     #FIXME: Change the link to the correct one
       link: https://github.com/orgs/nike-sole-community/projects/2
     - icon: fontawesome/brands/slack
@@ -33,13 +33,17 @@ extra:
 
 nav:
   - Home: index.md
-  - Tutorials:  # tutorials folder
+  - Tutorials and How-To:  # tutorials folder
     - Onboarding: tutorials/onboarding.md
+    - How-To Guides:
+      - tutorials/how-to.md
     - Getting Started:
       - Installation: tutorials/getting-started.md
       - Learn Koheesio: tutorials/learn-koheesio.md
-    - Hello World: tutorials/hello-world.md
-  - How-To Guides: how-to/how-to.md
+      - Hello World: tutorials/hello-world.md
+    - Advanced Topics:
+      - Data Processing: tutorials/advanced-data-processing.md
+      - Testing Steps: tutorials/testing-koheesio-steps.md
   - Reference:  # reference folder
     - Concepts:
       - reference/concepts/concepts.md
@@ -51,11 +55,10 @@ nav:
       - Tasks: reference/concepts/tasks.md
       - Context: reference/concepts/context.md
       - Logging: reference/concepts/logging.md
-  - Explanation:  # explanation folder
-    - Approach to Documentation: explanation/approach-documentation.md
   - API Reference: koheesio/  # api_reference folder
   - Community:  # community folder
     - Contribute: community/contribute.md
+    - Approach to Documentation: explanation/approach-documentation.md
 
 theme:
   name: material
