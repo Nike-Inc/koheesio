@@ -518,10 +518,10 @@ matrix.version.extra-dependencies = [
   ] },
 ]
 name.".*".env-vars = [
-    # set number of workes for parallel testing
-    { key = "PYTEST_XDIST_AUTO_NUM_WORKERS", value = "2" },
-    # disables Koheesio logo being printed during testing
-    { key = "KOHEESIO__PRINT_LOGO", value = "False" },
+  # set number of workes for parallel testing
+  { key = "PYTEST_XDIST_AUTO_NUM_WORKERS", value = "2" },
+  # disables Koheesio logo being printed during testing
+  { key = "KOHEESIO__PRINT_LOGO", value = "False" },
 ]
 [tool.pytest.ini_options]
 addopts = "-q --color=yes --order-scope=module"
@@ -543,8 +543,7 @@ filterwarnings = [
   "ignore:distutils.*:DeprecationWarning:pyspark.sql.pandas.*",
   "ignore:is_datetime64tz_dtype.*:DeprecationWarning:pyspark.sql.pandas.*",
   # Koheesio warnings
-  "ignore:DayTimeIntervalType .*:UserWarning:koheesio.steps.integrations.snowflake.*",
-  "ignore:RankDedup is deprecated. Use RowNumberDedup instead.:UserWarning:koheesio.steps.transformations.*",
+  "ignore:DayTimeIntervalType .*:UserWarning:koheesio.spark.snowflake.*",
 ]
 
 [tool.coverage.run]
@@ -558,11 +557,7 @@ koheesio = ["src/koheesio", "*/koheesio/src/koheesio"]
 tests = ["tests", "*/koheesio/tests"]
 
 [tool.coverage.report]
-exclude_lines = [
-  "no cov",
-  "if __name__ == .__main__.:",
-  "if TYPE_CHECKING:",
-]
+exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
 omit = ["tests/*"]
 
 ###  ~~~~  ###
