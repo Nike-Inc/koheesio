@@ -12,7 +12,6 @@ For more details on how to use this class and its methods, refer to the class do
 from typing import List, Tuple, Union
 
 from pydantic import Field, InstanceOf
-
 from pyspark.sql.types import AtomicType, StructType
 
 from koheesio.asyncio.http import AsyncHttpGetStep
@@ -100,7 +99,7 @@ class RestApiReader(Reader):
     """
 
     transport: Union[InstanceOf[AsyncHttpGetStep], InstanceOf[HttpGetStep]] = Field(
-        ..., description="HTTP transport step"
+        ..., description="HTTP transport step", exclude=True
     )
     spark_schema: Union[str, StructType, List[str], Tuple[str, ...], AtomicType] = Field(
         ..., description="The pyspark schema of the response"

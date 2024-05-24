@@ -1,23 +1,21 @@
 from __future__ import annotations
 
 import io
+import warnings
 from copy import deepcopy
 from functools import wraps
 from unittest import mock
 from unittest.mock import call, patch
 
 import pytest
-
-from pydantic import ValidationError
-
-from pyspark.sql import DataFrame
-from pyspark.sql.functions import lit
-
 from koheesio.models import Field
 from koheesio.spark.transformations.transform import Transform
 from koheesio.steps import Step, StepMetaClass, StepOutput
 from koheesio.steps.dummy import DummyOutput, DummyStep
 from koheesio.utils import get_project_root
+from pydantic import ValidationError
+from pyspark.sql import DataFrame
+from pyspark.sql.functions import lit
 
 
 def dummy_function(df: DataFrame):
@@ -77,13 +75,19 @@ class TestStepOutput:
         lazy_output.a = a
         lazy_output.b = b
 
-        if expected == ValidationError:
-            with pytest.raises(expected):
-                lazy_output.validate_output()
-        else:
-            actual = lazy_output.validate_output().model_dump()
-            print(f"{actual=}")
-            assert actual == expected
+        with warnings.catch_warnings(record=True):
+            warnings.filterwarnings(
+                "ignore",
+                message=r"^'Pydantic serializer warnings:\n  Expected `int` but got `str` - serialized value may not be as expected'",
+                category=UserWarning,
+            )
+            if expected == ValidationError:
+                with pytest.raises(expected):
+                    lazy_output.validate_output()
+            else:
+                actual = lazy_output.validate_output().model_dump()
+                print(f"{actual=}")
+                assert actual == expected
 
     @pytest.mark.parametrize("attribute, expected", [("a", True), ("d", False)])
     def test_stepoutput_hasattr(self, attribute, expected):

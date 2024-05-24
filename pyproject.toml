@@ -544,29 +544,21 @@ filterwarnings = [
   "ignore:distutils.*:DeprecationWarning:pyspark.sql.pandas.*",
   "ignore:is_datetime64tz_dtype.*:DeprecationWarning:pyspark.sql.pandas.*",
   # Koheesio warnings
-  "ignore:DayTimeIntervalType .*:UserWarning:koheesio.steps.integrations.snowflake.*",
-  "ignore:RankDedup is deprecated. Use RowNumberDedup instead.:UserWarning:koheesio.steps.transformations.*",
+  "ignore:DayTimeIntervalType .*:UserWarning:src.koheesio.spark.snowflake.*",
 ]
 
 [tool.coverage.run]
 source_pkgs = ["koheesio", "tests"]
 branch = true
 parallel = true
-omit = [
-  "src/koheesio/__about__.py",
-  "src/koheesio/__init__.py",
-]
+omit = ["src/koheesio/__about__.py", "src/koheesio/__init__.py"]
 
 [tool.coverage.paths]
 koheesio = ["src/koheesio", "*/koheesio/src/koheesio"]
 tests = ["tests", "*/koheesio/tests"]
 
 [tool.coverage.report]
-exclude_lines = [
-  "no cov",
-  "if __name__ == .__main__.:",
-  "if TYPE_CHECKING:",
-]
+exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
 omit = ["tests/*"]
 
 ###  ~~~~  ###
