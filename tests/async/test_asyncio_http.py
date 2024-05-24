@@ -7,8 +7,6 @@ from yarl import URL
 
 from pydantic import ValidationError
 
-from pydantic import ValidationError
-
 from koheesio.asyncio.http import AsyncHttpStep
 from koheesio.steps.http import HttpMethod
 

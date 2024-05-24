@@ -20,9 +20,9 @@ import inspect
 import json
 import sys
 import warnings
+from typing import Any
 from abc import abstractmethod
 from functools import partialmethod, wraps
-from typing import Any
 
 import yaml
 
