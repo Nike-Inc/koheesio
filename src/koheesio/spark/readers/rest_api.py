@@ -12,6 +12,7 @@ For more details on how to use this class and its methods, refer to the class do
 from typing import List, Tuple, Union
 
 from pydantic import Field, InstanceOf
+
 from pyspark.sql.types import AtomicType, StructType
 
 from koheesio.asyncio.http import AsyncHttpGetStep
