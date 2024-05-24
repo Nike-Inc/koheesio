@@ -60,13 +60,16 @@ class TestStepOutput:
     @pytest.mark.parametrize(
         "a, b, expected",
         [
-            (None, None, ValidationError),  # unhappy flow
+            # unhappy flow
+            (None, None, ValidationError),
+            # happy flow
             (
                 "foo",
                 42,
                 {"a": "foo", "b": 42, "name": "DummyOutput", "description": "Dummy output for testing purposes."},
-            ),  # happy flow
-            ("foo", "invalid type", ValidationError),  # test wrong type assigned
+            ),
+            # test wrong type assigned
+            ("foo", "invalid type", ValidationError),
         ],
     )
     def test_stepoutput_lazy(self, a, b, expected):
