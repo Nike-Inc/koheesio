@@ -56,7 +56,7 @@ jobs:
 
     - name: Run tests
       # run: hatch run test --python=${{ matrix.python-version }} -i pyspark${{ matrix.pyspark-version }}
-      run: hatch run test --python=${{ matrix.python-version }}
+      run: hatch test --python=${{ matrix.python-version }}
 
   # https://github.com/marketplace/actions/alls-green#why
   final_check: # This job does nothing and is only used for the branch protection
