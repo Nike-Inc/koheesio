@@ -26,10 +26,10 @@ from koheesio.logger import Logger, LoggingFactory
 __all__ = [
     "BaseModel",
     "ExtraParamsMixin",
+    "Field",
     "ListOfColumns",
     "ModelMetaclass",
     "PydanticGenericMetadata",
-    "Field",
     "field_validator",
     "model_validator",
 ]
