@@ -1,5 +1,6 @@
+
 tags:
-    - doctype/tutorial
+    - doctype/how-to
 
 # Onboarding to Koheesio
 
