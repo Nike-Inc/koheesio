@@ -16,7 +16,6 @@ from pyspark.sql import functions as F
 pytestmark = pytest.mark.spark
 
 
-
 def test_delta_table_writer(dummy_df, spark):
     table_name = "test_table"
     writer = DeltaTableWriter(table=table_name, output_mode=BatchOutputMode.APPEND, df=dummy_df)
