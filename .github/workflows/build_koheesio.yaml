@@ -79,7 +79,7 @@ jobs:
           name: python-artifacts
           path: dist
 
-      - name: Publish package to TestPyPI
+      - name: Publish package to PyPI
         uses: pypa/gh-action-pypi-publish@v1.8.14
         with:
           print-hash: true
