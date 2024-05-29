@@ -1,8 +1,5 @@
 name: release 
 
-permissions:
-  id-token: write
-
 on:
   push:
     tags:
@@ -74,6 +71,11 @@ jobs:
     needs: python-artifacts
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
     runs-on: ubuntu-latest
+    # Specifying a GitHub environment is optional, but strongly encouraged
+    environment: release
+    permissions:
+      # IMPORTANT: this permission is mandatory for trusted publishing
+      id-token: write
 
     steps:
       - name: Download Python artifacts
