@@ -23,7 +23,16 @@ from pydantic._internal._model_construction import ModelMetaclass
 from koheesio.context import Context
 from koheesio.logger import Logger, LoggingFactory
 
-__all__ = ["BaseModel", "ExtraParamsMixin", "ListOfColumns", "ModelMetaclass", "PydanticGenericMetadata"]
+__all__ = [
+    "BaseModel",
+    "ExtraParamsMixin",
+    "Field",
+    "ListOfColumns",
+    "ModelMetaclass",
+    "PydanticGenericMetadata",
+    "field_validator",
+    "model_validator",
+]
 
 
 # pylint: disable=function-redefined

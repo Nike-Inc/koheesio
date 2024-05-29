@@ -4,7 +4,7 @@ site_url: https://<tbd>/koheesio
 site_description:
   Koheesio is an open source python library that simplifies the development of data engineering pipelines.
 
-repo_name: nike/koheesio
+repo_name: Nike-Inc/koheesio
 repo_url: https://github.com/Nike-Inc/koheesio
 
 use_directory_urls: false
@@ -15,7 +15,7 @@ validation:
   unrecognized_links: warn
 
 watch:
-  - koheesio
+  - src/koheesio
 
 extra:
   version:
@@ -24,22 +24,22 @@ extra:
   social:
     - icon: material/github
       link: https://github.com/Nike-Inc/koheesio.git
-    - icon: fontawesome/brands/jira
-    #FIXME: Change the link to the correct one
-      link: https://github.com/orgs/nike-sole-community/projects/2
-    - icon: fontawesome/brands/slack
-    #FIXME: Change the link to the correct one
-      link: https://nikedigital.slack.com/archives/C04SHP7K7TL
+    - icon: material/bulletin-board
+      link: https://github.com/orgs/Nike-Inc/projects/4
 
 nav:
   - Home: index.md
-  - Tutorials:  # tutorials folder
+  - Tutorials and How-To:  # tutorials folder
     - Onboarding: tutorials/onboarding.md
+#    - How-To Guides:
+#      - tutorials/how-to.md
     - Getting Started:
       - Installation: tutorials/getting-started.md
       - Learn Koheesio: tutorials/learn-koheesio.md
-    - Hello World: tutorials/hello-world.md
-  - How-To Guides: how-to/how-to.md
+      - Hello World: tutorials/hello-world.md
+    - Advanced Topics:
+      - Data Processing: tutorials/advanced-data-processing.md
+      - Testing Steps: tutorials/testing-koheesio-steps.md
   - Reference:  # reference folder
     - Concepts:
       - reference/concepts/concepts.md
@@ -51,18 +51,17 @@ nav:
       - Tasks: reference/concepts/tasks.md
       - Context: reference/concepts/context.md
       - Logging: reference/concepts/logging.md
-  - Explanation:  # explanation folder
-    - Approach to Documentation: explanation/approach-documentation.md
-  - API Reference: koheesio/  # api_reference folder
+  - API Reference: api_reference/
   - Community:  # community folder
     - Contribute: community/contribute.md
+    - Approach to Documentation: explanation/approach-documentation.md
 
 theme:
   name: material
   font:
     text: Roboto
     code: Roboto Mono
-  favicon: assets/koheesio_logo.png
+  favicon: assets/logo_koheesio.svg
   palette:
     # Palette toggle for automatic mode
     - media: "(prefers-color-scheme)"
@@ -107,7 +106,7 @@ theme:
     - search.suggest
     - toc.follow
     # - toc.integrate
-  logo: assets/koheesio_logo.png
+  logo: assets/logo_total_white.svg
   language: en
 
 extra_css:
@@ -135,24 +134,31 @@ plugins:
       nav_file: API.md
   - section-index  # https://github.com/oprypin/mkdocs-section-index
   - mkdocstrings:
+      default_handler: python
       handlers:
         python:
-          paths: ["."]
-          import:
-            - https://docs.python.org/3/objects.inv
+          paths:
+            - src
           options:
+            # Headings
+            show_root_heading: true
+            show_root_full_path: false
+            # Docstrings
             docstring_style: numpy
-            # docstring_section_style: spacy
             docstring_options:
               ignore_init_summary: true
-            filters: ["!^_"]
-            # members_order: source
+            # docstring_section_style: spacy
+            show_if_no_docstring: true
+            # Signatures/annotations
+            show_signature_annotations: true
+            # Other
+            show_bases: false
             merge_init_into_class: true
+            filters: ["!^_"]
             separate_signature: true
             signature_crossrefs: true
             show_docstring_attributes: true
             show_category_heading: false
-            show_if_no_docstring: true
             show_root_full_path: true
             show_root_heading: false
             show_root_members_full_path: true
@@ -160,6 +166,8 @@ plugins:
             show_signature_annotations: true
             show_source: true
             warn_unknown_params: false
+          import:
+            - https://docs.python.org/3/objects.inv
 
 markdown_extensions:
   - abbr

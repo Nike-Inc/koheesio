@@ -8,8 +8,8 @@ Classes:
     DeltaTableStreamWriter: Class to write data in streaming mode to a Delta table.
 """
 
-from koheesio.spark.writers.delta.batch import DeltaTableWriter
+from koheesio.spark.writers.delta.batch import BatchOutputMode, DeltaTableWriter
 from koheesio.spark.writers.delta.scd import SCD2DeltaTableWriter
 from koheesio.spark.writers.delta.stream import DeltaTableStreamWriter
 
-__all__ = ["DeltaTableWriter", "DeltaTableStreamWriter", "SCD2DeltaTableWriter"]
+__all__ = ["DeltaTableWriter", "DeltaTableStreamWriter", "SCD2DeltaTableWriter", "BatchOutputMode"]

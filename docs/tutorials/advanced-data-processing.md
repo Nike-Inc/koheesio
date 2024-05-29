@@ -1,17 +1,18 @@
 # Advanced Data Processing with Koheesio
 
-In this guide, we will explore some advanced data processing techniques using Koheesio. We will cover topics such as complex transformations, handling large datasets, and optimizing performance.
+In this guide, we will explore some advanced data processing techniques using Koheesio. We will cover topics such as 
+complex transformations, handling large datasets, and optimizing performance.
 
 ## Complex Transformations
 
-Koheesio provides a variety of built-in transformations, but sometimes you may need to perform more complex operations on your data. In such cases, you can create custom transformations.
+Koheesio provides a variety of built-in transformations, but sometimes you may need to perform more complex operations 
+on your data. In such cases, you can create custom transformations.
 
 Here's an example of a custom transformation that normalizes a column in a DataFrame:
 
 ```python
 from pyspark.sql import DataFrame
-from koheesio.steps.transformations import Transform
-
+from koheesio.spark.transformations.transform import Transform
 
 def normalize_column(df: DataFrame, column: str) -> DataFrame:
     max_value = df.agg({column: "max"}).collect()[0][0]
@@ -42,15 +43,22 @@ class MyTask(EtlTask):
     target = DeltaTableWriter(table="my_table", partitionBy=["column1", "column2"])
 ```
 
-## Caching
-Caching is another technique that can improve performance by storing the result of a transformation in memory, so it 
-doesn't have to be recomputed each time it's used. You can use the cache method to cache the result of a transformation.
+[//]: # (## Caching)
 
-```python
-from koheesio.steps.transformations import CacheTransformation
+[//]: # (Caching is another technique that can improve performance by storing the result of a transformation in memory, so it )
 
+[//]: # (doesn't have to be recomputed each time it's used. You can use the cache method to cache the result of a transformation.)
 
-class MyTask(EtlTask):
-    transformations = [NormalizeColumnTransform(column="my_column"), CacheTransformation()]
-```
+[//]: # ()
+[//]: # (```python)
 
+[//]: # (from koheesio.steps.transformations.cache import CacheTransformation)
+
+[//]: # ()
+[//]: # (class MyTask&#40;EtlTask&#41;:)
+
+[//]: # (    transformations = [NormalizeColumnTransform&#40;column="my_column"&#41;, CacheTransformation&#40;&#41;])
+
+[//]: # (```)
+
+[//]: # ()
