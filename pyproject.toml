@@ -247,7 +247,6 @@ features = [
   "box",
   "pandas",
   "pyspark",
-  "se",
   "sftp",
   "delta",
   "dev",
@@ -279,27 +278,15 @@ version = ["pyspark35"]
 
 [tool.hatch.envs.hatch-test.overrides]
 matrix.version.extra-dependencies = [
-  { value = "pyspark>=3.3,<3.4", if = [
+  { value = "pyspark>=3.3,<3.4, spark-expectations>=2.1.0", if = [
     "pyspark33",
   ] },
-  { value = "pyspark>=3.4,<3.5", if = [
+  { value = "pyspark>=3.4,<3.5, spark-expectations>=2.1.0", if = [
     "pyspark34",
   ] },
   { value = "pyspark>=3.5,<3.6", if = [
     "pyspark35",
   ] },
-]
-
-name.".*pyspark35$".features = [
-  "async",
-  "async_http",
-  "box",
-  "pandas",
-  "pyspark",
-  "sftp",
-  "delta",
-  "dev",
-  "test",
 ]
 
 name.".*".env-vars = [
