@@ -1,5 +1,8 @@
 name: release 
 
+permissions:
+  id-token: write
+
 on:
   push:
     tags:
@@ -68,6 +71,7 @@ jobs:
   
   publish-pypi:
     name: Publish to PyPI
+    needs: python-artifacts
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
     runs-on: ubuntu-latest
 
