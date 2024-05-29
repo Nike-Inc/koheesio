@@ -1,13 +1,14 @@
-name: release
+name: release 
 
 on:
-  workflow_run:
-    workflows: [ "build koheesio" ]
-    types:
-      - completed
+  push:
+    tags:
+    - koheesio-v*
+    branches:
+    - main
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.workflow_run.event.pull_request.number || github.sha }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 
 defaults:
@@ -21,11 +22,53 @@ env:
   DIST_URL: "https://github.com/Nike-Inc/koheesio/releases"
 
 jobs:
+  python-artifacts:
+    name: Build wheel and source distribution
+    runs-on: ubuntu-latest
+
+    outputs:
+      old-version: ${{ steps.version.outputs.old-version }}
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install Hatch
+      uses: pypa/hatch@install
+
+    # Windows installers don't accept non-integer versions so we ubiquitously
+    # perform the following transformation: X.Y.Z.devN -> X.Y.Z.N
+    - name: Set project version
+      id: version
+      run: |-
+        old_version="$(hatch version)"
+        version="${old_version/dev/}"
+
+        echo "old-version=$old_version" >> $GITHUB_OUTPUT
+        echo "version=$version" >> $GITHUB_OUTPUT
+        echo "$version"
+        
+    - name: Build
+      run: hatch build
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: python-artifacts
+        path: dist/*
+        if-no-files-found: error
+  
   publish-pypi:
     name: Publish to PyPI
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    # FIXME: This is not working as expected
-    #  && github.event.workflow_run.event == 'push' && startsWith(github.event.workflow_run.event.ref, 'refs/tags')
+    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
     runs-on: ubuntu-latest
 
     steps:
