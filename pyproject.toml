@@ -289,12 +289,26 @@ matrix.version.extra-dependencies = [
     "pyspark35",
   ] },
 ]
+
+name.".*pyspark35$".features = [
+  "async",
+  "async_http",
+  "box",
+  "pandas",
+  "pyspark",
+  "sftp",
+  "delta",
+  "dev",
+  "test",
+]
+
 name.".*".env-vars = [
   # set number of workes for parallel testing
   { key = "PYTEST_XDIST_AUTO_NUM_WORKERS", value = "2" },
   # disables Koheesio logo being printed during testing
   { key = "KOHEESIO__PRINT_LOGO", value = "False" },
 ]
+
 [tool.pytest.ini_options]
 addopts = "-q --color=yes --order-scope=module"
 log_level = "CRITICAL"
