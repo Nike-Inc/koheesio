@@ -1,8 +1,8 @@
-name: build koheesio
+name: release
 
 on:
   workflow_run:
-    workflows: [ "build_koheesio" ]
+    workflows: [ "build koheesio" ]
     types:
       - completed
 
