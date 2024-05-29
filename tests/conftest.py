@@ -6,7 +6,7 @@ import pytest
 
 from koheesio.logger import LoggingFactory
 
-if os.name != 'nt':  # 'nt' is the name for Windows
+if os.name != "nt":  # 'nt' is the name for Windows
     # force time zone to be UTC
     os.environ["TZ"] = "UTC"
     time.tzset()

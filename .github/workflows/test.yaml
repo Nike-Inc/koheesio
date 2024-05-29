@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-#        os: [ubuntu-latest, windows-latest, macos-latest]
+#        os: [ubuntu-latest, windows-latest, macos-latest]  # FIXME: Add Windows and macOS
         os: [ubuntu-latest]
         python-version: ['3.9', '3.10', '3.11', '3.12']
         pyspark-version: ['33', '34', '35']
