@@ -85,4 +85,3 @@ jobs:
           print-hash: true
           user: ${{ secrets.PYPI_USERNAME }}
           password: ${{ secrets.PYPI_PASSWORD }}
-          repository-url: https://test.pypi.org/legacy/
