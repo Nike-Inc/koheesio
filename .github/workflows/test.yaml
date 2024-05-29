@@ -24,21 +24,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+#        os: [ubuntu-latest, windows-latest, macos-latest]  # FIXME: Add Windows and macOS
         os: [ubuntu-latest]
-        # os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ['3.9', '3.10', '3.11', '3.12']
-        # pyspark-version: ['33', '34', '35']
-        # exclude:
-        #   - python-version: '3.9'
-        #     pyspark-version: '35'
-        #   - python-version: '3.11'
-        #     pyspark-version: '33'
-        #   - python-version: '3.11'
-        #     pyspark-version: '34'
-        #   - python-version: '3.12'
-        #     pyspark-version: '33'
-        #   - python-version: '3.12'
-        #     pyspark-version: '34'
+        pyspark-version: ['33', '34', '35']
+        exclude:
+          - python-version: '3.9'
+            pyspark-version: '35'
+          - python-version: '3.11'
+            pyspark-version: '33'
+          - python-version: '3.11'
+            pyspark-version: '34'
+          - python-version: '3.12'
+            pyspark-version: '33'
+          - python-version: '3.12'
+            pyspark-version: '34'
 
     steps:
     - uses: actions/checkout@v4
@@ -48,15 +48,15 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Ensure latest pip
-      run: python -m pip install --upgrade pip
+    - name: Install Hatch
+      uses: pypa/hatch@install
 
-    - name: Install hatch
-      run: pip install hatch
+#    - name: Check Code Quality
+#      run:  |-
+#        hatch fmt --check --python=${{ matrix.python-version }}
 
     - name: Run tests
-      # run: hatch run test --python=${{ matrix.python-version }} -i pyspark${{ matrix.pyspark-version }}
-      run: hatch test --python=${{ matrix.python-version }}
+      run: hatch test --python=${{ matrix.python-version }} -i version=pyspark${{ matrix.pyspark-version }}
 
   # https://github.com/marketplace/actions/alls-green#why
   final_check: # This job does nothing and is only used for the branch protection
