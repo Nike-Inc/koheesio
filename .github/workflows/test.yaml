@@ -51,9 +51,12 @@ jobs:
     - name: Install Hatch
       uses: pypa/hatch@install
 
+#    - name: Check Code Quality
+#      run:  |-
+#        hatch fmt --check --python=${{ matrix.python-version }}
+
     - name: Run tests
       run: hatch test --python=${{ matrix.python-version }} -i version=pyspark${{ matrix.pyspark-version }}
-#      run: hatch test --python=${{ matrix.python-version }}
 
   # https://github.com/marketplace/actions/alls-green#why
   final_check: # This job does nothing and is only used for the branch protection
