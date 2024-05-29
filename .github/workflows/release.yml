@@ -23,7 +23,7 @@ env:
 jobs:
   publish-pypi:
     name: Publish to PyPI
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && startsWith(github.event.workflow_run.head_commit.message, 'refs/tags') }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && startsWith(github.event.workflow_run.event.ref, 'refs/tags') }}
     runs-on: ubuntu-latest
 
     steps:
