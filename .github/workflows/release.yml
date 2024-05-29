@@ -1,0 +1,42 @@
+name: build koheesio
+
+on:
+  workflow_run:
+    workflows: [ "build_koheesio" ]
+    types:
+      - completed
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  APP_NAME: koheesio
+  PYTHON_VERSION: "3.12"
+  PYOXIDIZER_VERSION: "0.24.0"
+  DIST_URL: "https://github.com/Nike-Inc/koheesio/releases"
+
+jobs:
+  publish-pypi:
+    name: Publish to PyPI
+    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+    needs: python-artifacts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download Python artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-artifacts
+          path: dist
+
+      - name: Publish package to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.8.14
+        with:
+          print-hash: true
+          user: ${{ secrets.PYPI_USERNAME }}
+          password: ${{ secrets.PYPI_PASSWORD }}
