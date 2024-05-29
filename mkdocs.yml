@@ -51,7 +51,7 @@ nav:
       - Tasks: reference/concepts/tasks.md
       - Context: reference/concepts/context.md
       - Logging: reference/concepts/logging.md
-  - API Reference: koheesio/  # api_reference folder
+  - API Reference: api_reference/
   - Community:  # community folder
     - Contribute: community/contribute.md
     - Approach to Documentation: explanation/approach-documentation.md
