@@ -1,10 +1,5 @@
 [
   {
-    "version": "danny-test",
-    "title": "danny-test",
-    "aliases": []
-  },
-  {
     "version": "dev",
     "title": "dev",
     "aliases": [
