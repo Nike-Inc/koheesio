@@ -1,4 +1,6 @@
 name: Test
+run-name: ${{ 'Tests for PR ' }}${{ github.event.pull_request.number }}${{ ' by ' }}${{ github.event.pull_request.user.login }}
+
 
 on:
   pull_request:
