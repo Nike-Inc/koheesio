@@ -4,13 +4,13 @@ import paramiko
 import pytest
 from paramiko import SSHException
 
-from koheesio.spark.writers.buffer import PandasCsvBufferWriter
-from koheesio.spark.writers.sftp import (
+from koheesio.integrations.spark.sftp import (
     SendCsvToSftp,
     SendJsonToSftp,
     SFTPWriteMode,
     SFTPWriter,
 )
+from koheesio.spark.writers.buffer import PandasCsvBufferWriter
 
 pytestmark = pytest.mark.spark
 
