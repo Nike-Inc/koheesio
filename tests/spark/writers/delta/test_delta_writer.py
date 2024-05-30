@@ -4,35 +4,35 @@ from unittest.mock import MagicMock, patch
 import pytest
 from conftest import await_job_completion
 from delta import DeltaTable
-
-from pydantic import ValidationError
-
-from pyspark.sql import functions as F
-
 from koheesio.spark import AnalysisException
 from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.writers import BatchOutputMode, StreamingOutputMode
 from koheesio.spark.writers.delta import DeltaTableStreamWriter, DeltaTableWriter
 from koheesio.spark.writers.delta.utils import log_clauses
 from koheesio.spark.writers.stream import Trigger
+from pydantic import ValidationError
+from pyspark.sql import functions as F
 
 pytestmark = pytest.mark.spark
 
 
-@pytest.mark.parametrize(
-    "output_mode,expected_count",
-    [
-        (BatchOutputMode.APPEND, 1),
-        (BatchOutputMode.APPEND, 2),
-        (BatchOutputMode.OVERWRITE, 1),
-        (BatchOutputMode.IGNORE, 1),
-    ],
-)
-def test_delta_table_writer(output_mode, expected_count, dummy_df, spark):
+def test_delta_table_writer(dummy_df, spark):
     table_name = "test_table"
-    DeltaTableWriter(table=table_name, output_mode=output_mode, df=dummy_df).execute()
+    writer = DeltaTableWriter(table=table_name, output_mode=BatchOutputMode.APPEND, df=dummy_df)
+    writer.execute()
     actual_count = spark.read.table(table_name).count()
-    assert actual_count == expected_count
+    assert actual_count == 1
+    writer.execute()
+    actual_count = spark.read.table(table_name).count()
+    assert actual_count == 2
+    writer.output_mode = BatchOutputMode.OVERWRITE
+    writer.execute()
+    actual_count = spark.read.table(table_name).count()
+    assert actual_count == 1
+    writer.output_mode = BatchOutputMode.IGNORE
+    writer.execute()
+    actual_count = spark.read.table(table_name).count()
+    assert actual_count == 1
 
 
 def test_delta_partitioning(spark, sample_df_to_partition):
