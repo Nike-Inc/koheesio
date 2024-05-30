@@ -33,7 +33,7 @@ jobs:
       toml_changed: ${{ steps.check.outputs.toml_changed }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Check changes
       id: check
       run: |
@@ -42,7 +42,7 @@ jobs:
 
   tests:
     needs: check_changes
-    if: needs.check_changes.outputs.python_changed != '' || needs.check_changes.outputs.toml_changed != ''
+    if: needs.check_changes.outputs.python_changed != '' || needs.check_changes.outputs.toml_changed != '' || github.event_name == 'workflow_dispatch'
     name: Python ${{ matrix.python-version }} with PySpark ${{ matrix.pyspark-version }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
     runs-on: ${{ matrix.os }}
 
