@@ -28,7 +28,7 @@ If you're using pip, run the following command to install Koheesio:
 Requires [pip](https://pip.pypa.io/en/stable/).
 
 ```bash
-pip install koheesio --extra-index-url https://artifactory.nike.com/artifactory/api/pypi/python-virtual/simple
+pip install koheesio
 ```
 
 ## Basic Usage
@@ -50,17 +50,52 @@ step = MyStep()
 step.execute()
 ```
 
-### Advanced Usage
-For more advanced usage, you can check out the examples in the `__notebooks__` directory of this repository. These examples show how to use Koheesio's features in more detail.
+## Advanced Usage
+
+```python
+from pyspark.sql.functions import lit
+from pyspark.sql import DataFrame, SparkSession
+
+# Step 1: import Koheesio dependencies
+from koheesio.context import Context
+from koheesio.steps.readers.dummy import DummyReader
+from koheesio.steps.transformations.camel_to_snake import CamelToSnakeTransformation
+from koheesio.steps.writers.dummy import DummyWriter
+from koheesio.tasks.etl_task import EtlTask
+
+# Step 2: Set up a SparkSession
+spark = SparkSession.builder.getOrCreate()
+
+# Step 3: Configure your Context
+context = Context({
+    "source": DummyReader(),
+    "transformations": [CamelToSnakeTransformation()],
+    "target": DummyWriter(),
+    "my_favorite_movie": "inception",
+})
+
+# Step 4: Create a Task
+class MyFavoriteMovieTask(EtlTask):
+    my_favorite_movie: str
+
+    def transform(self, df: DataFrame = None) -> DataFrame:
+        df = df.withColumn("MyFavoriteMovie", lit(self.my_favorite_movie))
+        return super().transform(df)
+
+# Step 5: Run your Task
+task = MyFavoriteMovieTask(**context)
+task.run()
+```
 
 ### Contributing
-If you want to contribute to Koheesio, check out the `CONTRIBUTING.md` file in this repository. It contains guidelines for contributing, including how to submit issues and pull requests.
+If you want to contribute to Koheesio, check out the `CONTRIBUTING.md` file in this repository. It contains guidelines
+for contributing, including how to submit issues and pull requests.
 
 ### Testing
 To run the tests for Koheesio, use the following command:
 
 ```bash
-make test
+make dev-test
 ```
 
-This will run all the tests in the `test` directory.
+This will run all the tests in the `tests` directory.
