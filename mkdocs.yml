@@ -43,14 +43,13 @@ nav:
   - Reference:  # reference folder
     - Concepts:
       - reference/concepts/concepts.md
-      - Steps:
-        - reference/concepts/steps.md
+      - Steps: reference/concepts/step.md
+      - Context: reference/concepts/context.md
+      - Logging: reference/concepts/logging.md
+      - Spark:
         - Readers: reference/concepts/readers.md
         - Writers: reference/concepts/writers.md
         - Transformations: reference/concepts/transformations.md
-      - Tasks: reference/concepts/tasks.md
-      - Context: reference/concepts/context.md
-      - Logging: reference/concepts/logging.md
   - API Reference: api_reference/
   - Community:  # community folder
     - Contribute: community/contribute.md

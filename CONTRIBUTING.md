@@ -2,26 +2,18 @@
 
 There are a few guidelines that we need contributors to follow so that we are able to process requests as efficiently as possible. 
 
-<!-- uncomment the below once Open Source is ready -->
-[//]: # (If you have any questions or concerns please feel free to contact us at [opensource@nike.com]&#40;mailto:opensource@nike.com&#41;.)
+If you have any questions or concerns please feel free to contact us at [opensource@nike.com](mailto:opensource@nike.com).
 
-[//]: # ()
-[//]: # (## Getting Started)
 
-[//]: # ()
-[//]: # (* Review our [Code of Conduct]&#40;https://github.com/Nike-Inc/nike-inc.github.io/blob/master/CONDUCT.md&#41;)
+## Getting Started
 
-[//]: # (* Submit the [Individual Contributor License Agreement]&#40;https://www.clahub.com/agreements/Nike-Inc/fastbreak&#41;)
 
-[//]: # (* Make sure you have a [GitHub account]&#40;https://github.com/signup/free&#41;)
-
-[//]: # (* Submit a ticket for your issue, assuming one does not already exist.)
-
-[//]: # (    * Clearly describe the issue including steps to reproduce when it is a bug.)
-
-[//]: # (    * Make sure you fill in the earliest version that you know has the issue.)
-
-[//]: # (* Fork the repository on GitHub)
+* Review our [Code of Conduct](https://github.com/Nike-Inc/nike-inc.github.io/blob/master/CONDUCT.md)
+* Make sure you have a [GitHub account](https://github.com/signup/free)
+* Submit a ticket for your issue, assuming one does not already exist.
+    * Clearly describe the issue including steps to reproduce when it is a bug.
+    * Make sure you fill in the earliest version that you know has the issue.
+* Fork the repository on GitHub
 
 ## Making Changes
 
@@ -98,6 +90,5 @@ At the moment, the release process is manual. We try to make frequent releases. 
 * [GitHub pull request documentation](https://help.github.com/send-pull-requests/)
 * [Nike's Code of Conduct](https://github.com/Nike-Inc/nike-inc.github.io/blob/master/CONDUCT.md)
 
-[//]: # (* [Nike's Individual Contributor License Agreement]&#40;https://www.clahub.com/agreements/Nike-Inc/fastbreak&#41;)
 
 [//]: # (* [Nike OSS]&#40;https://nike-inc.github.io/&#41;)

@@ -1,13 +1,12 @@
 # Koheesio
 
 <div align="center">
-
 <img src="https://raw.githubusercontent.com/Nike-Inc/koheesio/main/docs/assets/logo_koheesio.svg" alt="Koheesio logo" width="500" role="img">
 </div>
 
 |         |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 |---------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| CI/CD   | [![CI - Test](https://github.com/Nike-Inc/koheesio/actions/workflows/test.yml/badge.svg)](https://github.com/Nike-Inc/koheesio/actions/workflows/test.yml) [![CD - Build Koheesio](https://github.com/Nike-Inc/koheesio/actions/workflows/build_koheesio.yml/badge.svg)](https://github.com/Nike-Inc/koheesio/actions/workflows/release.yml)                                                                                                                                                                                                                                                                                                                                                                                                 |
+| CI/CD   | [![CI - Test](https://github.com/Nike-Inc/koheesio/actions/workflows/test.yml/badge.svg)](https://github.com/Nike-Inc/koheesio/actions/workflows/test.yml) [![CD - Build Koheesio](https://github.com/Nike-Inc/koheesio/actions/workflows/build_koheesio.yml/badge.svg)](https://github.com/Nike-Inc/koheesio/actions/workflows/release.yml)                                                                                                                                                                                                                                                                                                                                                                                                        |
 | Package | [![PyPI - Version](https://img.shields.io/pypi/v/koheesio.svg?logo=pypi&label=PyPI&logoColor=gold)](https://pypi.org/project/koheesio/) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/koheesio.svg?logo=python&label=Python&logoColor=gold)](https://pypi.org/project/koheesio/) [![PyPI - Installs](https://img.shields.io/pypi/dm/koheesio.svg?color=blue&label=Installs&logo=pypi&logoColor=gold)](https://pypi.org/project/koheesio/) [![Release - Downloads](https://img.shields.io/github/downloads/Nike-Inc/koheesio/total?label=Downloads)](https://github.com/Nike-Inc/koheesio/releases)                                                                                                                               |
 | Meta    | [![Hatch project](https://img.shields.io/badge/%F0%9F%A5%9A-Hatch-4051b5.svg)](https://github.com/pypa/hatch) [![linting - Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![types - Mypy](https://img.shields.io/badge/types-Mypy-blue.svg)](https://github.com/python/mypy) [![docstring - numpydoc](https://img.shields.io/badge/docstring-numpydoc-blue)](https://numpydoc.readthedocs.io/en/latest/format.html) [![code style - black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) [![License - Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-green.svg)](LICENSE.txt) |
 
@@ -30,7 +29,7 @@ set of features, making it an excellent choice for developers and organizations 
 Data Pipelines.
 
 
-### What sets Koheesio apart from other libraries?"
+### What sets Koheesio apart from other libraries?
 Koheesio encapsulates years of data engineering expertise, fostering a collaborative and innovative community. While 
 similar libraries exist, Koheesio's focus on data pipelines, integration with PySpark, and specific design for tasks 
 like data transformation, ETL jobs, data validation, and large-scale data processing sets it apart.
@@ -51,7 +50,7 @@ Here are the key components included in Koheesio:
     ```text
     ┌─────────┐        ┌──────────────────┐        ┌──────────┐
     │ Input 1 │───────▶│                  ├───────▶│ Output 1 │
-    └─────────┘        │                  │        └────√─────┘
+    └─────────┘        │                  │        └──────────┘
                        │                  │
     ┌─────────┐        │                  │        ┌──────────┐
     │ Input 2 │───────▶│       Step       │───────▶│ Output 2 │
@@ -99,9 +98,13 @@ or add the following line to your `pyproject.toml` (under `[tool.poetry.dependen
 koheesio = {version = "..."}
 ```
 
-### Extras
+### Extras / Integrations
 
-Koheesio also provides some additional features that can be useful in certain scenarios. These include:
+Koheesio also provides some additional features that can be useful in certain scenarios. We call these 'integrations'.
+With an integration we mean a module that requires additional dependencies to be installed.
+
+Extras can be added by adding `extras=['name_of_the_extra']` (poetry) or `koheesio[name_of_the_extra]` (pip/hatch) to 
+the pyproject.toml entry mentioned above.
 
 - __Spark Expectations:__  Available through the `koheesio.steps.integration.spark.dq.spark_expectations` module; installable through the `se` extra.
     - SE Provides Data Quality checks for Spark DataFrames.
@@ -111,15 +114,13 @@ Koheesio also provides some additional features that can be useful in certain sc
 [//]: # (    - Brickflow is a workflow orchestration tool that allows you to define and execute workflows in a declarative way.)
 [//]: # (    - For more information, refer to the [Brickflow docs]&#40;https://engineering.nike.com/brickflow&#41;)
 
-- __Box__: Available through the `koheesio.steps.integration.box` module; installable through the `box` extra.
+- __Box__: Available through the `koheesio.integration.box` module; installable through the `box` extra.
     - Box is a cloud content management and file sharing service for businesses.
 
-- __SFTP__: Available through the `koheesio.steps.integration.spark.sftp` module; installable through the `sftp` extra.
+
+- __SFTP__: Available through the `koheesio.integration.spark.sftp` module; installable through the `sftp` extra.
     - SFTP is a network protocol used for secure file transfer over a secure shell.
 
-> __Note:__  
-> Some of the steps require extra dependencies. See the [Extras](#extras) section for additional info.  
-> Extras can be added to Poetry by adding `extras=['name_of_the_extra']` to the toml entry mentioned above
 
 ## Contributing
 
@@ -138,7 +139,7 @@ We welcome contributions to our project! Here's a brief overview of our developm
   admin rights will create a new release on GitHub and publish the new version to PyPI.
 
 For more detailed information, please refer to our [contribution guidelines](./docs/contribute.md). We also adhere to
-[Nike's Code of Conduct](https://github.com/Nike-Inc/nike-inc.github.io/blob/master/CONDUCT.md) and [Nike's Individual Contributor License Agreement](https://www.clahub.com/agreements/Nike-Inc/fastbreak).
+[Nike's Code of Conduct](https://github.com/Nike-Inc/nike-inc.github.io/blob/master/CONDUCT.md) and []
 
 ### Additional Resources
 
