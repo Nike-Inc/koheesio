@@ -62,6 +62,7 @@ se = ["spark-expectations>=2.1.0"]
 # SFTP dependencies in to_csv line_iterator
 sftp = ["paramiko>=2.6.0"]
 delta = ["delta-spark>=2.2"]
+excel = ["openpyxl>=3.0.0"]
 dev = ["black", "isort", "ruff", "mypy", "pylint", "colorama", "types-PyYAML"]
 test = [
   "chispa",
@@ -175,6 +176,7 @@ features = [
   "pyspark",
   "sftp",
   "delta",
+  "excel",
   "se",
   "box",
   "dev",
@@ -192,8 +194,8 @@ isort-check = "isort . --check --diff --color"
 isort-fmt = "isort ."
 ruff-check = "ruff check ."
 ruff-fmt = "ruff check . --fix"
-mypy-check = "mypy koheesio"
-pylint-check = "pylint --output-format=colorized -d W0511 koheesio"
+mypy-check = "mypy src"
+pylint-check = "pylint --output-format=colorized -d W0511 src"
 check = [
   "- black-check",
   "- isort-check",
@@ -249,6 +251,7 @@ features = [
   "pyspark",
   "sftp",
   "delta",
+  "excel",
   "dev",
   "test",
 ]
@@ -400,6 +403,7 @@ features = [
   "se",
   "sftp",
   "delta",
+  "excel",
   "dev",
   "test",
   "docs",

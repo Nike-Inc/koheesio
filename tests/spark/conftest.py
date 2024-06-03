@@ -32,11 +32,6 @@ from pyspark.sql.types import (
 
 from koheesio.logger import LoggingFactory
 from koheesio.spark.readers.dummy import DummyReader
-from koheesio.utils import get_project_root
-
-PROJECT_ROOT = get_project_root()
-TEST_DATA_PATH = Path(PROJECT_ROOT / "tests" / "_data")
-DELTA_FILE = Path(TEST_DATA_PATH / "readers" / "delta_file")
 
 
 @pytest.fixture(scope="session")
@@ -51,11 +46,6 @@ def checkpoint_folder(tmp_path_factory, random_uuid, logger):
     fldr = tmp_path_factory.mktemp("checkpoint" + random_uuid)
     logger.debug(f"Building test checkpoint folder '{fldr}'")
     yield fldr.as_posix()
-
-
-@pytest.fixture(scope="session")
-def data_path():
-    return TEST_DATA_PATH.as_posix()
 
 
 @pytest.fixture(scope="session")
@@ -107,14 +97,14 @@ def set_env_vars():
 
 
 @pytest.fixture(scope="session", autouse=True)
-def setup(spark):
+def setup(spark, delta_file):
     db_name = "klettern"
 
     if not spark.catalog.databaseExists(db_name):
         spark.sql(f"CREATE DATABASE {db_name}")
         spark.sql(f"USE {db_name}")
 
-    setup_test_data(spark=spark)
+    setup_test_data(spark=spark, delta_file=Path(delta_file))
     yield
 
 
@@ -142,8 +132,8 @@ def sample_df_to_partition(spark):
 
 
 @pytest.fixture
-def streaming_dummy_df(spark):
-    setup_test_data(spark=spark)
+def streaming_dummy_df(spark, delta_file):
+    setup_test_data(spark=spark, delta_file=Path(delta_file))
     yield spark.readStream.table("delta_test_table")
 
 
@@ -198,12 +188,12 @@ def sample_df_with_string_timestamp(spark):
     return spark.createDataFrame(data, schema)
 
 
-def setup_test_data(spark):
+def setup_test_data(spark, delta_file):
     """
     Sets up test data for the Spark session. Reads a Delta file, creates a temporary view,
     and populates a Delta table with the view's data.
     """
-    delta_file = DELTA_FILE.absolute().as_posix()
+    delta_file = delta_file.absolute().as_posix()
     spark.read.format("delta").load(delta_file).limit(10).createOrReplaceTempView("delta_test_view")
     spark.sql(
         dedent(

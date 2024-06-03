@@ -1,7 +1,7 @@
 from textwrap import dedent
 
 import pytest
-from conftest import TEST_DATA_PATH
+from tests.conftest import TEST_DATA_PATH
 
 from koheesio.logger import LoggingFactory
 from koheesio.spark.transformations.sql_transform import SqlTransform
