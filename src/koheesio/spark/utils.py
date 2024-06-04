@@ -29,7 +29,6 @@ from pyspark.version import __version__ as spark_version
 __all__ = [
     "SparkDatatype",
     "get_spark_minor_version",
-    "import_pandas_based_on_pyspark_version",
     "on_databricks",
     "schema_struct_to_schema_str",
     "spark_data_type_is_array",
@@ -178,29 +177,3 @@ def schema_struct_to_schema_str(schema: StructType) -> str:
     if not schema:
         return ""
     return ",\n".join([f"{field.name} {field.dataType.typeName().upper()}" for field in schema.fields])
-
-
-def import_pandas_based_on_pyspark_version():
-    """
-    This function checks the installed version of PySpark and then tries to import the appropriate version of pandas.
-    If the correct version of pandas is not installed, it raises an ImportError with a message indicating which version
-    of pandas should be installed.
-    """
-    pyspark_version = get_spark_minor_version()
-
-    if pyspark_version < 3.4:
-        try:
-            import pandas as pd
-
-            assert pd.__version__ < "2"
-        except (ImportError, AssertionError):
-            raise ImportError("For PySpark <3.4, please install Pandas version < 2")
-    else:
-        try:
-            import pandas as pd
-
-            assert pd.__version__ >= "2"
-        except (ImportError, AssertionError):
-            raise ImportError("For PySpark versions other than 3.3, please install Pandas version >= 2")
-
-    return pd

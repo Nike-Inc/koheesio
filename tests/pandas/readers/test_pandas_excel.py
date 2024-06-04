@@ -14,7 +14,7 @@ def test_excel_reader(data_path):
             "b": ["bar", "and thanks"],
             "c": ["baz", "for all the fish"],
             "d": [None, 42],
-            "e": pd.to_datetime(["1/1/24", "1/1/24"], format="%m/%d/%y"),
+            "e": pd.to_datetime(["1/1/24", "1/1/24"]),
         }
     )
 

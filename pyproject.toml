@@ -287,9 +287,6 @@ matrix.version.extra-dependencies = [
   { value = "spark-expectations>=2.1.0", if = [
     "pyspark33",
   ] },
-  { value = "pandas<2", if = [
-    "pyspark33",
-  ] },
   { value = "pyspark>=3.4,<3.5", if = [
     "pyspark34",
   ] },
@@ -395,7 +392,7 @@ Available scripts:
 - `coverage` or `cov` - run the test suite with coverage.
 """
 path = ".venv"
-python = "3.9"
+python = "3.10"
 template = "default"
 features = [
   "async",
@@ -411,7 +408,7 @@ features = [
   "test",
   "docs",
 ]
-extra-dependencies = ["pyspark==3.3.*", "pandas<2"]
+extra-dependencies = ["pyspark==3.4.*"]
 
 
 ###  ~~~~~~~~~~~~~~~~~~  ###
