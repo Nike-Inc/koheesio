@@ -186,21 +186,14 @@ def import_pandas_based_on_pyspark_version():
     If the correct version of pandas is not installed, it raises an ImportError with a message indicating which version
     of pandas should be installed.
     """
-    pyspark_version = get_spark_minor_version()
+    try:
+        import pandas as pd
+        pyspark_version = get_spark_minor_version()
+        pandas_version = pd.__version__
 
-    if pyspark_version < 3.4:
-        try:
-            import pandas as pd
+        if (pyspark_version < 3.4 and pandas_version >= '2') or (pyspark_version >= 3.4 and pandas_version < '2'):
+            raise ImportError(f"For PySpark {pyspark_version}, please install Pandas version {'< 2' if pyspark_version < 3.4 else '>= 2'}")
 
-            assert pd.__version__ < "2"
-        except (ImportError, AssertionError):
-            raise ImportError("For PySpark <3.4, please install Pandas version < 2")
-    else:
-        try:
-            import pandas as pd
-
-            assert pd.__version__ >= "2"
-        except (ImportError, AssertionError):
-            raise ImportError("For PySpark versions other than 3.3, please install Pandas version >= 2")
-
-    return pd
+        return pd
+    except ImportError:
+        raise ImportError("Pandas module is not installed.")
