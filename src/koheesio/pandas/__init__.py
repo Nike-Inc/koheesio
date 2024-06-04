@@ -7,10 +7,11 @@ Extends the Step class with Pandas DataFrame support. The following:
 from typing import Optional
 from abc import ABC
 
-from pandas import DataFrame
-
 from koheesio import Step, StepOutput
 from koheesio.models import Field
+from koheesio.spark.utils import import_pandas_based_on_pyspark_version
+
+pandas = import_pandas_based_on_pyspark_version()
 
 
 class PandasStep(Step, ABC):
@@ -23,4 +24,4 @@ class PandasStep(Step, ABC):
     class Output(StepOutput):
         """Output class for PandasStep"""
 
-        df: Optional[DataFrame] = Field(default=None, description="The Pandas DataFrame")
+        df: Optional[pandas.DataFrame] = Field(default=None, description="The Pandas DataFrame")
