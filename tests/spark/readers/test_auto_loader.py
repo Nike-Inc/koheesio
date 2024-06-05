@@ -49,3 +49,27 @@ def test_read_json(spark, mocker, data_path):
     ]
     expected_df = spark.createDataFrame(data_expected, schema_expected)
     assert_df_equality(result, expected_df, ignore_column_order=True)
+
+def test_read_json_schema_defined(spark, mocker, data_path):
+    mocker.patch("koheesio.spark.readers.databricks.autoloader.AutoLoader.reader", mock_reader)
+
+    schema = StructType(
+        [
+            StructField("string", StringType(), True),
+            StructField("int", LongType(), True),
+            StructField("array", ArrayType(LongType()), True),
+        ]
+    )
+    options = {"multiLine": "true"}
+    json_file_path_str = f"{data_path}/readers/json_file/dummy.json"
+    auto_loader = AutoLoader(format="json", location=json_file_path_str, schema_location="dummy_value", options=options, schema=schema)
+
+    auto_loader.execute()
+    result = auto_loader.output.df
+
+    data_expected = [
+        {"string": "string1", "int": 1, "array": [1, 11, 111]},
+        {"string": "string2", "int": 2, "array": [2, 22, 222]},
+    ]
+    expected_df = spark.createDataFrame(data_expected, schema)
+    assert_df_equality(result, expected_df, ignore_column_order=True)
