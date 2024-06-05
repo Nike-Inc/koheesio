@@ -50,6 +50,7 @@ def test_read_json(spark, mocker, data_path):
     expected_df = spark.createDataFrame(data_expected, schema_expected)
     assert_df_equality(result, expected_df, ignore_column_order=True)
 
+
 def test_read_json_schema_defined(spark, mocker, data_path):
     mocker.patch("koheesio.spark.readers.databricks.autoloader.AutoLoader.reader", mock_reader)
 
@@ -62,7 +63,9 @@ def test_read_json_schema_defined(spark, mocker, data_path):
     )
     options = {"multiLine": "true"}
     json_file_path_str = f"{data_path}/readers/json_file/dummy.json"
-    auto_loader = AutoLoader(format="json", location=json_file_path_str, schema_location="dummy_value", options=options, schema=schema)
+    auto_loader = AutoLoader(
+        format="json", location=json_file_path_str, schema_location="dummy_value", options=options, schema=schema
+    )
 
     auto_loader.execute()
     result = auto_loader.output.df

@@ -3,14 +3,13 @@
 Autoloader can ingest JSON, CSV, PARQUET, AVRO, ORC, TEXT, and BINARYFILE file formats.
 """
 
-from enum import Enum
-from typing import Dict, Optional, Union
-
 import json
+from typing import Dict, Optional, Union
+from enum import Enum
 from pathlib import Path
 
-from pyspark.sql.types import StructType
 from pyspark.sql.streaming import DataStreamReader
+from pyspark.sql.types import StructType
 
 from koheesio.models import Field, field_validator
 from koheesio.spark.readers import Reader
