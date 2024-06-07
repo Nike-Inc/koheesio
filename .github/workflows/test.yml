@@ -44,11 +44,16 @@ jobs:
     - name: Check changes
       id: check
       run: |
-        BASE_REF=${{ github.event.pull_request.base.ref || 'main' }}
-        python_changed=$(git diff --name-only $BASE_REF ${{ github.event.after }} | grep '\.py$')
-        toml_changed=$(git diff --name-only $BASE_REF ${{ github.event.after }} | grep '\.toml$')
-        echo "python_changed=$python_changed" >> $GITHUB_OUTPUT
-        echo "toml_changed=$toml_changed" >> $GITHUB_OUTPUT
+          # Set the base reference for the git diff
+          BASE_REF=${{ github.event.pull_request.base.ref || 'main' }}
+        
+          # Check for changes in Python or TOML files
+          python_changed=$(git diff --name-only $BASE_REF ${{ github.event.after }} | grep '\.py$')
+          toml_changed=$(git diff --name-only $BASE_REF ${{ github.event.after }} | grep '\.toml$')
+        
+          # Write the changes to the GITHUB_OUTPUT environment file
+          echo "python_changed=$python_changed" >> $GITHUB_OUTPUT
+          echo "toml_changed=$toml_changed" >> $GITHUB_OUTPUT
 
   tests:
     needs: check_changes
