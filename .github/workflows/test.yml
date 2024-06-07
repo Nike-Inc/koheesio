@@ -39,8 +39,8 @@ jobs:
     - name: Check changes
       id: check
       run: |
-        echo "python_changed=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | grep '\.py$')" >> "$GITHUB_OUTPUT"
-        echo "toml_changed=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | grep '\.toml$')" >> "$GITHUB_OUTPUT"
+        echo "python_changed=$(git diff --name-only ${{ github.event.pull_request.base.ref }} ${{ github.event.after }} | grep '\.py$')" >> "$GITHUB_OUTPUT"
+        echo "toml_changed=$(git diff --name-only ${{ github.event.pull_request.base.ref }} ${{ github.event.after }} | grep '\.toml$')" >> "$GITHUB_OUTPUT"
 
   tests:
     needs: check_changes
