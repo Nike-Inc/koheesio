@@ -1,3 +1,4 @@
+from pathlib import Path
 from textwrap import dedent
 
 import pytest
@@ -5,11 +6,14 @@ import pytest
 from koheesio.logger import LoggingFactory
 from koheesio.spark.transformations.sql_transform import SqlTransform
 
-from tests.conftest import TEST_DATA_PATH
-
 pytestmark = pytest.mark.spark
 
 log = LoggingFactory.get_logger(name="test_sql_transform")
+
+
+@pytest.fixture
+def test_data_path(data_path) -> Path:
+    return Path(data_path) / "transformations"
 
 
 @pytest.mark.parametrize(
@@ -49,7 +53,7 @@ log = LoggingFactory.get_logger(name="test_sql_transform")
             # input values
             dict(
                 table_name="dummy_table",
-                sql_path=TEST_DATA_PATH / "transformations" / "dummy.sql",
+                sql_path="dummy.sql",
             ),
             # expected output
             {"id": 0, "incremented_id": 1},
@@ -59,14 +63,16 @@ log = LoggingFactory.get_logger(name="test_sql_transform")
             # input values
             dict(
                 table_name="dummy_table",
-                sql_path=str((TEST_DATA_PATH / "transformations" / "dummy.sql").as_posix()),
+                sql_path="dummy.sql",
             ),
             # expected output
             {"id": 0, "incremented_id": 1},
         ),
     ],
 )
-def test_sql_transform(input_values, expected, dummy_df):
+def test_sql_transform(input_values, expected, dummy_df, test_data_path):
+    if sql_path := input_values.get("sql_path"):
+        input_values["sql_path"] = str((test_data_path / sql_path).as_posix())
     result = SqlTransform(**input_values).transform(dummy_df)
     actual = result.head().asDict()
 
