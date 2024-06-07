@@ -3,13 +3,11 @@
 Autoloader can ingest JSON, CSV, PARQUET, AVRO, ORC, TEXT, and BINARYFILE file formats.
 """
 
-import json
-from typing import Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 from enum import Enum
-from pathlib import Path
 
 from pyspark.sql.streaming import DataStreamReader
-from pyspark.sql.types import StructType
+from pyspark.sql.types import AtomicType, StructType
 
 from koheesio.models import Field, field_validator
 from koheesio.spark.readers import Reader
@@ -87,14 +85,15 @@ class AutoLoader(Reader):
         description="The location for storing inferred schema and supporting schema evolution, "
         "used in `cloudFiles.schemaLocation`.",
     )
-    options: Optional[Dict[str, str]] = Field(
+    options: Optional[Dict[str, Any]] = Field(
         default_factory=dict,
         description="Extra inputs to provide to the autoloader. For a full list of inputs, "
         "see https://docs.databricks.com/ingestion/auto-loader/options.html",
     )
-    schema: Optional[Union[Path, str, StructType]] = Field(
+    schema_: Optional[Union[str, StructType, List[str], Tuple[str, ...], AtomicType]] = Field(
         default=None,
-        description="Explicit schema to infer the schema of the input files.",
+        description="Explicit schema to apply to the input files.",
+        alias="schema",
     )
 
     @field_validator("format")
@@ -104,22 +103,6 @@ class AutoLoader(Reader):
             if format_specified.upper() in [f.value.upper() for f in AutoLoaderFormat]:
                 format_specified = getattr(AutoLoaderFormat, format_specified.upper())
         return str(format_specified.value)
-
-    @field_validator("schema")
-    def validate_schema(cls, schema_specified):
-        """Validate `schema` value"""
-        schema = schema_specified
-        if isinstance(schema, StructType):
-            return schema
-
-        if schema is not None:
-            schema_path = Path(schema)
-            if schema_path.exists():
-                schema = schema_path.read_text()
-            else:
-                raise FileNotFoundError(f"Schema file not found at path {schema}")
-            schema = StructType.fromJson(json.loads(schema))
-        return schema
 
     def get_options(self):
         """Get the options for the autoloader"""
@@ -134,8 +117,8 @@ class AutoLoader(Reader):
     # @property
     def reader(self) -> DataStreamReader:
         reader = self.spark.readStream.format("cloudFiles")
-        if self.schema is not None:
-            reader = reader.schema(self.schema)
+        if self.schema_ is not None:
+            reader = reader.schema(self.schema_)
         reader = reader.options(**self.get_options())
         return reader
 
