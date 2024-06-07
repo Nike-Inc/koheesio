@@ -38,11 +38,15 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
+        ref: ${{ github.head_ref }}
+    - name: Fetch main branch
+      run: git fetch origin main:main
     - name: Check changes
       id: check
       run: |
-        echo "python_changed=$(git diff --name-only ${{ github.event.pull_request.base.ref }} ${{ github.event.after }} | grep '\.py$')" >> "$GITHUB_OUTPUT"
-        echo "toml_changed=$(git diff --name-only ${{ github.event.pull_request.base.ref }} ${{ github.event.after }} | grep '\.toml$')" >> "$GITHUB_OUTPUT"
+        BASE_REF=${{ github.event.pull_request.base.ref || 'main' }}
+        echo "python_changed=$(git diff --name-only $BASE_REF ${{ github.event.after }} | grep '\.py$')" >> "$GITHUB_OUTPUT"
+        echo "toml_changed=$(git diff --name-only $BASE_REF ${{ github.event.after }} | grep '\.toml$')" >> "$GITHUB_OUTPUT"
 
   tests:
     needs: check_changes
