@@ -186,7 +186,6 @@ features = [
 [tool.hatch.envs.default.scripts]
 # TODO: add scripts section based on Makefile
 # TODO: add bandit
-# TODO: move scripts from linting and style here
 # Code Quality commands
 black-check = "black --check --diff ."
 black-fmt = "black ."
@@ -215,15 +214,7 @@ non-spark-tests = "test -m \"not spark\""
 # scripts.run = "- log-versions && pytest tests/ {env:HATCH_TEST_ARGS:} {args}"
 # run ="echo {args}"
 # run = "- pytest tests/ {env:HATCH_TEST_ARGS:} {args}"
-# run-cov = "coverage run -m pytest{env:HATCH_TEST_ARGS:} {args}"
-# cov-combine = "coverage combine"
-# cov-report = "coverage report"
 # log-versions = "python --version && {env:HATCH_UV} pip freeze | grep pyspark"
-#
-#
-#
-# coverage = "- pytest tests/ {env:HATCH_TEST_ARGS:} {args} --cov=koheesio --cov-report=html --cov-report=term-missing --cov-fail-under=90"
-# cov = "coverage"
 
 
 ###  ~~~~~~~~~~~~~~~~~~~~~  ###
