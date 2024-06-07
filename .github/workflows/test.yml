@@ -52,8 +52,8 @@ jobs:
           toml_changed=$(git diff --name-only $BASE_REF ${{ github.event.after }} | grep '\.toml$')
         
           # Write the changes to the GITHUB_OUTPUT environment file
-          echo "python_changed=$python_changed" >> $GITHUB_OUTPUT
-          echo "toml_changed=$toml_changed" >> $GITHUB_OUTPUT
+          echo "python_changed=$python_changed" >> "$GITHUB_OUTPUT"
+          echo "toml_changed=$toml_changed" >> "$GITHUB_OUTPUT"
 
   tests:
     needs: check_changes
