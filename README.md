@@ -1,7 +1,6 @@
 # Koheesio
 
 <div align="center">
-
 <img src="https://raw.githubusercontent.com/Nike-Inc/koheesio/main/docs/assets/logo_koheesio.svg" alt="Koheesio logo" width="500" role="img">
 </div>
 
