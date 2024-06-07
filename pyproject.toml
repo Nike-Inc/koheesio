@@ -62,6 +62,7 @@ se = ["spark-expectations>=2.1.0"]
 # SFTP dependencies in to_csv line_iterator
 sftp = ["paramiko>=2.6.0"]
 delta = ["delta-spark>=2.2"]
+excel = ["openpyxl>=3.0.0"]
 dev = ["black", "isort", "ruff", "mypy", "pylint", "colorama", "types-PyYAML"]
 test = [
   "chispa",
@@ -175,6 +176,7 @@ features = [
   "pyspark",
   "sftp",
   "delta",
+  "excel",
   "se",
   "box",
   "dev",
@@ -184,7 +186,6 @@ features = [
 [tool.hatch.envs.default.scripts]
 # TODO: add scripts section based on Makefile
 # TODO: add bandit
-# TODO: move scripts from linting and style here
 # Code Quality commands
 black-check = "black --check --diff ."
 black-fmt = "black ."
@@ -192,8 +193,8 @@ isort-check = "isort . --check --diff --color"
 isort-fmt = "isort ."
 ruff-check = "ruff check ."
 ruff-fmt = "ruff check . --fix"
-mypy-check = "mypy koheesio"
-pylint-check = "pylint --output-format=colorized -d W0511 koheesio"
+mypy-check = "mypy src"
+pylint-check = "pylint --output-format=colorized -d W0511 src"
 check = [
   "- black-check",
   "- isort-check",
@@ -213,15 +214,7 @@ non-spark-tests = "test -m \"not spark\""
 # scripts.run = "- log-versions && pytest tests/ {env:HATCH_TEST_ARGS:} {args}"
 # run ="echo {args}"
 # run = "- pytest tests/ {env:HATCH_TEST_ARGS:} {args}"
-# run-cov = "coverage run -m pytest{env:HATCH_TEST_ARGS:} {args}"
-# cov-combine = "coverage combine"
-# cov-report = "coverage report"
 # log-versions = "python --version && {env:HATCH_UV} pip freeze | grep pyspark"
-#
-#
-#
-# coverage = "- pytest tests/ {env:HATCH_TEST_ARGS:} {args} --cov=koheesio --cov-report=html --cov-report=term-missing --cov-fail-under=90"
-# cov = "coverage"
 
 
 ###  ~~~~~~~~~~~~~~~~~~~~~  ###
@@ -249,6 +242,7 @@ features = [
   "pyspark",
   "sftp",
   "delta",
+  "excel",
   "dev",
   "test",
 ]
@@ -282,6 +276,9 @@ matrix.version.extra-dependencies = [
     "pyspark33",
   ] },
   { value = "spark-expectations>=2.1.0", if = [
+    "pyspark33",
+  ] },
+  { value = "pandas<2", if = [
     "pyspark33",
   ] },
   { value = "pyspark>=3.4,<3.5", if = [
@@ -400,6 +397,7 @@ features = [
   "se",
   "sftp",
   "delta",
+  "excel",
   "dev",
   "test",
   "docs",

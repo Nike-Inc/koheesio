@@ -1,9 +1,11 @@
 from typing import List, Union
 
-import pyspark
 import pytest
-from koheesio.utils import get_project_root
+
+import pyspark
 from pyspark.sql import SparkSession
+
+from koheesio.utils import get_project_root
 
 PROJECT_ROOT = get_project_root()
 
