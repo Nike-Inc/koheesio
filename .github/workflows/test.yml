@@ -47,8 +47,8 @@ jobs:
         BASE_REF=${{ github.event.pull_request.base.ref || 'main' }}
         python_changed=$(git diff --name-only $BASE_REF ${{ github.event.after }} | grep '\.py$')
         toml_changed=$(git diff --name-only $BASE_REF ${{ github.event.after }} | grep '\.toml$')
-        echo "::set-output name=python_changed::$python_changed"
-        echo "::set-output name=toml_changed::$toml_changed"
+        echo "python_changed=$python_changed" >> $GITHUB_ENV
+        echo "toml_changed=$toml_changed" >> $GITHUB_ENV
 
   tests:
     needs: check_changes
