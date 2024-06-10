@@ -233,7 +233,7 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
 
         return self.__merge(merge_builder=builder)
 
-    def _get_merge_builder(self, provided_merge_builder=None):
+    def _get_merge_builder(self, provided_merge_builder=None) -> DeltaMergeBuilder:
         """Resolves the merge builder. If provided, it will be used, otherwise it will be created from the args"""
 
         # A merge builder has been already created - case for merge_all
@@ -274,19 +274,8 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
             .merge(self.df.alias(source_alias), merge_cond)
         )
 
-        valid_clauses = [
-            "whenMatchedUpdate",
-            "whenNotMatchedInsert",
-            "whenMatchedDelete",
-            "whenNotMatchedBySourceUpdate",
-            "whenNotMatchedBySourceDelete",
-        ]
-
         for merge_clause in merge_clauses:
             clause_type = merge_clause.pop("clause", None)
-            if clause_type not in valid_clauses:
-                raise ValueError(f"Invalid merge clause '{clause_type}' provided")
-
             method = getattr(builder, clause_type)
             builder = method(**merge_clause)
 
@@ -313,6 +302,25 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
         if isinstance(table, str):
             return DeltaTableStep(table=table)
         return table
+
+    @field_validator("params")
+    def _validate_params(cls, params):
+        """Validates params. If an array of merge clauses is provided, they will be validated against the available
+        ones in DeltaMergeBuilder"""
+
+        valid_clauses = {m for m in dir(DeltaMergeBuilder) if m.startswith("when")}
+
+        if "merge_builder" in params:
+            merge_builder = params["merge_builder"]
+            if isinstance(merge_builder, list):
+                for merge_conf in merge_builder:
+                    clause = merge_conf.get("clause")
+                    if clause not in valid_clauses:
+                        raise ValueError(f"Invalid merge clause '{clause}' provided")
+            elif not isinstance(merge_builder, DeltaMergeBuilder):
+                raise ValueError("merge_builder must be a list or merge clauses or a DeltaMergeBuilder instance")
+
+        return params
 
     @classmethod
     def get_output_mode(cls, choice: str, options: Set[Type]) -> Union[BatchOutputMode, StreamingOutputMode]:
