@@ -233,7 +233,7 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
 
         return self.__merge(merge_builder=builder)
 
-    def _get_merge_builder(self, provided_merge_builder=None):
+    def _get_merge_builder(self, provided_merge_builder=None) -> DeltaMergeBuilder:
         """Resolves the merge builder. If provided, it will be used, otherwise it will be created from the args"""
 
         # A merge builder has been already created - case for merge_all
