@@ -63,7 +63,7 @@ se = ["spark-expectations>=2.1.0"]
 sftp = ["paramiko>=2.6.0"]
 delta = ["delta-spark>=2.2"]
 excel = ["openpyxl>=3.0.0"]
-dev = ["black", "isort", "ruff", "mypy", "pylint", "colorama", "types-PyYAML"]
+dev = ["black", "isort", "ruff", "mypy", "pylint", "colorama", "types-PyYAML", "bandit[toml]"]
 test = [
   "chispa",
   "coverage[toml]",
@@ -185,8 +185,8 @@ features = [
 
 [tool.hatch.envs.default.scripts]
 # TODO: add scripts section based on Makefile
-# TODO: add bandit
 # Code Quality commands
+bandit-check = "bandit -r src"
 black-check = "black --check --diff ."
 black-fmt = "black ."
 isort-check = "isort . --check --diff --color"
@@ -194,13 +194,22 @@ isort-fmt = "isort ."
 ruff-check = "ruff check ."
 ruff-fmt = "ruff check . --fix"
 mypy-check = "mypy src"
+mypy-modified = "MODIFIED_FILES=$(git diff --name-only --diff-filter=d HEAD | grep '\\.py$'); if [ -n \"$MODIFIED_FILES\" ]; then mypy --incremental $MODIFIED_FILES; else echo 'No modified Python files'; fi"
 pylint-check = "pylint --output-format=colorized -d W0511 src"
+pylint-modified = "MODIFIED_FILES=$(git diff --name-only --diff-filter=d HEAD | grep '\\.py$'); if [ -n \"$MODIFIED_FILES\" ]; then pylint $MODIFIED_FILES; else echo 'No modified Python files'; fi"
 check = [
   "- black-check",
   "- isort-check",
   "- ruff-check",
   "- mypy-check",
   "- pylint-check",
+]
+check-modified = [
+  "black-check",
+  "isort-check",
+  "ruff-check",
+  "mypy-modified",
+  "pylint-modified",
 ]
 fmt = ["black-fmt", "isort-fmt", "ruff-fmt"]
 fix = "fmt"
@@ -650,3 +659,11 @@ notes = ["FIXME", "TODO"]
 
 [tool.pylint.refactoring]
 max-nested-blocks = 3
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+tests = []
+skips = []
+format = "custom"
+#msg-template = "{relpath:20.20s}: {line:03}: {test_id:^8}: {severity}: {msg:>20}"
+confidence = "HIGH"
