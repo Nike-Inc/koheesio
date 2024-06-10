@@ -308,24 +308,25 @@ def test_merge_from_args(spark, dummy_df):
         )
 
 
-def test_merge_from_args_raise_value_error(spark, dummy_df):
-    table_name = "test_table_merge_from_args_value_error"
-    dummy_df.write.format("delta").saveAsTable(table_name)
-
-    writer = DeltaTableWriter(
-        df=dummy_df,
-        table=table_name,
-        output_mode=BatchOutputMode.MERGE,
-        output_mode_params={
+@pytest.mark.parametrize(
+    "output_mode_params",
+    [
+        {
             "merge_builder": [
                 {"clause": "NOT-SUPPORTED-MERGE-CLAUSE", "set": {"id": "source.id"}, "condition": "source.id=target.id"}
             ],
             "merge_cond": "source.id=target.id",
         },
-    )
-
+        {"merge_builder": MagicMock()},
+    ],
+)
+def test_merge_from_args_raise_value_error(spark, output_mode_params):
     with pytest.raises(ValueError):
-        writer._merge_builder_from_args()
+        DeltaTableWriter(
+            table="test_table_merge",
+            output_mode=BatchOutputMode.MERGE,
+            output_mode_params=output_mode_params,
+        )
 
 
 def test_merge_no_table(spark):

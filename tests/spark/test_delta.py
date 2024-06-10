@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -74,8 +75,8 @@ def test_table(value, expected):
     log.info("delta test completed")
 
 
-def test_delta_table_properties(spark, setup):
-    setup_test_data(spark=spark)
+def test_delta_table_properties(spark, setup, delta_file):
+    setup_test_data(spark=spark, delta_file=Path(delta_file))
     table_name = "delta_test_table"
     dt = DeltaTableStep(
         table=table_name,
