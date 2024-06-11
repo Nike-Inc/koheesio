@@ -72,7 +72,6 @@ The core components of Koheesio are designed to bring strong software engineerin
 logging, providing transparency and traceability. The 'Context' component allows for flexible customization of task 
 behavior, making it adaptable to various data processing needs.
 
-
 In essence, Koheesio is a comprehensive solution for data engineering challenges, designed with the principles of
 modularity, reusability, testability, and transparency at its core. It aims to provide a rich set of features including
 utilities, readers, writers, and transformations for any type of data processing. It is not in competition with other
@@ -88,7 +87,7 @@ We invite contributions from all, promoting collaboration and innovation in the 
 
 | Feature / Tool | Koheesio | Flyte | Kubeflow | Snakemake | Broadway |
 |----------------|----------|-------|----------|-----------|----------|
-| Language       | Python   | ?     | ?        | ?         | ?        |
+| Language       | Python   | ?     | ?        | ?         | Elixir   |
 | Ease of Use    | ?        | ?     | ?        | ?         | ?        |
 | Performance    | ?        | ?     | ?        | ?         | ?        |
 | Community      | ?        | ?     | ?        | ?         | ?        |

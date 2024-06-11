@@ -54,24 +54,29 @@ Step ---> O3["Output 3"]
 Step is the core abstraction of the framework. Meaning, that it is the core building block of the framework and is used
 to define all the operations that can be executed. 
 
-Please see the [Step](steps.md) documentation for more details.
+Please see the [Step] documentation for more details.
+
+[//]: # (References)
+[Context]: context.md
+[Logging]: logger.md
+[Step]: steps.md
 
 
-## [Context](context.md)
+## [Context]
 
 The Context is used to configure the environment where a Task or Step runs.
 
 It is often based on configuration files and can be used to adapt behaviour of a Task or Step based on the environment
 it runs in.
 
-Please see the [Context](context.md) documentation for more details.
+Please see the [Context] documentation for more details.
 
 
-## [Logging](logger.md)
+## [Logging]
 
 A logger object to log messages with different levels.
 
-Please see the [Logging](logger.md) documentation for more details.
+Please see the [Logging] documentation for more details.
 
 The interactions between the base concepts of the model is visible in the below diagram:  
 
