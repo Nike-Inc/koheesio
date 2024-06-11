@@ -5,7 +5,8 @@ The core components are the following:
 > <small>*Note:* click on the 'Concept' to take you to the corresponding module. The module documentation will have 
   greater detail on the specifics of the implementation</small>
 
-## [**Step**](steps.md)
+
+## [Step](steps.md)
 
 A custom unit of logic that can be executed. A Step is an atomic operation and serves as the building block of data 
 pipelines built with the framework. A step can be seen as an operation on a set of inputs, and returns a set of 
@@ -55,16 +56,8 @@ to define all the operations that can be executed.
 
 Please see the [Step](steps.md) documentation for more details.
 
-## [**Task**](tasks.md)
 
-The unit of work of one execution of the framework. 
-
-An execution usually consists of an `Extract - Transform - Load` approach of one data object.
-Tasks typically consist of a series of Steps.
-
-Please see the [Task](tasks.md) documentation for more details.
-
-## [**Context**](context.md)
+## [Context](context.md)
 
 The Context is used to configure the environment where a Task or Step runs.
 
@@ -73,19 +66,17 @@ it runs in.
 
 Please see the [Context](context.md) documentation for more details.
 
-## [**logger**](logging.md)
+
+## [Logging](logger.md)
 
 A logger object to log messages with different levels.
 
-Please see the [Logging](logging.md) documentation for more details.
-
+Please see the [Logging](logger.md) documentation for more details.
 
 The interactions between the base concepts of the model is visible in the below diagram:  
 
 ```mermaid
----
-title: Koheesio Class Diagram
----
+
 classDiagram
     Step .. Task
     Step .. Transformation
