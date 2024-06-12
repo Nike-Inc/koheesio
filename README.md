@@ -83,29 +83,27 @@ We invite contributions from all, promoting collaboration and innovation in the 
 
 ### Comparison to other libraries
 
-[//]: # (TODO: Add more details to the comparison table)
-
-| Feature / Tool | Koheesio | Flyte | Kubeflow | Snakemake | Broadway |
-|----------------|----------|-------|----------|-----------|----------|
-| Language       | Python   | ?     | ?        | ?         | Elixir   |
-| Ease of Use    | ?        | ?     | ?        | ?         | ?        |
-| Performance    | ?        | ?     | ?        | ?         | ?        |
-| Community      | ?        | ?     | ?        | ?         | ?        |
-| Unique Features| ?        | ?     | ?        | ?         | ?        |
-| Scalability    | ?        | ?     | ?        | ?         | ?        |
-| Integration    | ?        | ?     | ?        | ?         | ?        |
-
-brief summaries of each tool:
-
-1. **Koheesio**: Koheesio is a Python library that simplifies the development of data engineering pipelines. It provides a structured way to define and execute data processing tasks, making it easier to build, test, and maintain complex data workflows. It promotes modularity and collaboration, enabling the creation of complex pipelines from simple, reusable components. It uses Pydantic for strong typing, data validation, and settings management, ensuring a high level of type safety and structured configurations within pipeline components.
-
-2. **Flyte**: Flyte is a cloud-native machine learning and data processing platform. It allows users to write reusable tasks and workflows and then execute them at scale. Flyte is designed to be highly scalable and robust, with the ability to handle large workflows and complex dependencies. It also provides strong typing guarantees and data lineage tracking for tasks.
-
-3. **Kubeflow**: Kubeflow is a machine learning toolkit for Kubernetes. It is designed to make deployments of machine learning workflows on Kubernetes simple, portable, and scalable. Kubeflow provides a collection of cloud-native tools for different stages of a machine learning workflow, including training models, serving models, and managing data.
-
-4. **Snakemake**: Snakemake is a workflow management system that aims to reduce the complexity of creating workflows by providing a fast and comfortable execution environment, together with a clean and modern specification language in Python style. Snakemake workflows are essentially Python scripts extended by declarative code to define rules. Rules describe how to create output files from input files.
-
-5. **Broadway**: Broadway is a concurrent and multi-stage data ingestion and processing tool in Elixir. It's designed to help developers build data processing pipelines that consume a large amount of data, process it in multi-stages, and produce a response. It provides back-pressure, automatic acknowledgments, and batch processing capabilities.
+- [dbt](https://www.getdbt.com/): A SQL-first transformation workflow that enables teams to deploy analytics code quickly and collaboratively. It adheres to software engineering best practices such as modularity, portability, CI/CD, and documentation. This allows anyone on the data team to contribute safely to production-grade data pipelines. While dbt focuses on transforming data in warehouses using SQL, Koheesio is a more general data pipeline framework that can handle a variety of data processing tasks.- [Flyte](https://flyte.org/): A cloud-native platform for orchestrating ML and data processing workflows. Unlike Koheesio, it requires Kubernetes for deployment and has a strong focus on workflow orchestration.
+- [Kubeflow](https://kubeflow.org/): A project dedicated to simplifying the deployment of ML workflows on Kubernetes. Unlike Koheesio, it is more specialized for ML workflows.
+- [Snakemake](https://snakemake.readthedocs.io/en/stable/): A workflow management system that uses a Python-style language for defining workflows. While it's powerful for creating complex workflows, Koheesio's focus on modularity and reusability might make it easier to build, test, and maintain your data pipelines.
+- [Broadway](https://elixir-broadway.org/): An Elixir library for building concurrent, multi-stage data ingestion and processing pipelines. If your team is more comfortable with Python or if you're looking for a framework that emphasizes modularity and collaboration, Koheesio could be a better fit.
+- [Apache Airflow](https://airflow.apache.org/docs/): A platform to programmatically author, schedule and monitor workflows. Unlike Koheesio, it focuses on managing complex computational workflows.
+- [Luigi](https://luigi.readthedocs.io/): A Python module that helps you build complex pipelines of batch jobs. It is more focused on workflow orchestration compared to Koheesio.
+- [Databricks Workflows](https://docs.databricks.com/data-engineering/pipelines/index.html): A set of tools for building, debugging, deploying, and running Apache Spark workflows on Databricks.
+- [Prefect](https://docs.prefect.io/): A new workflow management system, designed for modern infrastructure and powered by the open-source Prefect Core workflow engine. It is more focused on workflow orchestration and management compared to Koheesio.
+- [Dagster](https://docs.dagster.io/): A data orchestrator for machine learning, analytics, and ETL. It's more focused on orchestrating and visualizing data workflows compared to Koheesio.
+- [Kedro](https://kedro.readthedocs.io/): A Python framework that applies software engineering best-practice to data and machine-learning pipelines. It is similar to Koheesio but has a stronger emphasis on machine learning pipelines.
+- [Metaflow](https://docs.metaflow.org/): A human-centric framework for data science that addresses the entire data science lifecycle. It is more focused on data science projects compared to Koheesio.
+- [Pachyderm](https://docs.pachyderm.com/): A data versioning, data lineage, and workflow system running on Kubernetes. It is more focused on data versioning and lineage compared to Koheesio.
+- [Argo](https://argoproj.github.io/argo/): An open source container-native workflow engine for orchestrating parallel jobs on Kubernetes. Unlike Koheesio, it requires Kubernetes for deployment.
+- [MLflow](https://mlflow.org/docs/latest/index.html): An open source platform for managing the end-to-end machine learning lifecycle. It is more focused on machine learning projects compared to Koheesio.
+- [Seldon Core](https://docs.seldon.io/projects/seldon-core/en/latest/): An open source platform for deploying machine learning models on Kubernetes. Unlike Koheesio, it is more focused on model deployment.
+- [TFX](https://www.tensorflow.org/tfx/guide): An end-to-end platform for deploying production ML pipelines. It is more focused on TensorFlow-based machine learning pipelines compared to Koheesio.
+- [Ray](https://docs.ray.io/en/latest/): A general-purpose distributed computing framework. Unlike Koheesio, it is more focused on distributed computing.
+- [Ploomber](https://ploomber.readthedocs.io/): A Python library for building robust data pipelines. In some ways it is similar to Koheesio, but has a very different API design more focused on workflow orchestration.
+- [Daggit](https://daggit.readthedocs.io/): A Python library for creating and executing Directed Acyclic Graphs (DAGs). It is more focused on DAG execution compared to Koheesio.
+- [DataJoint](https://docs.datajoint.io/): A language for defining data relations and manipulating data. Unlike Koheesio, it is more focused on data relation definition and manipulation.
+- [Dataform](https://docs.dataform.co/): A platform for managing data in BigQuery, Snowflake, Redshift, and other data warehouses. Unlike Koheesio, it is more focused on data warehouse management.
 
 
 ## Koheesio Core Components

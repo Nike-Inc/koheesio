@@ -6,7 +6,13 @@ The core components are the following:
   greater detail on the specifics of the implementation</small>
 
 
-## [Step](steps.md)
+[//]: # (References)
+[Context]: context.md
+[Logging]: logger.md
+[Step]: steps.md
+
+
+## [Step]
 
 A custom unit of logic that can be executed. A Step is an atomic operation and serves as the building block of data 
 pipelines built with the framework. A step can be seen as an operation on a set of inputs, and returns a set of 
@@ -55,11 +61,6 @@ Step is the core abstraction of the framework. Meaning, that it is the core buil
 to define all the operations that can be executed. 
 
 Please see the [Step] documentation for more details.
-
-[//]: # (References)
-[Context]: context.md
-[Logging]: logger.md
-[Step]: steps.md
 
 
 ## [Context]
