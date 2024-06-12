@@ -97,6 +97,7 @@ class FileLoader(Reader, ExtraParamsMixin):
     schema_: Optional[Union[StructType, str]] = Field(
         default=None, description="Schema to use when reading the file", validate_default=False, alias="schema"
     )
+    streaming: Optional[bool] = Field(default=False, description="Whether to read the files as a Stream or not")
 
     @field_validator("path")
     def ensure_path_is_str(cls, v):
@@ -106,8 +107,9 @@ class FileLoader(Reader, ExtraParamsMixin):
         return v
 
     def execute(self):
-        """Reads the file using the specified format, schema, while applying any extra parameters."""
-        reader = self.spark.read.format(self.format)
+        """Reads the file, in batch or as a stream, using the specified format and schema, while applying any extra parameters."""
+        reader = self.spark.readStream if self.streaming else self.spark.read
+        reader = reader.format(self.format)
 
         if self.schema_:
             reader.schema(self.schema_)
