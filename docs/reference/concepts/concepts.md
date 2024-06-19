@@ -9,7 +9,7 @@ The core components are the following:
 [//]: # (References)
 [Context]: context.md
 [Logging]: logger.md
-[Step]: steps.md
+[Step]: step.md
 
 
 ## [Step]

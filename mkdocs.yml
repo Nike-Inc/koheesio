@@ -1,6 +1,5 @@
 site_name: Koheesio
-#FIXME: Change the site_url to the correct one
-site_url: https://<tbd>/koheesio
+site_url: https://engineering.nike.com/koheesio/
 site_description:
   Koheesio is an open source python library that simplifies the development of data engineering pipelines.
 
@@ -45,11 +44,13 @@ nav:
       - reference/concepts/concepts.md
       - Steps: reference/concepts/step.md
       - Context: reference/concepts/context.md
-      - Logging: reference/concepts/logging.md
+      - Logger: reference/concepts/logger.md
       - Spark:
-        - Readers: reference/concepts/readers.md
-        - Writers: reference/concepts/writers.md
-        - Transformations: reference/concepts/transformations.md
+        - Readers: reference/spark/readers.md
+        - Writers: reference/spark/writers.md
+        - Transformations: reference/spark/transformations.md
+    - Glossary:
+      - includes/glossary.md
   - API Reference: api_reference/
   - Community:  # community folder
     - Contribute: community/contribute.md

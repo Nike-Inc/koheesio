@@ -907,8 +907,9 @@ class SnowflakeWriter(SnowflakeBaseModel, Writer):
 
     See Also
     --------
-    - [koheesio.steps.writers.Writer](../writers#koheesio.steps.writers.Writer)
-    - [koheesio.steps.writers.BatchOutputMode](../writers#koheesio.steps.writers.BatchOutputMode)
+    - [koheesio.steps.writers.Writer](../writers/index.md#koheesio.spark.writers.Writer)
+    - [koheesio.steps.writers.BatchOutputMode](../writers/index.md#koheesio.spark.writers.BatchOutputMode)
+    - [koheesio.steps.writers.StreamOutputMode](../writers/index.md#koheesio.spark.writers.StreamOutputMode)
     """
 
     table: str = Field(default=..., description="Target table name")

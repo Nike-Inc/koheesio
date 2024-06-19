@@ -20,35 +20,35 @@ Note
 ----
 Dates, Arrays and Maps are not supported by this module.
 
-- for dates, use the [koheesio.spark.transformations.date_time](date_time) module
-- for arrays, use the [koheesio.spark.transformations.arrays](arrays.html) module
+- for dates, use the [koheesio.spark.transformations.date_time](date_time/index.md) module
+- for arrays, use the [koheesio.spark.transformations.arrays](arrays/index.md) module
 
 Classes
 -------
 CastToDatatype:
-  Cast a column or set of columns to a given datatype
+    Cast a column or set of columns to a given datatype
 CastToByte
-  Cast to Byte (a.k.a. tinyint)
+    Cast to Byte (a.k.a. tinyint)
 CastToShort
-  Cast to Short (a.k.a. smallint)
+    Cast to Short (a.k.a. smallint)
 CastToInteger
-  Cast to Integer (a.k.a. int)
+    Cast to Integer (a.k.a. int)
 CastToLong
-  Cast to Long (a.k.a. bigint)
+    Cast to Long (a.k.a. bigint)
 CastToFloat
-  Cast to Float (a.k.a. real)
+    Cast to Float (a.k.a. real)
 CastToDouble
-  Cast to Double
+    Cast to Double
 CastToDecimal
-  Cast to Decimal (a.k.a. decimal, numeric, dec, BigDecimal)
+    Cast to Decimal (a.k.a. decimal, numeric, dec, BigDecimal)
 CastToString
-  Cast to String
+    Cast to String
 CastToBinary
-  Cast to Binary (a.k.a. byte array)
+    Cast to Binary (a.k.a. byte array)
 CastToBoolean
-  Cast to Boolean
+    Cast to Boolean
 CastToTimestamp
-  Cast to Timestamp
+    Cast to Timestamp
 
 Note
 ----
@@ -820,7 +820,7 @@ class CastToTimestamp(CastToDatatype):
 
     See Also
     --------
-    * [koheesio.spark.transformations.date_time](date_time)
+    * [koheesio.spark.transformations.date_time](date_time/index.md)
     * https://spark.apache.org/docs/latest/sql-ref-datetime-pattern.html#timestamp-pattern
 
     Unsupported datatypes:

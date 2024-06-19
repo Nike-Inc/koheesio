@@ -6,7 +6,7 @@ See class docstrings for more information.
 References
 ----------
 For a comprehensive guide on the usage, examples, and additional features of Transformation classes, please refer to the
-[reference/concepts/steps/transformations](../../../reference/concepts/transformations.md) section of the Koheesio
+[reference/concepts/spark/transformations](../../../reference/spark/transformations.md) section of the Koheesio
 documentation.
 
 Classes
@@ -156,21 +156,26 @@ class ColumnsTransformation(Transformation, ABC):
 
     Concept
     -------
-    A ColumnsTransformation is a Transformation with a standardized input for column or columns. The `columns` are
-    stored as a list. Either a single string, or a list of strings can be passed to enter the `columns`.
-    `column` and `columns` are aliases to one another - internally the name `columns` should be used though.
+    A ColumnsTransformation is a Transformation with a standardized input for column or columns.
 
     - `columns` are stored as a list
     - either a single string, or a list of strings can be passed to enter the `columns`
     - `column` and `columns` are aliases to one another - internally the name `columns` should be used though.
 
     If more than one column is passed, the behavior of the Class changes this way:
+
     - the transformation will be run in a loop against all the given columns
 
     Configuring the ColumnsTransformation
     -------------------------------------
-    The ColumnsTransformation class has a `ColumnConfig` class that can be used to configure the behavior of the class.
+    [ColumnConfig]: #koheesio.spark.transformations.ColumnsTransformation.ColumnConfig
+    [SparkDatatype]: ../utils/index.md#SparkDatatype
+
+    The ColumnsTransformation class has a [ColumnConfig] class that can be used to configure the behavior of the class.
+    Users should not have to interact with the [ColumnConfig] class directly.
+
     This class has the following fields:
+
     - `run_for_all_data_type`
         allows to run the transformation for all columns of a given type.
 
@@ -180,20 +185,19 @@ class ColumnsTransformation(Transformation, ABC):
     - `data_type_strict_mode`
         Toggles strict mode for data type validation. Will only work if `limit_data_type` is set.
 
-    Note that Data types need to be specified as a SparkDatatype enum.
+    Data types need to be specified as a [SparkDatatype] enum.
 
-    See the docstrings of the `ColumnConfig` class for more information.
-    See the SparkDatatype enum for a list of available data types.
+    ---
 
-    Users should not have to interact with the `ColumnConfig` class directly.
-
-    Parameters
-    ----------
-    columns:
-        The column (or list of columns) to apply the transformation to. Alias: column
+    <small>
+    - See the docstrings of the [ColumnConfig] class for more information.<br>
+    - See the [SparkDatatype] enum for a list of available data types.<br>
+    </small>
 
     Example
     -------
+    Implementing a transformation using the `ColumnsTransformation` class:
+
     ```python
     from pyspark.sql import functions as f
     from koheesio.steps.transformations import ColumnsTransformation
@@ -204,6 +208,14 @@ class ColumnsTransformation(Transformation, ABC):
             for column in self.get_columns():
                 self.output.df = self.df.withColumn(column, f.col(column) + 1)
     ```
+
+    In the above example, the `execute` method is implemented to add 1 to the values of a given column.
+
+    Parameters
+    ----------
+    columns:
+        The column (or list of columns) to apply the transformation to. Alias: column
+
     """
 
     columns: ListOfColumns = Field(

@@ -20,7 +20,7 @@ class TeradataReader(JdbcReader):
 
     See Also
     --------
-    * Refer to [JdbcReader](../readers/jdbc.html#koheesio.spark.readers.jdbc.JdbcReader) for the list of all available
+    * Refer to [JdbcReader](jdbc.md#koheesio.spark.readers.jdbc.JdbcReader) for the list of all available
         parameters.
     * Refer to Teradata docs for the list of all available connection string parameters:
         https://teradata-docs.s3.amazonaws.com/doc/connectivity/jdbc/reference/current/jdbcug_chapter_2.html#BABJIHBJ

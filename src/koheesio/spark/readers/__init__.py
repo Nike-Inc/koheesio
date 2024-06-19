@@ -3,7 +3,7 @@ Readers are a type of Step that read data from a source based on the input param
 self.output.df.
 
 For a comprehensive guide on the usage, examples, and additional features of Reader classes, please refer to the
-[reference/concepts/steps/readers](../../../reference/concepts/readers.md) section of the Koheesio documentation.
+[reference/spark/steps/readers](../../../reference/spark/readers.md) section of the Koheesio documentation.
 """
 
 from typing import Optional

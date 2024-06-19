@@ -341,7 +341,6 @@ class SendCsvToSftp(PandasCsvBufferWriter, SFTPWriter):
 
     Parameters
     ----------
-    ### SFTP Parameters (Inherited from SFTPWriter)
     path : Union[str, Path]
         Path to the folder to write to.
     file_name : Optional[str]
@@ -356,8 +355,6 @@ class SendCsvToSftp(PandasCsvBufferWriter, SFTPWriter):
         SFTP Server Password.
     mode: SFTPWriteMode
         Write mode: overwrite, append, ignore, exclusive, backup, or update.
-
-    ### CSV Parameters (Inherited from PandasCsvBufferWriter)
     header: bool
         Whether to write column names as the first line. Default is True.
     sep: str
@@ -428,7 +425,6 @@ class SendJsonToSftp(PandasJsonBufferWriter, SFTPWriter):
 
     Parameters
     ----------
-    ### SFTP Parameters (Inherited from SFTPWriter)
     path : Union[str, Path]
         Path to the folder on the SFTP server.
     file_name : Optional[str]
@@ -443,8 +439,6 @@ class SendJsonToSftp(PandasJsonBufferWriter, SFTPWriter):
         SFTP Server Password.
     mode: SFTPWriteMode
         Write mode: overwrite, append, ignore, exclusive, backup, or update.
-
-    ### JSON Parameters (Inherited from PandasJsonBufferWriter)
     orient: Literal["split", "records", "index", "columns", "values", "table"]
         Format of the JSON string. Default is 'records'.
     lines: bool
