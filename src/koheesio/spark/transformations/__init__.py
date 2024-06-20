@@ -45,7 +45,7 @@ class Transformation(SparkStep, ABC):
 
     Parameters
     ----------
-    df: Optional[DataFrame]
+    df : Optional[DataFrame]
         The DataFrame to apply the transformation to. If not provided, the DataFrame has to be passed to the
         transform-method.
 
@@ -213,7 +213,7 @@ class ColumnsTransformation(Transformation, ABC):
 
     Parameters
     ----------
-    columns:
+    columns : ListOfColumns
         The column (or list of columns) to apply the transformation to. Alias: column
 
     """
@@ -230,19 +230,19 @@ class ColumnsTransformation(Transformation, ABC):
 
         Parameters
         ----------
-        run_for_all_data_type: Optional[List[SparkDatatype]]
+        run_for_all_data_type : Optional[List[SparkDatatype]]
             allows to run the transformation for all columns of a given type.
             A user can trigger this behavior by either omitting the `columns` parameter or by passing a single `*` as a
             column name. In both cases, the `run_for_all_data_type` will be used to determine the data type.
             Value should be be passed as a SparkDatatype enum.
             (default: [None])
 
-        limit_data_type: Optional[List[SparkDatatype]]
+        limit_data_type : Optional[List[SparkDatatype]]
             allows to limit the transformation to a specific data type.
             Value should be passed as a SparkDatatype enum.
             (default: [None])
 
-        data_type_strict_mode: bool
+        data_type_strict_mode : bool
             Toggles strict mode for data type validation. Will only work if `limit_data_type` is set.
             - when True, a ValueError will be raised if any column does not adhere to the `limit_data_type`
             - when False, a warning will be thrown and the column will be skipped instead
@@ -317,14 +317,14 @@ class ColumnsTransformation(Transformation, ABC):
 
         Parameters
         ----------
-        col: Union[str, Column]
+        col : Union[str, Column]
             The column to check the type of
 
-        df: Optional[DataFrame]
+        df : Optional[DataFrame]
             The DataFrame belonging to the column. If not provided, the DataFrame passed to the constructor
             will be used.
 
-        simple_return_mode: bool
+        simple_return_mode : bool
             If True, the return value will be a simple string. If False, the return value will be a SparkDatatype enum.
 
         Returns
@@ -362,7 +362,7 @@ class ColumnsTransformation(Transformation, ABC):
 
         Parameters
         ----------
-        data_type: Union[str, SparkDatatype]
+        data_type : Union[str, SparkDatatype]
             The data type to get the columns for
 
         Returns
@@ -509,7 +509,7 @@ class ColumnsTransformationWithTarget(ColumnsTransformation, ABC):
 
         Parameters
         ----------
-        column: Column
+        column : Column
             The column to apply the transformation to
 
         Returns

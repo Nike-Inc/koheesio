@@ -36,7 +36,7 @@ class LowerCase(ColumnsTransformationWithTarget):
         The name of the column or columns to convert to lower case. Alias: column.
         Lower case will be applied to all columns in the list.
         Column is required to be of string type.
-    target_column: str
+    target_column : str, optional
         The name of the column to store the result in. If None, the result will be stored in the same column as the
         input.
 
@@ -92,7 +92,7 @@ class UpperCase(LowerCase):
         The name of the column or columns to convert to upper case. Alias: column.
         Upper case will be applied to all columns in the list.
         Column is required to be of string type.
-    target_column: str
+    target_column : str, optional
         The name of the column to store the result in. If None, the result will be stored in the same column as the
         input.
 
@@ -139,11 +139,11 @@ class TitleCase(LowerCase):
 
     Parameters
     ----------
-    columns: Union[str, List[str]]
+    columns : ListOfColumns
         The name of the column or columns to convert to title case. Alias: column.
         Title case will be applied to all columns in the list.
         Column is required to be of string type.
-    target_column: str
+    target_column : str, optional
         The name of the column to store the result in. If None, the result will be stored in the same column as the
         input.
 

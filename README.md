@@ -177,7 +177,7 @@ poetry add koheesio
 or add the following line to your `pyproject.toml` (under `[tool.poetry.dependencies]`), making sure to replace
 `...` with the version you want to have installed:
 
-```toml
+```toml title="pyproject.toml"
 koheesio = {version = "..."}
 ```
 
