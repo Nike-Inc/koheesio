@@ -100,6 +100,7 @@ pipeline involves ML tasks or not.
 - [TFX](https://www.tensorflow.org/tfx/guide): An end-to-end platform for deploying production ML pipelines. It is more focused on TensorFlow-based machine learning pipelines compared to Koheesio.
 - [Seldon Core](https://docs.seldon.io/projects/seldon-core/en/latest/): An open source platform for deploying machine learning models on Kubernetes. Unlike Koheesio, it is more focused on model deployment.
 
+
 #### Orchestration tools
 
 The libraries listed under this section are primarily focused on workflow orchestration. They provide various 
@@ -113,14 +114,14 @@ construction, regardless of how the pipeline orchestration is set up.
 
 - [Apache Airflow](https://airflow.apache.org/docs/): A platform to programmatically author, schedule and monitor workflows. Unlike Koheesio, it focuses on managing complex computational workflows.
 - [Luigi](https://luigi.readthedocs.io/): A Python module that helps you build complex pipelines of batch jobs. It is more focused on workflow orchestration compared to Koheesio.
-- [Databricks Workflows](https://docs.databricks.com/data-engineering/pipelines/index.html): A set of tools for building, debugging, deploying, and running Apache Spark workflows on Databricks.
+- [Databricks Workflows](https://www.databricks.com/product/workflows): A set of tools for building, debugging, deploying, and running Apache Spark workflows on Databricks.
 - [Prefect](https://docs.prefect.io/): A new workflow management system, designed for modern infrastructure and powered by the open-source Prefect Core workflow engine. It is more focused on workflow orchestration and management compared to Koheesio.
 - [Snakemake](https://snakemake.readthedocs.io/en/stable/): A workflow management system that uses a Python-style language for defining workflows. While it's powerful for creating complex workflows, Koheesio's focus on modularity and reusability might make it easier to build, test, and maintain your data pipelines.
 - [Dagster](https://docs.dagster.io/): A data orchestrator for machine learning, analytics, and ETL. It's more focused on orchestrating and visualizing data workflows compared to Koheesio.
 - [Ploomber](https://ploomber.readthedocs.io/): A Python library for building robust data pipelines. In some ways it is similar to Koheesio, but has a very different API design more focused on workflow orchestration.
-- [Daggit](https://daggit.readthedocs.io/): A Python library for creating and executing Directed Acyclic Graphs (DAGs). It is more focused on DAG execution compared to Koheesio.
 - [Pachyderm](https://docs.pachyderm.com/): A data versioning, data lineage, and workflow system running on Kubernetes. It is more focused on data versioning and lineage compared to Koheesio.
-- [Argo](https://argoproj.github.io/argo/): An open source container-native workflow engine for orchestrating parallel jobs on Kubernetes. Unlike Koheesio, it requires Kubernetes for deployment.
+- [Argo](https://argoproj.github.io/): An open source container-native workflow engine for orchestrating parallel jobs on Kubernetes. Unlike Koheesio, it requires Kubernetes for deployment.
+
 
 #### Others
   The libraries listed under this section offer a variety of unique functionalities, from parallel and distributed
@@ -149,7 +150,7 @@ variables across tasks and adapt the behavior of a Task based on its environment
 
 ## Installation
 
-You can install Koheesio using either pip or poetry.
+You can install Koheesio using either pip, hatch, or poetry.
 
 ### Using Pip
 
@@ -231,11 +232,11 @@ We welcome contributions to our project! Here's a brief overview of our developm
 - __Release Process__: We aim for frequent releases. Typically when we have a new feature or bugfix, a developer with
   admin rights will create a new release on GitHub and publish the new version to PyPI.
 
-For more detailed information, please refer to our [contribution guidelines](./docs/contribute.md). We also adhere to
-[Nike's Code of Conduct](https://github.com/Nike-Inc/nike-inc.github.io/blob/master/CONDUCT.md) and []
+For more detailed information, please refer to our [contribution guidelines](https://github.com/Nike-Inc/koheesio/blob/main/CONTRIBUTING.md).
+We also adhere to [Nike's Code of Conduct](https://github.com/Nike-Inc/nike-inc.github.io/blob/master/CONDUCT.md).
 
 ### Additional Resources
 
-- [General GitHub documentation](https://help.github.com/)
-- [GitHub pull request documentation](https://help.github.com/send-pull-requests/)
+- [General GitHub documentation](https://support.github.com/)
+- [GitHub pull request documentation](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests)
 - [Nike OSS](https://nike-inc.github.io/)
