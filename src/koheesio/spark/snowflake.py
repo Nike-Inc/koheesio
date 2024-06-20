@@ -5,7 +5,7 @@ Every class in this module is a subclass of `Step` or `Task` and is used to perf
 
 Notes
 -----
-Every Step in this module is based on [SnowflakeBaseModel](#koheesio.steps.integrations.snowflake.SnowflakeBaseModel).
+Every Step in this module is based on [SnowflakeBaseModel](./snowflake.md#koheesio.spark.snowflake.SnowflakeBaseModel).
 The following parameters are available for every Step.
 
 Parameters
@@ -907,9 +907,9 @@ class SnowflakeWriter(SnowflakeBaseModel, Writer):
 
     See Also
     --------
-    - [koheesio.steps.writers.Writer](../writers/index.md#koheesio.spark.writers.Writer)
-    - [koheesio.steps.writers.BatchOutputMode](../writers/index.md#koheesio.spark.writers.BatchOutputMode)
-    - [koheesio.steps.writers.StreamOutputMode](../writers/index.md#koheesio.spark.writers.StreamOutputMode)
+    - [koheesio.steps.writers.Writer](writers/index.md#koheesio.spark.writers.Writer)
+    - [koheesio.steps.writers.BatchOutputMode](writers/index.md#koheesio.spark.writers.BatchOutputMode)
+    - [koheesio.steps.writers.StreamingOutputMode](writers/index.md#koheesio.spark.writers.StreamingOutputMode)
     """
 
     table: str = Field(default=..., description="Target table name")

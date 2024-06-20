@@ -21,11 +21,11 @@ Note
 Dates, Arrays and Maps are not supported by this module.
 
 - for dates, use the [koheesio.spark.transformations.date_time](date_time/index.md) module
-- for arrays, use the [koheesio.spark.transformations.arrays](arrays/index.md) module
+- for arrays, use the [koheesio.spark.transformations.arrays](arrays.md) module
 
 Classes
 -------
-CastToDatatype:
+CastToDatatype
     Cast a column or set of columns to a given datatype
 CastToByte
     Cast to Byte (a.k.a. tinyint)

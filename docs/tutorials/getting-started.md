@@ -6,36 +6,53 @@
 
 ## Installation
 
-### Poetry
+<details>
+    <summary>hatch / hatchling</summary>
 
-If you're using Poetry, add the following entry to the `pyproject.toml` file:
+    If you're using hatch (or hatchling), simply add `koheesio` to the `dependencies` or section in your 
+    `pyproject.toml` file:
+    
+    ```toml title="pyproject.toml"
+    dependencies = [
+        "koheesio",
+    ]
+    ```
+</details>
 
-```toml title="pyproject.toml"
-[[tool.poetry.source]]
-name = "nike"
-url = "https://artifactory.nike.com/artifactory/api/pypi/python-virtual/simple"
-secondary = true
-```
+<details>
+    <summary>poetry</summary>
+    
+    If you're using Poetry, add the following entry to the `pyproject.toml` file:
+    
+    ```toml title="pyproject.toml"
+    [[tool.poetry.source]]
+    name = "nike"
+    url = "https://artifactory.nike.com/artifactory/api/pypi/python-virtual/simple"
+    secondary = true
+    ```
+    
+    ```bash
+    poetry add koheesio
+    ```
+</details>
 
-```bash
-poetry add koheesio
-```
-
-### pip
-
-If you're using pip, run the following command to install Koheesio:
-
-Requires [pip](https://pip.pypa.io/en/stable/).
-
-```bash
-pip install koheesio
-```
+<details>
+    <summary>pip</summary>
+    
+    If you're using pip, run the following command to install Koheesio:
+    
+    Requires [pip](https://pip.pypa.io/en/stable/).
+    
+    ```bash
+    pip install koheesio
+    ```
+</details>
 
 ## Basic Usage
 
 Once you've installed Koheesio, you can start using it in your Python scripts. Here's a basic example:
 
-```python
+```python title="my_first_step.py"
 from koheesio import Step
 
 # Define a step
@@ -52,16 +69,16 @@ step.execute()
 
 ## Advanced Usage
 
-```python
+```python title="my_first_etl.py"
 from pyspark.sql.functions import lit
 from pyspark.sql import DataFrame, SparkSession
 
 # Step 1: import Koheesio dependencies
 from koheesio.context import Context
-from koheesio.steps.readers.dummy import DummyReader
-from koheesio.steps.transformations.camel_to_snake import CamelToSnakeTransformation
-from koheesio.steps.writers.dummy import DummyWriter
-from koheesio.tasks.etl_task import EtlTask
+from koheesio.spark.readers.dummy import DummyReader
+from koheesio.spark.transformations.camel_to_snake import CamelToSnakeTransformation
+from koheesio.spark.writers.dummy import DummyWriter
+from koheesio.spark.etl_task import EtlTask
 
 # Step 2: Set up a SparkSession
 spark = SparkSession.builder.getOrCreate()

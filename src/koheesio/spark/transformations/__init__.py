@@ -168,8 +168,8 @@ class ColumnsTransformation(Transformation, ABC):
 
     Configuring the ColumnsTransformation
     -------------------------------------
-    [ColumnConfig]: #koheesio.spark.transformations.ColumnsTransformation.ColumnConfig
-    [SparkDatatype]: ../utils/index.md#SparkDatatype
+    [ColumnConfig]: ./index.md#koheesio.spark.transformations.ColumnsTransformation.ColumnConfig
+    [SparkDatatype]: ../utils.md#koheesio.spark.utils.SparkDatatype
 
     The ColumnsTransformation class has a [ColumnConfig] class that can be used to configure the behavior of the class.
     Users should not have to interact with the [ColumnConfig] class directly.

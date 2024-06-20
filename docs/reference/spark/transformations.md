@@ -15,7 +15,7 @@ pipeline. This can help avoid errors and make your code easier to understand and
 
 ## API Reference
 
-See [API Reference](../../api_reference/spark/transformations/index.html) for a detailed description of the 
+See [API Reference](../../api_reference/spark/transformations/index.md) for a detailed description of the 
 `Transformation` classes and their methods.
 
 ## Types of Transformations

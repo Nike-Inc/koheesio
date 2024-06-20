@@ -54,7 +54,7 @@ nav:
   - API Reference: api_reference/
   - Community:  # community folder
     - Contribute: community/contribute.md
-    - Approach to Documentation: explanation/approach-documentation.md
+    - Approach to Documentation: community/approach-documentation.md
 
 theme:
   name: material

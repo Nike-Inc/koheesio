@@ -35,8 +35,8 @@ See also:
 ---------
 Related Koheesio classes:
 
-[ColumnsTransformation]: ../../index.md#koheesio.spark.transformations.ColumnsTransformation
-[ColumnsTransformationWithTarget]: ../../index.md#koheesio.spark.transformation.ColumnsTransformationWithTarget
+[ColumnsTransformation]: ../index.md#koheesio.spark.transformations.ColumnsTransformation
+[ColumnsTransformationWithTarget]: ../index.md#koheesio.spark.transformations.ColumnsTransformationWithTarget
 
 From the koheesio.spark.transformations module:
 
