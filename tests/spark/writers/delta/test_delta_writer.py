@@ -19,20 +19,23 @@ from koheesio.spark.writers.stream import Trigger
 pytestmark = pytest.mark.spark
 
 
-@pytest.mark.parametrize(
-    "output_mode,expected_count",
-    [
-        (BatchOutputMode.APPEND, 1),
-        (BatchOutputMode.APPEND, 2),
-        (BatchOutputMode.OVERWRITE, 1),
-        (BatchOutputMode.IGNORE, 1),
-    ],
-)
-def test_delta_table_writer(output_mode, expected_count, dummy_df, spark):
+def test_delta_table_writer(dummy_df, spark):
     table_name = "test_table"
-    DeltaTableWriter(table=table_name, output_mode=output_mode, df=dummy_df).execute()
+    writer = DeltaTableWriter(table=table_name, output_mode=BatchOutputMode.APPEND, df=dummy_df)
+    writer.execute()
     actual_count = spark.read.table(table_name).count()
-    assert actual_count == expected_count
+    assert actual_count == 1
+    writer.execute()
+    actual_count = spark.read.table(table_name).count()
+    assert actual_count == 2
+    writer.output_mode = BatchOutputMode.OVERWRITE
+    writer.execute()
+    actual_count = spark.read.table(table_name).count()
+    assert actual_count == 1
+    writer.output_mode = BatchOutputMode.IGNORE
+    writer.execute()
+    actual_count = spark.read.table(table_name).count()
+    assert actual_count == 1
 
 
 def test_delta_partitioning(spark, sample_df_to_partition):
@@ -305,24 +308,25 @@ def test_merge_from_args(spark, dummy_df):
         )
 
 
-def test_merge_from_args_raise_value_error(spark, dummy_df):
-    table_name = "test_table_merge_from_args_value_error"
-    dummy_df.write.format("delta").saveAsTable(table_name)
-
-    writer = DeltaTableWriter(
-        df=dummy_df,
-        table=table_name,
-        output_mode=BatchOutputMode.MERGE,
-        output_mode_params={
+@pytest.mark.parametrize(
+    "output_mode_params",
+    [
+        {
             "merge_builder": [
                 {"clause": "NOT-SUPPORTED-MERGE-CLAUSE", "set": {"id": "source.id"}, "condition": "source.id=target.id"}
             ],
             "merge_cond": "source.id=target.id",
         },
-    )
-
+        {"merge_builder": MagicMock()},
+    ],
+)
+def test_merge_from_args_raise_value_error(spark, output_mode_params):
     with pytest.raises(ValueError):
-        writer._merge_builder_from_args()
+        DeltaTableWriter(
+            table="test_table_merge",
+            output_mode=BatchOutputMode.MERGE,
+            output_mode_params=output_mode_params,
+        )
 
 
 def test_merge_no_table(spark):

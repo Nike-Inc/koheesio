@@ -67,7 +67,9 @@ class RestApiReader(Reader):
         pages=3,
         session=session,
     )
-    task = RestApiReader(transport=transport, spark_schema="id: int, page:int, value: string")
+    task = RestApiReader(
+        transport=transport, spark_schema="id: int, page:int, value: string"
+    )
     task.execute()
     all_data = [row.asDict() for row in task.output.df.collect()]
     ```
@@ -92,7 +94,9 @@ class RestApiReader(Reader):
         connector=connector,
     )
 
-    task = RestApiReader(transport=transport, spark_schema="id: int, page:int, value: string")
+    task = RestApiReader(
+        transport=transport, spark_schema="id: int, page:int, value: string"
+    )
     task.execute()
     all_data = [row.asDict() for row in task.output.df.collect()]
     ```

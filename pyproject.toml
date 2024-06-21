@@ -58,12 +58,11 @@ async_http = [
 box = ["boxsdk[jwt]==3.8.1"]
 pandas = ["pandas>=1.3", "setuptools"]
 pyspark = ["pyspark>=3.2.0", "pyarrow>13"]
-# FIXME: loose versioning in spark_excpectations for pluggy module
-# se = ["spark-expectations>=1.1.0"]
-se = []
+se = ["spark-expectations>=2.1.0"]
 # SFTP dependencies in to_csv line_iterator
 sftp = ["paramiko>=2.6.0"]
 delta = ["delta-spark>=2.2"]
+excel = ["openpyxl>=3.0.0"]
 dev = ["black", "isort", "ruff", "mypy", "pylint", "colorama", "types-PyYAML"]
 test = [
   "chispa",
@@ -178,6 +177,7 @@ features = [
   "pyspark",
   "sftp",
   "delta",
+  "excel",
   "se",
   "box",
   "dev",
@@ -187,7 +187,6 @@ features = [
 [tool.hatch.envs.default.scripts]
 # TODO: add scripts section based on Makefile
 # TODO: add bandit
-# TODO: move scripts from linting and style here
 # Code Quality commands
 black-check = "black --check --diff ."
 black-fmt = "black ."
@@ -195,8 +194,8 @@ isort-check = "isort . --check --diff --color"
 isort-fmt = "isort ."
 ruff-check = "ruff check ."
 ruff-fmt = "ruff check . --fix"
-mypy-check = "mypy koheesio"
-pylint-check = "pylint --output-format=colorized -d W0511 koheesio"
+mypy-check = "mypy src"
+pylint-check = "pylint --output-format=colorized -d W0511 src"
 check = [
   "- black-check",
   "- isort-check",
@@ -216,15 +215,7 @@ non-spark-tests = "test -m \"not spark\""
 # scripts.run = "- log-versions && pytest tests/ {env:HATCH_TEST_ARGS:} {args}"
 # run ="echo {args}"
 # run = "- pytest tests/ {env:HATCH_TEST_ARGS:} {args}"
-# run-cov = "coverage run -m pytest{env:HATCH_TEST_ARGS:} {args}"
-# cov-combine = "coverage combine"
-# cov-report = "coverage report"
 # log-versions = "python --version && {env:HATCH_UV} pip freeze | grep pyspark"
-#
-#
-#
-# coverage = "- pytest tests/ {env:HATCH_TEST_ARGS:} {args} --cov=koheesio --cov-report=html --cov-report=term-missing --cov-fail-under=90"
-# cov = "coverage"
 
 
 ###  ~~~~~~~~~~~~~~~~~~~~~  ###
@@ -250,9 +241,9 @@ features = [
   "box",
   "pandas",
   "pyspark",
-  "se",
   "sftp",
   "delta",
+  "excel",
   "dev",
   "test",
 ]
@@ -285,19 +276,30 @@ matrix.version.extra-dependencies = [
   { value = "pyspark>=3.3,<3.4", if = [
     "pyspark33",
   ] },
+  { value = "spark-expectations>=2.1.0", if = [
+    "pyspark33",
+  ] },
+  { value = "pandas<2", if = [
+    "pyspark33",
+  ] },
   { value = "pyspark>=3.4,<3.5", if = [
+    "pyspark34",
+  ] },
+  { value = "spark-expectations>=2.1.0", if = [
     "pyspark34",
   ] },
   { value = "pyspark>=3.5,<3.6", if = [
     "pyspark35",
   ] },
 ]
+
 name.".*".env-vars = [
-    # set number of workes for parallel testing
-    { key = "PYTEST_XDIST_AUTO_NUM_WORKERS", value = "2" },
-    # disables Koheesio logo being printed during testing
-    { key = "KOHEESIO__PRINT_LOGO", value = "False" },
+  # set number of workes for parallel testing
+  { key = "PYTEST_XDIST_AUTO_NUM_WORKERS", value = "2" },
+  # disables Koheesio logo being printed during testing
+  { key = "KOHEESIO__PRINT_LOGO", value = "False" },
 ]
+
 [tool.pytest.ini_options]
 addopts = "-q --color=yes --order-scope=module"
 log_level = "CRITICAL"
@@ -332,11 +334,7 @@ koheesio = ["src/koheesio", "*/koheesio/src/koheesio"]
 tests = ["tests", "*/koheesio/tests"]
 
 [tool.coverage.report]
-exclude_lines = [
-  "no cov",
-  "if __name__ == .__main__.:",
-  "if TYPE_CHECKING:",
-]
+exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
 omit = ["tests/*"]
 
 ###  ~~~~  ###
@@ -400,6 +398,7 @@ features = [
   "se",
   "sftp",
   "delta",
+  "excel",
   "dev",
   "test",
   "docs",

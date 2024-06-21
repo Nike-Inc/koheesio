@@ -1,4 +1,4 @@
-name: release 
+name: Release 
 
 on:
   push:
@@ -83,8 +83,9 @@ jobs:
         with:
           name: python-artifacts
           path: dist
+      
+      - name: Install Hatch
+        uses: pypa/hatch@install
 
       - name: Publish package to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.8.14
-        with:
-          print-hash: true
+        run: hatch publish --yes --no-prompt

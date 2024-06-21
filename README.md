@@ -6,13 +6,12 @@
 
 |         |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 |---------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| CI/CD   | [![CI - Test](https://github.com/Nike-Inc/koheesio/actions/workflows/test.yml/badge.svg)](https://github.com/Nike-Inc/koheesio/actions/workflows/test.yml) [![CD - Build Koheesio](https://github.com/Nike-Inc/koheesio/actions/workflows/build_koheesio.yml/badge.svg)](https://github.com/Nike-Inc/koheesio/actions/workflows/release.yml)                                                                                                                                                                                                                                                                                                                                                                                                        |
-| Package | [![PyPI - Version](https://img.shields.io/pypi/v/koheesio.svg?logo=pypi&label=PyPI&logoColor=gold)](https://pypi.org/project/koheesio/) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/koheesio.svg?logo=python&label=Python&logoColor=gold)](https://pypi.org/project/koheesio/) [![PyPI - Installs](https://img.shields.io/pypi/dm/koheesio.svg?color=blue&label=Installs&logo=pypi&logoColor=gold)](https://pypi.org/project/koheesio/) [![Release - Downloads](https://img.shields.io/github/downloads/Nike-Inc/koheesio/total?label=Downloads)](https://github.com/Nike-Inc/koheesio/releases)                                                                                                                               |
-| Meta    | [![Hatch project](https://img.shields.io/badge/%F0%9F%A5%9A-Hatch-4051b5.svg)](https://github.com/pypa/hatch) [![linting - Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![types - Mypy](https://img.shields.io/badge/types-Mypy-blue.svg)](https://github.com/python/mypy) [![docstring - numpydoc](https://img.shields.io/badge/docstring-numpydoc-blue)](https://numpydoc.readthedocs.io/en/latest/format.html) [![code style - black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) [![License - Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-green.svg)](LICENSE.txt) |
+| CI/CD   | [![CI - Test](https://github.com/Nike-Inc/koheesio/actions/workflows/test.yml/badge.svg)](https://github.com/Nike-Inc/koheesio/actions/workflows/test.yml) [![CD - Release Koheesio](https://github.com/Nike-Inc/koheesio/actions/workflows/release.yml/badge.svg)](https://github.com/Nike-Inc/koheesio/actions/workflows/release.yml)                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Package | [![PyPI - Version](https://img.shields.io/pypi/v/koheesio.svg?logo=pypi&label=PyPI&logoColor=gold)](https://pypi.org/project/koheesio/) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/koheesio.svg?logo=python&label=Python&logoColor=gold)](https://pypi.org/project/koheesio/) [![PyPI - Downloads](https://img.shields.io/pypi/dm/koheesio?color=blue&label=Installs&logo=pypi&logoColor=gold)](https://pypi.org/project/koheesio/)                       |
+| Meta    | [![Hatch project](https://img.shields.io/badge/%F0%9F%A5%9A-Hatch-4051b5.svg)](https://github.com/pypa/hatch) [![linting - Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![types - Mypy](https://img.shields.io/badge/types-Mypy-blue.svg)](https://github.com/python/mypy) [![docstring - numpydoc](https://img.shields.io/badge/docstring-numpydoc-blue)](https://numpydoc.readthedocs.io/en/latest/format.html) [![code style - black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) [![License - Apache 2.0](https://img.shields.io/github/license/Nike-Inc/koheesio)](LICENSE.txt) |
 
 [//]: # (suggested edit: )
 # Koheesio: A Python Framework for Efficient Data Pipelines
-
 
 Koheesio - the Finnish word for cohesion - is a robust Python framework designed to build efficient data pipelines. It
 encourages modularity and collaboration, allowing the creation of complex pipelines from simple, reusable components.
@@ -147,7 +146,6 @@ Here are the 3 core components included in Koheesio:
 variables across tasks and adapt the behavior of a Task based on its environment.
 - __Logger__: This is a class for logging messages at different levels.
 
-
 ## Installation
 
 You can install Koheesio using either pip, hatch, or poetry.
@@ -164,7 +162,11 @@ pip install koheesio
 
 If you're using Hatch for package management, you can add Koheesio to your project by simply adding koheesio to your
 `pyproject.toml`.
-
+  
+  ```toml title="pyproject.toml"
+  [dependencies]
+  koheesio = "<version>"
+  ```
 
 ### Using Poetry
 
@@ -215,6 +217,9 @@ the `pyproject.toml` entry mentioned above or installing through pip.
 [//]: # (TODO: add spark extra)
 [//]: # (TODO: add pandas extra)
 
+> __Note:__  
+> Some of the steps require extra dependencies. See the [Extras](#extras) section for additional info.  
+> Extras can be done by adding `features=['name_of_the_extra']` to the toml entry mentioned above
 
 ## Contributing
 

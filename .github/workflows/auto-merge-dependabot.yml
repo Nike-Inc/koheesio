@@ -1,0 +1,51 @@
+name: Auto Merge Dependabot PRs
+
+on:
+  pull_request_target:
+    types:
+    - opened
+    - reopened
+    - synchronize
+    branches:
+    - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  dependabot:
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+
+    steps:
+    - name: Wait all checks
+      uses: lewagon/wait-on-check-action@v1.3.4
+      with:
+        ref: ${{ github.ref }}
+        check-name: final_check
+        wait-interval: 10
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Dependabot metadata
+      id: metadata
+      uses: dependabot/fetch-metadata@v2
+      with:
+        github-token: "${{ secrets.GITHUB_TOKEN }}"
+
+    - name: Add a label for all production dependencies
+      if: steps.metadata.outputs.dependency-type == 'direct:production'
+      run: gh pr edit "$PR_URL" --add-label "production"
+      env:
+        PR_URL: ${{github.event.pull_request.html_url}}
+
+    - name: Enable auto-merge for Dependabot PRs
+      # steps.dependabot-metadata.outputs.update-type:
+      #   The highest semver change being made by this PR,
+      #   e.g. version-update:semver-major. 
+      #   For all possible values, see the ignore documentation. 
+      #   https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#ignore
+      if: steps.metadata.outputs.update-type == 'version-update:semver-patch'
+      run: gh pr merge --auto --squash ${{ github.event.pull_request.html_url }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

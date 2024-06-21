@@ -2,6 +2,7 @@ from typing import List, Union
 
 import pytest
 
+import pyspark
 from pyspark.sql import SparkSession
 
 from koheesio.utils import get_project_root
@@ -9,7 +10,9 @@ from koheesio.utils import get_project_root
 PROJECT_ROOT = get_project_root()
 
 pytestmark = pytest.mark.spark
-pytestmark = pytest.mark.skip(reason="Skipping all tests in this module due to the spark expectation package issues")
+
+if pyspark.__version__.startswith("3.5"):
+    pytestmark = pytest.mark.skip("Spark Expectations is not supported for Spark 3.5")
 
 
 class TestSparkExpectationsTransform:

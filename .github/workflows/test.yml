@@ -1,9 +1,22 @@
-name: test
+name: Test
+run-name: ${{ 'Tests for PR ' }}${{ github.event.pull_request.number }}${{ ' by ' }}${{ github.event.pull_request.user.login }}
+
 
 on:
   pull_request:
     branches:
     - main
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'
+        required: true
+        default: 'warning'
+        type: choice
+        options:
+        - info
+        - warning
+        - debug
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
@@ -15,9 +28,43 @@ env:
   FORCE_COLOR: "1"
 
 jobs:
+  check_changes:
+    runs-on: ubuntu-latest
+    outputs:
+      python_changed: ${{ steps.check.outputs.python_changed }}
+      toml_changed: ${{ steps.check.outputs.toml_changed }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.ref }}
+        repository: ${{ github.event.pull_request.head.repo.full_name }}
+    - name: Fetch main branch
+      run: git fetch origin main:main
+    - name: Check changes
+      id: check
+      run: |
+          # Set the base reference for the git diff
+          BASE_REF=${{ github.event.pull_request.base.ref || 'main' }}
+        
+          # Check for changes in this PR / commit
+          git_diff_output=$(git diff --name-only $BASE_REF ${{ github.event.after }})
+        
+          # Count the number of changes to Python and TOML files
+          python_changed=$(echo "$git_diff_output" | grep '\.py$' | wc -l)
+          toml_changed=$(echo "$git_diff_output" | grep '\.toml$' | wc -l)
+        
+          # Write the changes to the GITHUB_OUTPUT environment file
+          echo "python_changed=$python_changed" >> $GITHUB_OUTPUT
+          echo "toml_changed=$toml_changed" >> $GITHUB_OUTPUT
+
   tests:
+    needs: check_changes
+    if: needs.check_changes.outputs.python_changed > 0 || needs.check_changes.outputs.toml_changed > 0 || github.event_name == 'workflow_dispatch'
     name: Python ${{ matrix.python-version }} with PySpark ${{ matrix.pyspark-version }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
     runs-on: ${{ matrix.os }}
+
     strategy:
       fail-fast: false
       matrix:
@@ -60,6 +107,7 @@ jobs:
     if: always()
 
     needs:
+    - check_changes
     - tests 
 
     runs-on: ubuntu-latest
@@ -69,3 +117,4 @@ jobs:
       uses: re-actors/alls-green@release/v1
       with:
         jobs: ${{ toJSON(needs) }}
+        allowed-skips: tests

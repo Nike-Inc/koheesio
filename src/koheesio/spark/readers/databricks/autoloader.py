@@ -3,8 +3,11 @@
 Autoloader can ingest JSON, CSV, PARQUET, AVRO, ORC, TEXT, and BINARYFILE file formats.
 """
 
-from typing import Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 from enum import Enum
+
+from pyspark.sql.streaming import DataStreamReader
+from pyspark.sql.types import AtomicType, StructType
 
 from koheesio.models import Field, field_validator
 from koheesio.spark.readers import Reader
@@ -53,7 +56,7 @@ class AutoLoader(Reader):
     Example
     -------
     ```python
-    from koheesio.spark.readers.databricks import AutoLoader, AutoLoaderFormat
+    from koheesio.steps.readers.databricks import AutoLoader, AutoLoaderFormat
 
     result_df = AutoLoader(
         format=AutoLoaderFormat.JSON,
@@ -82,10 +85,15 @@ class AutoLoader(Reader):
         description="The location for storing inferred schema and supporting schema evolution, "
         "used in `cloudFiles.schemaLocation`.",
     )
-    options: Optional[Dict[str, str]] = Field(
+    options: Optional[Dict[str, Any]] = Field(
         default_factory=dict,
         description="Extra inputs to provide to the autoloader. For a full list of inputs, "
         "see https://docs.databricks.com/ingestion/auto-loader/options.html",
+    )
+    schema_: Optional[Union[str, StructType, List[str], Tuple[str, ...], AtomicType]] = Field(
+        default=None,
+        description="Explicit schema to apply to the input files.",
+        alias="schema",
     )
 
     @field_validator("format")
@@ -107,9 +115,12 @@ class AutoLoader(Reader):
         return self.options
 
     # @property
-    def reader(self):
-        """Return the reader for the autoloader"""
-        return self.spark.readStream.format("cloudFiles").options(**self.get_options())
+    def reader(self) -> DataStreamReader:
+        reader = self.spark.readStream.format("cloudFiles")
+        if self.schema_ is not None:
+            reader = reader.schema(self.schema_)
+        reader = reader.options(**self.get_options())
+        return reader
 
     def execute(self):
         """Reads from the given location with the given options using Autoloader"""
