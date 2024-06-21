@@ -92,15 +92,14 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    # FIXME: Remove this workaround
-    - name: Print numpy and pandas versions
-      run: |
-        hatch run python -c "import numpy; print(numpy.__version__)"
-        hatch run python -c "import pandas; print(pandas.__version__)"
-
     - name: Install Hatch
       uses: pypa/hatch@install
 
+    # FIXME: Remove this workaround
+    - name: Print numpy and pandas versions
+      run: |
+        python -c "import numpy; print(numpy.__version__)"
+        python -c "import pandas; print(pandas.__version__)"
 #    - name: Check Code Quality
 #      run:  |-
 #        hatch fmt --check --python=${{ matrix.python-version }}
