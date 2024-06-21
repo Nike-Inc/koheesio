@@ -1,7 +1,7 @@
 """Loggers are used to log messages from your application.
 
 For a comprehensive guide on the usage, examples, and additional features of the logging classes, please refer to the
-[reference/concepts/logging](../reference/concepts/logging.md) section of the Koheesio documentation.
+[reference/concepts/logger](../reference/concepts/logger.md) section of the Koheesio documentation.
 
 Classes
 -------

@@ -12,7 +12,7 @@ the `df` property of the `Reader`.
 
 ## API Reference
 
-See [API Reference](../../koheesio/steps/readers) for a detailed description of the `Reader` class and its methods.
+See [API Reference](../../api_reference/spark/readers/index.md) for a detailed description of the `Reader` class and its methods.
 
 ## Key Features of a Reader
 

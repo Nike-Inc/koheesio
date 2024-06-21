@@ -289,7 +289,7 @@ class PandasCsvBufferWriter(BufferWriter, ExtraParamsMixin):
 
         if options_type == "spark":
             csv_options["lineterminator"] = csv_options.pop(line_sep_option_naming)
-        elif options_type == "kohesio_pandas_buffer_writer":
+        elif options_type == "koheesio_pandas_buffer_writer":
             csv_options["line_terminator"] = csv_options.pop(line_sep_option_naming)
 
         return csv_options
@@ -320,26 +320,29 @@ class PandasJsonBufferWriter(BufferWriter, ExtraParamsMixin):
 
     Parameters
     -----------
-    orient: Literal["split", "records", "index", "columns", "values", "table"]
+    orient : Literal["split", "records", "index", "columns", "values", "table"]
         Format of the resulting JSON string. Default is 'records'.
-    lines: bool
+    lines : bool
         Format output as one JSON object per line. Only used when orient='records'. Default is True.
         - If true, the output will be formatted as one JSON object per line.
         - If false, the output will be written as a single JSON object.
         Note: this value is only used when orient='records' and will be ignored otherwise.
-    date_format: Literal["iso", "epoch"]
+    date_format : Literal["iso", "epoch"]
         Type of date conversion. Default is 'iso'. See `Date and Timestamp Formats` for a detailed description and
         more information.
-    double_precision: int
+    double_precision : int
         Number of decimal places for encoding floating point values. Default is 10.
-    force_ascii: bool
+    force_ascii : bool
         Force encoded string to be ASCII. Default is True.
-    compression: Optional[Literal["gzip"]]
+    compression : Optional[Literal["gzip"]]
         A string representing the compression to use for on-the-fly compression of the output data.
         Koheesio sets this default to 'None' leaving the data uncompressed. Can be set to gzip' optionally.
         Other compression options are currently not supported by Koheesio for JSON output.
 
-    ## Date and Timestamp Formats in JSON
+    Other Possible Parameters
+    -------------------------
+
+    ### Date and Timestamp Formats in JSON
     The `date_format` and `date_unit` parameters in pandas `to_json()` method are used to control the representation of
     dates and timestamps in the resulting JSON.
 
@@ -354,7 +357,7 @@ class PandasJsonBufferWriter(BufferWriter, ExtraParamsMixin):
         options: 's' for seconds, 'ms' for milliseconds, 'us' for microseconds, and 'ns' for nanoseconds.
         The default is 'ms'. Note that this parameter is ignored when `date_format='iso'`.
 
-    ## Orient Parameter
+    ### Orient Parameter
     The `orient` parameter is used to specify the format of the resulting JSON string. Each option is useful in
     different scenarios depending on whether you need to preserve the index, data types, and/or column names of the
     original DataFrame. The set of possible orients is:

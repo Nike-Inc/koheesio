@@ -50,7 +50,7 @@ class DeltaTableReader(Reader):
     filter_cond : Optional[Union[Column, str]]
         Filter condition to apply to the dataframe. Filters can be provided by using Column or string expressions.
         For example: `f.col('state') == 'Ohio'`, `state = 'Ohio'` or  `(col('col1') > 3) & (col('col2') < 9)`
-    columns: Optional[ListOfColumns]
+    columns : Optional[ListOfColumns]
         Columns to select from the table. One or many columns can be provided as strings.
         For example: `['col1', 'col2']`, `['col1']` or `'col1'`
     streaming : Optional[bool]

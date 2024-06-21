@@ -1,6 +1,5 @@
 site_name: Koheesio
-#FIXME: Change the site_url to the correct one
-site_url: https://<tbd>/koheesio
+site_url: https://engineering.nike.com/koheesio/
 site_description:
   Koheesio is an open source python library that simplifies the development of data engineering pipelines.
 
@@ -43,18 +42,19 @@ nav:
   - Reference:  # reference folder
     - Concepts:
       - reference/concepts/concepts.md
-      - Steps:
-        - reference/concepts/steps.md
-        - Readers: reference/concepts/readers.md
-        - Writers: reference/concepts/writers.md
-        - Transformations: reference/concepts/transformations.md
-      - Tasks: reference/concepts/tasks.md
+      - Steps: reference/concepts/step.md
       - Context: reference/concepts/context.md
-      - Logging: reference/concepts/logging.md
+      - Logger: reference/concepts/logger.md
+      - Spark:
+        - Readers: reference/spark/readers.md
+        - Writers: reference/spark/writers.md
+        - Transformations: reference/spark/transformations.md
+    - Glossary:
+      - includes/glossary.md
   - API Reference: api_reference/
   - Community:  # community folder
     - Contribute: community/contribute.md
-    - Approach to Documentation: explanation/approach-documentation.md
+    - Approach to Documentation: community/approach-documentation.md
 
 theme:
   name: material
@@ -63,27 +63,20 @@ theme:
     code: Roboto Mono
   favicon: assets/logo_koheesio.svg
   palette:
-    # Palette toggle for automatic mode
-    - media: "(prefers-color-scheme)"
-      toggle:
-        icon: material/brightness-auto
-        name: Switch to light mode
-    # Palette toggle for light mode
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: custom
-      accent: custom
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: custom
-      accent: custom
+      primary: indigo
+      accent: indigo
       toggle:
-        icon: material/brightness-4
+        icon: material/weather-night
         name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
   features:
     # - announce.dismiss
     - content.code.annotate
