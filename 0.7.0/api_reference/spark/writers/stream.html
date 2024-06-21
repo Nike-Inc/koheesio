@@ -1,0 +1,5410 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Koheesio is an open source python library that simplifies the development of data engineering pipelines.">
+      
+      
+      
+        <link rel="canonical" href="https://engineering.nike.com/koheesio/0.7.0/api_reference/spark/writers/stream.html">
+      
+      
+        <link rel="prev" href="snowflake.html">
+      
+      
+        <link rel="next" href="delta/index.html">
+      
+      
+      <link rel="icon" href="../../../assets/logo_koheesio.svg">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.25">
+    
+    
+      
+        <title>Stream - Koheesio</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.6543a935.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../../css/custom.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#koheesio.spark.writers.stream.ForEachBatchStreamWriter" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../../index.html" title="Koheesio" class="md-header__button md-logo" aria-label="Koheesio" data-md-component="logo">
+      
+  <img src="../../../assets/logo_total_white.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Koheesio
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Stream
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3 3.19.09m3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95 2.06.05m-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31Z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5c-.84 0-1.65.15-2.39.42L12 2M3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29L3.34 7m.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14L3.36 17M20.65 7l-1.77 3.79a7.023 7.023 0 0 0-2.38-4.15l4.15.36m-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29L20.64 17M12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44L12 22Z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91 1.61 0 2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08Z"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Nike-Inc/koheesio" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Nike-Inc/koheesio
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../index.html" class="md-tabs__link">
+        
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../tutorials/onboarding.html" class="md-tabs__link">
+          
+  
+  Tutorials and How-To
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/concepts/concepts.html" class="md-tabs__link">
+          
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="../../index.html" class="md-tabs__link">
+        
+  
+    
+  
+  API Reference
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../community/contribute.html" class="md-tabs__link">
+          
+  
+  Community
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../../index.html" title="Koheesio" class="md-nav__button md-logo" aria-label="Koheesio" data-md-component="logo">
+      
+  <img src="../../../assets/logo_total_white.svg" alt="logo">
+
+    </a>
+    Koheesio
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Nike-Inc/koheesio" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Nike-Inc/koheesio
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../index.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Tutorials and How-To
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Tutorials and How-To
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/onboarding.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Onboarding
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Getting Started
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            Getting Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/getting-started.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/learn-koheesio.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Learn Koheesio
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/hello-world.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hello World
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Advanced Topics
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            Advanced Topics
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/advanced-data-processing.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Data Processing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/testing-koheesio-steps.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Testing Steps
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Reference
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_1" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../reference/concepts/concepts.html" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Concepts
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_1" id="__nav_3_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_1">
+            <span class="md-nav__icon md-icon"></span>
+            Concepts
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/concepts/step.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Steps
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/concepts/context.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Context
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/concepts/logger.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Logger
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_1_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_1_4" id="__nav_3_1_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Spark
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_3_1_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_1_4">
+            <span class="md-nav__icon md-icon"></span>
+            Spark
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/spark/readers.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Readers
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/spark/writers.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Writers
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/spark/transformations.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Transformations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../includes/glossary.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Glossary
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../index.html" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    API Reference
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            API Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../context.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Context
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../intro_api.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Intro api
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../logger.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Logger
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../utils.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Utils
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_5" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../asyncio/index.html" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Asyncio
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_5" id="__nav_4_5_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_5">
+            <span class="md-nav__icon md-icon"></span>
+            Asyncio
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../asyncio/http.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Http
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_6" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../integrations/index.html" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Integrations
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_6" id="__nav_4_6_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_6">
+            <span class="md-nav__icon md-icon"></span>
+            Integrations
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/box.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Box
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_6_2" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../integrations/spark/index.html" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Spark
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_6_2" id="__nav_4_6_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_4_6_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_6_2">
+            <span class="md-nav__icon md-icon"></span>
+            Spark
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/spark/sftp.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sftp
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_6_2_2" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../integrations/spark/dq/index.html" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Dq
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_6_2_2" id="__nav_4_6_2_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_4_6_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_6_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            Dq
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integrations/spark/dq/spark_expectations.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Spark expectations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_7" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../models/index.html" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Models
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_7" id="__nav_4_7_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_7">
+            <span class="md-nav__icon md-icon"></span>
+            Models
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/sql.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sql
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_8" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../notifications/index.html" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Notifications
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_8" id="__nav_4_8_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_8">
+            <span class="md-nav__icon md-icon"></span>
+            Notifications
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notifications/slack.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Slack
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_9" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../secrets/index.html" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Secrets
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_9" id="__nav_4_9_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_9">
+            <span class="md-nav__icon md-icon"></span>
+            Secrets
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../secrets/cerberus.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Cerberus
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_10" checked>
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../index.html" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Spark
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_10" id="__nav_4_10_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_10_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4_10">
+            <span class="md-nav__icon md-icon"></span>
+            Spark
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../delta.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Delta
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../etl_task.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Etl task
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../snowflake.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Snowflake
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../utils.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Utils
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_10_5" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../readers/index.html" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Readers
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_10_5" id="__nav_4_10_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_4_10_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_10_5">
+            <span class="md-nav__icon md-icon"></span>
+            Readers
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/delta.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Delta
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/dummy.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dummy
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/file_loader.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    File loader
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/hana.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hana
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/jdbc.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jdbc
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/kafka.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kafka
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/memory.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Memory
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/metastore.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Metastore
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/rest_api.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Rest api
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/snowflake.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Snowflake
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/spark_sql_reader.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Spark sql reader
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/teradata.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Teradata
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_10_5_13" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../readers/databricks/index.html" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Databricks
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_10_5_13" id="__nav_4_10_5_13_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_4_10_5_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_10_5_13">
+            <span class="md-nav__icon md-icon"></span>
+            Databricks
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/databricks/autoloader.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Autoloader
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_10_6" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../transformations/index.html" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Transformations
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_10_6" id="__nav_4_10_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_4_10_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_10_6">
+            <span class="md-nav__icon md-icon"></span>
+            Transformations
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transformations/arrays.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Arrays
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transformations/camel_to_snake.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Camel to snake
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transformations/cast_to_datatype.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Cast to datatype
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transformations/drop_column.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Drop column
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transformations/dummy.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dummy
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transformations/get_item.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Get item
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transformations/hash.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hash
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transformations/lookup.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Lookup
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transformations/repartition.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Repartition
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transformations/replace.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Replace
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transformations/row_number_dedup.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Row number dedup
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transformations/sql_transform.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sql transform
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transformations/transform.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Transform
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transformations/uuid5.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Uuid5
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_10_6_15" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../transformations/date_time/index.html" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Date time
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_10_6_15" id="__nav_4_10_6_15_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_4_10_6_15_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_10_6_15">
+            <span class="md-nav__icon md-icon"></span>
+            Date time
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transformations/date_time/interval.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interval
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_10_6_16" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../transformations/strings/index.html" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Strings
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_10_6_16" id="__nav_4_10_6_16_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_4_10_6_16_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_10_6_16">
+            <span class="md-nav__icon md-icon"></span>
+            Strings
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transformations/strings/change_case.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Change case
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transformations/strings/concat.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Concat
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transformations/strings/pad.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Pad
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transformations/strings/regexp.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Regexp
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transformations/strings/replace.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Replace
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transformations/strings/split.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Split
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transformations/strings/substring.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Substring
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transformations/strings/trim.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Trim
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_10_7" checked>
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="index.html" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Writers
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_10_7" id="__nav_4_10_7_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_4_10_7_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4_10_7">
+            <span class="md-nav__icon md-icon"></span>
+            Writers
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="buffer.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Buffer
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="dummy.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dummy
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="kafka.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Kafka
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="snowflake.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Snowflake
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Stream
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="stream.html" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Stream
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.ForEachBatchStreamWriter" class="md-nav__link">
+    <span class="md-ellipsis">
+      ForEachBatchStreamWriter
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ForEachBatchStreamWriter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.ForEachBatchStreamWriter.execute" class="md-nav__link">
+    <span class="md-ellipsis">
+      execute
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.StreamWriter" class="md-nav__link">
+    <span class="md-ellipsis">
+      StreamWriter
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="StreamWriter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.StreamWriter.batch_function" class="md-nav__link">
+    <span class="md-ellipsis">
+      batch_function
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.StreamWriter.checkpoint_location" class="md-nav__link">
+    <span class="md-ellipsis">
+      checkpoint_location
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.StreamWriter.output_mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      output_mode
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.StreamWriter.stream_writer" class="md-nav__link">
+    <span class="md-ellipsis">
+      stream_writer
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.StreamWriter.streaming_query" class="md-nav__link">
+    <span class="md-ellipsis">
+      streaming_query
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.StreamWriter.trigger" class="md-nav__link">
+    <span class="md-ellipsis">
+      trigger
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.StreamWriter.writer" class="md-nav__link">
+    <span class="md-ellipsis">
+      writer
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.StreamWriter.await_termination" class="md-nav__link">
+    <span class="md-ellipsis">
+      await_termination
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.StreamWriter.execute" class="md-nav__link">
+    <span class="md-ellipsis">
+      execute
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger" class="md-nav__link">
+    <span class="md-ellipsis">
+      Trigger
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Trigger">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.available_now" class="md-nav__link">
+    <span class="md-ellipsis">
+      available_now
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.continuous" class="md-nav__link">
+    <span class="md-ellipsis">
+      continuous
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.model_config" class="md-nav__link">
+    <span class="md-ellipsis">
+      model_config
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.once" class="md-nav__link">
+    <span class="md-ellipsis">
+      once
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.processing_time" class="md-nav__link">
+    <span class="md-ellipsis">
+      processing_time
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.triggers" class="md-nav__link">
+    <span class="md-ellipsis">
+      triggers
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.value" class="md-nav__link">
+    <span class="md-ellipsis">
+      value
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.execute" class="md-nav__link">
+    <span class="md-ellipsis">
+      execute
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.from_any" class="md-nav__link">
+    <span class="md-ellipsis">
+      from_any
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.from_dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      from_dict
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.from_string" class="md-nav__link">
+    <span class="md-ellipsis">
+      from_string
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.validate_available_now" class="md-nav__link">
+    <span class="md-ellipsis">
+      validate_available_now
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.validate_continuous" class="md-nav__link">
+    <span class="md-ellipsis">
+      validate_continuous
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.validate_once" class="md-nav__link">
+    <span class="md-ellipsis">
+      validate_once
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.validate_processing_time" class="md-nav__link">
+    <span class="md-ellipsis">
+      validate_processing_time
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.validate_triggers" class="md-nav__link">
+    <span class="md-ellipsis">
+      validate_triggers
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.writer_to_foreachbatch" class="md-nav__link">
+    <span class="md-ellipsis">
+      writer_to_foreachbatch
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_10_7_6" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="delta/index.html" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Delta
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_10_7_6" id="__nav_4_10_7_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_4_10_7_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_10_7_6">
+            <span class="md-nav__icon md-icon"></span>
+            Delta
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="delta/batch.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Batch
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="delta/scd.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Scd
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="delta/stream.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Stream
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="delta/utils.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Utils
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_11" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../sso/index.html" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Sso
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_11" id="__nav_4_11_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_11">
+            <span class="md-nav__icon md-icon"></span>
+            Sso
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sso/okta.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Okta
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_12" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../steps/index.html" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Steps
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_12" id="__nav_4_12_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_12">
+            <span class="md-nav__icon md-icon"></span>
+            Steps
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../steps/dummy.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dummy
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../steps/http.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Http
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Community
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Community
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../community/contribute.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Contribute
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../community/approach-documentation.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Approach to Documentation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.ForEachBatchStreamWriter" class="md-nav__link">
+    <span class="md-ellipsis">
+      ForEachBatchStreamWriter
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ForEachBatchStreamWriter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.ForEachBatchStreamWriter.execute" class="md-nav__link">
+    <span class="md-ellipsis">
+      execute
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.StreamWriter" class="md-nav__link">
+    <span class="md-ellipsis">
+      StreamWriter
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="StreamWriter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.StreamWriter.batch_function" class="md-nav__link">
+    <span class="md-ellipsis">
+      batch_function
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.StreamWriter.checkpoint_location" class="md-nav__link">
+    <span class="md-ellipsis">
+      checkpoint_location
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.StreamWriter.output_mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      output_mode
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.StreamWriter.stream_writer" class="md-nav__link">
+    <span class="md-ellipsis">
+      stream_writer
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.StreamWriter.streaming_query" class="md-nav__link">
+    <span class="md-ellipsis">
+      streaming_query
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.StreamWriter.trigger" class="md-nav__link">
+    <span class="md-ellipsis">
+      trigger
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.StreamWriter.writer" class="md-nav__link">
+    <span class="md-ellipsis">
+      writer
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.StreamWriter.await_termination" class="md-nav__link">
+    <span class="md-ellipsis">
+      await_termination
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.StreamWriter.execute" class="md-nav__link">
+    <span class="md-ellipsis">
+      execute
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger" class="md-nav__link">
+    <span class="md-ellipsis">
+      Trigger
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Trigger">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.available_now" class="md-nav__link">
+    <span class="md-ellipsis">
+      available_now
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.continuous" class="md-nav__link">
+    <span class="md-ellipsis">
+      continuous
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.model_config" class="md-nav__link">
+    <span class="md-ellipsis">
+      model_config
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.once" class="md-nav__link">
+    <span class="md-ellipsis">
+      once
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.processing_time" class="md-nav__link">
+    <span class="md-ellipsis">
+      processing_time
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.triggers" class="md-nav__link">
+    <span class="md-ellipsis">
+      triggers
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.value" class="md-nav__link">
+    <span class="md-ellipsis">
+      value
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.execute" class="md-nav__link">
+    <span class="md-ellipsis">
+      execute
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.from_any" class="md-nav__link">
+    <span class="md-ellipsis">
+      from_any
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.from_dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      from_dict
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.from_string" class="md-nav__link">
+    <span class="md-ellipsis">
+      from_string
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.validate_available_now" class="md-nav__link">
+    <span class="md-ellipsis">
+      validate_available_now
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.validate_continuous" class="md-nav__link">
+    <span class="md-ellipsis">
+      validate_continuous
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.validate_once" class="md-nav__link">
+    <span class="md-ellipsis">
+      validate_once
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.validate_processing_time" class="md-nav__link">
+    <span class="md-ellipsis">
+      validate_processing_time
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.Trigger.validate_triggers" class="md-nav__link">
+    <span class="md-ellipsis">
+      validate_triggers
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#koheesio.spark.writers.stream.writer_to_foreachbatch" class="md-nav__link">
+    <span class="md-ellipsis">
+      writer_to_foreachbatch
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+  <h1>Stream</h1>
+
+<div class="doc doc-object doc-module">
+
+
+
+
+    <div class="doc doc-contents first">
+
+      <p>Module that holds some classes and functions to be able to write to a stream</p>
+
+
+<p><span class="doc-section-title">Classes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="koheesio.spark.writers.stream.Trigger" href="#koheesio.spark.writers.stream.Trigger">Trigger</a></code></td>
+            <td>
+              <div class="doc-md-description">
+                <p>class to set the trigger for a stream query</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="koheesio.spark.writers.stream.StreamWriter" href="#koheesio.spark.writers.stream.StreamWriter">StreamWriter</a></code></td>
+            <td>
+              <div class="doc-md-description">
+                <p>abstract class for stream writers</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" title="koheesio.spark.writers.stream.ForEachBatchStreamWriter" href="#koheesio.spark.writers.stream.ForEachBatchStreamWriter">ForEachBatchStreamWriter</a></code></td>
+            <td>
+              <div class="doc-md-description">
+                <p>class to run a writer for each batch</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Functions:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title="koheesio.spark.writers.stream.writer_to_foreachbatch" href="#koheesio.spark.writers.stream.writer_to_foreachbatch">writer_to_foreachbatch</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>function to be used as batch_function for StreamWriter (sub)classes</p>
+                </div>
+              </td>
+            </tr>
+      </tbody>
+    </table>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="koheesio.spark.writers.stream.ForEachBatchStreamWriter" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">koheesio.spark.writers.stream.ForEachBatchStreamWriter</span>
+
+
+<a href="#koheesio.spark.writers.stream.ForEachBatchStreamWriter" class="headerlink" title="Permanent link">#</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+
+      <p>Runnable ForEachBatchWriter</p>
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="koheesio.spark.writers.stream.ForEachBatchStreamWriter.execute" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">execute</span>
+
+
+<a href="#koheesio.spark.writers.stream.ForEachBatchStreamWriter.execute" class="headerlink" title="Permanent link">#</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">execute</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+            <details class="quote">
+              <summary>Source code in <code>src/koheesio/spark/writers/stream.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-319">319</a></span>
+<span class="normal"><a href="#__codelineno-0-320">320</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-319" name="__codelineno-0-319"></a><span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="__codelineno-0-320" name="__codelineno-0-320"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">streaming_query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="koheesio.spark.writers.stream.StreamWriter" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">koheesio.spark.writers.stream.StreamWriter</span>
+
+
+<a href="#koheesio.spark.writers.stream.StreamWriter" class="headerlink" title="Permanent link">#</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+
+      <p>ABC Stream Writer</p>
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="koheesio.spark.writers.stream.StreamWriter.batch_function" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">batch_function</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#koheesio.spark.writers.stream.StreamWriter.batch_function" class="headerlink" title="Permanent link">#</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">batch_function</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">]</span> <span class="o">=</span> <span class="n"><span title="koheesio.models.Field">Field</span></span><span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;allows you to run custom batch functions for each micro batch&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;batch_function_for_each_df&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="koheesio.spark.writers.stream.StreamWriter.checkpoint_location" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">checkpoint_location</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#koheesio.spark.writers.stream.StreamWriter.checkpoint_location" class="headerlink" title="Permanent link">#</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">checkpoint_location</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="n"><span title="koheesio.models.Field">Field</span></span><span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">default</span><span class="o">=...</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;checkpointLocation&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;In case of a failure or intentional shutdown, you can recover the previous progress and state of a previous query, and continue where it left off. This is done using checkpointing and write-ahead logs. You can configure a query with a checkpoint location, and the query will save all the progress information and the running aggregates to the checkpoint location. This checkpoint location has to be a path in an HDFS compatible file system that is accessible by Spark (e.g. Databricks Unity Catalog External Location)&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="koheesio.spark.writers.stream.StreamWriter.output_mode" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">output_mode</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#koheesio.spark.writers.stream.StreamWriter.output_mode" class="headerlink" title="Permanent link">#</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">output_mode</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="koheesio.spark.writers.StreamingOutputMode" href="index.html#koheesio.spark.writers.StreamingOutputMode">StreamingOutputMode</a></span> <span class="o">=</span> <span class="n"><span title="koheesio.models.Field">Field</span></span><span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">default</span><span class="o">=</span><span class="n"><a class="autorefs autorefs-internal" title="koheesio.spark.writers.StreamingOutputMode.APPEND" href="index.html#koheesio.spark.writers.StreamingOutputMode.APPEND">APPEND</a></span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;outputMode&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="n"><span title="koheesio.spark.writers.StreamingOutputMode.__doc__">__doc__</span></span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="koheesio.spark.writers.stream.StreamWriter.stream_writer" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">stream_writer</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#koheesio.spark.writers.stream.StreamWriter.stream_writer" class="headerlink" title="Permanent link">#</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">stream_writer</span><span class="p">:</span> <span class="n"><span title="pyspark.sql.streaming.DataStreamWriter">DataStreamWriter</span></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+      <p>Returns the stream writer for the given DataFrame and settings</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="koheesio.spark.writers.stream.StreamWriter.streaming_query" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">streaming_query</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#koheesio.spark.writers.stream.StreamWriter.streaming_query" class="headerlink" title="Permanent link">#</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">streaming_query</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><span title="pyspark.sql.streaming.StreamingQuery">StreamingQuery</span></span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n"><span title="koheesio.models.Field">Field</span></span><span class="p">(</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Query ID of the stream query&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="p">)</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="koheesio.spark.writers.stream.StreamWriter.trigger" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">trigger</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#koheesio.spark.writers.stream.StreamWriter.trigger" class="headerlink" title="Permanent link">#</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">trigger</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="koheesio.spark.writers.stream.Trigger" href="#koheesio.spark.writers.stream.Trigger">Trigger</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Dict" href="https://docs.python.org/3/library/typing.html#typing.Dict">Dict</a></span><span class="p">]]</span> <span class="o">=</span> <span class="n"><span title="koheesio.models.Field">Field</span></span><span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">default</span><span class="o">=</span><span class="n"><a class="autorefs autorefs-internal" title="koheesio.spark.writers.stream.Trigger" href="#koheesio.spark.writers.stream.Trigger">Trigger</a></span><span class="p">(</span><span class="n">available_now</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Set the trigger for the stream query. If this is not set it process data as batch&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="koheesio.spark.writers.stream.StreamWriter.writer" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">writer</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#koheesio.spark.writers.stream.StreamWriter.writer" class="headerlink" title="Permanent link">#</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">writer</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+      <p>Returns the stream writer since we don't have a batch mode for streams</p>
+    </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="koheesio.spark.writers.stream.StreamWriter.await_termination" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">await_termination</span>
+
+
+<a href="#koheesio.spark.writers.stream.StreamWriter.await_termination" class="headerlink" title="Permanent link">#</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">await_termination</span><span class="p">(</span><span class="n">timeout</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+      <p>Await termination of the stream query</p>
+
+            <details class="quote">
+              <summary>Source code in <code>src/koheesio/spark/writers/stream.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-279">279</a></span>
+<span class="normal"><a href="#__codelineno-0-280">280</a></span>
+<span class="normal"><a href="#__codelineno-0-281">281</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-279" name="__codelineno-0-279"></a><span class="k">def</span> <span class="nf">await_termination</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<a id="__codelineno-0-280" name="__codelineno-0-280"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Await termination of the stream query&quot;&quot;&quot;</span>
+<a id="__codelineno-0-281" name="__codelineno-0-281"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">streaming_query</span><span class="o">.</span><span class="n">awaitTermination</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="koheesio.spark.writers.stream.StreamWriter.execute" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">execute</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+<a href="#koheesio.spark.writers.stream.StreamWriter.execute" class="headerlink" title="Permanent link">#</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">execute</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+            <details class="quote">
+              <summary>Source code in <code>src/koheesio/spark/writers/stream.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-304">304</a></span>
+<span class="normal"><a href="#__codelineno-0-305">305</a></span>
+<span class="normal"><a href="#__codelineno-0-306">306</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-304" name="__codelineno-0-304"></a><span class="nd">@abstractmethod</span>
+<a id="__codelineno-0-305" name="__codelineno-0-305"></a><span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="__codelineno-0-306" name="__codelineno-0-306"></a>    <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="koheesio.spark.writers.stream.Trigger" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">koheesio.spark.writers.stream.Trigger</span>
+
+
+<a href="#koheesio.spark.writers.stream.Trigger" class="headerlink" title="Permanent link">#</a></h2>
+
+
+    <div class="doc doc-contents ">
+
+
+      <p>Trigger types for a stream query.</p>
+<p>Only one trigger can be set!</p>
+
+
+<details class="example" open>
+  <summary>Example</summary>
+  <ul>
+<li>processingTime='5 seconds'</li>
+<li>continuous='5 seconds'</li>
+<li>availableNow=True</li>
+<li>once=True</li>
+</ul>
+</details>
+
+<details class="see-also" open>
+  <summary>See Also</summary>
+  <ul>
+<li><a href="https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html#triggers">https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html#triggers</a></li>
+</ul>
+</details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="koheesio.spark.writers.stream.Trigger.available_now" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">available_now</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#koheesio.spark.writers.stream.Trigger.available_now" class="headerlink" title="Permanent link">#</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">available_now</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span><span class="p">]</span> <span class="o">=</span> <span class="n"><span title="koheesio.models.Field">Field</span></span><span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;availableNow&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;if set to True, set a trigger that processes all available data in multiple batches then terminates the query.&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="koheesio.spark.writers.stream.Trigger.continuous" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">continuous</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#koheesio.spark.writers.stream.Trigger.continuous" class="headerlink" title="Permanent link">#</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">continuous</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="n"><span title="koheesio.models.Field">Field</span></span><span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;a time interval as a string, e.g. &#39;5 seconds&#39;, &#39;1 minute&#39;.Set a trigger that runs a continuous query with a given checkpoint interval.&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="koheesio.spark.writers.stream.Trigger.model_config" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">model_config</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#koheesio.spark.writers.stream.Trigger.model_config" class="headerlink" title="Permanent link">#</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">model_config</span> <span class="o">=</span> <span class="n"><span title="koheesio.models.ConfigDict">ConfigDict</span></span><span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">validate_default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="s2">&quot;forbid&quot;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="koheesio.spark.writers.stream.Trigger.once" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">once</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#koheesio.spark.writers.stream.Trigger.once" class="headerlink" title="Permanent link">#</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">once</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span><span class="p">]</span> <span class="o">=</span> <span class="n"><span title="koheesio.models.Field">Field</span></span><span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">deprecated</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;if set to True, set a trigger that processes only one batch of data in a streaming query then terminates the query. use `available_now` instead of `once`.&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="koheesio.spark.writers.stream.Trigger.processing_time" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">processing_time</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#koheesio.spark.writers.stream.Trigger.processing_time" class="headerlink" title="Permanent link">#</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">processing_time</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="n"><span title="koheesio.models.Field">Field</span></span><span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;processingTime&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;a processing time interval as a string, e.g. &#39;5 seconds&#39;, &#39;1 minute&#39;.Set a trigger that runs a microbatch query periodically based on the processing time.&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="koheesio.spark.writers.stream.Trigger.triggers" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">triggers</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#koheesio.spark.writers.stream.Trigger.triggers" class="headerlink" title="Permanent link">#</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">triggers</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+      <p>Returns a list of tuples with the value for each trigger</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="koheesio.spark.writers.stream.Trigger.value" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">value</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#koheesio.spark.writers.stream.Trigger.value" class="headerlink" title="Permanent link">#</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">value</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Dict" href="https://docs.python.org/3/library/typing.html#typing.Dict">Dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+      <p>Returns the trigger value as a dictionary</p>
+    </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="koheesio.spark.writers.stream.Trigger.execute" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">execute</span>
+
+
+<a href="#koheesio.spark.writers.stream.Trigger.execute" class="headerlink" title="Permanent link">#</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">execute</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+      <p>Returns the trigger value as a dictionary
+This method can be skipped, as the value can be accessed directly from the <code>value</code> property</p>
+
+            <details class="quote">
+              <summary>Source code in <code>src/koheesio/spark/writers/stream.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-222">222</a></span>
+<span class="normal"><a href="#__codelineno-0-223">223</a></span>
+<span class="normal"><a href="#__codelineno-0-224">224</a></span>
+<span class="normal"><a href="#__codelineno-0-225">225</a></span>
+<span class="normal"><a href="#__codelineno-0-226">226</a></span>
+<span class="normal"><a href="#__codelineno-0-227">227</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-222" name="__codelineno-0-222"></a><span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="__codelineno-0-223" name="__codelineno-0-223"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the trigger value as a dictionary</span>
+<a id="__codelineno-0-224" name="__codelineno-0-224"></a><span class="sd">    This method can be skipped, as the value can be accessed directly from the `value` property</span>
+<a id="__codelineno-0-225" name="__codelineno-0-225"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-226" name="__codelineno-0-226"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Trigger.execute is deprecated. Use Trigger.value directly instead&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-227" name="__codelineno-0-227"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="koheesio.spark.writers.stream.Trigger.from_any" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">from_any</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#koheesio.spark.writers.stream.Trigger.from_any" class="headerlink" title="Permanent link">#</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">from_any</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+      <p>Dynamically creates a Trigger class based on either another Trigger class, a passed string value, or a
+dictionary</p>
+<p>This way Trigger.from_any can be used as part of a validator, without needing to worry about supported types</p>
+
+            <details class="quote">
+              <summary>Source code in <code>src/koheesio/spark/writers/stream.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-204">204</a></span>
+<span class="normal"><a href="#__codelineno-0-205">205</a></span>
+<span class="normal"><a href="#__codelineno-0-206">206</a></span>
+<span class="normal"><a href="#__codelineno-0-207">207</a></span>
+<span class="normal"><a href="#__codelineno-0-208">208</a></span>
+<span class="normal"><a href="#__codelineno-0-209">209</a></span>
+<span class="normal"><a href="#__codelineno-0-210">210</a></span>
+<span class="normal"><a href="#__codelineno-0-211">211</a></span>
+<span class="normal"><a href="#__codelineno-0-212">212</a></span>
+<span class="normal"><a href="#__codelineno-0-213">213</a></span>
+<span class="normal"><a href="#__codelineno-0-214">214</a></span>
+<span class="normal"><a href="#__codelineno-0-215">215</a></span>
+<span class="normal"><a href="#__codelineno-0-216">216</a></span>
+<span class="normal"><a href="#__codelineno-0-217">217</a></span>
+<span class="normal"><a href="#__codelineno-0-218">218</a></span>
+<span class="normal"><a href="#__codelineno-0-219">219</a></span>
+<span class="normal"><a href="#__codelineno-0-220">220</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-204" name="__codelineno-0-204"></a><span class="nd">@classmethod</span>
+<a id="__codelineno-0-205" name="__codelineno-0-205"></a><span class="k">def</span> <span class="nf">from_any</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<a id="__codelineno-0-206" name="__codelineno-0-206"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Dynamically creates a Trigger class based on either another Trigger class, a passed string value, or a</span>
+<a id="__codelineno-0-207" name="__codelineno-0-207"></a><span class="sd">    dictionary</span>
+<a id="__codelineno-0-208" name="__codelineno-0-208"></a>
+<a id="__codelineno-0-209" name="__codelineno-0-209"></a><span class="sd">    This way Trigger.from_any can be used as part of a validator, without needing to worry about supported types</span>
+<a id="__codelineno-0-210" name="__codelineno-0-210"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-211" name="__codelineno-0-211"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Trigger</span><span class="p">):</span>
+<a id="__codelineno-0-212" name="__codelineno-0-212"></a>        <span class="k">return</span> <span class="n">value</span>
+<a id="__codelineno-0-213" name="__codelineno-0-213"></a>
+<a id="__codelineno-0-214" name="__codelineno-0-214"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+<a id="__codelineno-0-215" name="__codelineno-0-215"></a>        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+<a id="__codelineno-0-216" name="__codelineno-0-216"></a>
+<a id="__codelineno-0-217" name="__codelineno-0-217"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+<a id="__codelineno-0-218" name="__codelineno-0-218"></a>        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+<a id="__codelineno-0-219" name="__codelineno-0-219"></a>
+<a id="__codelineno-0-220" name="__codelineno-0-220"></a>    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unable to create Trigger based on the given value: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="koheesio.spark.writers.stream.Trigger.from_dict" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">from_dict</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#koheesio.spark.writers.stream.Trigger.from_dict" class="headerlink" title="Permanent link">#</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">from_dict</span><span class="p">(</span><span class="n">_dict</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+      <p>Creates a Trigger class based on a dictionary</p>
+
+            <details class="quote">
+              <summary>Source code in <code>src/koheesio/spark/writers/stream.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-153">153</a></span>
+<span class="normal"><a href="#__codelineno-0-154">154</a></span>
+<span class="normal"><a href="#__codelineno-0-155">155</a></span>
+<span class="normal"><a href="#__codelineno-0-156">156</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-153" name="__codelineno-0-153"></a><span class="nd">@classmethod</span>
+<a id="__codelineno-0-154" name="__codelineno-0-154"></a><span class="k">def</span> <span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">_dict</span><span class="p">):</span>
+<a id="__codelineno-0-155" name="__codelineno-0-155"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a Trigger class based on a dictionary&quot;&quot;&quot;</span>
+<a id="__codelineno-0-156" name="__codelineno-0-156"></a>    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">_dict</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="koheesio.spark.writers.stream.Trigger.from_string" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">from_string</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#koheesio.spark.writers.stream.Trigger.from_string" class="headerlink" title="Permanent link">#</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">from_string</span><span class="p">(</span><span class="n">trigger</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+      <p>Creates a Trigger class based on a string</p>
+
+
+<details class="example" open>
+  <summary>Example</summary>
+  <h6 id="koheesio.spark.writers.stream.Trigger.from_string--happy-flow">happy flow<a class="headerlink" href="#koheesio.spark.writers.stream.Trigger.from_string--happy-flow" title="Permanent link">#</a></h6>
+<ul>
+<li>processingTime='5 seconds'</li>
+<li>processing_time="5 hours"</li>
+<li>processingTime=4 minutes</li>
+<li>once=True</li>
+<li>once=true</li>
+<li>available_now=true</li>
+<li>continuous='3 hours'</li>
+<li>once=TrUe</li>
+<li>once=TRUE</li>
+</ul>
+<h6 id="koheesio.spark.writers.stream.Trigger.from_string--unhappy-flow">unhappy flow<a class="headerlink" href="#koheesio.spark.writers.stream.Trigger.from_string--unhappy-flow" title="Permanent link">#</a></h6>
+<p>valid values, but should fail the validation check of the class</p>
+<ul>
+<li>availableNow=False</li>
+<li>continuous=True</li>
+<li>once=false</li>
+</ul>
+</details>
+            <details class="quote">
+              <summary>Source code in <code>src/koheesio/spark/writers/stream.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-158">158</a></span>
+<span class="normal"><a href="#__codelineno-0-159">159</a></span>
+<span class="normal"><a href="#__codelineno-0-160">160</a></span>
+<span class="normal"><a href="#__codelineno-0-161">161</a></span>
+<span class="normal"><a href="#__codelineno-0-162">162</a></span>
+<span class="normal"><a href="#__codelineno-0-163">163</a></span>
+<span class="normal"><a href="#__codelineno-0-164">164</a></span>
+<span class="normal"><a href="#__codelineno-0-165">165</a></span>
+<span class="normal"><a href="#__codelineno-0-166">166</a></span>
+<span class="normal"><a href="#__codelineno-0-167">167</a></span>
+<span class="normal"><a href="#__codelineno-0-168">168</a></span>
+<span class="normal"><a href="#__codelineno-0-169">169</a></span>
+<span class="normal"><a href="#__codelineno-0-170">170</a></span>
+<span class="normal"><a href="#__codelineno-0-171">171</a></span>
+<span class="normal"><a href="#__codelineno-0-172">172</a></span>
+<span class="normal"><a href="#__codelineno-0-173">173</a></span>
+<span class="normal"><a href="#__codelineno-0-174">174</a></span>
+<span class="normal"><a href="#__codelineno-0-175">175</a></span>
+<span class="normal"><a href="#__codelineno-0-176">176</a></span>
+<span class="normal"><a href="#__codelineno-0-177">177</a></span>
+<span class="normal"><a href="#__codelineno-0-178">178</a></span>
+<span class="normal"><a href="#__codelineno-0-179">179</a></span>
+<span class="normal"><a href="#__codelineno-0-180">180</a></span>
+<span class="normal"><a href="#__codelineno-0-181">181</a></span>
+<span class="normal"><a href="#__codelineno-0-182">182</a></span>
+<span class="normal"><a href="#__codelineno-0-183">183</a></span>
+<span class="normal"><a href="#__codelineno-0-184">184</a></span>
+<span class="normal"><a href="#__codelineno-0-185">185</a></span>
+<span class="normal"><a href="#__codelineno-0-186">186</a></span>
+<span class="normal"><a href="#__codelineno-0-187">187</a></span>
+<span class="normal"><a href="#__codelineno-0-188">188</a></span>
+<span class="normal"><a href="#__codelineno-0-189">189</a></span>
+<span class="normal"><a href="#__codelineno-0-190">190</a></span>
+<span class="normal"><a href="#__codelineno-0-191">191</a></span>
+<span class="normal"><a href="#__codelineno-0-192">192</a></span>
+<span class="normal"><a href="#__codelineno-0-193">193</a></span>
+<span class="normal"><a href="#__codelineno-0-194">194</a></span>
+<span class="normal"><a href="#__codelineno-0-195">195</a></span>
+<span class="normal"><a href="#__codelineno-0-196">196</a></span>
+<span class="normal"><a href="#__codelineno-0-197">197</a></span>
+<span class="normal"><a href="#__codelineno-0-198">198</a></span>
+<span class="normal"><a href="#__codelineno-0-199">199</a></span>
+<span class="normal"><a href="#__codelineno-0-200">200</a></span>
+<span class="normal"><a href="#__codelineno-0-201">201</a></span>
+<span class="normal"><a href="#__codelineno-0-202">202</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-158" name="__codelineno-0-158"></a><span class="nd">@classmethod</span>
+<a id="__codelineno-0-159" name="__codelineno-0-159"></a><span class="k">def</span> <span class="nf">from_string</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">trigger</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<a id="__codelineno-0-160" name="__codelineno-0-160"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a Trigger class based on a string</span>
+<a id="__codelineno-0-161" name="__codelineno-0-161"></a>
+<a id="__codelineno-0-162" name="__codelineno-0-162"></a><span class="sd">    Example</span>
+<a id="__codelineno-0-163" name="__codelineno-0-163"></a><span class="sd">    -------</span>
+<a id="__codelineno-0-164" name="__codelineno-0-164"></a><span class="sd">    ### happy flow</span>
+<a id="__codelineno-0-165" name="__codelineno-0-165"></a>
+<a id="__codelineno-0-166" name="__codelineno-0-166"></a><span class="sd">    * processingTime=&#39;5 seconds&#39;</span>
+<a id="__codelineno-0-167" name="__codelineno-0-167"></a><span class="sd">    * processing_time=&quot;5 hours&quot;</span>
+<a id="__codelineno-0-168" name="__codelineno-0-168"></a><span class="sd">    * processingTime=4 minutes</span>
+<a id="__codelineno-0-169" name="__codelineno-0-169"></a><span class="sd">    * once=True</span>
+<a id="__codelineno-0-170" name="__codelineno-0-170"></a><span class="sd">    * once=true</span>
+<a id="__codelineno-0-171" name="__codelineno-0-171"></a><span class="sd">    * available_now=true</span>
+<a id="__codelineno-0-172" name="__codelineno-0-172"></a><span class="sd">    * continuous=&#39;3 hours&#39;</span>
+<a id="__codelineno-0-173" name="__codelineno-0-173"></a><span class="sd">    * once=TrUe</span>
+<a id="__codelineno-0-174" name="__codelineno-0-174"></a><span class="sd">    * once=TRUE</span>
+<a id="__codelineno-0-175" name="__codelineno-0-175"></a>
+<a id="__codelineno-0-176" name="__codelineno-0-176"></a><span class="sd">    ### unhappy flow</span>
+<a id="__codelineno-0-177" name="__codelineno-0-177"></a><span class="sd">    valid values, but should fail the validation check of the class</span>
+<a id="__codelineno-0-178" name="__codelineno-0-178"></a>
+<a id="__codelineno-0-179" name="__codelineno-0-179"></a><span class="sd">    * availableNow=False</span>
+<a id="__codelineno-0-180" name="__codelineno-0-180"></a><span class="sd">    * continuous=True</span>
+<a id="__codelineno-0-181" name="__codelineno-0-181"></a><span class="sd">    * once=false</span>
+<a id="__codelineno-0-182" name="__codelineno-0-182"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-183" name="__codelineno-0-183"></a>    <span class="kn">import</span> <span class="nn">re</span>
+<a id="__codelineno-0-184" name="__codelineno-0-184"></a>
+<a id="__codelineno-0-185" name="__codelineno-0-185"></a>    <span class="n">trigger_from_string</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(?P&lt;triggerType&gt;\w+)=[\&#39;</span><span class="se">\&quot;</span><span class="s2">]?(?P&lt;value&gt;.+)[\&#39;</span><span class="se">\&quot;</span><span class="s2">]?&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-186" name="__codelineno-0-186"></a>    <span class="n">_match</span> <span class="o">=</span> <span class="n">trigger_from_string</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">trigger</span><span class="p">)</span>
+<a id="__codelineno-0-187" name="__codelineno-0-187"></a>
+<a id="__codelineno-0-188" name="__codelineno-0-188"></a>    <span class="k">if</span> <span class="n">_match</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-189" name="__codelineno-0-189"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+<a id="__codelineno-0-190" name="__codelineno-0-190"></a>            <span class="sa">f</span><span class="s2">&quot;Cannot parse value for Trigger: &#39;</span><span class="si">{</span><span class="n">trigger</span><span class="si">}</span><span class="s2">&#39;. </span><span class="se">\n</span><span class="s2">&quot;</span>
+<a id="__codelineno-0-191" name="__codelineno-0-191"></a>            <span class="sa">f</span><span class="s2">&quot;Valid types are </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">_all_triggers_with_alias</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+<a id="__codelineno-0-192" name="__codelineno-0-192"></a>        <span class="p">)</span>
+<a id="__codelineno-0-193" name="__codelineno-0-193"></a>
+<a id="__codelineno-0-194" name="__codelineno-0-194"></a>    <span class="n">trigger_type</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">_match</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
+<a id="__codelineno-0-195" name="__codelineno-0-195"></a>
+<a id="__codelineno-0-196" name="__codelineno-0-196"></a>    <span class="c1"># strip the value of any quotes</span>
+<a id="__codelineno-0-197" name="__codelineno-0-197"></a>    <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;&quot;&#39;</span><span class="p">)</span>
+<a id="__codelineno-0-198" name="__codelineno-0-198"></a>
+<a id="__codelineno-0-199" name="__codelineno-0-199"></a>    <span class="c1"># making value a boolean when given</span>
+<a id="__codelineno-0-200" name="__codelineno-0-200"></a>    <span class="n">value</span> <span class="o">=</span> <span class="n">convert_str_to_bool</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+<a id="__codelineno-0-201" name="__codelineno-0-201"></a>
+<a id="__codelineno-0-202" name="__codelineno-0-202"></a>    <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_dict</span><span class="p">({</span><span class="n">trigger_type</span><span class="p">:</span> <span class="n">value</span><span class="p">})</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="koheesio.spark.writers.stream.Trigger.validate_available_now" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">validate_available_now</span>
+
+
+<a href="#koheesio.spark.writers.stream.Trigger.validate_available_now" class="headerlink" title="Permanent link">#</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">validate_available_now</span><span class="p">(</span><span class="n">available_now</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+      <p>Validate the available_now trigger value</p>
+
+            <details class="quote">
+              <summary>Source code in <code>src/koheesio/spark/writers/stream.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-136">136</a></span>
+<span class="normal"><a href="#__codelineno-0-137">137</a></span>
+<span class="normal"><a href="#__codelineno-0-138">138</a></span>
+<span class="normal"><a href="#__codelineno-0-139">139</a></span>
+<span class="normal"><a href="#__codelineno-0-140">140</a></span>
+<span class="normal"><a href="#__codelineno-0-141">141</a></span>
+<span class="normal"><a href="#__codelineno-0-142">142</a></span>
+<span class="normal"><a href="#__codelineno-0-143">143</a></span>
+<span class="normal"><a href="#__codelineno-0-144">144</a></span>
+<span class="normal"><a href="#__codelineno-0-145">145</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-136" name="__codelineno-0-136"></a><span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;available_now&quot;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;before&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-137" name="__codelineno-0-137"></a><span class="k">def</span> <span class="nf">validate_available_now</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">available_now</span><span class="p">):</span>
+<a id="__codelineno-0-138" name="__codelineno-0-138"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate the available_now trigger value&quot;&quot;&quot;</span>
+<a id="__codelineno-0-139" name="__codelineno-0-139"></a>    <span class="c1"># making value a boolean when given</span>
+<a id="__codelineno-0-140" name="__codelineno-0-140"></a>    <span class="n">available_now</span> <span class="o">=</span> <span class="n">convert_str_to_bool</span><span class="p">(</span><span class="n">available_now</span><span class="p">)</span>
+<a id="__codelineno-0-141" name="__codelineno-0-141"></a>
+<a id="__codelineno-0-142" name="__codelineno-0-142"></a>    <span class="c1"># adapted from `pyspark.sql.streaming.readwriter.DataStreamWriter.trigger`</span>
+<a id="__codelineno-0-143" name="__codelineno-0-143"></a>    <span class="k">if</span> <span class="n">available_now</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span>
+<a id="__codelineno-0-144" name="__codelineno-0-144"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Value for availableNow must be True. Got:</span><span class="si">{</span><span class="n">available_now</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-145" name="__codelineno-0-145"></a>    <span class="k">return</span> <span class="n">available_now</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="koheesio.spark.writers.stream.Trigger.validate_continuous" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">validate_continuous</span>
+
+
+<a href="#koheesio.spark.writers.stream.Trigger.validate_continuous" class="headerlink" title="Permanent link">#</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">validate_continuous</span><span class="p">(</span><span class="n">continuous</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+      <p>Validate the continuous trigger value</p>
+
+            <details class="quote">
+              <summary>Source code in <code>src/koheesio/spark/writers/stream.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-113">113</a></span>
+<span class="normal"><a href="#__codelineno-0-114">114</a></span>
+<span class="normal"><a href="#__codelineno-0-115">115</a></span>
+<span class="normal"><a href="#__codelineno-0-116">116</a></span>
+<span class="normal"><a href="#__codelineno-0-117">117</a></span>
+<span class="normal"><a href="#__codelineno-0-118">118</a></span>
+<span class="normal"><a href="#__codelineno-0-119">119</a></span>
+<span class="normal"><a href="#__codelineno-0-120">120</a></span>
+<span class="normal"><a href="#__codelineno-0-121">121</a></span>
+<span class="normal"><a href="#__codelineno-0-122">122</a></span>
+<span class="normal"><a href="#__codelineno-0-123">123</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-113" name="__codelineno-0-113"></a><span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;continuous&quot;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;before&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-114" name="__codelineno-0-114"></a><span class="k">def</span> <span class="nf">validate_continuous</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">continuous</span><span class="p">):</span>
+<a id="__codelineno-0-115" name="__codelineno-0-115"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate the continuous trigger value&quot;&quot;&quot;</span>
+<a id="__codelineno-0-116" name="__codelineno-0-116"></a>    <span class="c1"># adapted from `pyspark.sql.streaming.readwriter.DataStreamWriter.trigger` except that the if statement is not</span>
+<a id="__codelineno-0-117" name="__codelineno-0-117"></a>    <span class="c1"># split in two parts</span>
+<a id="__codelineno-0-118" name="__codelineno-0-118"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">continuous</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+<a id="__codelineno-0-119" name="__codelineno-0-119"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Value for continuous must be a string. Got: </span><span class="si">{</span><span class="n">continuous</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-120" name="__codelineno-0-120"></a>
+<a id="__codelineno-0-121" name="__codelineno-0-121"></a>    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">continuous</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+<a id="__codelineno-0-122" name="__codelineno-0-122"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Value for continuous must be a non empty string. Got: </span><span class="si">{</span><span class="n">continuous</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-123" name="__codelineno-0-123"></a>    <span class="k">return</span> <span class="n">continuous</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="koheesio.spark.writers.stream.Trigger.validate_once" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">validate_once</span>
+
+
+<a href="#koheesio.spark.writers.stream.Trigger.validate_once" class="headerlink" title="Permanent link">#</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">validate_once</span><span class="p">(</span><span class="n">once</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+      <p>Validate the once trigger value</p>
+
+            <details class="quote">
+              <summary>Source code in <code>src/koheesio/spark/writers/stream.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-125">125</a></span>
+<span class="normal"><a href="#__codelineno-0-126">126</a></span>
+<span class="normal"><a href="#__codelineno-0-127">127</a></span>
+<span class="normal"><a href="#__codelineno-0-128">128</a></span>
+<span class="normal"><a href="#__codelineno-0-129">129</a></span>
+<span class="normal"><a href="#__codelineno-0-130">130</a></span>
+<span class="normal"><a href="#__codelineno-0-131">131</a></span>
+<span class="normal"><a href="#__codelineno-0-132">132</a></span>
+<span class="normal"><a href="#__codelineno-0-133">133</a></span>
+<span class="normal"><a href="#__codelineno-0-134">134</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-125" name="__codelineno-0-125"></a><span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;once&quot;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;before&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-126" name="__codelineno-0-126"></a><span class="k">def</span> <span class="nf">validate_once</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">once</span><span class="p">):</span>
+<a id="__codelineno-0-127" name="__codelineno-0-127"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate the once trigger value&quot;&quot;&quot;</span>
+<a id="__codelineno-0-128" name="__codelineno-0-128"></a>    <span class="c1"># making value a boolean when given</span>
+<a id="__codelineno-0-129" name="__codelineno-0-129"></a>    <span class="n">once</span> <span class="o">=</span> <span class="n">convert_str_to_bool</span><span class="p">(</span><span class="n">once</span><span class="p">)</span>
+<a id="__codelineno-0-130" name="__codelineno-0-130"></a>
+<a id="__codelineno-0-131" name="__codelineno-0-131"></a>    <span class="c1"># adapted from `pyspark.sql.streaming.readwriter.DataStreamWriter.trigger`</span>
+<a id="__codelineno-0-132" name="__codelineno-0-132"></a>    <span class="k">if</span> <span class="n">once</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span>
+<a id="__codelineno-0-133" name="__codelineno-0-133"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Value for once must be True. Got: </span><span class="si">{</span><span class="n">once</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-134" name="__codelineno-0-134"></a>    <span class="k">return</span> <span class="n">once</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="koheesio.spark.writers.stream.Trigger.validate_processing_time" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">validate_processing_time</span>
+
+
+<a href="#koheesio.spark.writers.stream.Trigger.validate_processing_time" class="headerlink" title="Permanent link">#</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">validate_processing_time</span><span class="p">(</span><span class="n">processing_time</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+      <p>Validate the processing time trigger value</p>
+
+            <details class="quote">
+              <summary>Source code in <code>src/koheesio/spark/writers/stream.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-102">102</a></span>
+<span class="normal"><a href="#__codelineno-0-103">103</a></span>
+<span class="normal"><a href="#__codelineno-0-104">104</a></span>
+<span class="normal"><a href="#__codelineno-0-105">105</a></span>
+<span class="normal"><a href="#__codelineno-0-106">106</a></span>
+<span class="normal"><a href="#__codelineno-0-107">107</a></span>
+<span class="normal"><a href="#__codelineno-0-108">108</a></span>
+<span class="normal"><a href="#__codelineno-0-109">109</a></span>
+<span class="normal"><a href="#__codelineno-0-110">110</a></span>
+<span class="normal"><a href="#__codelineno-0-111">111</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-102" name="__codelineno-0-102"></a><span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;processing_time&quot;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;before&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-103" name="__codelineno-0-103"></a><span class="k">def</span> <span class="nf">validate_processing_time</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">processing_time</span><span class="p">):</span>
+<a id="__codelineno-0-104" name="__codelineno-0-104"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate the processing time trigger value&quot;&quot;&quot;</span>
+<a id="__codelineno-0-105" name="__codelineno-0-105"></a>    <span class="c1"># adapted from `pyspark.sql.streaming.readwriter.DataStreamWriter.trigger`</span>
+<a id="__codelineno-0-106" name="__codelineno-0-106"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">processing_time</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+<a id="__codelineno-0-107" name="__codelineno-0-107"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Value for processing_time must be a string. Got: </span><span class="si">{</span><span class="n">processing_time</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-108" name="__codelineno-0-108"></a>
+<a id="__codelineno-0-109" name="__codelineno-0-109"></a>    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">processing_time</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+<a id="__codelineno-0-110" name="__codelineno-0-110"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Value for processingTime must be a non empty string. Got: </span><span class="si">{</span><span class="n">processing_time</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-111" name="__codelineno-0-111"></a>    <span class="k">return</span> <span class="n">processing_time</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="koheesio.spark.writers.stream.Trigger.validate_triggers" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">validate_triggers</span>
+
+
+<a href="#koheesio.spark.writers.stream.Trigger.validate_triggers" class="headerlink" title="Permanent link">#</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">validate_triggers</span><span class="p">(</span><span class="n">triggers</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Dict" href="https://docs.python.org/3/library/typing.html#typing.Dict">Dict</a></span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+      <p>Validate the trigger value</p>
+
+            <details class="quote">
+              <summary>Source code in <code>src/koheesio/spark/writers/stream.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-89"> 89</a></span>
+<span class="normal"><a href="#__codelineno-0-90"> 90</a></span>
+<span class="normal"><a href="#__codelineno-0-91"> 91</a></span>
+<span class="normal"><a href="#__codelineno-0-92"> 92</a></span>
+<span class="normal"><a href="#__codelineno-0-93"> 93</a></span>
+<span class="normal"><a href="#__codelineno-0-94"> 94</a></span>
+<span class="normal"><a href="#__codelineno-0-95"> 95</a></span>
+<span class="normal"><a href="#__codelineno-0-96"> 96</a></span>
+<span class="normal"><a href="#__codelineno-0-97"> 97</a></span>
+<span class="normal"><a href="#__codelineno-0-98"> 98</a></span>
+<span class="normal"><a href="#__codelineno-0-99"> 99</a></span>
+<span class="normal"><a href="#__codelineno-0-100">100</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-89" name="__codelineno-0-89"></a><span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;before&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-90" name="__codelineno-0-90"></a><span class="k">def</span> <span class="nf">validate_triggers</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">triggers</span><span class="p">:</span> <span class="n">Dict</span><span class="p">):</span>
+<a id="__codelineno-0-91" name="__codelineno-0-91"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate the trigger value&quot;&quot;&quot;</span>
+<a id="__codelineno-0-92" name="__codelineno-0-92"></a>    <span class="n">params</span> <span class="o">=</span> <span class="p">[</span><span class="o">*</span><span class="n">triggers</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+<a id="__codelineno-0-93" name="__codelineno-0-93"></a>
+<a id="__codelineno-0-94" name="__codelineno-0-94"></a>    <span class="c1"># adapted from `pyspark.sql.streaming.readwriter.DataStreamWriter.trigger`; modified to work with pydantic v2</span>
+<a id="__codelineno-0-95" name="__codelineno-0-95"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">triggers</span><span class="p">:</span>
+<a id="__codelineno-0-96" name="__codelineno-0-96"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No trigger provided&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-97" name="__codelineno-0-97"></a>    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+<a id="__codelineno-0-98" name="__codelineno-0-98"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Multiple triggers not allowed.&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-99" name="__codelineno-0-99"></a>
+<a id="__codelineno-0-100" name="__codelineno-0-100"></a>    <span class="k">return</span> <span class="n">triggers</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="koheesio.spark.writers.stream.writer_to_foreachbatch" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">koheesio.spark.writers.stream.writer_to_foreachbatch</span>
+
+
+<a href="#koheesio.spark.writers.stream.writer_to_foreachbatch" class="headerlink" title="Permanent link">#</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">writer_to_foreachbatch</span><span class="p">(</span><span class="n">writer</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="koheesio.spark.writers.Writer" href="index.html#koheesio.spark.writers.Writer">Writer</a></span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+      <p>Call <code>writer.execute</code> on each batch</p>
+<p>To be passed as batch_function for StreamWriter (sub)classes.</p>
+
+
+<details class="example" open>
+  <summary>Example</summary>
+  <h5 id="koheesio.spark.writers.stream.writer_to_foreachbatch--writing-to-a-delta-table-and-a-snowflake-table">Writing to a Delta table and a Snowflake table<a class="headerlink" href="#koheesio.spark.writers.stream.writer_to_foreachbatch--writing-to-a-delta-table-and-a-snowflake-table" title="Permanent link">#</a></h5>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">DeltaTableStreamWriter</span><span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">table</span><span class="o">=</span><span class="s2">&quot;my_table&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">checkpointLocation</span><span class="o">=</span><span class="s2">&quot;my_checkpointlocation&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">batch_function</span><span class="o">=</span><span class="n">writer_to_foreachbatch</span><span class="p">(</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        <span class="n">SnowflakeWriter</span><span class="p">(</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>            <span class="o">**</span><span class="n">sfOptions</span><span class="p">,</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>            <span class="n">table</span><span class="o">=</span><span class="s2">&quot;snowflake_table&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>            <span class="n">insert_type</span><span class="o">=</span><span class="n">SnowflakeWriter</span><span class="o">.</span><span class="n">InsertType</span><span class="o">.</span><span class="n">APPEND</span><span class="p">,</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>        <span class="p">)</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="p">),</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="p">)</span>
+</code></pre></div>
+</details>
+            <details class="quote">
+              <summary>Source code in <code>src/koheesio/spark/writers/stream.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-323">323</a></span>
+<span class="normal"><a href="#__codelineno-0-324">324</a></span>
+<span class="normal"><a href="#__codelineno-0-325">325</a></span>
+<span class="normal"><a href="#__codelineno-0-326">326</a></span>
+<span class="normal"><a href="#__codelineno-0-327">327</a></span>
+<span class="normal"><a href="#__codelineno-0-328">328</a></span>
+<span class="normal"><a href="#__codelineno-0-329">329</a></span>
+<span class="normal"><a href="#__codelineno-0-330">330</a></span>
+<span class="normal"><a href="#__codelineno-0-331">331</a></span>
+<span class="normal"><a href="#__codelineno-0-332">332</a></span>
+<span class="normal"><a href="#__codelineno-0-333">333</a></span>
+<span class="normal"><a href="#__codelineno-0-334">334</a></span>
+<span class="normal"><a href="#__codelineno-0-335">335</a></span>
+<span class="normal"><a href="#__codelineno-0-336">336</a></span>
+<span class="normal"><a href="#__codelineno-0-337">337</a></span>
+<span class="normal"><a href="#__codelineno-0-338">338</a></span>
+<span class="normal"><a href="#__codelineno-0-339">339</a></span>
+<span class="normal"><a href="#__codelineno-0-340">340</a></span>
+<span class="normal"><a href="#__codelineno-0-341">341</a></span>
+<span class="normal"><a href="#__codelineno-0-342">342</a></span>
+<span class="normal"><a href="#__codelineno-0-343">343</a></span>
+<span class="normal"><a href="#__codelineno-0-344">344</a></span>
+<span class="normal"><a href="#__codelineno-0-345">345</a></span>
+<span class="normal"><a href="#__codelineno-0-346">346</a></span>
+<span class="normal"><a href="#__codelineno-0-347">347</a></span>
+<span class="normal"><a href="#__codelineno-0-348">348</a></span>
+<span class="normal"><a href="#__codelineno-0-349">349</a></span>
+<span class="normal"><a href="#__codelineno-0-350">350</a></span>
+<span class="normal"><a href="#__codelineno-0-351">351</a></span>
+<span class="normal"><a href="#__codelineno-0-352">352</a></span>
+<span class="normal"><a href="#__codelineno-0-353">353</a></span>
+<span class="normal"><a href="#__codelineno-0-354">354</a></span>
+<span class="normal"><a href="#__codelineno-0-355">355</a></span>
+<span class="normal"><a href="#__codelineno-0-356">356</a></span>
+<span class="normal"><a href="#__codelineno-0-357">357</a></span>
+<span class="normal"><a href="#__codelineno-0-358">358</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-323" name="__codelineno-0-323"></a><span class="k">def</span> <span class="nf">writer_to_foreachbatch</span><span class="p">(</span><span class="n">writer</span><span class="p">:</span> <span class="n">Writer</span><span class="p">):</span>
+<a id="__codelineno-0-324" name="__codelineno-0-324"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Call `writer.execute` on each batch</span>
+<a id="__codelineno-0-325" name="__codelineno-0-325"></a>
+<a id="__codelineno-0-326" name="__codelineno-0-326"></a><span class="sd">    To be passed as batch_function for StreamWriter (sub)classes.</span>
+<a id="__codelineno-0-327" name="__codelineno-0-327"></a>
+<a id="__codelineno-0-328" name="__codelineno-0-328"></a><span class="sd">    Example</span>
+<a id="__codelineno-0-329" name="__codelineno-0-329"></a><span class="sd">    -------</span>
+<a id="__codelineno-0-330" name="__codelineno-0-330"></a><span class="sd">    ### Writing to a Delta table and a Snowflake table</span>
+<a id="__codelineno-0-331" name="__codelineno-0-331"></a><span class="sd">    ```python</span>
+<a id="__codelineno-0-332" name="__codelineno-0-332"></a><span class="sd">    DeltaTableStreamWriter(</span>
+<a id="__codelineno-0-333" name="__codelineno-0-333"></a><span class="sd">        table=&quot;my_table&quot;,</span>
+<a id="__codelineno-0-334" name="__codelineno-0-334"></a><span class="sd">        checkpointLocation=&quot;my_checkpointlocation&quot;,</span>
+<a id="__codelineno-0-335" name="__codelineno-0-335"></a><span class="sd">        batch_function=writer_to_foreachbatch(</span>
+<a id="__codelineno-0-336" name="__codelineno-0-336"></a><span class="sd">            SnowflakeWriter(</span>
+<a id="__codelineno-0-337" name="__codelineno-0-337"></a><span class="sd">                **sfOptions,</span>
+<a id="__codelineno-0-338" name="__codelineno-0-338"></a><span class="sd">                table=&quot;snowflake_table&quot;,</span>
+<a id="__codelineno-0-339" name="__codelineno-0-339"></a><span class="sd">                insert_type=SnowflakeWriter.InsertType.APPEND,</span>
+<a id="__codelineno-0-340" name="__codelineno-0-340"></a><span class="sd">            )</span>
+<a id="__codelineno-0-341" name="__codelineno-0-341"></a><span class="sd">        ),</span>
+<a id="__codelineno-0-342" name="__codelineno-0-342"></a><span class="sd">    )</span>
+<a id="__codelineno-0-343" name="__codelineno-0-343"></a><span class="sd">    ```</span>
+<a id="__codelineno-0-344" name="__codelineno-0-344"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-345" name="__codelineno-0-345"></a>
+<a id="__codelineno-0-346" name="__codelineno-0-346"></a>    <span class="k">def</span> <span class="nf">inner</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">batch_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<a id="__codelineno-0-347" name="__codelineno-0-347"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Inner method</span>
+<a id="__codelineno-0-348" name="__codelineno-0-348"></a>
+<a id="__codelineno-0-349" name="__codelineno-0-349"></a><span class="sd">        As per the Spark documentation:</span>
+<a id="__codelineno-0-350" name="__codelineno-0-350"></a><span class="sd">        In every micro-batch, the provided function will be called in every micro-batch with (i) the output rows as a</span>
+<a id="__codelineno-0-351" name="__codelineno-0-351"></a><span class="sd">        DataFrame and (ii) the batch identifier. The batchId can be used deduplicate and transactionally write the</span>
+<a id="__codelineno-0-352" name="__codelineno-0-352"></a><span class="sd">        output (that is, the provided Dataset) to external systems. The output DataFrame is guaranteed to exactly</span>
+<a id="__codelineno-0-353" name="__codelineno-0-353"></a><span class="sd">        same for the same batchId (assuming all operations are deterministic in the query).</span>
+<a id="__codelineno-0-354" name="__codelineno-0-354"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="__codelineno-0-355" name="__codelineno-0-355"></a>        <span class="n">writer</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Running batch function for batch </span><span class="si">{</span><span class="n">batch_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-356" name="__codelineno-0-356"></a>        <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<a id="__codelineno-0-357" name="__codelineno-0-357"></a>
+<a id="__codelineno-0-358" name="__codelineno-0-358"></a>    <span class="k">return</span> <span class="n">inner</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+  
+    
+  
+  
+
+
+  <aside class="md-source-file">
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Last update">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1-2.1-2M12.5 7v5.2l4 2.4-1 1L11 13V7h1.5M11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2v1.8Z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">June 21, 2024</span>
+  </span>
+
+    
+    
+    
+    
+  </aside>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/Nike-Inc/koheesio.git" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2Z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/orgs/Nike-Inc/projects/4" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12.04 2.5 9.53 5h5l-2.49-2.5M4 7v13h16V7H4m8-7 5 5h3a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h3l5-5M7 18v-4h5v4H7m7-1v-7h4v7h-4m-8-5V9h5v3H6Z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["content.code.annotate", "content.code.copy", "content.tabs.link", "content.tooltips", "navigation.sections", "navigation.top", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "main", "provider": "mike"}}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.081f42fc.min.js"></script>
+      
+    
+  </body>
+</html>
