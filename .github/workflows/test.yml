@@ -92,6 +92,9 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: numpy workaround  # FIXME: Remove this workaround
+      run: pip install numpy==2.0.0
+
     - name: Install Hatch
       uses: pypa/hatch@install
 
