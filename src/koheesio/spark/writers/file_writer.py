@@ -38,11 +38,12 @@ class FileWriter(Writer, ExtraParamsMixin):
 
     Extra parameters can be passed to the writer as keyword arguments.
 
-    Example:
-        ```python
-        writer = FileWriter(df=df, path="path/to/file.csv", output_mode=BatchOutputMode.APPEND,
-                             format=FileFormat.parquet, compression="snappy")
-        ```
+    Examples
+    --------
+    ```python
+    writer = FileWriter(df=df, path="path/to/file.csv", output_mode=BatchOutputMode.APPEND, format=FileFormat.parquet,
+                        compression="snappy")
+    ```
     """
 
     output_mode: BatchOutputMode = Field(default=BatchOutputMode.APPEND, description="The output mode to use")
@@ -75,7 +76,8 @@ class CsvFileWriter(FileWriter):
 
     Extra parameters can be passed to the writer as keyword arguments.
 
-    Example:
+    Examples
+    --------
     ```python
     writer = CsvFileWriter(df=df, path="path/to/file.csv", output_mode=BatchOutputMode.APPEND, header=True)
     ```
@@ -91,7 +93,8 @@ class ParquetFileWriter(FileWriter):
 
     Extra parameters can be passed to the writer as keyword arguments.
 
-    Example:
+    Examples
+    --------
     ```python
     writer = ParquetFileWriter(df=df, path="path/to/file.parquet", output_mode=BatchOutputMode.APPEND,
                                compression="snappy")
@@ -108,7 +111,8 @@ class AvroFileWriter(FileWriter):
 
     Extra parameters can be passed to the writer as keyword arguments.
 
-    Example:
+    Examples
+    --------
     ```python
     writer = AvroFileWriter(df=df, path="path/to/file.avro", output_mode=BatchOutputMode.APPEND)
     ```
@@ -124,7 +128,8 @@ class JsonFileWriter(FileWriter):
 
     Extra parameters can be passed to the writer as keyword arguments.
 
-    Example:
+    Examples
+    --------
     ```python
     writer = JsonFileWriter(df=df, path="path/to/file.json", output_mode=BatchOutputMode.APPEND)
     ```
@@ -140,7 +145,8 @@ class OrcFileWriter(FileWriter):
 
     Extra parameters can be passed to the writer as keyword arguments.
 
-    Example:
+    Examples
+    --------
     ```python
     writer = OrcFileWriter(df=df, path="path/to/file.orc", output_mode=BatchOutputMode.APPEND)
     ```
@@ -156,7 +162,8 @@ class TextFileWriter(FileWriter):
 
     Extra parameters can be passed to the writer as keyword arguments.
 
-    Example:
+    Examples
+    --------
     ```python
     writer = TextFileWriter(df=df, path="path/to/file.txt", output_mode=BatchOutputMode.APPEND)
     ```
