@@ -8,10 +8,11 @@ import os
 from pydantic import Field
 from abc import ABC, abstractmethod
 
-from typing import Any, List
+from typing import Any, List, Union
 from tempfile import TemporaryDirectory
 
-from pyspark.sql.types import StringType, FloatType, BooleanType, LongType, StructField, StructType
+from pyspark.sql import DataFrame
+from pyspark.sql.types import StringType, FloatType, BooleanType, LongType, StructField, StructType, IntegerType
 
 from pathlib import PurePath
 from tableauhyperapi import (
@@ -66,6 +67,7 @@ class HyperFileReader(HyperFile, SparkStep):
             "bool": BooleanType,
             "big_int": LongType,
             "timestamp": StringType,
+            "int": IntegerType,
         }
 
         df_cols = []
@@ -145,6 +147,9 @@ class HyperFileListWriter(HyperFileWriter):
     """
     Write list of rows to a Hyper file.
 
+    Reference:
+        Datatypes in https://tableau.github.io/hyper-db/docs/sql/datatype/ for supported data types.
+
     Example:
         hw = HyperFileListWriter(
             name="test",
@@ -190,10 +195,15 @@ class HyperFileListWriter(HyperFileWriter):
 class HyperFileParquetWriter(HyperFileWriter):
     """
     Read one or multiple parquet files and write them to a Hyper file.
-    Refer to: https://tableau.github.io/hyper-db/docs/sql/command/copy_from
 
     Note:
         This method is much faster than HyperFileListWriter for large files.
+
+    Reference:
+        Copy from external format: https://tableau.github.io/hyper-db/docs/sql/command/copy_from
+        Datatypes in https://tableau.github.io/hyper-db/docs/sql/datatype/ for supported data types.
+        Parquet format limitations:
+            https://tableau.github.io/hyper-db/docs/sql/external/formats/#external-format-parquet
 
     Example:
         hw = HyperFileParquetWriter(
@@ -212,14 +222,15 @@ class HyperFileParquetWriter(HyperFileWriter):
         # do somthing with returned file path
         hw.hyper_path
     """
-    file: conlist(str, min_length=1) = Field(
+    file: conlist(Union[str, PurePath], min_length=1) = Field(
         default=...,
         alias="files",
         description="One or multiple parquet files to write to the Hyper file"
     )
 
     def execute(self):
-        array_files = "'" + "','".join(self.file) + "'"
+        _file = [str(f) for f in self.file]
+        array_files = "'" + "','".join(_file) + "'"
 
         with HyperProcess(telemetry=Telemetry.DO_NOT_SEND_USAGE_DATA_TO_TABLEAU) as hp:
             with Connection(
@@ -235,3 +246,5 @@ class HyperFileParquetWriter(HyperFileWriter):
 
         self.output.hyper_path = self.hyper_path
 
+# https://tableau.github.io/hyper-db/docs/sql/external/formats/#external-format-parquet
+# TODO: Dataframe Writer - > Inherit Schema from Dataframe and convert datatypes -> Save to Parquet -> Write To Hyper

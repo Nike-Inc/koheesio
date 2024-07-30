@@ -66,8 +66,9 @@ delta = ["delta-spark>=2.2"]
 excel = ["openpyxl>=3.0.0"]
 # Tableau dependencies
 tableau = [
-  "tableauhyperapi>=0.0.19484",
-  "tableauserverclient>=0.25"
+  #"tableauhyperapi>=0.0.19484",
+  "tableauserverclient>=0.25",
+  "pantab",
 ]
 dev = ["black", "isort", "ruff", "mypy", "pylint", "colorama", "types-PyYAML"]
 test = [
