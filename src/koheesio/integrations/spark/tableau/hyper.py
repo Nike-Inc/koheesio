@@ -207,16 +207,16 @@ class HyperFileParquetWriter(HyperFileWriter):
 
     Example:
         hw = HyperFileParquetWriter(
-        name="test",
-        table_definition=TableDefinition(
-            table_name=TableName("Extract", "Extract"),
-            columns=[
-                TableDefinition.Column(name="string", type=SqlType.text(), nullability=NOT_NULLABLE),
-                TableDefinition.Column(name="int", type=SqlType.int(), nullability=NULLABLE),
-                TableDefinition.Column(name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE),
-            ]
-        ),
-        files=["/my-path/parquet-1.snappy.parquet","/my-path/parquet-2.snappy.parquet"]
+            name="test",
+            table_definition=TableDefinition(
+                table_name=TableName("Extract", "Extract"),
+                columns=[
+                    TableDefinition.Column(name="string", type=SqlType.text(), nullability=NOT_NULLABLE),
+                    TableDefinition.Column(name="int", type=SqlType.int(), nullability=NULLABLE),
+                    TableDefinition.Column(name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE),
+                ]
+            ),
+            files=["/my-path/parquet-1.snappy.parquet","/my-path/parquet-2.snappy.parquet"]
         ).execute()
 
         # do somthing with returned file path
