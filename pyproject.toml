@@ -209,6 +209,7 @@ lint = ["- ruff-fmt", "- mypy-check", "pylint-check"]
 log-versions = "python --version && {env:HATCH_UV} pip freeze | grep pyspark"
 test = "- pytest{env:HATCH_TEST_ARGS:} {args} -n 2"
 spark-tests = "test -m spark"
+spark-remote-tests = "test -m spark -m \"not skip_on_remote_session\"" 
 non-spark-tests = "test -m \"not spark\""
 
 # scripts.run = "echo bla {env:HATCH_TEST_ARGS:} {args}"
@@ -265,11 +266,11 @@ version = ["pyspark33", "pyspark34"]
 
 [[tool.hatch.envs.hatch-test.matrix]]
 python = ["3.10"]
-version = ["pyspark33", "pyspark34", "pyspark35"]
+version = ["pyspark33", "pyspark34", "pyspark35", "pyspark35r"]
 
 [[tool.hatch.envs.hatch-test.matrix]]
 python = ["3.11", "3.12"]
-version = ["pyspark35"]
+version = ["pyspark35", "pyspark35r"]
 
 [tool.hatch.envs.hatch-test.overrides]
 matrix.version.extra-dependencies = [
@@ -290,6 +291,7 @@ matrix.version.extra-dependencies = [
   ] },
   { value = "pyspark>=3.5,<3.6", if = [
     "pyspark35",
+    "pyspark35r",
   ] },
 ]
 
@@ -298,6 +300,12 @@ name.".*".env-vars = [
   { key = "PYTEST_XDIST_AUTO_NUM_WORKERS", value = "2" },
   # disables Koheesio logo being printed during testing
   { key = "KOHEESIO__PRINT_LOGO", value = "False" },
+]
+
+name.".*(pyspark35r).*".env-vars = [
+  # enable soark connect, setting to local as it will trigger 
+  # spark to start local spark server and enbale remote session
+  { key = "SPARK_REMOTE", value = "local" },
 ]
 
 [tool.pytest.ini_options]
@@ -395,7 +403,7 @@ features = [
   "box",
   "pandas",
   "pyspark",
-  "se",
+  # "se",
   "sftp",
   "delta",
   "excel",
@@ -403,7 +411,7 @@ features = [
   "test",
   "docs",
 ]
-extra-dependencies = ["pyspark==3.4.*"]
+extra-dependencies = ["pyspark[connect]==3.5.*"]
 
 
 ###  ~~~~~~~~~~~~~~~~~~  ###

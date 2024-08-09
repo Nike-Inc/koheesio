@@ -75,7 +75,7 @@ class DummyWriter(Writer):
         df: DataFrame = self.df
 
         # noinspection PyProtectedMember
-        df_content = df._jdf.showString(self.n, self.truncate, self.vertical)
+        df_content = df._show_string(self.n, self.truncate, self.vertical)
 
         # logs the equivalent of doing df.show()
         self.log.info(f"content of df that was passed to DummyWriter:\n{df_content}")

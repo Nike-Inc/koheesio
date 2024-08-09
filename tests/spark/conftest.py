@@ -7,7 +7,6 @@ from textwrap import dedent
 from unittest.mock import Mock
 
 import pytest
-from delta import configure_spark_with_delta_pip
 
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.types import (
@@ -51,10 +50,25 @@ def checkpoint_folder(tmp_path_factory, random_uuid, logger):
 @pytest.fixture(scope="session")
 def spark(warehouse_path, random_uuid):
     """Spark session fixture with Delta enabled."""
+    os.environ["SPARK_REMOTE"] = "local"
+    import importlib_metadata
+
+    delta_version = importlib_metadata.version("delta_spark")
+
+    extra_packages = []
+    builder = SparkSession.builder.appName("test_session" + random_uuid)
+
+    if os.environ.get("SPARK_REMOTE") == "local":
+        builder = builder.remote("local")
+        extra_packages.append("org.apache.spark:spark-connect_2.12:3.5.1")
+    else:
+        builder = builder.master("local[*]")
+
+    packages = ",".join(extra_packages + [f"io.delta:delta-spark_2.12:{delta_version}"])
+
     builder = (
-        SparkSession.builder.appName("test_session" + random_uuid)
-        .master("local[*]")
-        .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
+        builder.config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
+        .config("spark.jars.packages", packages)
         .config("spark.sql.warehouse.dir", warehouse_path)
         .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
         .config("spark.sql.session.timeZone", "UTC")
@@ -62,7 +76,9 @@ def spark(warehouse_path, random_uuid):
         .config("spark.sql.execution.arrow.pyspark.fallback.enabled", "true")
     )
 
-    spark_session = configure_spark_with_delta_pip(builder).getOrCreate()
+    spark_session = builder.getOrCreate()
+
+
     yield spark_session
 
     spark_session.stop()

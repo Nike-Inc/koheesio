@@ -84,7 +84,7 @@ def test_delta_table_merge_all(spark):
     }
     assert result == expected
 
-
+@pytest.mark.skip_on_remote_session
 def test_deltatablewriter_with_invalid_conditions(spark, dummy_df):
     table_name = "delta_test_table"
     merge_builder = (

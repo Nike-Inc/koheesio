@@ -3,15 +3,17 @@ Create Spark DataFrame directly from the data stored in a Python variable
 """
 
 import json
-from typing import Any, Dict, Optional, Union
 from enum import Enum
 from functools import partial
+from io import StringIO
+from typing import Any, Dict, Optional, Union
 
-from pyspark.rdd import RDD
+import pandas as pd
 from pyspark.sql import DataFrame
 from pyspark.sql.types import StructType
 
 from koheesio.models import ExtraParamsMixin, Field
+from koheesio.spark import SparkSession
 from koheesio.spark.readers import Reader
 
 
@@ -71,43 +73,48 @@ class InMemoryDataReader(Reader, ExtraParamsMixin):
         description="[Optional] Set of extra parameters that should be passed to the appropriate reader (csv / json)",
     )
 
-    @property
-    def _rdd(self) -> RDD:
-        """
-        Read provided data and transform it into Spark RDD
-
-        Returns
-        -------
-        RDD
-        """
-        _data = self.data
-
-        if isinstance(_data, bytes):
-            _data = _data.decode("utf-8")
-
-        if isinstance(_data, dict):
-            _data = json.dumps(_data)
-
-        # 'list' type already compatible with 'parallelize'
-        if not isinstance(_data, list):
-            _data = _data.splitlines()
-
-        _rdd = self.spark.sparkContext.parallelize(_data)
-
-        return _rdd
-
-    def _csv(self, rdd: RDD) -> DataFrame:
+    def _csv(self) -> DataFrame:
         """Method for reading CSV data"""
-        return self.spark.read.csv(rdd, schema=self.schema_, **self.params)
+        if isinstance(self.data, list):
+            csv_data: str = "\n".join(self.data)
+        else:
+            csv_data: str = self.data  # type: ignore
 
-    def _json(self, rdd: RDD) -> DataFrame:
+        pandas_df = pd.read_csv(StringIO(csv_data), **self.params)  # type: ignore
+        df = self.spark.createDataFrame(pandas_df, schema=self.schema_)  # type: ignore
+
+        return df
+
+    def _json(self) -> DataFrame:
         """Method for reading JSON data"""
-        return self.spark.read.json(rdd, schema=self.schema_, **self.params)
+        self.spark: SparkSession
+
+        if isinstance(self.data, str):
+            json_data = [json.loads(self.data)]
+        elif isinstance(self.data, list):
+            if all(isinstance(x, str) for x in self.data):
+                json_data = [json.loads(x) for x in self.data]
+        else:
+            json_data = [self.data]
+
+        # Use pyspark.pandas to read the JSON data from the string
+        pandas_df = pd.read_json(StringIO(json.dumps(json_data)), ** self.params)  # type: ignore
+
+        # Convert pyspark.pandas DataFrame to Spark DataFrame
+        df = self.spark.createDataFrame(pandas_df, schema=self.schema_)  
+
+        return df
 
     def execute(self):
         """
         Execute method appropriate to the specific data format
         """
+        if self.data is None:
+            raise ValueError("Data is not provided")
+
+        if isinstance(self.data, bytes):
+            self.data = self.data.decode("utf-8")
+
         _func = getattr(InMemoryDataReader, f"_{self.format}")
-        _df = partial(_func, self, self._rdd)()
+        _df = partial(_func, self)()
         self.output.df = _df

@@ -2,13 +2,14 @@
 Module for the BaseReader class
 """
 
-from typing import Optional, TypeVar
+from typing import Optional
 from abc import ABC, abstractmethod
 
 from koheesio import Step
+from koheesio.spark import DataFrame as SparkDataFrame
 
 # Define a type variable that can be any type of DataFrame
-DataFrameType = TypeVar("DataFrameType")
+DataFrameType = SparkDataFrame
 
 
 class BaseReader(Step, ABC):
