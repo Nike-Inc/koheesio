@@ -33,6 +33,7 @@ class HyperFile(Step, ABC):
     """
     Base class for all HyperFile classes
     """
+
     schema_: str = Field(default="Extract", alias="schema", description="Internal schema name within the Hyper file")
     table: str = Field(default="Extract", description="Table name within the Hyper file")
 
@@ -53,10 +54,9 @@ class HyperFileReader(HyperFile, SparkStep):
             path=PurePath(hw.hyper_path),
         ).execute().df
     """
+
     path: PurePath = Field(
-        default=...,
-        description="Path to the Hyper file",
-        examples=["PurePath(~/data/my-file.hyper)"]
+        default=..., description="Path to the Hyper file", examples=["PurePath(~/data/my-file.hyper)"]
     )
 
     def execute(self):
@@ -110,20 +110,20 @@ class HyperFileWriter(HyperFile):
     """
     Base class for all HyperFileWriter classes
     """
+
     path: PurePath = Field(
-        default=TemporaryDirectory().name,
-        description="Path to the Hyper file",
-        examples=["PurePath(/tmp/hyper/)"]
+        default=TemporaryDirectory().name, description="Path to the Hyper file", examples=["PurePath(/tmp/hyper/)"]
     )
     name: str = Field(default="extract", description="Name of the Hyper file")
     table_definition: TableDefinition = Field(
         default=...,
         description="Table definition to write to the Hyper file as described in "
-        "https://tableau.github.io/hyper-db/lang_docs/py/tableauhyperapi.html#tableauhyperapi.TableDefinition"
+        "https://tableau.github.io/hyper-db/lang_docs/py/tableauhyperapi.html#tableauhyperapi.TableDefinition",
     )
 
     class Output(StepOutput):
         """Output class for HyperFileListWriter"""
+
         hyper_path: PurePath = Field(default=..., description="Path to created Hyper file")
 
     @property
@@ -171,10 +171,11 @@ class HyperFileListWriter(HyperFileWriter):
         # do somthing with returned file path
         hw.hyper_path
     """
+
     table_definition: TableDefinition = Field(
         default=...,
         description="Table definition to write to the Hyper file as described in "
-        "https://tableau.github.io/hyper-db/lang_docs/py/tableauhyperapi.html#tableauhyperapi.TableDefinition"
+        "https://tableau.github.io/hyper-db/lang_docs/py/tableauhyperapi.html#tableauhyperapi.TableDefinition",
     )
     data: conlist(List[Any], min_length=1) = Field(default=..., description="List of rows to write to the Hyper file")
 
@@ -222,10 +223,9 @@ class HyperFileParquetWriter(HyperFileWriter):
         # do somthing with returned file path
         hw.hyper_path
     """
+
     file: conlist(Union[str, PurePath], min_length=1) = Field(
-        default=...,
-        alias="files",
-        description="One or multiple parquet files to write to the Hyper file"
+        default=..., alias="files", description="One or multiple parquet files to write to the Hyper file"
     )
 
     def execute(self):
@@ -238,13 +238,12 @@ class HyperFileParquetWriter(HyperFileWriter):
             ) as connection:
                 connection.catalog.create_schema(schema=self.table_definition.table_name.schema_name)
                 connection.catalog.create_table(table_definition=self.table_definition)
-                sql = f'copy "{self.schema_}"."{self.table}" ' \
-                    f'from array [{array_files}] ' \
-                    f'with (format parquet)'
+                sql = f'copy "{self.schema_}"."{self.table}" ' f"from array [{array_files}] " f"with (format parquet)"
                 self.log.debug(f"Executing SQL: {sql}")
                 connection.execute_command(sql)
 
         self.output.hyper_path = self.hyper_path
+
 
 # https://tableau.github.io/hyper-db/docs/sql/external/formats/#external-format-parquet
 # TODO: Dataframe Writer - > Inherit Schema from Dataframe and convert datatypes -> Save to Parquet -> Write To Hyper
