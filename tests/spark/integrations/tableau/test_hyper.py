@@ -21,16 +21,20 @@ class TestHyper:
     @pytest.fixture()
     def parquet_file(self, data_path):
         path = f"{data_path}/readers/parquet_file"
-        return Path(path).glob('**/*.parquet')
+        return Path(path).glob("**/*.parquet")
 
     @pytest.fixture()
     def hyper_file(self, data_path):
         return f"{data_path}/readers/hyper_file/dummy.hyper"
 
     def test_hyper_file_reader(self, hyper_file):
-        df = HyperFileReader(
-            path=hyper_file,
-        ).execute().df
+        df = (
+            HyperFileReader(
+                path=hyper_file,
+            )
+            .execute()
+            .df
+        )
 
         assert df.count() == 3
         assert df.dtypes == [("string", "string"), ("int", "int"), ("timestamp", "timestamp")]
@@ -44,7 +48,7 @@ class TestHyper:
                     TableDefinition.Column(name="string", type=SqlType.text(), nullability=NOT_NULLABLE),
                     TableDefinition.Column(name="int", type=SqlType.int(), nullability=NULLABLE),
                     TableDefinition.Column(name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE),
-                ]
+                ],
             ),
             data=[
                 ["text_1", 1, datetime(2024, 1, 1, 0, 0, 0, 0)],
@@ -53,9 +57,13 @@ class TestHyper:
             ],
         ).execute()
 
-        df = HyperFileReader(
-            path=PurePath(hw.hyper_path),
-        ).execute().df
+        df = (
+            HyperFileReader(
+                path=PurePath(hw.hyper_path),
+            )
+            .execute()
+            .df
+        )
 
         assert df.count() == 3
         assert df.dtypes == [("string", "string"), ("int", "int"), ("timestamp", "timestamp")]
@@ -69,9 +77,9 @@ class TestHyper:
                     TableDefinition.Column(name="string", type=SqlType.text(), nullability=NOT_NULLABLE),
                     TableDefinition.Column(name="int", type=SqlType.int(), nullability=NULLABLE),
                     TableDefinition.Column(name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE),
-                ]
+                ],
             ),
-            files=parquet_file
+            files=parquet_file,
         ).execute()
 
         df = HyperFileReader(path=PurePath(hw.hyper_path)).execute().df

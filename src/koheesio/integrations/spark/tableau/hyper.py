@@ -243,7 +243,3 @@ class HyperFileParquetWriter(HyperFileWriter):
                 connection.execute_command(sql)
 
         self.output.hyper_path = self.hyper_path
-
-
-# https://tableau.github.io/hyper-db/docs/sql/external/formats/#external-format-parquet
-# TODO: Dataframe Writer - > Inherit Schema from Dataframe and convert datatypes -> Save to Parquet -> Write To Hyper

@@ -70,6 +70,9 @@ class TableauServer(Step):
         if project and project_id:
             raise ValueError("Both 'project' and 'project_id' parameters cannot be provided at the same time.")
 
+        if not project and not project_id:
+            raise ValueError("Either 'project' or 'project_id' parameters should be provided, none is set")
+
     @property
     def auth(self) -> ContextManager:
         """
