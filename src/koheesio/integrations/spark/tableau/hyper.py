@@ -1,20 +1,27 @@
-from koheesio.steps import Step, StepOutput
-from koheesio.spark.readers import SparkStep
-from koheesio.models import conlist
-
-from koheesio.spark.transformations.cast_to_datatype import CastToDatatype
-
 import os
-from pydantic import Field
 from abc import ABC, abstractmethod
-
-from typing import Any, List, Union
-from tempfile import TemporaryDirectory
-
-from pyspark.sql import DataFrame
-from pyspark.sql.types import StringType, FloatType, BooleanType, LongType, StructField, StructType, IntegerType
-
 from pathlib import PurePath
+from tempfile import TemporaryDirectory
+from typing import Any, List, Union, Optional
+
+from pydantic import Field, conlist
+from pyspark.sql import DataFrame
+from pyspark.sql.functions import col
+from pyspark.sql.types import (
+    StringType,
+    FloatType,
+    BooleanType,
+    LongType,
+    StructField,
+    StructType,
+    IntegerType,
+    ShortType,
+    DoubleType,
+    DateType,
+    TimestampType,
+    TimestampNTZType,
+    DecimalType
+)
 from tableauhyperapi import (
     Connection,
     CreateMode,
@@ -27,6 +34,10 @@ from tableauhyperapi import (
     TableName,
     Telemetry,
 )
+
+from koheesio.spark.readers import SparkStep
+from koheesio.spark.transformations.cast_to_datatype import CastToDatatype
+from koheesio.steps import Step, StepOutput
 
 
 class HyperFile(Step, ABC):
@@ -65,13 +76,15 @@ class HyperFileReader(HyperFile, SparkStep):
             "text": StringType,
             "double": FloatType,
             "bool": BooleanType,
+            "small_int": ShortType,
             "big_int": LongType,
             "timestamp": StringType,
             "int": IntegerType,
+            "numeric": DecimalType,
         }
-
         df_cols = []
         timestamp_cols = []
+        date_cols = []
 
         with HyperProcess(telemetry=Telemetry.DO_NOT_SEND_USAGE_DATA_TO_TABLEAU) as hp:
             with Connection(endpoint=hp.endpoint, database=self.path) as connection:
@@ -84,24 +97,36 @@ class HyperFileReader(HyperFile, SparkStep):
 
                     column_name = column.name.unescaped.__str__()
                     tableau_type = column.type.__str__().lower()
-                    spark_type = type_mapping.get(tableau_type, StringType)
+
+                    if tableau_type.startswith("numeric"):
+                        spark_type = DecimalType(precision=18, scale=5)
+                    else:
+                        spark_type = type_mapping.get(tableau_type, StringType)()
 
                     if tableau_type == "timestamp":
                         timestamp_cols.append(column_name)
-                        col = f'cast("{column_name}" as text)'
+                        _col = f'cast("{column_name}" as text)'
                     elif tableau_type == "date":
-                        col = f'cast("{column_name}" as text)'
+                        date_cols.append(column_name)
+                        _col = f'cast("{column_name}" as text)'
+                    elif tableau_type.startswith("numeric"):
+                        _col = f'cast("{column_name}" as decimal(18,5))'
                     else:
-                        col = f'"{column_name}"'
+                        _col = f'"{column_name}"'
 
-                    df_cols.append(StructField(column_name, spark_type()))
-                    select_cols.append(col)
+                    df_cols.append(
+                        StructField(column_name, spark_type)
+                    )
+                    select_cols.append(_col)
 
                 data = connection.execute_list_query(f"select {','.join(select_cols)} from {self.table_name}")
 
         df_schema = StructType(df_cols)
         df = self.spark.createDataFrame(data, schema=df_schema)
-        df = CastToDatatype(column=timestamp_cols, datatype="timestamp").transform(df)
+        if timestamp_cols:
+            df = CastToDatatype(column=timestamp_cols, datatype="timestamp").transform(df)
+        if date_cols:
+            df = CastToDatatype(column=date_cols, datatype="date").transform(df)
 
         self.output.df = df
 
@@ -116,7 +141,7 @@ class HyperFileWriter(HyperFile):
     )
     name: str = Field(default="extract", description="Name of the Hyper file")
     table_definition: TableDefinition = Field(
-        default=...,
+        default=None,
         description="Table definition to write to the Hyper file as described in "
         "https://tableau.github.io/hyper-db/lang_docs/py/tableauhyperapi.html#tableauhyperapi.TableDefinition",
     )
@@ -137,6 +162,9 @@ class HyperFileWriter(HyperFile):
         hyper_path = PurePath(self.path, f"{self.name}.hyper" if ".hyper" not in self.name else self.name)
         self.log.info(f"Destination file: {hyper_path}")
         return hyper_path
+
+    def write(self):
+        self.execute()
 
     @abstractmethod
     def execute(self):
@@ -172,11 +200,6 @@ class HyperFileListWriter(HyperFileWriter):
         hw.hyper_path
     """
 
-    table_definition: TableDefinition = Field(
-        default=...,
-        description="Table definition to write to the Hyper file as described in "
-        "https://tableau.github.io/hyper-db/lang_docs/py/tableauhyperapi.html#tableauhyperapi.TableDefinition",
-    )
     data: conlist(List[Any], min_length=1) = Field(default=..., description="List of rows to write to the Hyper file")
 
     def execute(self):
@@ -243,3 +266,115 @@ class HyperFileParquetWriter(HyperFileWriter):
                 connection.execute_command(sql)
 
         self.output.hyper_path = self.hyper_path
+
+
+class HyperFileDataFrameWriter(HyperFileWriter):
+    df: DataFrame = Field(default=..., description="Spark DataFrame to write to the Hyper file")
+    table_definition: Optional[TableDefinition] = None  # table_definition is not required for this class
+
+    @staticmethod
+    def table_definition_column(column: StructField) -> TableDefinition.Column:
+        """
+        Convert a Spark StructField to a Tableau Hyper SqlType
+        """
+        type_mapping = {
+            IntegerType(): SqlType.int,
+            LongType(): SqlType.big_int,
+            ShortType(): SqlType.small_int,
+            DoubleType(): SqlType.double,
+            FloatType(): SqlType.double,
+            BooleanType(): SqlType.bool,
+            DateType(): SqlType.date,
+            TimestampType(): SqlType.timestamp,     # TZ-aware type will be mapped to NTZ type
+            TimestampNTZType(): SqlType.timestamp,
+            StringType(): SqlType.text,
+        }
+
+        if column.dataType in type_mapping:
+            sql_type = type_mapping[column.dataType]()
+        elif str(column.dataType).startswith("DecimalType"):
+            # Tableau Hyper API limits the precision to 18 decimal places
+            # noinspection PyUnresolvedReferences
+            sql_type = SqlType.numeric(
+                precision=column.dataType.precision if column.dataType.precision <= 18 else 18,
+                scale=column.dataType.scale
+            )
+        else:
+            raise ValueError(f"Unsupported datatype '{column.dataType}' for column '{column.name}'.")
+
+        return TableDefinition.Column(
+            name=column.name, type=sql_type, nullability=NULLABLE if column.nullable else NOT_NULLABLE
+        )
+
+    @property
+    def _table_definition(self) -> TableDefinition:
+        schema = self.df.schema
+        columns = list(map(self.table_definition_column, schema))
+
+        return TableDefinition(table_name=self.table_name, columns=columns)
+
+    def clean_dataframe(self) -> DataFrame:
+        """
+        - Replace NULLs for string and numeric columns
+        - Convert data types to ensure compatibility with Tableau Hyper API
+        """
+        _df = self.df
+        _schema = self.df.schema
+
+        integer_cols = [field.name for field in _schema if field.dataType == IntegerType()]
+        long_cols = [field.name for field in _schema if field.dataType == LongType()]
+        double_cols = [field.name for field in _schema if field.dataType == DoubleType()]
+        float_cols = [field.name for field in _schema if field.dataType == FloatType()]
+        string_cols = [field.name for field in _schema if field.dataType == StringType()]
+        decimal_cols = [field for field in _schema if str(field.dataType).startswith("DecimalType")]
+        timestamp_cols = [field.name for field in _schema if field.dataType == TimestampType()]
+
+        # Cast decimal fields to DecimalType(18,3)
+        for d_col in decimal_cols:
+            # noinspection PyUnresolvedReferences
+            if d_col.dataType.precision > 18:
+                _df = self.df.withColumn(d_col.name, col(d_col.name).cast(DecimalType(precision=18, scale=5)))
+
+        for t_col in timestamp_cols:
+            _df = _df.withColumn(t_col, col(t_col).cast(TimestampNTZType()))
+
+        # Replace null and NaN values with 0
+        if len(integer_cols) > 0:
+            _df = _df.na.fill(0, integer_cols)
+        elif len(long_cols) > 0:
+            _df = _df.na.fill(0, long_cols)
+        elif len(double_cols) > 0:
+            _df = _df.na.fill(0.0, double_cols)
+        elif len(float_cols) > 0:
+            _df = _df.na.fill(0.0, float_cols)
+        elif len(decimal_cols) > 0:
+            _df = _df.na.fill(0.0, decimal_cols)
+        elif len(string_cols) > 0:
+            _df = _df.na.fill("", string_cols)
+
+        return _df
+
+    def write_parquet(self):
+        _path = self.path.joinpath("parquet")
+        (
+            self.clean_dataframe()
+            .coalesce(1).write.option("delimiter", ",").option("header", "true").mode("overwrite")
+            .parquet(_path.as_posix())
+        )
+
+        for _, _, files in os.walk(_path):
+            for file in files:
+                if file.endswith(".parquet"):
+                    fp = PurePath(_path, file)
+                    self.log.info("Parquet file created: %s", fp)
+                    return [fp]
+
+    def execute(self):
+        w = HyperFileParquetWriter(
+            path=self.path,
+            name=self.name,
+            table_definition=self._table_definition,
+            files=self.write_parquet()
+        )
+        w.execute()
+        self.output.hyper_path = w.output.hyper_path

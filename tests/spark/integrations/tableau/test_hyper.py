@@ -7,6 +7,7 @@ from koheesio.integrations.spark.tableau.hyper import (
     HyperFileListWriter,
     HyperFileReader,
     HyperFileParquetWriter,
+    HyperFileDataFrameWriter,
     TableName,
     TableDefinition,
     SqlType,
@@ -86,3 +87,17 @@ class TestHyper:
 
         assert df.count() == 6
         assert df.dtypes == [("string", "string"), ("int", "int"), ("timestamp", "timestamp")]
+
+    def test_hyper_file_dataframe_writer(self, data_path, df_with_all_types):
+        hw = HyperFileDataFrameWriter(
+            name="test",
+            df=df_with_all_types.drop("void", "byte", "binary", "array", "map", "float"),
+        ).execute()
+
+        df = HyperFileReader(path=PurePath(hw.hyper_path)).execute().df
+        assert df.count() == 1
+        assert df.dtypes == [
+            ("short", "smallint"), ("integer", "int"), ("long", "bigint"),
+            ("double", "float"), ("decimal", "decimal(18,5)"), ("string", "string"),
+            ("boolean", "boolean"), ("timestamp", "timestamp"), ("date", "date"),
+        ]
