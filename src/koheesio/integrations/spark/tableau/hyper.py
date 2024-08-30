@@ -1,38 +1,40 @@
 import os
+from typing import Any, List, Optional, Union
 from abc import ABC, abstractmethod
 from pathlib import PurePath
 from tempfile import TemporaryDirectory
-from typing import Any, List, Union, Optional
 
-from pydantic import Field, conlist
-from pyspark.sql import DataFrame
-from pyspark.sql.functions import col
-from pyspark.sql.types import (
-    StringType,
-    FloatType,
-    BooleanType,
-    LongType,
-    StructField,
-    StructType,
-    IntegerType,
-    ShortType,
-    DoubleType,
-    DateType,
-    TimestampType,
-    TimestampNTZType,
-    DecimalType
-)
 from tableauhyperapi import (
+    NOT_NULLABLE,
+    NULLABLE,
     Connection,
     CreateMode,
     HyperProcess,
     Inserter,
-    NOT_NULLABLE,
-    NULLABLE,
     SqlType,
     TableDefinition,
     TableName,
     Telemetry,
+)
+
+from pydantic import Field, conlist
+
+from pyspark.sql import DataFrame
+from pyspark.sql.functions import col
+from pyspark.sql.types import (
+    BooleanType,
+    DateType,
+    DecimalType,
+    DoubleType,
+    FloatType,
+    IntegerType,
+    LongType,
+    ShortType,
+    StringType,
+    StructField,
+    StructType,
+    TimestampNTZType,
+    TimestampType,
 )
 
 from koheesio.spark.readers import SparkStep
@@ -114,9 +116,7 @@ class HyperFileReader(HyperFile, SparkStep):
                     else:
                         _col = f'"{column_name}"'
 
-                    df_cols.append(
-                        StructField(column_name, spark_type)
-                    )
+                    df_cols.append(StructField(column_name, spark_type))
                     select_cols.append(_col)
 
                 data = connection.execute_list_query(f"select {','.join(select_cols)} from {self.table_name}")
@@ -285,7 +285,7 @@ class HyperFileDataFrameWriter(HyperFileWriter):
             FloatType(): SqlType.double,
             BooleanType(): SqlType.bool,
             DateType(): SqlType.date,
-            TimestampType(): SqlType.timestamp,     # TZ-aware type will be mapped to NTZ type
+            TimestampType(): SqlType.timestamp,  # TZ-aware type will be mapped to NTZ type
             TimestampNTZType(): SqlType.timestamp,
             StringType(): SqlType.text,
         }
@@ -297,7 +297,7 @@ class HyperFileDataFrameWriter(HyperFileWriter):
             # noinspection PyUnresolvedReferences
             sql_type = SqlType.numeric(
                 precision=column.dataType.precision if column.dataType.precision <= 18 else 18,
-                scale=column.dataType.scale
+                scale=column.dataType.scale,
             )
         else:
             raise ValueError(f"Unsupported datatype '{column.dataType}' for column '{column.name}'.")
@@ -358,7 +358,10 @@ class HyperFileDataFrameWriter(HyperFileWriter):
         _path = self.path.joinpath("parquet")
         (
             self.clean_dataframe()
-            .coalesce(1).write.option("delimiter", ",").option("header", "true").mode("overwrite")
+            .coalesce(1)
+            .write.option("delimiter", ",")
+            .option("header", "true")
+            .mode("overwrite")
             .parquet(_path.as_posix())
         )
 
@@ -371,10 +374,7 @@ class HyperFileDataFrameWriter(HyperFileWriter):
 
     def execute(self):
         w = HyperFileParquetWriter(
-            path=self.path,
-            name=self.name,
-            table_definition=self._table_definition,
-            files=self.write_parquet()
+            path=self.path, name=self.name, table_definition=self._table_definition, files=self.write_parquet()
         )
         w.execute()
         self.output.hyper_path = w.output.hyper_path

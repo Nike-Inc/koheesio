@@ -1,12 +1,19 @@
 import os
+from typing import ContextManager, Optional, Union
 from enum import Enum
 from pathlib import PurePath
-from typing import ContextManager
-from typing import Optional, Union
 
 import urllib3
-from pydantic import SecretStr, Field
-from tableauserverclient import PersonalAccessTokenAuth, TableauAuth, Server, ProjectItem, Pager, DatasourceItem
+from tableauserverclient import (
+    DatasourceItem,
+    Pager,
+    PersonalAccessTokenAuth,
+    ProjectItem,
+    Server,
+    TableauAuth,
+)
+
+from pydantic import Field, SecretStr
 
 from koheesio.models import model_validator
 from koheesio.steps import Step, StepOutput

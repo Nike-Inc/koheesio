@@ -1,18 +1,18 @@
 from datetime import datetime
-from pathlib import PurePath, Path
+from pathlib import Path, PurePath
 
 import pytest
 
 from koheesio.integrations.spark.tableau.hyper import (
-    HyperFileListWriter,
-    HyperFileReader,
-    HyperFileParquetWriter,
-    HyperFileDataFrameWriter,
-    TableName,
-    TableDefinition,
-    SqlType,
     NOT_NULLABLE,
     NULLABLE,
+    HyperFileDataFrameWriter,
+    HyperFileListWriter,
+    HyperFileParquetWriter,
+    HyperFileReader,
+    SqlType,
+    TableDefinition,
+    TableName,
 )
 
 pytestmark = pytest.mark.spark
@@ -97,7 +97,13 @@ class TestHyper:
         df = HyperFileReader(path=PurePath(hw.hyper_path)).execute().df
         assert df.count() == 1
         assert df.dtypes == [
-            ("short", "smallint"), ("integer", "int"), ("long", "bigint"),
-            ("double", "float"), ("decimal", "decimal(18,5)"), ("string", "string"),
-            ("boolean", "boolean"), ("timestamp", "timestamp"), ("date", "date"),
+            ("short", "smallint"),
+            ("integer", "int"),
+            ("long", "bigint"),
+            ("double", "float"),
+            ("decimal", "decimal(18,5)"),
+            ("string", "string"),
+            ("boolean", "boolean"),
+            ("timestamp", "timestamp"),
+            ("date", "date"),
         ]
