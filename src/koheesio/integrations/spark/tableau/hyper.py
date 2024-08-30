@@ -33,13 +33,13 @@ from pyspark.sql.types import (
     StringType,
     StructField,
     StructType,
-    TimestampNTZType,
     TimestampType,
 )
 
 from koheesio.spark.readers import SparkStep
 from koheesio.spark.transformations.cast_to_datatype import CastToDatatype
 from koheesio.steps import Step, StepOutput
+from koheesio.spark.utils import spark_minor_version
 
 
 class HyperFile(Step, ABC):
@@ -286,9 +286,11 @@ class HyperFileDataFrameWriter(HyperFileWriter):
             BooleanType(): SqlType.bool,
             DateType(): SqlType.date,
             TimestampType(): SqlType.timestamp,  # TZ-aware type will be mapped to NTZ type
-            TimestampNTZType(): SqlType.timestamp,
             StringType(): SqlType.text,
         }
+        if spark_minor_version >= 3.4:
+            from pyspark.sql.types import TimestampNTZType
+            type_mapping[TimestampNTZType()] = SqlType.timestamp
 
         if column.dataType in type_mapping:
             sql_type = type_mapping[column.dataType]()
@@ -335,8 +337,10 @@ class HyperFileDataFrameWriter(HyperFileWriter):
             if d_col.dataType.precision > 18:
                 _df = self.df.withColumn(d_col.name, col(d_col.name).cast(DecimalType(precision=18, scale=5)))
 
-        for t_col in timestamp_cols:
-            _df = _df.withColumn(t_col, col(t_col).cast(TimestampNTZType()))
+        if spark_minor_version >= 3.4:
+            from pyspark.sql.types import TimestampNTZType
+            for t_col in timestamp_cols:
+                _df = _df.withColumn(t_col, col(t_col).cast(TimestampNTZType()))
 
         # Replace null and NaN values with 0
         if len(integer_cols) > 0:
