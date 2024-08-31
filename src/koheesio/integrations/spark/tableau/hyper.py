@@ -285,12 +285,15 @@ class HyperFileDataFrameWriter(HyperFileWriter):
             FloatType(): SqlType.double,
             BooleanType(): SqlType.bool,
             DateType(): SqlType.date,
-            TimestampType(): SqlType.timestamp,  # TZ-aware type will be mapped to NTZ type
             StringType(): SqlType.text,
         }
+
         if spark_minor_version >= 3.4:
             from pyspark.sql.types import TimestampNTZType
             type_mapping[TimestampNTZType()] = SqlType.timestamp
+            type_mapping[TimestampType()] = SqlType.timestamp  # TZ-aware Spark type will be mapped to NTZ type of Hyper
+        else:
+            type_mapping[TimestampType()] = SqlType.timestamp_tz
 
         if column.dataType in type_mapping:
             sql_type = type_mapping[column.dataType]()
