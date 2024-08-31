@@ -81,6 +81,7 @@ class HyperFileReader(HyperFile, SparkStep):
             "small_int": ShortType,
             "big_int": LongType,
             "timestamp": StringType,
+            "timestamp_tz": StringType,
             "int": IntegerType,
             "numeric": DecimalType,
         }
@@ -105,7 +106,7 @@ class HyperFileReader(HyperFile, SparkStep):
                     else:
                         spark_type = type_mapping.get(tableau_type, StringType)()
 
-                    if tableau_type == "timestamp":
+                    if tableau_type == "timestamp" or tableau_type == "timestamp_tz":
                         timestamp_cols.append(column_name)
                         _col = f'cast("{column_name}" as text)'
                     elif tableau_type == "date":
@@ -316,7 +317,12 @@ class HyperFileDataFrameWriter(HyperFileWriter):
         schema = self.df.schema
         columns = list(map(self.table_definition_column, schema))
 
-        return TableDefinition(table_name=self.table_name, columns=columns)
+        td = TableDefinition(table_name=self.table_name, columns=columns)
+        self.log.debug(f"Table definition for {self.table_name}:")
+        for column in td.columns:
+            self.log.debug(f"|-- {column.name}: {column.type} (nullable = {column.nullability})")
+
+        return td
 
     def clean_dataframe(self) -> DataFrame:
         """
