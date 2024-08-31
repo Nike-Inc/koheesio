@@ -38,8 +38,8 @@ from pyspark.sql.types import (
 
 from koheesio.spark.readers import SparkStep
 from koheesio.spark.transformations.cast_to_datatype import CastToDatatype
-from koheesio.steps import Step, StepOutput
 from koheesio.spark.utils import spark_minor_version
+from koheesio.steps import Step, StepOutput
 
 
 class HyperFile(Step, ABC):
@@ -289,10 +289,14 @@ class HyperFileDataFrameWriter(HyperFileWriter):
             StringType(): SqlType.text,
         }
 
+        # Handling the TimestampNTZType for Spark 3.4+
+        # Mapping both TimestampType and TimestampNTZType to NTZ type of Hyper
         if spark_minor_version >= 3.4:
             from pyspark.sql.types import TimestampNTZType
+
             type_mapping[TimestampNTZType()] = SqlType.timestamp
-            type_mapping[TimestampType()] = SqlType.timestamp  # TZ-aware Spark type will be mapped to NTZ type of Hyper
+            type_mapping[TimestampType()] = SqlType.timestamp
+        # In older versions of Spark, only TimestampType is available and is mapped to TZ type of Hyper
         else:
             type_mapping[TimestampType()] = SqlType.timestamp_tz
 
@@ -346,8 +350,11 @@ class HyperFileDataFrameWriter(HyperFileWriter):
             if d_col.dataType.precision > 18:
                 _df = self.df.withColumn(d_col.name, col(d_col.name).cast(DecimalType(precision=18, scale=5)))
 
+        # Handling the TimestampNTZType for Spark 3.4+
+        # Any TimestampType column will be cast to TimestampNTZType for compatibility with Tableau Hyper API
         if spark_minor_version >= 3.4:
             from pyspark.sql.types import TimestampNTZType
+
             for t_col in timestamp_cols:
                 _df = _df.withColumn(t_col, col(t_col).cast(TimestampNTZType()))
 
