@@ -1,8 +1,3 @@
----
-tags:
-    - doctype/explanation
----
-
 ## Scope
 
 <!-- TODO: add Koheesio specifics -->
@@ -21,7 +16,7 @@ From [documentation.divio.com](https://documentation.divio.com):
 > They are: _tutorials, how-to guides, technical reference and explanation_. They represent four different purposes or functions, and require four different approaches to their creation. Understanding the implications of this will help improve most documentation - often immensely.
 >
 > **About the system**
-> ![Documentation System Overview](assets/../../assets/documentation-system-overview.png)
+> ![Documentation System Overview](../assets/documentation-system-overview.png)
 > The documentation system outlined here is a simple, comprehensive and nearly universally-applicable scheme. It is proven in practice across a wide variety of fields and applications.
 >
 > There are some very simple principles that govern documentation that are very rarely if ever spelled out. They seem to be a secret, though they shouldn’t be.

@@ -17,9 +17,9 @@ Concept
 
 See Also
 --------
-* [koheesio.spark.transformations](../transformations)
+* [koheesio.spark.transformations](index.md)
     Module containing all transformation classes.
-* [koheesio.spark.transformations.ColumnsTransformationWithTarget](../transformations/index.html#koheesio.spark.transformations.ColumnsTransformationWithTarget)
+* [koheesio.spark.transformations.ColumnsTransformationWithTarget](index.md#koheesio.spark.transformations.ColumnsTransformationWithTarget)
     Base class for all transformations that operate on columns and have a target column.
 """
 

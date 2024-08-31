@@ -14,7 +14,7 @@ class HanaReader(JdbcReader):
 
     Notes
     -----
-    * Refer to [JdbcReader](jdbc.html#koheesio.spark.readers.jdbc.JdbcReader) for the list of all available parameters.
+    * Refer to [JdbcReader](jdbc.md#koheesio.spark.readers.jdbc.JdbcReader) for the list of all available parameters.
     * Refer to SAP HANA Client Interface Programming Reference docs for the list of all available connection string
         parameters:
         https://help.sap.com/docs/SAP_HANA_CLIENT/f1b440ded6144a54ada97ff95dac7adf/109397c2206a4ab2a5386d494f4cf75e.html

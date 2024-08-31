@@ -121,7 +121,7 @@ class SFTPWriter(Writer):
         file through SFTP. Details on how the DataFrame is written to the buffer should be implemented in the
         implementation of the BufferWriter class. Any BufferWriter can be used here, as long as it implements the
         BufferWriter interface.
-    mode: SFTPWriteMode, optional, default=SFTPWriteMode.OVERWRITE
+    mode : SFTPWriteMode, optional, default=SFTPWriteMode.OVERWRITE
         Write mode: overwrite, append, ignore, exclusive, backup, or update. See the docstring of SFTPWriteMode for
         more details.
     """
@@ -341,7 +341,6 @@ class SendCsvToSftp(PandasCsvBufferWriter, SFTPWriter):
 
     Parameters
     ----------
-    ### SFTP Parameters (Inherited from SFTPWriter)
     path : Union[str, Path]
         Path to the folder to write to.
     file_name : Optional[str]
@@ -354,27 +353,27 @@ class SendCsvToSftp(PandasCsvBufferWriter, SFTPWriter):
         SFTP Server Username.
     password : SecretStr
         SFTP Server Password.
-    mode: SFTPWriteMode
+    mode : SFTPWriteMode
         Write mode: overwrite, append, ignore, exclusive, backup, or update.
-
-    ### CSV Parameters (Inherited from PandasCsvBufferWriter)
-    header: bool
+    header : bool
         Whether to write column names as the first line. Default is True.
-    sep: str
+    sep : str
         Field delimiter for the output file. Default is ','.
-    quote: str
+    quote : str
         Character used to quote fields. Default is '"'.
-    quoteAll: bool
+    quoteAll : bool
         Whether all values should be enclosed in quotes. Default is False.
-    escape: str
+    escape : str
         Character used to escape sep and quote when needed. Default is '\\'.
-    timestampFormat: str
+    timestampFormat : str
         Date format for datetime objects. Default is '%Y-%m-%dT%H:%M:%S.%f'.
-    lineSep: str
+    lineSep : str
         Character used as line separator. Default is os.linesep.
-    compression: Optional[Literal["infer", "gzip", "bz2", "zip", "xz", "zstd", "tar"]]
+    compression : Optional[Literal["infer", "gzip", "bz2", "zip", "xz", "zstd", "tar"]]
         Compression to use for the output data. Default is None.
 
+    See Also
+    --------
     For more details on the CSV parameters, refer to the PandasCsvBufferWriter class documentation.
     """
 
@@ -383,7 +382,7 @@ class SendCsvToSftp(PandasCsvBufferWriter, SFTPWriter):
     @model_validator(mode="after")
     def set_up_buffer_writer(self) -> "SendCsvToSftp":
         """Set up the buffer writer, passing all CSV related options to it."""
-        self.buffer_writer = PandasCsvBufferWriter(**self.get_options(options_type="kohesio_pandas_buffer_writer"))
+        self.buffer_writer = PandasCsvBufferWriter(**self.get_options(options_type="koheesio_pandas_buffer_writer"))
         return self
 
     def execute(self):
@@ -428,7 +427,6 @@ class SendJsonToSftp(PandasJsonBufferWriter, SFTPWriter):
 
     Parameters
     ----------
-    ### SFTP Parameters (Inherited from SFTPWriter)
     path : Union[str, Path]
         Path to the folder on the SFTP server.
     file_name : Optional[str]
@@ -441,21 +439,19 @@ class SendJsonToSftp(PandasJsonBufferWriter, SFTPWriter):
         SFTP Server Username.
     password : SecretStr
         SFTP Server Password.
-    mode: SFTPWriteMode
+    mode : SFTPWriteMode
         Write mode: overwrite, append, ignore, exclusive, backup, or update.
-
-    ### JSON Parameters (Inherited from PandasJsonBufferWriter)
-    orient: Literal["split", "records", "index", "columns", "values", "table"]
+    orient : Literal["split", "records", "index", "columns", "values", "table"]
         Format of the JSON string. Default is 'records'.
-    lines: bool
+    lines : bool
         If True, output is one JSON object per line. Only used when orient='records'. Default is True.
-    date_format: Literal["iso", "epoch"]
+    date_format : Literal["iso", "epoch"]
         Type of date conversion. Default is 'iso'.
-    double_precision: int
+    double_precision : int
         Decimal places for encoding floating point values. Default is 10.
-    force_ascii: bool
+    force_ascii : bool
         If True, encoded string is ASCII. Default is True.
-    compression: Optional[Literal["gzip"]]
+    compression : Optional[Literal["gzip"]]
         Compression to use for output data. Default is None.
 
     See Also

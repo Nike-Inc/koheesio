@@ -15,11 +15,11 @@ class SqlBaseStep(Step, ExtraParamsMixin, ABC):
 
     Parameters
     ----------
-    sql_path: Optional[Union[Path, str]], optional, default=None
+    sql_path : Optional[Union[Path, str]], optional, default=None
         Path to a SQL file
-    sql: Optional[str], optional, default=None
+    sql : Optional[str], optional, default=None
         SQL script to apply
-    params: Dict[str, Any], optional, default_factory=dict
+    params : Dict[str, Any], optional, default_factory=dict
         Placeholders (parameters) for templating. These are identified with `${placeholder}` in the SQL script.\n
         __Note__: any arbitrary kwargs passed to the class will be added to params.
     """

@@ -1,5 +1,7 @@
 import pytest
 
+import pyspark.sql.types as T
+
 from koheesio.spark import AnalysisException
 from koheesio.spark.readers.file_loader import (
     AvroReader,
@@ -104,6 +106,15 @@ def test_json_reader(json_file):
     df = reader.read()
     actual_data = [row.asDict() for row in df.collect()]
     assert actual_data == expected_data
+
+
+def test_json_stream_reader(json_file):
+    schema = "string STRING, int INT, float FLOAT"
+    reader = JsonReader(path=json_file, schema=schema, streaming=True)
+    assert reader.path == json_file
+    df = reader.read()
+    assert df.isStreaming
+    assert df.schema == T._parse_datatype_string(schema)
 
 
 def test_parquet_reader(parquet_file):

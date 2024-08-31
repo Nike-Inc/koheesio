@@ -1,6 +1,6 @@
 .PHONY: help  ## Display this message
 help:
-	@python koheesio/__about__.py
+	@python src/koheesio/__about__.py
 	@echo "\nAvailable \033[34m'make'\033[0m commands:"
 	@echo "\n\033[1mSetup:\033[0m"
 	@grep -E '^.PHONY: .*?## setup - .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ".PHONY: |## (setup|hatch) - "}; {printf " \033[36m%-22s\033[0m %s\n", $$2, $$3}'
