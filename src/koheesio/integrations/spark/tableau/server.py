@@ -20,6 +20,9 @@ from koheesio.steps import Step, StepOutput
 
 
 class TableauServer(Step):
+    """
+    Base class for Tableau server interactions. Class provides authentication and project identification functionality.
+    """
     url: str = Field(
         default=...,
         alias="url",
@@ -85,11 +88,16 @@ class TableauServer(Step):
         """
         Authenticate on the Tableau server.
 
-        Example:
-            with self._authenticate():
+        Examples
+        --------
+        ```python
+        with self._authenticate():
+            self.server.projects.get()
+        ```
 
-        Returns:
-            TableauAuth or PersonalAccessTokenAuth authorization object
+        Returns
+        -------
+        ContextManager for TableauAuth or PersonalAccessTokenAuth authorization object
         """
         # Suppress 'InsecureRequestWarning'
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -114,16 +122,19 @@ class TableauServer(Step):
     def working_project(self) -> Union[ProjectItem, None]:
         """
         Identify working project by using `project` and `parent_project` (if necessary) class properties.
-        The goal is to uniquely identify specific project on the server, if multiple projects have the same
+        The goal is to uniquely identify specific project on the server. If multiple projects have the same
         name, the `parent_project` attribute of the TableauServer is required.
 
+        Notes
+        -----
         Set `parent_project` value to 'root' if the project is located in the root directory.
 
         If `id` of the project is known, it can be used in `project_id` parameter, then the detection of the working
         project using the `project` and `parent_project` attributes is skipped.
 
-        Returns:
-            ProjectItem: ProjectItem object representing the working project
+        Returns
+        -------
+        ProjectItem object representing the working project
         """
 
         with self.auth:
@@ -168,7 +179,7 @@ class TableauServer(Step):
 
 class TableauHyperPublishMode(str, Enum):
     """
-    The different publishing modes for the TableauHyperPublisher.
+    Publishing modes for the TableauHyperPublisher.
     """
 
     APPEND = Server.PublishMode.Append
@@ -176,6 +187,9 @@ class TableauHyperPublishMode(str, Enum):
 
 
 class TableauHyperPublisher(TableauServer):
+    """
+    Publish the given Hyper file to the Tableau server. Hyper file will be treated by Tableau server as a datasource.
+    """
     datasource_name: str = Field(default=..., description="Name of the datasource to publish")
     hyper_path: PurePath = Field(default=..., description="Path to Hyper file")
     publish_mode: TableauHyperPublishMode = Field(
@@ -184,7 +198,9 @@ class TableauHyperPublisher(TableauServer):
     )
 
     class Output(StepOutput):
-        """Output class for HyperFileListWriter"""
+        """
+        Output class for TableauHyperPublisher
+        """
 
         datasource_item: DatasourceItem = Field(
             default=..., description="DatasourceItem object representing the published datasource"

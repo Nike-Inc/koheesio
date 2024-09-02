@@ -62,10 +62,13 @@ class HyperFileReader(HyperFile, SparkStep):
     """
     Read a Hyper file and return a Spark DataFrame.
 
-    Example:
-        df = HyperFileReader(
-            path=PurePath(hw.hyper_path),
-        ).execute().df
+    Examples
+    --------
+    ```python
+    df = HyperFileReader(
+        path=PurePath(hw.hyper_path),
+    ).execute().df
+    ```
     """
 
     path: PurePath = Field(
@@ -148,7 +151,9 @@ class HyperFileWriter(HyperFile):
     )
 
     class Output(StepOutput):
-        """Output class for HyperFileListWriter"""
+        """
+        Output class for HyperFileListWriter
+        """
 
         hyper_path: PurePath = Field(default=..., description="Path to created Hyper file")
 
@@ -176,29 +181,33 @@ class HyperFileListWriter(HyperFileWriter):
     """
     Write list of rows to a Hyper file.
 
-    Reference:
-        Datatypes in https://tableau.github.io/hyper-db/docs/sql/datatype/ for supported data types.
+    Reference
+    ---------
+    Datatypes in https://tableau.github.io/hyper-db/docs/sql/datatype/ for supported data types.
 
-    Example:
-        hw = HyperFileListWriter(
-            name="test",
-            table_definition=TableDefinition(
-                table_name=TableName("Extract", "Extract"),
-                columns=[
-                    TableDefinition.Column(name="string", type=SqlType.text(), nullability=NOT_NULLABLE),
-                    TableDefinition.Column(name="int", type=SqlType.int(), nullability=NULLABLE),
-                    TableDefinition.Column(name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE),
-                ]
-            ),
-            data=[
-                ["text_1", 1, datetime(2024, 1, 1, 0, 0, 0, 0)],
-                ["text_2", 2, datetime(2024, 1, 2, 0, 0, 0, 0)],
-                ["text_3", None, None],
-            ],
-        ).execute()
+    Examples
+    --------
+    ```python
+    hw = HyperFileListWriter(
+        name="test",
+        table_definition=TableDefinition(
+            table_name=TableName("Extract", "Extract"),
+            columns=[
+                TableDefinition.Column(name="string", type=SqlType.text(), nullability=NOT_NULLABLE),
+                TableDefinition.Column(name="int", type=SqlType.int(), nullability=NULLABLE),
+                TableDefinition.Column(name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE),
+            ]
+        ),
+        data=[
+            ["text_1", 1, datetime(2024, 1, 1, 0, 0, 0, 0)],
+            ["text_2", 2, datetime(2024, 1, 2, 0, 0, 0, 0)],
+            ["text_3", None, None],
+        ],
+    ).execute()
 
-        # do somthing with returned file path
-        hw.hyper_path
+    # do somthing with returned file path
+    hw.hyper_path
+    ```
     """
 
     data: conlist(List[Any], min_length=1) = Field(default=..., description="List of rows to write to the Hyper file")
@@ -221,31 +230,36 @@ class HyperFileParquetWriter(HyperFileWriter):
     """
     Read one or multiple parquet files and write them to a Hyper file.
 
-    Note:
-        This method is much faster than HyperFileListWriter for large files.
+    Notes
+    -----
+    This method is much faster than HyperFileListWriter for large files.
 
-    Reference:
-        Copy from external format: https://tableau.github.io/hyper-db/docs/sql/command/copy_from
-        Datatypes in https://tableau.github.io/hyper-db/docs/sql/datatype/ for supported data types.
-        Parquet format limitations:
-            https://tableau.github.io/hyper-db/docs/sql/external/formats/#external-format-parquet
+    References
+    ----------
+    Copy from external format: https://tableau.github.io/hyper-db/docs/sql/command/copy_from
+    Datatypes in https://tableau.github.io/hyper-db/docs/sql/datatype/ for supported data types.
+    Parquet format limitations:
+        https://tableau.github.io/hyper-db/docs/sql/external/formats/#external-format-parquet
 
-    Example:
-        hw = HyperFileParquetWriter(
-            name="test",
-            table_definition=TableDefinition(
-                table_name=TableName("Extract", "Extract"),
-                columns=[
-                    TableDefinition.Column(name="string", type=SqlType.text(), nullability=NOT_NULLABLE),
-                    TableDefinition.Column(name="int", type=SqlType.int(), nullability=NULLABLE),
-                    TableDefinition.Column(name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE),
-                ]
-            ),
-            files=["/my-path/parquet-1.snappy.parquet","/my-path/parquet-2.snappy.parquet"]
-        ).execute()
+    Examples
+    --------
+    ```python
+    hw = HyperFileParquetWriter(
+        name="test",
+        table_definition=TableDefinition(
+            table_name=TableName("Extract", "Extract"),
+            columns=[
+                TableDefinition.Column(name="string", type=SqlType.text(), nullability=NOT_NULLABLE),
+                TableDefinition.Column(name="int", type=SqlType.int(), nullability=NULLABLE),
+                TableDefinition.Column(name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE),
+            ]
+        ),
+        files=["/my-path/parquet-1.snappy.parquet","/my-path/parquet-2.snappy.parquet"]
+    ).execute()
 
-        # do somthing with returned file path
-        hw.hyper_path
+    # do somthing with returned file path
+    hw.hyper_path
+    ```
     """
 
     file: conlist(Union[str, PurePath], min_length=1) = Field(
@@ -270,6 +284,22 @@ class HyperFileParquetWriter(HyperFileWriter):
 
 
 class HyperFileDataFrameWriter(HyperFileWriter):
+    """
+    Write a Spark DataFrame to a Hyper file.
+    The process will write the DataFrame to a parquet file and then use the HyperFileParquetWriter to write to the
+    Hyper file.
+
+    Examples
+    --------
+    ```python
+    hw = HyperFileDataFrameWriter(
+        df=spark.createDataFrame([(1, "foo"), (2, "bar")], ["id", "name"]),
+        name="test",
+    ).execute()
+
+        # do somthing with returned file path
+        hw.hyper_path
+    """
     df: DataFrame = Field(default=..., description="Spark DataFrame to write to the Hyper file")
     table_definition: Optional[TableDefinition] = None  # table_definition is not required for this class
 
