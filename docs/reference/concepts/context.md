@@ -12,14 +12,14 @@ complex configurations. It also provides serialization and deserialization capab
 and load configurations in JSON, YAML, or TOML formats.
 
 Whether you're setting up the environment for a Task or Step, or managing variables shared across multiple tasks, 
-`Context` provides a robust and efficient solution. 
+`Context` provides a robust and efficient solution.
 
 This document will guide you through its key features and show you how to leverage its capabilities in your Koheesio 
 applications.
 
 ## API Reference
 
-See [API Reference](../../koheesio/context.html) for a detailed description of the `Context` class and its methods.
+See [API Reference](../../api_reference/context.md) for a detailed description of the `Context` class and its methods.
 
 ## Key Features
 

@@ -37,13 +37,13 @@ class Trim(ColumnsTransformationWithTarget):
 
     Parameters
     ----------
-    columns:
+    columns : ListOfColumns
         The column (or list of columns) to trim. Alias: column
         If no columns are provided, all string columns will be trimmed.
-    target_column:
+    target_column : ListOfColumns, optional
         The column to store the result in. If not provided, the result will be stored in the source column.
         Alias: target_suffix - if multiple columns are given as source, this will be used as a suffix.
-    direction:
+    direction : trim_type, optional, default "left-right"
         On which side to remove the spaces. Either "left", "right" or "left-right". Defaults to "left-right"
 
     Examples

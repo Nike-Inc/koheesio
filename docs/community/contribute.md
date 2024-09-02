@@ -17,15 +17,15 @@ There are a few guidelines that we need contributors to follow so that we are ab
 
 * Create a feature branch off of `main` before you start your work.
     * Please avoid working directly on the `main` branch.
-* Setup the required package manager [hatch](#-package-manager)
-* Setup the dev environment [see below](#-dev-environment-setup)
+* Setup the required package manager [hatch](#package-manager)
+* Setup the dev environment [see below](#dev-environment-setup)
 * Make commits of logical units.
     * You may be asked to squash unnecessary commits down to logical units.
 * Check for unnecessary whitespace with `git diff --check` before committing.
 * Write meaningful, descriptive commit messages.
 * Please follow existing code conventions when working on a file
-* Make sure to check the standards on the code, [see below](#-linting-and-standards)
-* Make sure to test the code before you push changes [see below](#-testing)
+* Make sure to check the standards on the code, [see below](#linting-and-standards)
+* Make sure to test the code before you push changes [see below](#testing)
 
 ## 🤝 Submitting Changes
 
@@ -66,7 +66,7 @@ make hatch-install
 
 This will install hatch using brew if you are on a Mac. 
 
-If you are on a different OS, you can follow the instructions [here]( https://hatch.pypa.io/latest/install/)
+If you are on a different OS, you can follow the instructions [here](https://hatch.pypa.io/latest/install/)
 
 
 ### 📌 Dev Environment Setup
@@ -119,5 +119,4 @@ Make sure that all tests pass and that you have adequate coverage before submitt
 * [General GitHub documentation](https://help.github.com/)
 * [GitHub pull request documentation](https://help.github.com/send-pull-requests/)
 * [Nike's Code of Conduct](https://github.com/Nike-Inc/nike-inc.github.io/blob/master/CONDUCT.md)
-* [Nike's Individual Contributor License Agreement](https://www.clahub.com/agreements/Nike-Inc/fastbreak)
 * [Nike OSS](https://nike-inc.github.io/)

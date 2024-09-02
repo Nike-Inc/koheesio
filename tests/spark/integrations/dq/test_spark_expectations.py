@@ -73,6 +73,8 @@ class TestSparkExpectationsTransform:
         err_table_df = spark.read.table("default.output_table_error")
         assert err_table_df.count() == 2
 
+        spark.sql("drop table default.output_table_error")
+
     def test_meta_columns_are_not_dropped(self, spark, prepare_tables):
         from koheesio.integrations.spark.dq.spark_expectations import (
             SparkExpectationsTransformation,
@@ -98,6 +100,8 @@ class TestSparkExpectationsTransform:
         # Spark Expectations should add either meta_dq_run_date (<=1.1.0) or meta_dq_run_datetime (>= v1.1.1)
         assert "meta_dq_run_date" in output_columns or "meta_dq_run_datetime" in output_columns
 
+        spark.sql("drop table default.output_table_error")
+
     def test_meta_columns_are_dropped(self, spark, prepare_tables):
         from koheesio.integrations.spark.dq.spark_expectations import (
             SparkExpectationsTransformation,
@@ -121,6 +125,8 @@ class TestSparkExpectationsTransform:
 
         assert "meta_dq_run_id" not in output_columns
         assert "meta_dq_run_datetime" not in output_columns and "meta_dq_run_datetime" not in output_columns
+
+        spark.sql("drop table default.output_table_error")
 
     @staticmethod
     def apply_spark_sql(spark: SparkSession, source_sql_files: Union[List[str], str]) -> None:

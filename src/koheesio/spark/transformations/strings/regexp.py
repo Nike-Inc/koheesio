@@ -31,7 +31,7 @@ class RegexpExtract(ColumnsTransformationWithTarget):
 
     Parameters
     ----------
-    columns : Union[str, List[str]]
+    columns : ListOfColumns
         The column (or list of columns) to extract from. Alias: column
     target_column : Optional[str], optional, default=None
         The column to store the result in. If not provided, the result will be stored in the source column.
@@ -113,14 +113,14 @@ class RegexpReplace(ColumnsTransformationWithTarget):
 
     Parameters
     ----------
-    columns:
+    columns : ListOfColumns
         The column (or list of columns) to replace in. Alias: column
-    target_column:
+    target_column : Optional[str], optional, default=None
         The column to store the result in. If not provided, the result will be stored in the source column.
         Alias: target_suffix - if multiple columns are given as source, this will be used as a suffix.
-    regexp:
+    regexp : str
         The regular expression to replace
-    replacement:
+    replacement : str
         String to replace matched pattern with.
 
     Examples

@@ -20,9 +20,9 @@ classes defined there.
 
 See Also
 --------
-- [koheesio.spark.readers.Reader](../readers#koheesio.spark.readers.Reader)
+- [koheesio.spark.readers.Reader](index.md#koheesio.spark.readers.Reader)
     Base class for all Readers.
-- [koheesio.steps.integrations.snowflake](../integrations/snowflake.html)
+- [koheesio.spark.snowflake](../snowflake.md)
     Module containing Snowflake classes.
 
 More detailed class descriptions can be found in the class docstrings.

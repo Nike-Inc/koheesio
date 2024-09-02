@@ -1,7 +1,3 @@
-
-tags:
-    - doctype/how-to
-
 # Onboarding to Koheesio
 
 Koheesio is a Python library that simplifies the development of data engineering pipelines. It provides a structured 

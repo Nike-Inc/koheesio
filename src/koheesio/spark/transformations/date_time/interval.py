@@ -35,10 +35,13 @@ See also:
 ---------
 Related Koheesio classes:
 
-* [koheesio.spark.transformations.ColumnsTransformation](transformations/index.html#koheesio.steps.transformation.ColumnsTransformation) :
-    Base class for ColumnsTransformation. Defines column / columns field + recursive logic
-* [koheesio.spark.transformations.ColumnsTransformationWithTarget](transformations/index.html#koheesio.steps.transformation.ColumnsTransformationWithTarget) :
-    Defines target_column / target_suffix field
+[ColumnsTransformation]: ../index.md#koheesio.spark.transformations.ColumnsTransformation
+[ColumnsTransformationWithTarget]: ../index.md#koheesio.spark.transformations.ColumnsTransformationWithTarget
+
+From the koheesio.spark.transformations module:
+
+* [ColumnsTransformation] : Base class for ColumnsTransformation. Defines column / columns field + recursive logic
+* [ColumnsTransformationWithTarget] : Defines target_column / target_suffix field
 
 pyspark.sql.functions:
 

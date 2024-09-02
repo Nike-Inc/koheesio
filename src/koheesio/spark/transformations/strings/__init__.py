@@ -7,7 +7,7 @@ apply column transformations to multiple columns at once. See the class docstrin
 
 The following Transformations are included:
 
-[change_case](change_case.html):
+[change_case](change_case.md):
 
 - `Lower`
     Converts a string column to lower case.
@@ -16,12 +16,12 @@ The following Transformations are included:
 - `TitleCase` or `InitCap`
     Converts a string column to title case, where each word starts with a capital letter.
 
-[concat](concat.html):
+[concat](concat.md):
 
 - `Concat`
     Concatenates multiple input columns together into a single column, optionally using the given separator.
 
-[pad](pad.html):
+[pad](pad.md):
 
 - `Pad`
     Pads the values of `source_column` with the `character` up until it reaches `length` of characters
@@ -30,31 +30,31 @@ The following Transformations are included:
 - `RPad`
     Pad with a character on the right side of the string.
 
-[regexp](regexp.html):
+[regexp](regexp.md):
 
 - `RegexpExtract`
     Extract a specific group matched by a Java regexp from the specified string column.
 - `RegexpReplace`
     Searches for the given regexp and replaces all instances with what is in 'replacement'.
 
-[replace](replace.html):
+[replace](replace.md):
 
 - `Replace`
     Replace all instances of a string in a column with another string.
 
-[split](split.html):
+[split](split.md):
 
 - `SplitAll`
     Splits the contents of a column on basis of a split_pattern.
 - `SplitAtFirstMatch`
     Like SplitAll, but only splits the string once. You can specify whether you want the first or second part.
 
-[substring](substring.html):
+[substring](substring.md):
 
 - `Substring`
     Extracts a substring from a string column starting at the given position.
 
-[trim](trim.html):
+[trim](trim.md):
 
 - `Trim`
     Trim whitespace from the beginning and/or end of a string.

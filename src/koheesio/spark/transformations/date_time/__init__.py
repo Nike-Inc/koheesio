@@ -194,12 +194,18 @@ class ToTimestamp(ColumnsTransformationWithTarget):
     --------
     Related Koheesio classes:
 
-    * [koheesio.spark.transformations.ColumnsTransformation](transformations/index.html#koheesio.steps.transformation.ColumnsTransformation) :
+    [ColumnsTransformation]: ../index.md#koheesio.spark.transformations.ColumnsTransformation
+    [ColumnsTransformationWithTarget]: ../index.md#koheesio.spark.transformations.ColumnsTransformationWithTarget
+    [pyspark.sql.functions]: https://spark.apache.org/docs/3.5.1/api/python/reference/pyspark.sql/functions.html
+
+    From the `koheesio.spark.transformations` module:
+
+    * [ColumnsTransformation] :
         Base class for ColumnsTransformation. Defines column / columns field + recursive logic
-    * [koheesio.spark.transformations.ColumnsTransformationWithTarget](transformations/index.html#koheesio.steps.transformation.ColumnsTransformationWithTarget) :
+    * [ColumnsTransformationWithTarget] :
         Defines target_column / target_suffix field
 
-    pyspark.sql.functions:
+    [pyspark.sql.functions]:
 
     * datetime pattern : https://spark.apache.org/docs/latest/sql-ref-datetime-pattern.html
 

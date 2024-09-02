@@ -46,8 +46,8 @@ class BaseModel(PydanticBaseModel, ABC):
     Additional methods and properties:
     ---------------------------------
     ### Fields
-    Every Koheesio BaseModel has two fields: `name` and `description`. These fields are used to provide a name and a
-    description to the model.
+    Every Koheesio BaseModel has two predefined fields: `name` and `description`. These fields are used to provide a
+    name and a description to the model.
 
     - `name`: This is the name of the Model. If not provided, it defaults to the class name.
 
@@ -246,7 +246,7 @@ class BaseModel(PydanticBaseModel, ABC):
         return LoggingFactory.get_logger(name=self.__class__.__name__, inherit_from_koheesio=True)
 
     @classmethod
-    def from_basemodel(cls, basemodel: BaseModel, **kwargs):
+    def from_basemodel(cls, basemodel: BaseModel, **kwargs) -> InstanceOf[BaseModel]:
         """Returns a new BaseModel instance based on the data of another BaseModel"""
         kwargs = {**basemodel.model_dump(), **kwargs}
         return cls(**kwargs)
@@ -669,4 +669,8 @@ def _list_of_columns_validation(columns_value):
     return list(dict.fromkeys(columns))  # dict.fromkeys is used to dedup while maintaining order
 
 
-ListOfColumns = Annotated[List[str], BeforeValidator(_list_of_columns_validation)]
+ListOfColumns = Annotated[Union[str, List[str]], BeforeValidator(_list_of_columns_validation)]
+""" Annotated type for a list of column names. 
+Will ensure that there are no duplicate columns, empty strings, etc.
+In case an individual column is passed, the value will be coerced to a list.
+"""
