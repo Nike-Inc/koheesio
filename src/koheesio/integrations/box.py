@@ -21,10 +21,10 @@ from boxsdk import Client, JWTAuth
 from boxsdk.object.file import File
 from boxsdk.object.folder import Folder
 
-from pyspark.sql import DataFrame
 from pyspark.sql.functions import expr, lit
 from pyspark.sql.types import StructType
 
+from koheesio.spark import DataFrame
 from koheesio import Step, StepOutput
 from koheesio.models import (
     Field,
