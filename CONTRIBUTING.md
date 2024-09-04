@@ -43,12 +43,12 @@ if it isn't showing any activity.
 We use `make` for managing different steps of setup and maintenance in the project. You can install make by following
 the instructions [here](https://formulae.brew.sh/formula/make)
 
-We use `poetry` as our package manager.
+We use `hatch` as our package manager.
 
-Please DO NOT use pip or conda to install the dependencies. Instead, use poetry:
+Please DO NOT use pip or conda to install the dependencies. To install hatch (if on MAC):
 
 ```bash
-make poetry-install
+make init hatch-install
 ```
 
 ### 📌 Dev Environment Setup
@@ -75,7 +75,7 @@ Make sure that the linter does not report any errors or warnings before submitti
 We use `pytest` to test our code. You can run the tests by running the following command:
 
 ```bash
-make test
+make dev-test
 ```
 
 Make sure that all tests pass before submitting a pull request.
