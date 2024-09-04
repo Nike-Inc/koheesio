@@ -16,6 +16,7 @@ authors = [
   # TODO: add other contributors
   { name = "Danny Meijer", email = "danny.meijer@nike.com" },
   { name = "Mikita Sakalouski", email = "mikita.sakalouski@nike.com" },
+  { name = "Maxim Mityutko", email = "maxim.mityutko@nike.com" },
 ]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
@@ -63,6 +64,11 @@ se = ["spark-expectations>=2.1.0"]
 sftp = ["paramiko>=2.6.0"]
 delta = ["delta-spark>=2.2"]
 excel = ["openpyxl>=3.0.0"]
+# Tableau dependencies
+tableau = [
+  "tableauhyperapi>=0.0.19484",
+  "tableauserverclient>=0.25",
+]
 dev = ["black", "isort", "ruff", "mypy", "pylint", "colorama", "types-PyYAML"]
 test = [
   "chispa",
@@ -180,6 +186,7 @@ features = [
   "excel",
   "se",
   "box",
+  "tableau",
   "dev",
 ]
 
@@ -244,6 +251,7 @@ features = [
   "sftp",
   "delta",
   "excel",
+  "tableau",
   "dev",
   "test",
 ]
@@ -399,6 +407,7 @@ features = [
   "sftp",
   "delta",
   "excel",
+  "tableau",
   "dev",
   "test",
   "docs",
