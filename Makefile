@@ -110,7 +110,7 @@ all-tests:
 spark-tests:
 	@echo "\033[1mRunning Spark tests:\033[0m\n\033[35m This will run the Spark test suite against all specified environments\033[0m"
 	@echo "\033[1;31mWARNING:\033[0;33m This may take upward of 20-30 minutes to complete!\033[0m"
-	@hatch test -m spark --no-header --no-summary
+	@hatch test -m spark --no-header
 .PHONY: non-spark-tests  ## testing - Run non-spark tests in ALL environments
 non-spark-tests:
 	@echo "\033[1mRunning non-Spark tests:\033[0m\n\033[35m This will run the non-Spark test suite against all specified environments\033[0m"

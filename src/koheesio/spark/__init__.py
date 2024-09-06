@@ -10,7 +10,7 @@ from abc import ABC
 from pydantic import Field
 
 from pyspark.sql import Column
-from pyspark.sql import DataFrame as SparkDataFrame
+from pyspark.sql import DataFrame as _SparkDataFrame
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 
@@ -21,12 +21,21 @@ except ImportError:
 
 from koheesio import Step, StepOutput
 from koheesio.spark.utils import get_spark_minor_version
+from koheesio.logger import warn
 
+
+DataFrame = _SparkDataFrame
 if get_spark_minor_version() >= 3.5:
-    from pyspark.sql.connect.session import DataFrame as SparkConnectDataFrame
+    try:
+            from pyspark.sql.connect.session import DataFrame as _SparkConnectDataFrame
+            DataFrame = Union[_SparkDataFrame, _SparkConnectDataFrame]
+    except ImportError:
+        warn(
+            "Spark Connect is not available for use. If needed, please install the required package "
+            "'koheesio[spark-connect]'."
+        )
 
-DataFrame = Union[SparkDataFrame, SparkConnectDataFrame]
-
+__all__ = ["SparkStep", "DataFrame", "current_timestamp_utc"]
 
 class SparkStep(Step, ABC):
     """Base class for a Spark step
@@ -47,7 +56,7 @@ class SparkStep(Step, ABC):
         return SparkSession.getActiveSession()
 
 
-# TODO: Move to spark/functions/__init__.py after reorganizing the code
+# TODO: Move to spark/utils.py after reorganizing the code
 def current_timestamp_utc(spark: SparkSession) -> Column:
     """Get the current timestamp in UTC"""
     return F.to_utc_timestamp(F.current_timestamp(), spark.conf.get("spark.sql.session.timeZone"))
