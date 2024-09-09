@@ -6,12 +6,11 @@ is a function that accepts a DataFrame (df) and any number of keyword args.
 
 from __future__ import annotations
 
-from typing import Callable, Dict
 from functools import partial
-
-from pyspark.sql import DataFrame
+from typing import Callable, Dict
 
 from koheesio.models import ExtraParamsMixin, Field
+from koheesio.spark import DataFrame
 from koheesio.spark.transformations import Transformation
 from koheesio.utils import get_args_for_func
 

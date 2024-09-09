@@ -26,11 +26,10 @@ from abc import ABC, abstractmethod
 
 from pyspark.sql import Column
 from pyspark.sql import functions as f
-from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.types import DataType
 
 from koheesio.models import Field, ListOfColumns, field_validator
-from koheesio.spark import SparkStep
+from koheesio.spark import SparkStep, DataFrame
 from koheesio.spark.utils import SparkDatatype
 
 

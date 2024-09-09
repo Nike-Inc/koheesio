@@ -27,8 +27,8 @@ from koheesio.logger import warn
 DataFrame = _SparkDataFrame
 if get_spark_minor_version() >= 3.5:
     try:
-            from pyspark.sql.connect.session import DataFrame as _SparkConnectDataFrame
-            DataFrame = Union[_SparkDataFrame, _SparkConnectDataFrame]
+        from pyspark.sql.connect.session import DataFrame as _SparkConnectDataFrame
+        DataFrame = Union[_SparkDataFrame, _SparkConnectDataFrame]
     except ImportError:
         warn(
             "Spark Connect is not available for use. If needed, please install the required package "
@@ -36,6 +36,7 @@ if get_spark_minor_version() >= 3.5:
         )
 
 __all__ = ["SparkStep", "DataFrame", "current_timestamp_utc"]
+
 
 class SparkStep(Step, ABC):
     """Base class for a Spark step

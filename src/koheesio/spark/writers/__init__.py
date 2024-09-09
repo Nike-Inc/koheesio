@@ -4,10 +4,8 @@ from typing import Optional
 from abc import ABC, abstractmethod
 from enum import Enum
 
-from pyspark.sql import DataFrame
-
 from koheesio.models import Field
-from koheesio.spark import SparkStep
+from koheesio.spark import SparkStep, DataFrame
 
 
 # TODO: Investigate if we can clean various OutputModes into a more streamlined structure

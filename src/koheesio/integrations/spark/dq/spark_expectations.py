@@ -4,21 +4,19 @@ Koheesio step for running data quality rules with Spark Expectations engine.
 
 from typing import Any, Dict, Optional, Union
 
+from pydantic import Field
 from spark_expectations.config.user_config import Constants as user_config
 from spark_expectations.core.expectations import (
     SparkExpectations,
     WrappedDataFrameWriter,
 )
 
-from pydantic import Field
-
-import pyspark
-from pyspark.sql import DataFrame
-
+from koheesio.spark import DataFrame
 from koheesio.spark.transformations import Transformation
+from koheesio.spark.utils import get_spark_minor_version
 from koheesio.spark.writers import BatchOutputMode
 
-if pyspark.__version__.startswith("3.5"):
+if get_spark_minor_version() >= 3.5:
     raise ImportError("Spark Expectations is not supported for Spark 3.5")
 
 
