@@ -28,6 +28,6 @@ See Also
 More detailed class descriptions can be found in the class docstrings.
 """
 
-from koheesio.steps.integrations.snowflake import DbTableQuery, Query, SnowflakeReader
+from koheesio.spark.snowflake import DbTableQuery, Query, SnowflakeReader
 
 __all__ = ["SnowflakeReader", "Query", "DbTableQuery"]
