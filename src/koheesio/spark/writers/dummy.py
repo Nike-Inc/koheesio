@@ -2,9 +2,8 @@
 
 from typing import Any, Dict, Union
 
-from pyspark.sql import DataFrame
-
 from koheesio.models import Field, PositiveInt, field_validator
+from koheesio.spark import DataFrame
 from koheesio.spark.writers import Writer
 
 

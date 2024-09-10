@@ -4,10 +4,10 @@ Concatenates multiple input columns together into a single column, optionally us
 
 from typing import List, Optional
 
-from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, concat, concat_ws
 
 from koheesio.models import Field, field_validator
+from koheesio.spark import DataFrame
 from koheesio.spark.transformations import ColumnsTransformation
 
 

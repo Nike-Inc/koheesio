@@ -1,7 +1,6 @@
 from pathlib import Path
-from unittest.mock import MagicMock
+import os
 
-from koheesio.spark import DataFrame, SparkSession
 from koheesio.spark.writers import BatchOutputMode
 from koheesio.spark.writers.file_writer import FileFormat, FileWriter
 
@@ -12,17 +11,14 @@ def test_path_validator():
     assert isinstance(file_writer.path, str)
 
 
-def test_execute(dummy_df, mocker):
-    path = "expected_path"
+def test_execute(dummy_df, tmp_path, random_uuid):
+    path = tmp_path / f"test_{random_uuid}"
     output_mode = BatchOutputMode.APPEND
     options = {"option1": "value1", "option2": "value2"}
-    format = FileFormat.parquet
-    writer = FileWriter(df=dummy_df, output_mode=output_mode, path=path, format=format, **options)
-
-    mock_df_writer = MagicMock()
-    mocker.patch.object(DataFrame, "write", mock_df_writer)
-    mock_df_writer.options.return_value = mock_df_writer
+    fmt = FileFormat.parquet
+    writer = FileWriter(df=dummy_df, output_mode=output_mode, path=path, format=fmt, **options)
 
     writer.execute()
-    mock_df_writer.options.assert_called_with(**options)
-    mock_df_writer.save.assert_called_with(path=path, format=format.value, mode=output_mode.value)
+
+    # Verify the file is written to the temporary location
+    assert os.path.exists(path)
