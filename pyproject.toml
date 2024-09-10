@@ -63,6 +63,7 @@ se = ["spark-expectations>=2.1.0"]
 sftp = ["paramiko>=2.6.0"]
 delta = ["delta-spark>=2.2"]
 excel = ["openpyxl>=3.0.0"]
+graphql = ["gql[requests,aiohttp]>=3.5.0"]
 dev = ["black", "isort", "ruff", "mypy", "pylint", "colorama", "types-PyYAML"]
 test = [
   "chispa",
@@ -399,6 +400,7 @@ features = [
   "sftp",
   "delta",
   "excel",
+  "graphql",
   "dev",
   "test",
   "docs",
