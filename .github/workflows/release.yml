@@ -72,11 +72,22 @@ jobs:
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
     runs-on: ubuntu-latest
     # Specifying a GitHub environment is optional, but strongly encouraged
-    environment: release
+    environment: 
+      name: release
+      url: https://pypi.org/project/koheesio/
     permissions:
       # IMPORTANT: this permission is mandatory for trusted publishing
       id-token: write
 
     steps:
-      - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Download Python artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-artifacts
+          path: dist
+      
+      - name: Install Hatch
+        uses: pypa/hatch@install
+
+      - name: Publish package to PyPI
+        run: hatch publish --yes --no-prompt
