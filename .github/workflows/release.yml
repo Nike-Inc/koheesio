@@ -88,4 +88,4 @@ jobs:
         uses: pypa/hatch@install
 
       - name: Publish package to PyPI
-        run: hatch publish --yes --no-prompt
+        run: hatch publish --yes --no-prompt --user __TOKEN__
