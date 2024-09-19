@@ -4,11 +4,12 @@ Spark step module
 
 from __future__ import annotations
 
+import importlib.metadata
 from abc import ABC
 from typing import Optional, Union
 
-import pkg_resources
 import pyspark
+from packaging import version
 from pydantic import Field
 from pyspark.sql import Column as SQLColumn
 from pyspark.sql import DataFrame as PySparkSQLDataFrame
@@ -17,7 +18,7 @@ from pyspark.sql import functions as F
 
 from koheesio import Step, StepOutput
 
-if pkg_resources.get_distribution("pyspark").version > "3.5":
+if version.parse(importlib.metadata.version("pyspark")) >= version.parse("3.5"):
     from pyspark.sql.connect.column import Column as RemoteColumn
     from pyspark.sql.connect.dataframe import DataFrame as RemoteDataFrame
     from pyspark.sql.connect.session import SparkSession as RemoteSparkSession
