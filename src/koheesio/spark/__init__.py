@@ -4,27 +4,40 @@ Spark step module
 
 from __future__ import annotations
 
-from typing import Optional
+import importlib.metadata
 from abc import ABC
+from typing import Optional, Union
 
+import pyspark
+from packaging import version
 from pydantic import Field
-
-from pyspark.sql import Column
+from pyspark.sql import Column as SQLColumn
 from pyspark.sql import DataFrame as PySparkSQLDataFrame
-from pyspark.sql import SparkSession as OriginalSparkSession
+from pyspark.sql import SparkSession as LocalSparkSession
 from pyspark.sql import functions as F
+
+from koheesio import Step, StepOutput
+
+if version.parse(importlib.metadata.version("pyspark")) >= version.parse("3.5"):
+    from pyspark.sql.connect.column import Column as RemoteColumn
+    from pyspark.sql.connect.dataframe import DataFrame as RemoteDataFrame
+    from pyspark.sql.connect.session import SparkSession as RemoteSparkSession
+
+    DataFrame = Union[PySparkSQLDataFrame, RemoteDataFrame]
+    Column = Union[RemoteColumn, SQLColumn]
+    SparkSession = Union[LocalSparkSession, RemoteSparkSession]
+else:
+    DataFrame = PySparkSQLDataFrame
+    Column = SQLColumn
+    SparkSession = LocalSparkSession
+
 
 try:
     from pyspark.sql.utils import AnalysisException as SparkAnalysisException
 except ImportError:
     from pyspark.errors.exceptions.base import AnalysisException as SparkAnalysisException
 
-from koheesio import Step, StepOutput
 
-# TODO: Move to spark/__init__.py after reorganizing the code
-# Will be used for typing checks and consistency, specifically for PySpark >=3.5
-DataFrame = PySparkSQLDataFrame
-SparkSession = OriginalSparkSession
 AnalysisException = SparkAnalysisException
 
 
@@ -44,7 +57,7 @@ class SparkStep(Step, ABC):
     @property
     def spark(self) -> Optional[SparkSession]:
         """Get active SparkSession instance"""
-        return SparkSession.getActiveSession()
+        return pyspark.sql.session.SparkSession.getActiveSession()
 
 
 # TODO: Move to spark/functions/__init__.py after reorganizing the code

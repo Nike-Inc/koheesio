@@ -24,13 +24,11 @@ ColumnsTransformationWithTarget
 from typing import List, Optional, Union
 from abc import ABC, abstractmethod
 
-from pyspark.sql import Column
 from pyspark.sql import functions as f
-from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.types import DataType
 
 from koheesio.models import Field, ListOfColumns, field_validator
-from koheesio.spark import SparkStep
+from koheesio.spark import Column, DataFrame, RemoteColumn, SparkStep
 from koheesio.spark.utils import SparkDatatype
 
 
@@ -58,9 +56,7 @@ class Transformation(SparkStep, ABC):
 
     class AddOne(Transformation):
         def execute(self):
-            self.output.df = self.df.withColumn(
-                "new_column", f.col("old_column") + 1
-            )
+            self.output.df = self.df.withColumn("new_column", f.col("old_column") + 1)
     ```
 
     In the example above, the `execute` method is implemented to add 1 to the values of the `old_column` and store the
@@ -343,7 +339,7 @@ class ColumnsTransformation(Transformation, ABC):
 
         # ask the JVM for the name of the column
         # noinspection PyProtectedMember
-        col_name = col._jc.toString()
+        col_name = col._expr._unparsed_identifier if isinstance(col, RemoteColumn) else col._jc.toString()  # type: ignore
 
         # In order to check the datatype of the column, we have to ask the DataFrame its schema
         df_col = [c for c in df.schema if c.name == col_name][0]

@@ -1,7 +1,6 @@
 import pytest
 
-from pyspark.sql.dataframe import DataFrame
-
+from koheesio.spark import DataFrame
 from koheesio.spark.readers.metastore import MetastoreReader
 
 pytestmark = pytest.mark.spark

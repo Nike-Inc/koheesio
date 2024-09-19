@@ -34,15 +34,16 @@ DeltaTableWriter(
 ```
 """
 
-from typing import List, Optional, Set, Type, Union
 from functools import partial
+from logging import warning
+from typing import List, Optional, Set, Type, Union
 
 from delta.tables import DeltaMergeBuilder, DeltaTable
 from py4j.protocol import Py4JError
-
 from pyspark.sql import DataFrameWriter
 
 from koheesio.models import ExtraParamsMixin, Field, field_validator
+from koheesio.spark import LocalSparkSession
 from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.utils import on_databricks
 from koheesio.spark.writers import BatchOutputMode, StreamingOutputMode, Writer
@@ -286,6 +287,7 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
         """Validate `output_mode` value"""
         if isinstance(mode, str):
             mode = cls.get_output_mode(mode, options={StreamingOutputMode, BatchOutputMode})
+
         if not isinstance(mode, BatchOutputMode) and not isinstance(mode, StreamingOutputMode):
             raise AttributeError(
                 f"""
@@ -294,6 +296,7 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
                 Streaming Mode - {StreamingOutputMode.__doc__}
                 """
             )
+
         return str(mode.value)
 
     @field_validator("table")
@@ -331,6 +334,21 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
         - BatchOutputMode
         - StreamingOutputMode
         """
+        has_spark_remote = False
+
+        try:
+            from koheesio.spark import RemoteSparkSession
+
+            has_spark_remote = isinstance(LocalSparkSession.getActiveSession(), RemoteSparkSession)
+        except ImportError:
+            warning("Spark connect is not installed. Remote mode is not supported.")
+
+        if (
+            choice.upper() in (BatchOutputMode.MERGEALL, BatchOutputMode.MERGE_ALL, BatchOutputMode.MERGE)
+            and has_spark_remote
+        ):
+            raise RuntimeError(f"Output mode {choice.upper()} is not supported in remote mode")
+
         for enum_type in options:
             if choice.upper() in [om.value.upper() for om in enum_type]:
                 return getattr(enum_type, choice.upper())

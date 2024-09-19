@@ -15,19 +15,16 @@ and seamless integration with Delta tables in Spark.
 
 """
 
-from typing import List, Optional
 from logging import Logger
+from typing import List, Optional
 
 from delta.tables import DeltaMergeBuilder, DeltaTable
-
 from pydantic import InstanceOf
-
-from pyspark.sql import Column
 from pyspark.sql import functions as F
 from pyspark.sql.types import DateType, TimestampType
 
 from koheesio.models import Field
-from koheesio.spark import DataFrame, SparkSession, current_timestamp_utc
+from koheesio.spark import Column, DataFrame, SparkSession, current_timestamp_utc
 from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.writers import Writer
 

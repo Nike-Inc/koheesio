@@ -11,11 +11,12 @@ DeltaTableStreamReader
 from typing import Any, Dict, Optional, Union
 
 import pyspark.sql.functions as f
-from pyspark.sql import Column, DataFrameReader
+from pyspark.sql import DataFrameReader
 from pyspark.sql.streaming import DataStreamReader
 
 from koheesio.logger import LoggingFactory
 from koheesio.models import Field, ListOfColumns, field_validator, model_validator
+from koheesio.spark import Column
 from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.readers import Reader
 from koheesio.utils import get_random_string
@@ -240,6 +241,7 @@ class DeltaTableReader(Reader):
     def view(self):
         """Create a temporary view of the dataframe for SQL queries"""
         temp_view_name = self.temp_view_name
+
         if (output_df := self.output.df) is None:
             self.log.warning(
                 "Attempting to createTempView without any data being present. Please run .execute() or .read() first. "
@@ -247,6 +249,7 @@ class DeltaTableReader(Reader):
             )
         else:
             output_df.createOrReplaceTempView(temp_view_name)
+
         return temp_view_name
 
     def get_options(self) -> Dict[str, Any]:

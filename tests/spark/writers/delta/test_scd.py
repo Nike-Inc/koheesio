@@ -1,12 +1,12 @@
 import datetime
+import importlib.metadata
 from typing import List, Optional
 
 import pytest
 from delta import DeltaTable
 from delta.tables import DeltaMergeBuilder
-
+from packaging import version
 from pydantic import Field
-
 from pyspark.sql import Column
 from pyspark.sql import functions as F
 from pyspark.sql.types import Row
@@ -17,7 +17,11 @@ from koheesio.spark.writers.delta.scd import SCD2DeltaTableWriter
 
 pytestmark = pytest.mark.spark
 
+pyspark_version = version.parse(importlib.metadata.version("pyspark"))
+skip_reason = "Tests are not working with PySpark 3.5 due to delta calling _sc. Test requires pyspark version >= 4.0"
 
+
+@pytest.mark.skipif(pyspark_version < version.parse("4.0"), reason=skip_reason)
 def test_scd2_custom_logic(spark):
     def _get_result(target_df: DataFrame, expr: str):
         res = (
@@ -248,6 +252,7 @@ def test_scd2_custom_logic(spark):
     assert result == expected
 
 
+@pytest.mark.skipif(pyspark_version < version.parse("4.0"), reason=skip_reason)
 def test_scd2_logic(spark):
     changes_data = [
         [("key1", "value1", "scd1-value11", "2024-05-01"), ("key2", "value2", "scd1-value21", "2024-04-01")],
