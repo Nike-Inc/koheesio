@@ -301,6 +301,7 @@ class HyperFileDataFrameWriter(HyperFileWriter):
     hw.hyper_path
     ```
     """
+
     df: DataFrame = Field(default=..., description="Spark DataFrame to write to the Hyper file")
     table_definition: Optional[TableDefinition] = None  # table_definition is not required for this class
 

@@ -295,7 +295,8 @@ class DeltaTableStep(SparkStep):
 
     @property
     def exists(self) -> bool:
-        """Check if table exists"""
+        """Check if table exists.
+        Depending on the value of the boolean flag `create_if_not_exists` a different logging level is provided."""
         result = False
 
         try:
@@ -304,7 +305,16 @@ class DeltaTableStep(SparkStep):
         except AnalysisException as e:
             err_msg = str(e).lower()
             if err_msg.startswith("[table_or_view_not_found]") or err_msg.startswith("table or view not found"):
-                self.log.error(f"Table `{self.table}` doesn't exist.")
+                if self.create_if_not_exists:
+                    self.log.info(
+                        f"Table `{self.table}` doesn't exist. "
+                        f"The `create_if_not_exists` flag is set to True, therefore the table will be created."
+                    )
+                else:
+                    self.log.error(
+                        f"Table `{self.table}` doesn't exist. "
+                        f"The `create_if_not_exists` flag is set to False, therefore the table will not be created."
+                    )
             else:
                 raise e
 
