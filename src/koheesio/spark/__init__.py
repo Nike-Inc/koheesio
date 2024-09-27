@@ -34,7 +34,14 @@ class SparkStep(Step, ABC):
     Extends the Step class with SparkSession support. The following:
     - Spark steps are expected to return a Spark DataFrame as output.
     - spark property is available to access the active SparkSession instance.
+    - The SparkSession instance can be provided as an argument to the constructor through the `spark` parameter.
     """
+
+    spark_: Optional[SparkSession] = Field(
+        default=None,
+        alias="spark",
+        description="The SparkSession instance. If not provided, the active SparkSession will be used.",
+    )
 
     class Output(StepOutput):
         """Output class for SparkStep"""
@@ -44,7 +51,7 @@ class SparkStep(Step, ABC):
     @property
     def spark(self) -> Optional[SparkSession]:
         """Get active SparkSession instance"""
-        return SparkSession.getActiveSession()
+        return self.spark_ or SparkSession.getActiveSession()
 
 
 # TODO: Move to spark/functions/__init__.py after reorganizing the code
