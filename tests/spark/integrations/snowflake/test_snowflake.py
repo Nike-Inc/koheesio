@@ -39,29 +39,34 @@ COMMON_OPTIONS = {
     "warehouse": "warehouse",
 }
 
+
 def test_snowflake_module_import():
     # test that the pass-through imports in the koheesio.spark snowflake modules are working
-    from koheesio.spark.writers import snowflake as snowflake_readers
     from koheesio.spark.readers import snowflake as snowflake_writers
+    from koheesio.spark.writers import snowflake as snowflake_readers
 
 
 class TestSnowflakeReader:
-    reader_options = {"dbtable": "table", **COMMON_OPTIONS}
-
-    def test_get_options(self):
-        sf = SnowflakeReader(**(self.reader_options | {"authenticator": None}))
+    @pytest.mark.parametrize(
+        "reader_options", [{"dbtable": "table", **COMMON_OPTIONS}, {"table": "table", **COMMON_OPTIONS}]
+    )
+    def test_get_options(self, reader_options):
+        sf = SnowflakeReader(**(reader_options | {"authenticator": None}))
         o = sf.get_options()
         assert sf.format == "snowflake"
         assert o["sfUser"] == "user"
         assert o["sfCompress"] == "on"
         assert "authenticator" not in o
 
-    def test_execute(self, dummy_spark):
+    @pytest.mark.parametrize(
+        "reader_options", [{"dbtable": "table", **COMMON_OPTIONS}, {"table": "table", **COMMON_OPTIONS}]
+    )
+    def test_execute(self, dummy_spark, reader_options):
         """Method should be callable from parent class"""
         with mock.patch.object(SparkSession, "getActiveSession") as mock_spark:
             mock_spark.return_value = dummy_spark
 
-            k = SnowflakeReader(**self.reader_options).execute()
+            k = SnowflakeReader(**reader_options).execute()
             assert k.df.count() == 1
 
 

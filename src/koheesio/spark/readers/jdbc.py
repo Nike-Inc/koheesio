@@ -67,7 +67,9 @@ class JdbcReader(Reader):
     )
     user: str = Field(default=..., description="User to authenticate to the server")
     password: SecretStr = Field(default=..., description="Password belonging to the username")
-    dbtable: Optional[str] = Field(default=None, description="Database table name, also include schema name")
+    dbtable: Optional[str] = Field(
+        default=None, description="Database table name, also include schema name", alias="table"
+    )
     query: Optional[str] = Field(default=None, description="Query")
     options: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Extra options to pass to spark reader")
 
