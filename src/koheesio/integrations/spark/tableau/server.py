@@ -23,6 +23,7 @@ class TableauServer(Step):
     """
     Base class for Tableau server interactions. Class provides authentication and project identification functionality.
     """
+
     url: str = Field(
         default=...,
         alias="url",
@@ -190,6 +191,7 @@ class TableauHyperPublisher(TableauServer):
     """
     Publish the given Hyper file to the Tableau server. Hyper file will be treated by Tableau server as a datasource.
     """
+
     datasource_name: str = Field(default=..., description="Name of the datasource to publish")
     hyper_path: PurePath = Field(default=..., description="Path to Hyper file")
     publish_mode: TableauHyperPublishMode = Field(
