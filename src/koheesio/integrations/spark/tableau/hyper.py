@@ -65,9 +65,13 @@ class HyperFileReader(HyperFile, SparkStep):
     Examples
     --------
     ```python
-    df = HyperFileReader(
-        path=PurePath(hw.hyper_path),
-    ).execute().df
+    df = (
+        HyperFileReader(
+            path=PurePath(hw.hyper_path),
+        )
+        .execute()
+        .df
+    )
     ```
     """
 
@@ -193,10 +197,16 @@ class HyperFileListWriter(HyperFileWriter):
         table_definition=TableDefinition(
             table_name=TableName("Extract", "Extract"),
             columns=[
-                TableDefinition.Column(name="string", type=SqlType.text(), nullability=NOT_NULLABLE),
-                TableDefinition.Column(name="int", type=SqlType.int(), nullability=NULLABLE),
-                TableDefinition.Column(name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE),
-            ]
+                TableDefinition.Column(
+                    name="string", type=SqlType.text(), nullability=NOT_NULLABLE
+                ),
+                TableDefinition.Column(
+                    name="int", type=SqlType.int(), nullability=NULLABLE
+                ),
+                TableDefinition.Column(
+                    name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE
+                ),
+            ],
         ),
         data=[
             ["text_1", 1, datetime(2024, 1, 1, 0, 0, 0, 0)],
@@ -249,12 +259,21 @@ class HyperFileParquetWriter(HyperFileWriter):
         table_definition=TableDefinition(
             table_name=TableName("Extract", "Extract"),
             columns=[
-                TableDefinition.Column(name="string", type=SqlType.text(), nullability=NOT_NULLABLE),
-                TableDefinition.Column(name="int", type=SqlType.int(), nullability=NULLABLE),
-                TableDefinition.Column(name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE),
-            ]
+                TableDefinition.Column(
+                    name="string", type=SqlType.text(), nullability=NOT_NULLABLE
+                ),
+                TableDefinition.Column(
+                    name="int", type=SqlType.int(), nullability=NULLABLE
+                ),
+                TableDefinition.Column(
+                    name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE
+                ),
+            ],
         ),
-        files=["/my-path/parquet-1.snappy.parquet","/my-path/parquet-2.snappy.parquet"]
+        files=[
+            "/my-path/parquet-1.snappy.parquet",
+            "/my-path/parquet-2.snappy.parquet",
+        ],
     ).execute()
 
     # do somthing with returned file path

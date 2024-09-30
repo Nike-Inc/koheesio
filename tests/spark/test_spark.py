@@ -11,7 +11,10 @@ from unittest import mock
 
 import pytest
 
+from pyspark.sql import SparkSession
+
 from koheesio.models import SecretStr
+from koheesio.spark import SparkStep
 
 pytestmark = pytest.mark.spark
 
@@ -32,3 +35,17 @@ class TestSparkImportFailures:
                 SparkSession.builder.appName("tests").getOrCreate()
 
             pass
+
+
+class TestSparkStep:
+    """Test SparkStep class"""
+
+    def test_spark_property_with_session(self):
+        spark = SparkSession.builder.appName("pytest-pyspark-local-testing-explicit").master("local[*]").getOrCreate()
+        step = SparkStep(spark=spark)
+        assert step.spark is spark
+
+    def test_spark_property_without_session(self):
+        spark = SparkSession.builder.appName("pytest-pyspark-local-testing-implicit").master("local[*]").getOrCreate()
+        step = SparkStep()
+        assert step.spark is spark
