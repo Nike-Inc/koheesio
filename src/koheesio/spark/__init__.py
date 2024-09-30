@@ -59,6 +59,7 @@ class SparkStep(Step, ABC):
             self.spark = SparkSession.getActiveSession()
         return self
 
+
 # TODO: Move to spark/functions/__init__.py after reorganizing the code
 def current_timestamp_utc(spark: SparkSession) -> Column:
     """Get the current timestamp in UTC"""
