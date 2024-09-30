@@ -20,6 +20,7 @@ except ImportError:
     from pyspark.errors.exceptions.base import AnalysisException as SparkAnalysisException
 
 from koheesio import Step, StepOutput
+from koheesio.models import model_validator
 
 # TODO: Move to spark/__init__.py after reorganizing the code
 # Will be used for typing checks and consistency, specifically for PySpark >=3.5
@@ -37,10 +38,10 @@ class SparkStep(Step, ABC):
     - The SparkSession instance can be provided as an argument to the constructor through the `spark` parameter.
     """
 
-    spark_: Optional[SparkSession] = Field(
+    spark: Optional[SparkSession] = Field(
         default=None,
-        alias="spark",
         description="The SparkSession instance. If not provided, the active SparkSession will be used.",
+        validate_default=False,
     )
 
     class Output(StepOutput):
@@ -48,20 +49,15 @@ class SparkStep(Step, ABC):
 
         df: Optional[DataFrame] = Field(default=None, description="The Spark DataFrame")
 
-    @property
-    def spark(self) -> Optional[SparkSession]:
+    @model_validator(mode="after")
+    def _get_active_spark_session(self):
         """Return active SparkSession instance
         If a user provides a SparkSession instance, it will be returned. Otherwise, an active SparkSession will be
         attempted to be retrieved.
         """
-        self.log.error(f"before {self.spark_ = }")  # DEBUG - TODO, will remove once debug is ready
-        print(f"before {self.spark_ = }")  # DEBUG - TODO, will remove once debug is ready
-        if self.spark_ is None:
-            self.spark_ = OriginalSparkSession.getActiveSession()
-        self.log.error(f"after {self.spark_ = }")  # DEBUG - TODO, will remove once debug is ready
-        print(f"after {self.spark_ = }")  # DEBUG - TODO, will remove once debug is ready
-        return self.spark_.getActiveSession()
-
+        if self.spark is None:
+            self.spark = SparkSession.getActiveSession()
+        return self
 
 # TODO: Move to spark/functions/__init__.py after reorganizing the code
 def current_timestamp_utc(spark: SparkSession) -> Column:
