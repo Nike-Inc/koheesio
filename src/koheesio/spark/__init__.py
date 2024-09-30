@@ -50,11 +50,17 @@ class SparkStep(Step, ABC):
 
     @property
     def spark(self) -> Optional[SparkSession]:
-        """Get active SparkSession instance"""
-        print(f"{self.spark_ = }")  # DEBUG - TODO, will remove once debug is ready
+        """Return active SparkSession instance
+        If a user provides a SparkSession instance, it will be returned. Otherwise, an active SparkSession will be
+        attempted to be retrieved.
+        """
+        self.log.error(f"before {self.spark_ = }")  # DEBUG - TODO, will remove once debug is ready
+        print(f"before {self.spark_ = }")  # DEBUG - TODO, will remove once debug is ready
         if self.spark_ is None:
-            return SparkSession.getActiveSession()
-        return self.spark_
+            self.spark_ = OriginalSparkSession.getActiveSession()
+        self.log.error(f"after {self.spark_ = }")  # DEBUG - TODO, will remove once debug is ready
+        print(f"after {self.spark_ = }")  # DEBUG - TODO, will remove once debug is ready
+        return self.spark_.getActiveSession()
 
 
 # TODO: Move to spark/functions/__init__.py after reorganizing the code
