@@ -40,17 +40,12 @@ class TestSparkImportFailures:
 class TestSparkStep:
     """Test SparkStep class"""
 
-    @pytest.fixture(scope="function")
-    def spark_session(self):
-        """Each test gets a fresh SparkSession, ensuring no shared state between tests."""
-        spark = SparkSession.builder.appName("pytest-pyspark-local-testing").master("local[*]").getOrCreate()
-        yield spark
-        spark.stop()
+    def test_spark_property_with_session(self):
+        spark = SparkSession.builder.appName("pytest-pyspark-local-testing-explicit").master("local[*]").getOrCreate()
+        step = SparkStep(spark=spark)
+        assert step.spark is spark
 
-    def test_spark_property_with_session(self, spark_session):
-        step = SparkStep(spark=spark_session)
-        assert step.spark is spark_session
-
-    def test_spark_property_without_session(self, spark_session):
+    def test_spark_property_without_session(self):
+        spark = SparkSession.builder.appName("pytest-pyspark-local-testing-implicit").master("local[*]").getOrCreate()
         step = SparkStep()
-        assert step.spark is spark_session
+        assert step.spark is spark
