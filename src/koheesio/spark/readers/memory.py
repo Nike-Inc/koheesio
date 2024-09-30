@@ -9,11 +9,10 @@ from io import StringIO
 from typing import Any, Dict, Optional, Union
 
 import pandas as pd
-from pyspark.sql import DataFrame
 from pyspark.sql.types import StructType
 
 from koheesio.models import ExtraParamsMixin, Field
-from koheesio.spark import SparkSession
+from koheesio.spark import DataFrame, SparkSession
 from koheesio.spark.readers import Reader
 
 
@@ -98,10 +97,10 @@ class InMemoryDataReader(Reader, ExtraParamsMixin):
             json_data = [self.data]
 
         # Use pyspark.pandas to read the JSON data from the string
-        pandas_df = pd.read_json(StringIO(json.dumps(json_data)), ** self.params)  # type: ignore
+        pandas_df = pd.read_json(StringIO(json.dumps(json_data)), **self.params)  # type: ignore
 
         # Convert pyspark.pandas DataFrame to Spark DataFrame
-        df = self.spark.createDataFrame(pandas_df, schema=self.schema_)  
+        df = self.spark.createDataFrame(pandas_df, schema=self.schema_)
 
         return df
 

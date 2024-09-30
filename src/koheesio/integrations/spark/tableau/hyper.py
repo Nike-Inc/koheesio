@@ -1,25 +1,10 @@
 import os
-from typing import Any, List, Optional, Union
 from abc import ABC, abstractmethod
 from pathlib import PurePath
 from tempfile import TemporaryDirectory
-
-from tableauhyperapi import (
-    NOT_NULLABLE,
-    NULLABLE,
-    Connection,
-    CreateMode,
-    HyperProcess,
-    Inserter,
-    SqlType,
-    TableDefinition,
-    TableName,
-    Telemetry,
-)
+from typing import Any, List, Optional, Union
 
 from pydantic import Field, conlist
-
-from pyspark.sql import DataFrame
 from pyspark.sql.functions import col
 from pyspark.sql.types import (
     BooleanType,
@@ -35,7 +20,20 @@ from pyspark.sql.types import (
     StructType,
     TimestampType,
 )
+from tableauhyperapi import (
+    NOT_NULLABLE,
+    NULLABLE,
+    Connection,
+    CreateMode,
+    HyperProcess,
+    Inserter,
+    SqlType,
+    TableDefinition,
+    TableName,
+    Telemetry,
+)
 
+from koheesio.spark import DataFrame
 from koheesio.spark.readers import SparkStep
 from koheesio.spark.transformations.cast_to_datatype import CastToDatatype
 from koheesio.spark.utils import spark_minor_version
@@ -65,9 +63,13 @@ class HyperFileReader(HyperFile, SparkStep):
     Examples
     --------
     ```python
-    df = HyperFileReader(
-        path=PurePath(hw.hyper_path),
-    ).execute().df
+    df = (
+        HyperFileReader(
+            path=PurePath(hw.hyper_path),
+        )
+        .execute()
+        .df
+    )
     ```
     """
 
@@ -196,7 +198,7 @@ class HyperFileListWriter(HyperFileWriter):
                 TableDefinition.Column(name="string", type=SqlType.text(), nullability=NOT_NULLABLE),
                 TableDefinition.Column(name="int", type=SqlType.int(), nullability=NULLABLE),
                 TableDefinition.Column(name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE),
-            ]
+            ],
         ),
         data=[
             ["text_1", 1, datetime(2024, 1, 1, 0, 0, 0, 0)],
@@ -252,9 +254,9 @@ class HyperFileParquetWriter(HyperFileWriter):
                 TableDefinition.Column(name="string", type=SqlType.text(), nullability=NOT_NULLABLE),
                 TableDefinition.Column(name="int", type=SqlType.int(), nullability=NULLABLE),
                 TableDefinition.Column(name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE),
-            ]
+            ],
         ),
-        files=["/my-path/parquet-1.snappy.parquet","/my-path/parquet-2.snappy.parquet"]
+        files=["/my-path/parquet-1.snappy.parquet", "/my-path/parquet-2.snappy.parquet"],
     ).execute()
 
     # do somthing with returned file path
@@ -301,6 +303,7 @@ class HyperFileDataFrameWriter(HyperFileWriter):
     hw.hyper_path
     ```
     """
+
     df: DataFrame = Field(default=..., description="Spark DataFrame to write to the Hyper file")
     table_definition: Optional[TableDefinition] = None  # table_definition is not required for this class
 

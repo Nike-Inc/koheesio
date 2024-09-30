@@ -12,7 +12,7 @@ from typing import Any, Dict, Optional, Union
 
 import pyspark.sql.functions as f
 from pyspark.sql import DataFrameReader
-from pyspark.sql.streaming import DataStreamReader
+from pyspark.sql.streaming.readwriter import DataStreamReader
 
 from koheesio.logger import LoggingFactory
 from koheesio.models import Field, ListOfColumns, field_validator, model_validator

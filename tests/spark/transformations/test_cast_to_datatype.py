@@ -6,13 +6,11 @@ import datetime
 from decimal import Decimal
 
 import pytest
-
 from pydantic import ValidationError
-
-from pyspark.sql import DataFrame
 from pyspark.sql import functions as f
 
 from koheesio.logger import LoggingFactory
+from koheesio.spark import DataFrame
 from koheesio.spark.transformations.cast_to_datatype import (
     CastToBinary,
     CastToBoolean,

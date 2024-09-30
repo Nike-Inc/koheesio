@@ -2,13 +2,11 @@ from datetime import datetime
 from unittest import mock
 
 import chispa
+import pydantic
 import pytest
 from conftest import await_job_completion
 
-import pydantic
-
-from pyspark.sql import DataFrame
-
+from koheesio.spark import DataFrame
 from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.readers.delta import DeltaTableReader
 from koheesio.spark.snowflake import (

@@ -41,12 +41,12 @@ format : str, optional, default="snowflake"
 """
 
 import json
-from typing import Any, Dict, List, Optional, Set, Union
 from abc import ABC
 from copy import deepcopy
 from textwrap import dedent
+from typing import Any, Dict, List, Optional, Set, Union
 
-from pyspark.sql import DataFrame, Window
+from pyspark.sql import Window
 from pyspark.sql import functions as f
 from pyspark.sql import types as t
 
@@ -61,7 +61,7 @@ from koheesio.models import (
     field_validator,
     model_validator,
 )
-from koheesio.spark import SparkStep
+from koheesio.spark import DataFrame, SparkStep
 from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.readers.delta import DeltaTableReader, DeltaTableStreamReader
 from koheesio.spark.readers.jdbc import JdbcReader

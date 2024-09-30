@@ -1,11 +1,10 @@
 from typing import Any, Dict
 
 import pytest
-
-from pyspark.sql import DataFrame
 from pyspark.sql import functions as f
 
 from koheesio.logger import LoggingFactory
+from koheesio.spark import DataFrame
 from koheesio.spark.transformations.transform import Transform
 
 pytestmark = pytest.mark.spark

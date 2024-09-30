@@ -7,8 +7,7 @@ from textwrap import dedent
 from unittest.mock import Mock
 
 import pytest
-
-from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql import SparkSession
 from pyspark.sql.types import (
     ArrayType,
     BinaryType,
@@ -30,6 +29,7 @@ from pyspark.sql.types import (
 )
 
 from koheesio.logger import LoggingFactory
+from koheesio.spark import DataFrame
 from koheesio.spark.readers.dummy import DummyReader
 
 
@@ -77,7 +77,6 @@ def spark(warehouse_path, random_uuid):
     )
 
     spark_session = builder.getOrCreate()
-
 
     yield spark_session
 

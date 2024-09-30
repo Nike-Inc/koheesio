@@ -6,13 +6,13 @@ from __future__ import annotations
 
 import importlib.metadata
 from abc import ABC
-from typing import Optional, Union
+from typing import Optional, TypeAlias, Union
 
 import pyspark
 from packaging import version
 from pydantic import Field
 from pyspark.sql import Column as SQLColumn
-from pyspark.sql import DataFrame as PySparkSQLDataFrame
+from pyspark.sql import DataFrame as SparkDataFrame
 from pyspark.sql import SparkSession as LocalSparkSession
 from pyspark.sql import functions as F
 
@@ -20,16 +20,16 @@ from koheesio import Step, StepOutput
 
 if version.parse(importlib.metadata.version("pyspark")) >= version.parse("3.5"):
     from pyspark.sql.connect.column import Column as RemoteColumn
-    from pyspark.sql.connect.dataframe import DataFrame as RemoteDataFrame
+    from pyspark.sql.connect.dataframe import DataFrame as ConnectDataFrame
     from pyspark.sql.connect.session import SparkSession as RemoteSparkSession
 
-    DataFrame = Union[PySparkSQLDataFrame, RemoteDataFrame]
-    Column = Union[RemoteColumn, SQLColumn]
-    SparkSession = Union[LocalSparkSession, RemoteSparkSession]
+    DataFrame: TypeAlias = Union[SparkDataFrame, ConnectDataFrame]  # type: ignore
+    Column: TypeAlias = Union[SQLColumn, RemoteColumn]  # type: ignore
+    SparkSession: TypeAlias = Union[LocalSparkSession, RemoteSparkSession]  # type: ignore
 else:
-    DataFrame = PySparkSQLDataFrame
-    Column = SQLColumn
-    SparkSession = LocalSparkSession
+    DataFrame: TypeAlias = SparkDataFrame  # type: ignore
+    Column: TypeAlias = SQLColumn  # type: ignore
+    SparkSession: TypeAlias = LocalSparkSession  # type: ignore
 
 
 try:
