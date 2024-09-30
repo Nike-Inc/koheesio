@@ -89,7 +89,7 @@ def test_from_func(dummy_df):
 
 def test_df_transform_compatibility(dummy_df: DataFrame):
 
-    expected_date = {
+    expected_data = {
         "id": 0,
         "foo": "bar",
         "bar": "baz",
@@ -110,4 +110,4 @@ def test_df_transform_compatibility(dummy_df: DataFrame):
         .transform(Substring(column="foo_hash", start=1, length=6, target_column="foo_sub"))
     )
 
-    assert output_df.head().asDict() == expected_date
+    assert output_df.head().asDict() == expected_data
