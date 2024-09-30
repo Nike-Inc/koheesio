@@ -57,9 +57,12 @@ class Transformation(SparkStep, ABC):
 
 
     class AddOne(Transformation):
+
+        target_column: str = "new_column"
+
         def execute(self):
             self.output.df = self.df.withColumn(
-                "new_column", f.col("old_column") + 1
+                self.target_column, f.col("old_column") + 1
             )
     ```
 
@@ -150,6 +153,28 @@ class Transformation(SparkStep, ABC):
             raise RuntimeError("No valid Dataframe was passed")
         self.execute()
         return self.output.df
+
+    def __call__(self, *args, **kwargs):
+        """Allow the class to be called as a function.
+        This is especially useful when using a DataFrame's transform method.
+
+        Example
+        -------
+        ```python
+        input_df = spark.range(3)
+
+        output_df = (
+            input_df
+            .transform(AddOne(target_column="foo"))
+            .transform(AddOne(target_column="bar"))
+        )
+        ```
+
+        In the above example, the `AddOne` transformation is applied to the `input_df` DataFrame using the `transform`
+        method. The `output_df` will now contain the original DataFrame with an additional columns called `foo` and
+        `bar', each with the values of `id` + 1.
+        """
+        return self.transform(*args, **kwargs)
 
 
 class ColumnsTransformation(Transformation, ABC):
