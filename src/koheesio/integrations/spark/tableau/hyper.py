@@ -148,7 +148,7 @@ class HyperFileWriter(HyperFile):
         default=TemporaryDirectory().name,
         description="Path to the Hyper file, if executing in Databricks "
         "set the path manually and ensure to specify the scheme `dbfs:/`.",
-        examples=["PurePath(/tmp/hyper/)", "PurePath(dbfs:/tmp/hyper/)"]
+        examples=["PurePath(/tmp/hyper/)", "PurePath(dbfs:/tmp/hyper/)"],
     )
     name: str = Field(default="extract", description="Name of the Hyper file")
     table_definition: TableDefinition = Field(
