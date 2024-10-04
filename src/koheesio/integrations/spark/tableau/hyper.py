@@ -145,7 +145,10 @@ class HyperFileWriter(HyperFile):
     """
 
     path: PurePath = Field(
-        default=TemporaryDirectory().name, description="Path to the Hyper file", examples=["PurePath(/tmp/hyper/)"]
+        default=TemporaryDirectory().name,
+        description="Path to the Hyper file, if executing in Databricks "
+        "set the path manually and ensure to specify the scheme `dbfs:/`.",
+        examples=["PurePath(/tmp/hyper/)", "PurePath(dbfs:/tmp/hyper/)"]
     )
     name: str = Field(default="extract", description="Name of the Hyper file")
     table_definition: TableDefinition = Field(
@@ -316,6 +319,13 @@ class HyperFileDataFrameWriter(HyperFileWriter):
         name="test",
     ).execute()
 
+    # or in Databricks
+    hw = HyperFileDataFrameWriter(
+        df=spark.createDataFrame([(1, "foo"), (2, "bar")], ["id", "name"]),
+        name="test",
+        path="dbfs:/tmp/hyper/",
+    ).execute()
+
     # do somthing with returned file path
     hw.hyper_path
     ```
@@ -435,6 +445,10 @@ class HyperFileDataFrameWriter(HyperFileWriter):
             .mode("overwrite")
             .parquet(_path.as_posix())
         )
+
+        if _path.as_posix().startswith("dbfs:"):
+            _path = PurePath(_path.as_posix().replace("dbfs:", "/dbfs"))
+            self.log.debug("Parquet location on DBFS: %s}", _path)
 
         for _, _, files in os.walk(_path):
             for file in files:
