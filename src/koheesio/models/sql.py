@@ -1,8 +1,8 @@
 """This module contains the base class for SQL steps."""
 
-from typing import Any, Dict, Optional, Union
 from abc import ABC
 from pathlib import Path
+from typing import Any, Dict, Optional, Union
 
 from koheesio import Step
 from koheesio.models import ExtraParamsMixin, Field, model_validator
@@ -59,10 +59,7 @@ class SqlBaseStep(Step, ExtraParamsMixin, ABC):
     @property
     def query(self):
         """Returns the query while performing params replacement"""
-        query = self.sql
-
-        for key, value in self.params.items():
-            query = query.replace(f"${{{key}}}", value)
+        query = self.sql.replace("${", "{") if self.sql else self.sql
 
         self.log.debug(f"Generated query: {query}")
         return query

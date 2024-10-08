@@ -2,8 +2,8 @@
 This module defines the DeltaTableStreamWriter class, which is used to write streaming dataframes to Delta tables.
 """
 
-from typing import Optional
 from email.policy import default
+from typing import Optional
 
 from pydantic import Field
 
@@ -32,5 +32,7 @@ class DeltaTableStreamWriter(StreamWriter, DeltaTableWriter):
     def execute(self):
         if self.batch_function:
             self.streaming_query = self.writer.start()
+        # elif self.streaming and self.is_remote_spark_session:
+        #     self.streaming_query = self.writer.start()
         else:
             self.streaming_query = self.writer.toTable(tableName=self.table.table_name)

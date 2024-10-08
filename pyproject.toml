@@ -62,13 +62,10 @@ pyspark = ["pyspark>=3.2.0", "pyarrow>13"]
 se = ["spark-expectations>=2.1.0"]
 # SFTP dependencies in to_csv line_iterator
 sftp = ["paramiko>=2.6.0"]
-delta = ["delta-spark>=2.2"]
+delta = ["delta-spark>=3.2.1"]
 excel = ["openpyxl>=3.0.0"]
 # Tableau dependencies
-tableau = [
-  "tableauhyperapi>=0.0.19484",
-  "tableauserverclient>=0.25",
-]
+tableau = ["tableauhyperapi>=0.0.19484", "tableauserverclient>=0.25"]
 dev = ["black", "isort", "ruff", "mypy", "pylint", "colorama", "types-PyYAML"]
 test = [
   "chispa",
@@ -216,7 +213,7 @@ lint = ["- ruff-fmt", "- mypy-check", "pylint-check"]
 log-versions = "python --version && {env:HATCH_UV} pip freeze | grep pyspark"
 test = "- pytest{env:HATCH_TEST_ARGS:} {args} -n 2"
 spark-tests = "test -m spark"
-spark-remote-tests = "test -m spark -m \"not skip_on_remote_session\"" 
+spark-remote-tests = "test -m spark -m \"not skip_on_remote_session\""
 non-spark-tests = "test -m \"not spark\""
 
 # scripts.run = "echo bla {env:HATCH_TEST_ARGS:} {args}"
@@ -420,7 +417,7 @@ features = [
   "test",
   "docs",
 ]
-extra-dependencies = ["pyspark[connect]==3.5.*"]
+extra-dependencies = ["pyspark[connect]==3.5.3"]
 
 
 ###  ~~~~~~~~~~~~~~~~~~  ###
@@ -581,6 +578,7 @@ check_untyped_defs = false
 disallow_untyped_calls = false
 disallow_untyped_defs = true
 files = ["koheesio/**/*.py"]
+plugins = ["pydantic.mypy"]
 
 [tool.pylint.main]
 fail-under = 9.5
