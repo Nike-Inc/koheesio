@@ -84,7 +84,7 @@ def test_split_all(input_values, data, schema, expected, spark):
     output_df = split_all.transform(df=input_df)
 
     # log equivalent of doing df.show()
-    log.info(f"show output_df: \n{show_string(df, 20, 20, False)}")
+    log.info(f"show output_df: \n{show_string(output_df, 20, 20, False)}")
 
     actual = [row.asDict()[filter_column] for row in output_df.collect()]
     assert actual == expected
