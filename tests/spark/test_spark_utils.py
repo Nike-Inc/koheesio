@@ -9,6 +9,7 @@ from koheesio.spark.utils import (
     import_pandas_based_on_pyspark_version,
     on_databricks,
     schema_struct_to_schema_str,
+    show_string,
 )
 
 
@@ -51,3 +52,8 @@ def test_import_pandas_based_on_pyspark_version(spark_version, pandas_version, e
                 import_pandas_based_on_pyspark_version()
         else:
             import_pandas_based_on_pyspark_version()  # This should not raise an error
+
+
+def test_show_string(dummy_df):
+    actual = show_string(dummy_df, n=1, truncate=1, vertical=False)
+    assert actual == "+---+\n| id|\n+---+\n|  0|\n+---+\n"

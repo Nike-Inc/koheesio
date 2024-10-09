@@ -4,6 +4,7 @@ Spark Utility functions
 
 import os
 from enum import Enum
+from typing import Union
 
 from pyspark.sql.types import (
     ArrayType,
@@ -25,6 +26,8 @@ from pyspark.sql.types import (
     TimestampType,
 )
 from pyspark.version import __version__ as spark_version
+
+from koheesio.spark import DataFrame
 
 __all__ = [
     "SparkDatatype",
@@ -201,3 +204,34 @@ def import_pandas_based_on_pyspark_version():
         return pd
     except ImportError as e:
         raise ImportError("Pandas module is not installed.") from e
+
+
+def show_string(df: DataFrame,  n: int = 20, truncate: Union[bool, int] = True, vertical: bool = False) -> str:
+    """Returns a string representation of the DataFrame
+    The default implementation of DataFrame.show() hardcodes a print statement, which is not always desirable.
+    With this function, you can get the string representation of the DataFrame instead, and choose how to display it.
+
+    Example
+    -------
+    ```python
+    print(show_string(df))
+
+    # or use with a logger
+    logger.info(show_string(df))
+    ```
+
+    Parameters
+    ----------
+    df : DataFrame
+        The DataFrame to display
+    n : int, optional
+        The number of rows to display, by default 20
+    truncate : Union[bool, int], optional
+        If set to True, truncate the displayed columns, by default True
+    vertical : bool, optional
+        If set to True, display the DataFrame vertically, by default False
+    """
+    if spark_minor_version < 3.5:
+        return df._jdf.showString(n, truncate, vertical)
+    # as per spark 3.5, the _show_string method is now available making calls to _jdf.showString obsolete
+    return df._show_string(n, truncate, vertical)
