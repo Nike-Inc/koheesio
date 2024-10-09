@@ -25,19 +25,16 @@ from pyspark.sql.types import (
     StructType,
     TimestampType,
 )
-from pyspark.version import __version__ as spark_version
 
-from koheesio.spark import DataFrame
+from koheesio.spark import SPARK_MINOR_VERSION, DataFrame
 
 __all__ = [
     "SparkDatatype",
-    "get_spark_minor_version",
     "import_pandas_based_on_pyspark_version",
     "on_databricks",
     "schema_struct_to_schema_str",
     "spark_data_type_is_array",
     "spark_data_type_is_numeric",
-    "spark_minor_version",
 ]
 
 
@@ -148,18 +145,6 @@ class SparkDatatype(Enum):
         return getattr(cls, value.upper())
 
 
-def get_spark_minor_version() -> float:
-    """Returns the minor version of the spark instance.
-
-    For example, if the spark version is 3.3.2, this function would return 3.3
-    """
-    return float(".".join(spark_version.split(".")[:2]))
-
-
-# short-hand for the get_spark_minor_version function
-spark_minor_version: float = get_spark_minor_version()
-
-
 def on_databricks() -> bool:
     """Retrieve if we're running on databricks or elsewhere"""
     dbr_version = os.getenv("DATABRICKS_RUNTIME_VERSION", None)
@@ -192,7 +177,7 @@ def import_pandas_based_on_pyspark_version():
     try:
         import pandas as pd
 
-        pyspark_version = get_spark_minor_version()
+        pyspark_version = SPARK_MINOR_VERSION
         pandas_version = pd.__version__
 
         if (pyspark_version < 3.4 and pandas_version >= "2") or (pyspark_version >= 3.4 and pandas_version < "2"):
@@ -206,7 +191,7 @@ def import_pandas_based_on_pyspark_version():
         raise ImportError("Pandas module is not installed.") from e
 
 
-def show_string(df: DataFrame,  n: int = 20, truncate: Union[bool, int] = True, vertical: bool = False) -> str:
+def show_string(df: DataFrame, n: int = 20, truncate: Union[bool, int] = True, vertical: bool = False) -> str:
     """Returns a string representation of the DataFrame
     The default implementation of DataFrame.show() hardcodes a print statement, which is not always desirable.
     With this function, you can get the string representation of the DataFrame instead, and choose how to display it.
@@ -231,7 +216,7 @@ def show_string(df: DataFrame,  n: int = 20, truncate: Union[bool, int] = True, 
     vertical : bool, optional
         If set to True, display the DataFrame vertically, by default False
     """
-    if spark_minor_version < 3.5:
+    if SPARK_MINOR_VERSION < 3.5:
         return df._jdf.showString(n, truncate, vertical)
     # as per spark 3.5, the _show_string method is now available making calls to _jdf.showString obsolete
     return df._show_string(n, truncate, vertical)

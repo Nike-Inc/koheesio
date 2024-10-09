@@ -10,20 +10,32 @@ from abc import ABC
 from typing import Optional, TypeAlias, Union
 
 import pyspark
-from packaging import version
 from pydantic import Field
 from pyspark.sql import Column as SQLColumn
 from pyspark.sql import DataFrame as SparkDataFrame
 from pyspark.sql import SparkSession as LocalSparkSession
 from pyspark.sql import functions as F
+from pyspark.version import __version__ as spark_version
 
 from koheesio import Step, StepOutput
+
+
+def get_spark_minor_version() -> float:
+    """Returns the minor version of the spark instance.
+
+    For example, if the spark version is 3.3.2, this function would return 3.3
+    """
+    return float(".".join(spark_version.split(".")[:2]))
+
+
+# short-hand for the get_spark_minor_version function
+SPARK_MINOR_VERSION: float = get_spark_minor_version()
 
 
 def check_if_pyspark_connect_is_supported():
     result = False
     module_name: str = "pyspark"
-    if version.parse(importlib.metadata.version(module_name)) >= version.parse("3.5"):
+    if SPARK_MINOR_VERSION >= 3.5:
         try:
             importlib.import_module(f"{module_name}.sql.connect")
             result = True
