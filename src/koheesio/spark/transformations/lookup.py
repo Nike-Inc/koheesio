@@ -13,9 +13,10 @@ from typing import List, Optional, Union
 from enum import Enum
 
 import pyspark.sql.functions as f
-from pyspark.sql import Column, DataFrame
+from pyspark.sql import Column
 
 from koheesio.models import BaseModel, Field, field_validator
+from koheesio.spark import DataFrame
 from koheesio.spark.transformations import Transformation
 
 

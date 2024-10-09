@@ -9,6 +9,7 @@ from koheesio.spark.utils import (
     on_databricks,
     schema_struct_to_schema_str,
     show_string,
+    get_column_name,
 )
 
 
@@ -56,3 +57,10 @@ def test_import_pandas_based_on_pyspark_version(spark_version, pandas_version, e
 def test_show_string(dummy_df):
     actual = show_string(dummy_df, n=1, truncate=1, vertical=False)
     assert actual == "+---+\n| id|\n+---+\n|  0|\n+---+\n"
+
+
+def test_column_name():
+    from pyspark.sql.functions import col
+    name = "my_column"
+    column = col(name)
+    assert get_column_name(column) == name

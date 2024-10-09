@@ -128,6 +128,7 @@ from pyspark.sql.utils import ParseException
 
 from koheesio.models import Field, field_validator
 from koheesio.spark.transformations import ColumnsTransformationWithTarget
+from koheesio.spark.utils import get_column_name
 
 # create a literal constraining the operations to 'add' and 'subtract'
 Operations = Literal["add", "subtract"]
@@ -268,7 +269,7 @@ def adjust_time(column: Column, operation: Operations, interval: str) -> Column:
     # check that value is a valid interval
     interval = validate_interval(interval)
 
-    column_name = column._jc.toString()
+    column_name = get_column_name(column)
 
     # determine the operation to perform
     try:

@@ -26,7 +26,7 @@ from pyspark.sql.types import (
     TimestampType,
 )
 
-from koheesio.spark import SPARK_MINOR_VERSION, DataFrame, get_spark_minor_version
+from koheesio.spark import Column, SPARK_MINOR_VERSION, DataFrame, get_spark_minor_version
 
 __all__ = [
     "SparkDatatype",
@@ -223,3 +223,27 @@ def show_string(df: DataFrame, n: int = 20, truncate: Union[bool, int] = True, v
         return df._jdf.showString(n, truncate, vertical)
     # as per spark 3.5, the _show_string method is now available making calls to _jdf.showString obsolete
     return df._show_string(n, truncate, vertical)
+
+
+def get_column_name(col: Column) -> str:
+    """Get the column name from a Column object
+
+    Normally, the name of a Column object is not directly accessible in the regular pyspark API. This function
+    extracts the name of the given column object without needing to provide it in the context of a DataFrame.
+
+    Parameters
+    ----------
+    col: Column
+        The Column object
+
+    Returns
+    -------
+    str
+        The name of the given column
+    """
+    from pyspark.sql.connect.column import Column as ConnectColumn
+
+    if isinstance(col, ConnectColumn):
+        return col.name()._expr._parent.name()
+
+    return col._jc.toString()
