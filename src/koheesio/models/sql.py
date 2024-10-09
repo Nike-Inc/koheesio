@@ -1,8 +1,8 @@
 """This module contains the base class for SQL steps."""
 
+from typing import Any, Dict, Optional, Union
 from abc import ABC
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
 
 from koheesio import Step
 from koheesio.models import ExtraParamsMixin, Field, model_validator

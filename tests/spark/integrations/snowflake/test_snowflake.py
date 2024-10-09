@@ -39,10 +39,11 @@ COMMON_OPTIONS = {
     "warehouse": "warehouse",
 }
 
+
 def test_snowflake_module_import():
     # test that the pass-through imports in the koheesio.spark snowflake modules are working
-    from koheesio.spark.writers import snowflake as snowflake_readers
     from koheesio.spark.readers import snowflake as snowflake_writers
+    from koheesio.spark.writers import snowflake as snowflake_readers
 
 
 class TestSnowflakeReader:

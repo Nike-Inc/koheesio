@@ -6,11 +6,12 @@ from __future__ import annotations
 
 import importlib.metadata
 import importlib.util
-from abc import ABC
 from typing import Optional, TypeAlias, Union
+from abc import ABC
+
+from pydantic import Field
 
 import pyspark
-from pydantic import Field
 from pyspark.sql import Column as SQLColumn
 from pyspark.sql import DataFrame as SparkDataFrame
 from pyspark.sql import SparkSession as LocalSparkSession
@@ -28,7 +29,7 @@ def get_spark_minor_version() -> float:
     return float(".".join(spark_version.split(".")[:2]))
 
 
-# short-hand for the get_spark_minor_version function
+# shorthand for the get_spark_minor_version function
 SPARK_MINOR_VERSION: float = get_spark_minor_version()
 
 
@@ -61,7 +62,9 @@ else:
 try:
     from pyspark.sql.utils import AnalysisException as SparkAnalysisException
 except ImportError:
-    from pyspark.errors.exceptions.base import AnalysisException as SparkAnalysisException
+    from pyspark.errors.exceptions.base import (
+        AnalysisException as SparkAnalysisException,
+    )
 
 
 AnalysisException = SparkAnalysisException

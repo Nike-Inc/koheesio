@@ -6,7 +6,9 @@ import pytest
 from delta import DeltaTable
 from delta.tables import DeltaMergeBuilder
 from packaging import version
+
 from pydantic import Field
+
 from pyspark.sql import Column
 from pyspark.sql import functions as F
 from pyspark.sql.types import Row

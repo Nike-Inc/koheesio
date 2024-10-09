@@ -3,12 +3,13 @@ Create Spark DataFrame directly from the data stored in a Python variable
 """
 
 import json
+from typing import Any, Dict, Optional, Union
 from enum import Enum
 from functools import partial
 from io import StringIO
-from typing import Any, Dict, Optional, Union
 
 import pandas as pd
+
 from pyspark.sql.types import StructType
 
 from koheesio.models import ExtraParamsMixin, Field

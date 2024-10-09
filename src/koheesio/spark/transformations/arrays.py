@@ -23,9 +23,9 @@ See Also
     Base class for all transformations that operate on columns and have a target column.
 """
 
+from typing import Any
 from abc import ABC
 from functools import reduce
-from typing import Any
 
 from pyspark.sql import Column
 from pyspark.sql import functions as F
@@ -33,10 +33,7 @@ from pyspark.sql import functions as F
 from koheesio.models import Field
 from koheesio.spark import SPARK_MINOR_VERSION
 from koheesio.spark.transformations import ColumnsTransformationWithTarget
-from koheesio.spark.utils import (
-    SparkDatatype,
-    spark_data_type_is_numeric,
-)
+from koheesio.spark.utils import SparkDatatype, spark_data_type_is_numeric
 
 __all__ = [
     "ArrayDistinct",

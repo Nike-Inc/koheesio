@@ -3,8 +3,8 @@ Spark Utility functions
 """
 
 import os
-from enum import Enum
 from typing import Union
+from enum import Enum
 
 from pyspark.sql.types import (
     ArrayType,
@@ -26,7 +26,7 @@ from pyspark.sql.types import (
     TimestampType,
 )
 
-from koheesio.spark import SPARK_MINOR_VERSION, DataFrame
+from koheesio.spark import SPARK_MINOR_VERSION, DataFrame, get_spark_minor_version
 
 __all__ = [
     "SparkDatatype",
@@ -35,6 +35,8 @@ __all__ = [
     "schema_struct_to_schema_str",
     "spark_data_type_is_array",
     "spark_data_type_is_numeric",
+    "show_string",
+    "get_spark_minor_version",
 ]
 
 

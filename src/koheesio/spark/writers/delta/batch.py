@@ -34,12 +34,13 @@ DeltaTableWriter(
 ```
 """
 
+from typing import List, Optional, Set, Type, Union
 from functools import partial
 from logging import warning
-from typing import List, Optional, Set, Type, Union
 
 from delta.tables import DeltaMergeBuilder, DeltaTable
 from py4j.protocol import Py4JError
+
 from pyspark.sql import DataFrameWriter
 
 from koheesio.models import ExtraParamsMixin, Field, field_validator

@@ -60,7 +60,7 @@ def test_delta_table_cdf_reader(spark, streaming_dummy_df, random_uuid):
 
 def test_delta_reader_view(spark):
     reader = DeltaTableReader(table="delta_test_table")
-    
+
     with pytest.raises(AnalysisException):
         _ = spark.table(reader.view)
         # In Spark remote session the above statetment will not raise an exception

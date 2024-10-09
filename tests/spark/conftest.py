@@ -7,6 +7,7 @@ from textwrap import dedent
 from unittest.mock import Mock
 
 import pytest
+
 from pyspark.sql import SparkSession
 from pyspark.sql.types import (
     ArrayType,

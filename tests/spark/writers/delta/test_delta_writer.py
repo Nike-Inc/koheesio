@@ -6,7 +6,9 @@ import pytest
 from conftest import await_job_completion
 from delta import DeltaTable
 from packaging import version
+
 from pydantic import ValidationError
+
 from pyspark.sql import functions as F
 
 from koheesio.spark import AnalysisException
@@ -333,6 +335,7 @@ def test_merge_from_args_raise_value_error(spark, output_mode_params):
             output_mode=BatchOutputMode.MERGE,
             output_mode_params=output_mode_params,
         )
+
 
 # @pytest.mark.skipif(pyspark_version < version.parse("4.0"), reason=skip_reason)
 def test_merge_no_table(spark):

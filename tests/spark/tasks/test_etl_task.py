@@ -1,5 +1,6 @@
 import delta
 import pytest
+
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.functions import col, lit
 
@@ -72,10 +73,10 @@ def test_delta_stream_task(spark, checkpoint_folder):
     delta_table = DeltaTableStep(table="delta_stream_table")
     DummyReader(range=5).read().write.format("delta").mode("append").saveAsTable("delta_stream_table")
     writer = DeltaTableStreamWriter(table="delta_stream_table_out", checkpoint_location=checkpoint_folder)
-    
+
     dd = DeltaTableStreamReader(table=delta_table)
     dd.execute()
-    
+
     dd.output.df.createOrReplaceTempView("temp_view")
     delta_table.spark.sql("SELECT * FROM temp_view").show()
 

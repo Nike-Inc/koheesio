@@ -2,9 +2,10 @@ from datetime import datetime
 from unittest import mock
 
 import chispa
-import pydantic
 import pytest
 from conftest import await_job_completion
+
+import pydantic
 
 from koheesio.spark import DataFrame
 from koheesio.spark.delta import DeltaTableStep

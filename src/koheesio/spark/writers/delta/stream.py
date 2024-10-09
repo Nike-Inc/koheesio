@@ -2,8 +2,8 @@
 This module defines the DeltaTableStreamWriter class, which is used to write streaming dataframes to Delta tables.
 """
 
-from email.policy import default
 from typing import Optional
+from email.policy import default
 
 from pydantic import Field
 

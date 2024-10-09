@@ -65,7 +65,7 @@ def test_regexp_extract(input_values, expected, spark):
     output_df = RegexpExtract(**input_values).transform(input_df)
 
     # log equivalent of doing df.show()
-    log.info(f"show output_df: \n{show_string(df, 20, 20, False)}")
+    log.info(f"show output_df: \n{show_string(output_df, 20, 20, False)}")
     actual = [row.asDict() for row in output_df.collect()]
     assert actual == expected
 
@@ -123,7 +123,7 @@ def test_regexp_replace(input_values, expected, spark):
     output_df = regexp_replace.transform(input_df)
 
     # log equivalent of doing df.show()
-    log.info(f"show output_df: \n{show_string(df, 20, 20, False)}")
+    log.info(f"show output_df: \n{show_string(output_df, 20, 20, False)}")
     actual = [row.asDict()[target_column] for row in output_df.collect()]
     assert actual == expected
 
