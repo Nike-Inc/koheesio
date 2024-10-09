@@ -3,8 +3,8 @@ Spark Utility functions
 """
 
 import os
-from typing import Union
 from enum import Enum
+from typing import Union
 
 from pyspark.sql.types import (
     ArrayType,
@@ -37,6 +37,7 @@ __all__ = [
     "spark_data_type_is_numeric",
     "show_string",
     "get_spark_minor_version",
+    "SPARK_MINOR_VERSION",
 ]
 
 
@@ -179,7 +180,7 @@ def import_pandas_based_on_pyspark_version():
     try:
         import pandas as pd
 
-        pyspark_version = SPARK_MINOR_VERSION
+        pyspark_version = get_spark_minor_version()
         pandas_version = pd.__version__
 
         if (pyspark_version < 3.4 and pandas_version >= "2") or (pyspark_version >= 3.4 and pandas_version < "2"):

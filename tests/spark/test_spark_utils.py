@@ -2,7 +2,6 @@ from os import environ
 from unittest.mock import patch
 
 import pytest
-
 from pyspark.sql.types import StringType, StructField, StructType
 
 from koheesio.spark.utils import (

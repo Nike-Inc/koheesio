@@ -1,7 +1,6 @@
 import math
 
 import pytest
-
 from pyspark.sql.types import (
     ArrayType,
     FloatType,
@@ -340,7 +339,7 @@ def test_array(kls, column, expected_data, params, spark):
 
     # noinspection PyCallingNonCallable
     df = kls(df=test_data, column=column, **params).transform()
-    actual_data = [row.asDict() for row in df.select(column).collect()][column]
+    actual_data = [row.asDict()[column] for row in df.select(column).collect()]
 
     def check_result(_actual_data: list, _expected_data: list):
         _data = _expected_data or _actual_data
