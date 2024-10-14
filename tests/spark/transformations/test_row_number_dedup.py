@@ -128,7 +128,7 @@ def test_row_number_dedup_with_columns(spark: SparkSession, target_column: str) 
     }
 
 
-@pytest.mark.parametrize("target_column", ["col_row_nuber"])
+@pytest.mark.parametrize("target_column", ["col_row_number"])
 def test_row_number_dedup_with_duplicated_columns(spark: SparkSession, target_column: str) -> None:
     df = spark.createDataFrame(
         [
