@@ -4,7 +4,7 @@ import sys
 from decimal import Decimal
 from pathlib import Path
 from textwrap import dedent
-from unittest.mock import Mock
+from unittest.mock import Mock, MagicMock
 
 import pytest
 
@@ -225,11 +225,24 @@ def setup_test_data(spark, delta_file):
 
 @pytest.fixture(scope="class")
 def dummy_spark():
-    class DummySpark:
+    class DummySpark(MagicMock):
         """Mocking SparkSession"""
 
         def __init__(self):
+            super().__init__(spec=SparkSession)
             self.options_dict = {}
+
+            # Mock the read method chain
+            self.read = Mock()
+            self.read.format = Mock(return_value=self.read)
+            self.read.options = Mock(return_value=self.read)
+            self.read.load = Mock(return_value=self._create_mock_df())
+
+        def _create_mock_df(self):
+            df = MagicMock(spec=DataFrame)
+            df.count.return_value = 1
+            df.schema = StructType([StructField("foo", StringType(), True)])
+            return df
 
         def mock_method(self, *args, **kwargs):
             return self
@@ -251,7 +264,7 @@ def dummy_spark():
 
         @staticmethod
         def load() -> DataFrame:
-            df = Mock(spec=DataFrame)
+            df = MagicMock(spec=DataFrame)
             df.count.return_value = 1
             df.schema = StructType([StructField("foo", StringType(), True)])
             return df

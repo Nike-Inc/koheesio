@@ -11,7 +11,8 @@ from koheesio.models import ExtraParamsMixin, Field, model_validator
 class SqlBaseStep(Step, ExtraParamsMixin, ABC):
     """Base class for SQL steps
 
-    `params` are used as placeholders for templating. These are identified with ${placeholder} in the SQL script.
+    `params` are used as placeholders for templating. The substitutions are identified by braces ('{' and '}') and can
+    optionally contain a $-sign - e.g. `${placeholder}` or `{placeholder}`.
 
     Parameters
     ----------
@@ -28,8 +29,8 @@ class SqlBaseStep(Step, ExtraParamsMixin, ABC):
     sql: Optional[str] = Field(default=None, description="SQL script to apply")
     params: Dict[str, Any] = Field(
         default_factory=dict,
-        description="Placeholders (parameters) for templating. These are identified with ${placeholder} in the SQL "
-        "script. Note: any arbitrary kwargs passed to the class will be added to params.",
+        description="Placeholders (parameters) for templating. The substitutions are identified by braces ('{' and '}')"
+        "and can optionally contain a $-sign. Note: any arbitrary kwargs passed to the class will be added to params.",
     )
 
     @model_validator(mode="after")
@@ -60,6 +61,8 @@ class SqlBaseStep(Step, ExtraParamsMixin, ABC):
     def query(self):
         """Returns the query while performing params replacement"""
         query = self.sql.replace("${", "{") if self.sql else self.sql
+        if "{" in query:
+            query = query.format(**self.params)
 
         self.log.debug(f"Generated query: {query}")
         return query

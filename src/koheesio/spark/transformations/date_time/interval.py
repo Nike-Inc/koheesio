@@ -126,6 +126,7 @@ from pyspark.sql import Column
 from pyspark.sql.functions import col, expr
 from pyspark.sql.utils import ParseException
 
+from koheesio.logger import warn
 from koheesio.models import Field, field_validator
 from koheesio.spark.transformations import ColumnsTransformationWithTarget
 from koheesio.spark.utils import get_column_name
@@ -158,6 +159,12 @@ class DateTimeColumn(Column):
     @classmethod
     def from_column(cls, column: Column):
         """Create a DateTimeColumn from an existing Column"""
+        if not isinstance(column, Column):
+            warn(
+                f"Expected column to be of type Column, got {type(column)} instead. "
+                f"This might happen if you use Spark in remote (connect) mode."
+            )
+            return column
         return cls(column._jc)
 
 

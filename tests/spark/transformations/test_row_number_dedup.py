@@ -10,7 +10,7 @@ from koheesio.spark.transformations.row_number_dedup import RowNumberDedup
 pytestmark = pytest.mark.spark
 
 
-@pytest.mark.parametrize("target_column", ["col_row_nuber"])
+@pytest.mark.parametrize("target_column", ["col_row_number"])
 def test_row_number_dedup(spark: SparkSession, target_column: str) -> None:
     df = spark.createDataFrame(
         [
@@ -48,7 +48,7 @@ def test_row_number_dedup(spark: SparkSession, target_column: str) -> None:
     }
 
 
-@pytest.mark.parametrize("target_column", ["col_row_nuber"])
+@pytest.mark.parametrize("target_column", ["col_row_number"])
 def test_row_number_dedup_not_list_column(spark: SparkSession, target_column: str) -> None:
     df = spark.createDataFrame(
         [
@@ -88,7 +88,7 @@ def test_row_number_dedup_not_list_column(spark: SparkSession, target_column: st
     }
 
 
-@pytest.mark.parametrize("target_column", ["col_row_nuber"])
+@pytest.mark.parametrize("target_column", ["col_row_number"])
 def test_row_number_dedup_with_columns(spark: SparkSession, target_column: str) -> None:
     df = spark.createDataFrame(
         [
