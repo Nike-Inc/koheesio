@@ -11,16 +11,16 @@ Prerequisites
 """
 
 import re
-from typing import Any, Dict, Optional, Union
 from abc import ABC
 from datetime import datetime
-from io import BytesIO
+from io import BytesIO, StringIO
 from pathlib import PurePath
+from typing import Any, Dict, Optional, Union
 
+import pandas as pd
 from boxsdk import Client, JWTAuth
 from boxsdk.object.file import File
 from boxsdk.object.folder import Folder
-
 from pyspark.sql.functions import expr, lit
 from pyspark.sql.types import StructType
 
@@ -403,7 +403,11 @@ class BoxCsvFileReader(BoxReaderBase):
             self.log.debug(f"Reading contents of file with the ID '{f}' into Spark DataFrame")
             file = self.client.file(file_id=f)
             data = file.content().decode("utf-8")
-            temp_df = self.spark.read.csv(data, header=True, schema=self.schema_, **self.params)
+
+            data_buffer = StringIO(data)
+            temp_df_pandas = pd.read_csv(data_buffer, header=0, dtype=str if not self.schema_ else None, **self.params)  # type: ignore
+            temp_df = self.spark.createDataFrame(temp_df_pandas, schema=self.schema_)
+
             temp_df = (
                 temp_df
                 # fmt: off
