@@ -8,10 +8,11 @@ from __future__ import annotations
 
 from typing import Optional, Union
 
-from pyspark.sql import Column, Window, WindowSpec
+from pyspark.sql import Window, WindowSpec
 from pyspark.sql.functions import col, desc, row_number
 
 from koheesio.models import Field, conlist, field_validator
+from koheesio.spark import Column
 from koheesio.spark.transformations import ColumnsTransformation
 
 
