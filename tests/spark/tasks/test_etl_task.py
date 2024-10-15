@@ -80,26 +80,26 @@ def test_delta_stream_task(spark, checkpoint_folder):
     dd.output.df.createOrReplaceTempView("temp_view")
     delta_table.spark.sql("SELECT * FROM temp_view").show()
 
-    # delta_task = EtlTask(
-    #     source=DeltaTableStreamReader(table=delta_table),
-    #     target=writer,
-    #     transformations=[
-    #         SqlTransform(
-    #             sql="SELECT ${field} FROM ${table_name} WHERE id = 0",
-    #             table_name="temp_view",
-    #             field="id",
-    #         ),
-    #         Transform(dummy_function2, name="pari"),
-    #     ],
-    # )
+    delta_task = EtlTask(
+        source=DeltaTableStreamReader(table=delta_table),
+        target=writer,
+        transformations=[
+            SqlTransform(
+                sql="SELECT ${field} FROM ${table_name} WHERE id = 0",
+                table_name="temp_view",
+                field="id",
+            ),
+            Transform(dummy_function2, name="pari"),
+        ],
+    )
 
-    # delta_task.run()
-    # writer.streaming_query.awaitTermination(timeout=20)  # type: ignore
+    delta_task.run()
+    writer.streaming_query.awaitTermination(timeout=20)  # type: ignore
 
-    # out_df = spark.table("delta_stream_table_out")
-    # actual = out_df.head().asDict()
-    # expected = {"id": 0, "name": "pari"}
-    # assert actual == expected
+    out_df = spark.table("delta_stream_table_out")
+    actual = out_df.head().asDict()
+    expected = {"id": 0, "name": "pari"}
+    assert actual == expected
 
 
 def test_transformations_alias(spark: SparkSession) -> None:
