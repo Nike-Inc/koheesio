@@ -4,7 +4,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from conftest import await_job_completion
 from delta import DeltaTable
+
 from pydantic import ValidationError
+
 from pyspark.sql import functions as F
 
 from koheesio.spark import SPARK_MINOR_VERSION, AnalysisException

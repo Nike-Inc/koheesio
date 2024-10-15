@@ -2,14 +2,15 @@ from os import environ
 from unittest.mock import patch
 
 import pytest
+
 from pyspark.sql.types import StringType, StructField, StructType
 
 from koheesio.spark.utils import (
+    get_column_name,
     import_pandas_based_on_pyspark_version,
     on_databricks,
     schema_struct_to_schema_str,
     show_string,
-    get_column_name,
 )
 
 
@@ -61,6 +62,7 @@ def test_show_string(dummy_df):
 
 def test_column_name():
     from pyspark.sql.functions import col
+
     name = "my_column"
     column = col(name)
     assert get_column_name(column) == name

@@ -130,7 +130,7 @@ from pyspark.sql.utils import ParseException
 
 from koheesio.logger import warn
 from koheesio.models import Field, field_validator
-from koheesio.spark import Column, SPARK_MINOR_VERSION
+from koheesio.spark import SPARK_MINOR_VERSION, Column
 from koheesio.spark.transformations import ColumnsTransformationWithTarget
 from koheesio.spark.utils import get_column_name
 
@@ -173,12 +173,14 @@ class DateTimeColumn(SparkColumn):
 
 
 if SPARK_MINOR_VERSION >= 3.5:
+
     class DateTimeColumnConnect(ConnectColumn):
         """A datetime column that can be adjusted by adding or subtracting an interval value  using the `+` and `-`
         operators.
 
         Optimized for Spark Connect mode.
         """
+
         __add__ = DateTimeColumn.__add__
         __sub__ = DateTimeColumn.__sub__
         from_column = DateTimeColumn.from_column

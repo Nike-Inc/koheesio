@@ -4,7 +4,7 @@ import sys
 from decimal import Decimal
 from pathlib import Path
 from textwrap import dedent
-from unittest.mock import Mock, MagicMock
+from unittest.mock import MagicMock, Mock
 
 import pytest
 

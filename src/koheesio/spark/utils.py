@@ -3,10 +3,11 @@ Spark Utility functions
 """
 
 import os
-from enum import Enum
-from typing import Union
 import re
+from typing import Union
+from enum import Enum
 
+from pyspark.sql.column import Column as SparkColumn
 from pyspark.sql.types import (
     ArrayType,
     BinaryType,
@@ -26,9 +27,13 @@ from pyspark.sql.types import (
     StructType,
     TimestampType,
 )
-from pyspark.sql.column import Column as SparkColumn
 
-from koheesio.spark import Column, SPARK_MINOR_VERSION, DataFrame, get_spark_minor_version
+from koheesio.spark import (
+    SPARK_MINOR_VERSION,
+    Column,
+    DataFrame,
+    get_spark_minor_version,
+)
 
 __all__ = [
     "SparkDatatype",
@@ -252,7 +257,8 @@ def get_column_name(col: Column) -> str:
     # check if we are dealing with a Column object from Spark Connect
     err = ValueError("Column object is not a valid Column object")
     try:
-        from pyspark.sql.connect.column import Column as ConnectColumn, Expression
+        from pyspark.sql.connect.column import Column as ConnectColumn
+        from pyspark.sql.connect.column import Expression
     except ImportError as e:
         raise err from e
 
@@ -264,4 +270,3 @@ def get_column_name(col: Column) -> str:
 
     # In case we were not able to determine the correct type of the Column object, we raise an error
     raise err
-
