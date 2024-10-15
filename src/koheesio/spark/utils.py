@@ -5,6 +5,7 @@ Spark Utility functions
 import os
 from enum import Enum
 from typing import Union
+import re
 
 from pyspark.sql.types import (
     ArrayType,
@@ -25,6 +26,7 @@ from pyspark.sql.types import (
     StructType,
     TimestampType,
 )
+from pyspark.sql.column import Column as SparkColumn
 
 from koheesio.spark import Column, SPARK_MINOR_VERSION, DataFrame, get_spark_minor_version
 
@@ -38,6 +40,7 @@ __all__ = [
     "show_string",
     "get_spark_minor_version",
     "SPARK_MINOR_VERSION",
+    "get_column_name",
 ]
 
 
@@ -241,9 +244,24 @@ def get_column_name(col: Column) -> str:
     str
         The name of the given column
     """
-    from pyspark.sql.connect.column import Column as ConnectColumn
+    # we have to distinguish between the Column object from pyspark.sql.column and pyspark.sql.connect.column
+    if isinstance(col, SparkColumn):
+        # In case of a 'regular' Column object, we can directly access the name attribute through the _jc attribute
+        return col._jc.toString()
+
+    # check if we are dealing with a Column object from Spark Connect
+    err = ValueError("Column object is not a valid Column object")
+    try:
+        from pyspark.sql.connect.column import Column as ConnectColumn, Expression
+    except ImportError as e:
+        raise err from e
 
     if isinstance(col, ConnectColumn):
-        return col.name()._expr._parent.name()
+        # In case we encounter a Column through Spark Connect, we have to parse the expression to get the name
+        _expr = str(col._expr)
+        match = re.search(r"AS\s+(.*)", _expr)
+        return match.group(1) if match else _expr
 
-    return col._jc.toString()
+    # In case we were not able to determine the correct type of the Column object, we raise an error
+    raise err
+
