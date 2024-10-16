@@ -55,22 +55,16 @@ class TestJdbcReader:
             assert e.type is ValueError
 
     def test_execute_w_dbtable_and_query(self, dummy_spark):
-        with mock.patch.object(SparkSession, "getActiveSession") as mock_spark:
-            mock_spark.return_value = dummy_spark
+        jr = JdbcReader(**self.common_options, dbtable="foo", query="bar")
+        jr.execute()
 
-            jr = JdbcReader(**self.common_options, dbtable="foo", query="bar")
-            jr.execute()
-
-            assert jr.df.count() == 1
-            assert mock_spark.return_value.options_dict["query"] == "bar"
-            assert "dbtable" not in mock_spark.return_value.options_dict
+        assert jr.df.count() == 3
+        assert mock_spark.return_value.options_dict["query"] == "bar"
+        assert "dbtable" not in mock_spark.return_value.options_dict
 
     def test_execute_w_dbtable(self, dummy_spark):
-        with mock.patch.object(SparkSession, "getActiveSession") as mock_spark:
-            mock_spark.return_value = dummy_spark
+        jr = JdbcReader(**self.common_options, dbtable="foo")
+        jr.execute()
 
-            jr = JdbcReader(**self.common_options, dbtable="foo")
-            jr.execute()
-
-            assert jr.df.count() == 1
-            assert mock_spark.return_value.options_dict["dbtable"] == "foo"
+        assert jr.df.count() == 1
+        assert mock_spark.return_value.options_dict["dbtable"] == "foo"

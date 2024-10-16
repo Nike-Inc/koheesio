@@ -4,6 +4,7 @@ import sys
 from decimal import Decimal
 from pathlib import Path
 from textwrap import dedent
+from unittest import mock
 from unittest.mock import MagicMock, Mock
 
 import pytest
@@ -224,45 +225,22 @@ def setup_test_data(spark, delta_file):
 
 
 @pytest.fixture(scope="class")
-def dummy_spark(spark):
-    class DummySpark(MagicMock):
-        """Mocking SparkSession"""
+def dummy_spark(spark, sample_df_with_strings):
+    """SparkSession fixture that makes any call to SparkSession.read.load() return a DataFrame with strings.
 
-        def __init__(self):
-            super().__init__(spec=spark.getActiveSession().__class__)
-            self.options_dict = {}
+    Because of the use of `type(spark.read)`, this fixture automatically alters its behavior for either a remote or
+    regular Spark session.
 
-        def _create_mock_df(self):
-            df = MagicMock(spec=DataFrame)
-            df.count.return_value = 1
-            df.schema = StructType([StructField("foo", StringType(), True)])
-            return df
-
-        def mock_method(self, *args, **kwargs):
-            return self
-
-        @property
-        def mock_property(self):
-            return self
-
-        def mock_options(self, *args, **kwargs):
-            self.options_dict = kwargs
-            return self
-
-        options = mock_options
-        format = mock_method
-
-        _jvm = Mock()
-        _jvm.net.snowflake.spark.snowflake.Utils.runQuery.return_value = True
-
-        @staticmethod
-        def load() -> DataFrame:
-            df = MagicMock(spec=DataFrame)
-            df.count.return_value = 1
-            df.schema = StructType([StructField("foo", StringType(), True)])
-            return df
-
-    return DummySpark()
+    Example
+    -------
+    ```python
+    def test_dummy_spark(dummy_spark, sample_df_with_strings):
+        df = dummy_spark.read.load()
+        assert df.count() == sample_df_with_strings.count()
+    ```
+    """
+    with mock.patch.object(type(spark.read), 'load', return_value=sample_df_with_strings):
+        yield
 
 
 def await_job_completion(timeout=300, query_id=None):

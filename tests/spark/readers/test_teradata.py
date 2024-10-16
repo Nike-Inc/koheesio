@@ -2,8 +2,7 @@ from unittest import mock
 
 import pytest
 
-from pyspark.sql import SparkSession
-
+from koheesio.spark import SparkSession
 from koheesio.spark.readers.teradata import TeradataReader
 
 pytestmark = pytest.mark.spark
@@ -27,8 +26,5 @@ class TestTeradataReader:
 
     def test_execute(self, dummy_spark):
         """Method should be callable from parent class"""
-        with mock.patch.object(SparkSession, "getActiveSession") as mock_spark:
-            mock_spark.return_value = dummy_spark
-
-            tr = TeradataReader(**self.common_options)
-            assert tr.execute().df.count() == 1
+        tr = TeradataReader(**self.common_options)
+        assert tr.execute().df.count() == 3

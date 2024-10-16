@@ -140,11 +140,8 @@ class TestAddColumn:
     options = {"table": "foo", "column": "bar", "type": t.DateType(), **COMMON_OPTIONS}
 
     def test_execute(self, dummy_spark):
-        with mock.patch.object(SparkSession, "getActiveSession") as mock_spark:
-            mock_spark.return_value = dummy_spark
-
-            k = AddColumn(**self.options).execute()
-            assert k.query == "ALTER TABLE FOO ADD COLUMN BAR DATE"
+        k = AddColumn(**self.options).execute()
+        assert k.query == "ALTER TABLE FOO ADD COLUMN BAR DATE"
 
 
 def test_grant_privileges_on_object(dummy_spark):
@@ -154,57 +151,43 @@ def test_grant_privileges_on_object(dummy_spark):
     del options["role"]  # role is not required for this step as we are setting "roles"
 
     kls = GrantPrivilegesOnObject(**options)
+    k = kls.execute()
 
-    with mock.patch.object(SparkSession, "getActiveSession") as mock_spark:
-        mock_spark.return_value = dummy_spark
-        k = kls.execute()
-
-        assert len(k.query) == 2, "expecting 2 queries (one for each role)"
-        assert "DELETE" in k.query[0]
-        assert "SELECT" in k.query[0]
+    assert len(k.query) == 2, "expecting 2 queries (one for each role)"
+    assert "DELETE" in k.query[0]
+    assert "SELECT" in k.query[0]
 
 
 def test_grant_privileges_on_table(dummy_spark):
     options = {**COMMON_OPTIONS, **dict(table="foo", privileges=["SELECT"], roles=["role_1"])}
     del options["role"]  # role is not required for this step as we are setting "roles"
 
-    kls = GrantPrivilegesOnTable(
-        **options,
-    )
-    with mock.patch.object(SparkSession, "getActiveSession") as mock_spark:
-        mock_spark.return_value = dummy_spark
-
-        k = kls.execute()
-        assert k.query == [
-            "GRANT SELECT ON TABLE DB.SCHEMA.FOO TO ROLE ROLE_1",
-        ]
+    kls = GrantPrivilegesOnTable(**options)
+    k = kls.execute()
+    assert k.query == [
+        "GRANT SELECT ON TABLE DB.SCHEMA.FOO TO ROLE ROLE_1",
+    ]
 
 
 class TestGrantPrivilegesOnView:
     options = {**COMMON_OPTIONS}
 
     def test_execute(self, dummy_spark):
-        with mock.patch.object(SparkSession, "getActiveSession") as mock_spark:
-            mock_spark.return_value = dummy_spark
-
-            k = GrantPrivilegesOnView(**self.options, view="foo", privileges=["SELECT"], roles=["role_1"]).execute()
-            assert k.query == [
-                "GRANT SELECT ON VIEW DB.SCHEMA.FOO TO ROLE ROLE_1",
-            ]
+        k = GrantPrivilegesOnView(**self.options, view="foo", privileges=["SELECT"], roles=["role_1"]).execute()
+        assert k.query == [
+            "GRANT SELECT ON VIEW DB.SCHEMA.FOO TO ROLE ROLE_1",
+        ]
 
 
 class TestSnowflakeWriter:
     def test_execute(self, dummy_spark):
-        with mock.patch.object(SparkSession, "getActiveSession") as mock_spark:
-            mock_spark.return_value = dummy_spark
-
-            k = SnowflakeWriter(
-                **COMMON_OPTIONS,
-                table="foo",
-                df=dummy_spark.load(),
-                mode=BatchOutputMode.OVERWRITE,
-            )
-            k.execute()
+        k = SnowflakeWriter(
+            **COMMON_OPTIONS,
+            table="foo",
+            df=dummy_spark.load(),
+            mode=BatchOutputMode.OVERWRITE,
+        )
+        k.execute()
 
 
 class TestSyncTableAndDataFrameSchema:
