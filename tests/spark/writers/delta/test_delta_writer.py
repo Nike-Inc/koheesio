@@ -190,7 +190,7 @@ def test_delta_stream_table_writer(streaming_dummy_df, spark, checkpoint_folder)
         df=streaming_dummy_df,
     )
     delta_writer.write()
-    await_job_completion(timeout=20, query_id=delta_writer.streaming_query.id)
+    await_job_completion(spark, timeout=20, query_id=delta_writer.streaming_query.id)
     df = spark.read.table(table_name)
 
     assert df.count() == 10

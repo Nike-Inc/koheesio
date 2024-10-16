@@ -55,18 +55,18 @@ class TestJdbcReader:
             assert e.type is ValueError
 
     def test_execute_w_dbtable_and_query(self, dummy_spark):
+        """query should take precedence over dbtable"""
         jr = JdbcReader(**self.common_options, dbtable="foo", query="bar")
         jr.execute()
 
         assert jr.df.count() == 3
-        # FIXME
-        assert mock_spark.return_value.options_dict["query"] == "bar"
-        assert "dbtable" not in mock_spark.return_value.options_dict
+        assert dummy_spark.options_dict["query"] == "bar"
+        assert dummy_spark.options_dict.get("dbtable") is None
 
     def test_execute_w_dbtable(self, dummy_spark):
+        """check that dbtable is passed to the reader correctly"""
         jr = JdbcReader(**self.common_options, dbtable="foo")
         jr.execute()
 
         assert jr.df.count() == 3
-        # FIXME
-        assert mock_spark.return_value.options_dict["dbtable"] == "foo"
+        assert dummy_spark.options_dict["dbtable"] == "foo"

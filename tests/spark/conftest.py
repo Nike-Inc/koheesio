@@ -5,7 +5,7 @@ from decimal import Decimal
 from pathlib import Path
 from textwrap import dedent
 from unittest import mock
-from unittest.mock import MagicMock, Mock
+from collections import namedtuple
 
 import pytest
 
@@ -31,7 +31,6 @@ from pyspark.sql.types import (
 )
 
 from koheesio.logger import LoggingFactory
-from koheesio.spark import DataFrame
 from koheesio.spark.readers.dummy import DummyReader
 
 
@@ -224,8 +223,12 @@ def setup_test_data(spark, delta_file):
     )
 
 
+SparkContextData = namedtuple('SparkContextData', ['spark', 'options_dict'])
+"""A named tuple containing the Spark session and the options dictionary used to create the DataFrame"""
+
+
 @pytest.fixture(scope="class")
-def dummy_spark(spark, sample_df_with_strings):
+def dummy_spark(spark, sample_df_with_strings) -> SparkContextData:
     """SparkSession fixture that makes any call to SparkSession.read.load() return a DataFrame with strings.
 
     Because of the use of `type(spark.read)`, this fixture automatically alters its behavior for either a remote or
@@ -238,12 +241,25 @@ def dummy_spark(spark, sample_df_with_strings):
         df = dummy_spark.read.load()
         assert df.count() == sample_df_with_strings.count()
     ```
+
+    Returns
+    -------
+    SparkContextData
+        A named tuple containing the Spark session and the options dictionary used to create the DataFrame
     """
-    with mock.patch.object(type(spark.read), 'load', return_value=sample_df_with_strings):
-        yield
+    _options_dict = {}
+
+    def mock_options(*args, **kwargs):
+        _options_dict.update(kwargs)
+        return spark.read
+
+    spark_reader = type(spark.read)
+    with mock.patch.object(spark_reader, 'options', side_effect=mock_options):
+        with mock.patch.object(spark_reader, 'load', return_value=sample_df_with_strings):
+            yield SparkContextData(spark, _options_dict)
 
 
-def await_job_completion(timeout=300, query_id=None):
+def await_job_completion(spark, timeout=300, query_id=None):
     """
     Waits for a Spark streaming job to complete.
 
@@ -254,7 +270,7 @@ def await_job_completion(timeout=300, query_id=None):
     logger = LoggingFactory.get_logger(name="await_job_completion", inherit_from_koheesio=True)
 
     start_time = datetime.datetime.now()
-    spark = SparkSession.getActiveSession()
+    spark = spark.getActiveSession()
     logger.info("Waiting for streaming job to complete")
     if query_id is not None:
         stream = spark.streams.get(query_id)
