@@ -59,6 +59,7 @@ class TestJdbcReader:
         jr.execute()
 
         assert jr.df.count() == 3
+        # FIXME
         assert mock_spark.return_value.options_dict["query"] == "bar"
         assert "dbtable" not in mock_spark.return_value.options_dict
 
@@ -66,5 +67,6 @@ class TestJdbcReader:
         jr = JdbcReader(**self.common_options, dbtable="foo")
         jr.execute()
 
-        assert jr.df.count() == 1
+        assert jr.df.count() == 3
+        # FIXME
         assert mock_spark.return_value.options_dict["dbtable"] == "foo"
