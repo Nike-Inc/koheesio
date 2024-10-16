@@ -224,19 +224,13 @@ def setup_test_data(spark, delta_file):
 
 
 @pytest.fixture(scope="class")
-def dummy_spark():
+def dummy_spark(spark):
     class DummySpark(MagicMock):
         """Mocking SparkSession"""
 
         def __init__(self):
-            super().__init__(spec=SparkSession)
+            super().__init__(spec=spark.getActiveSession().__class__)
             self.options_dict = {}
-
-            # Mock the read method chain
-            self.read = Mock()
-            self.read.format = Mock(return_value=self.read)
-            self.read.options = Mock(return_value=self.read)
-            self.read.load = Mock(return_value=self._create_mock_df())
 
         def _create_mock_df(self):
             df = MagicMock(spec=DataFrame)
@@ -257,7 +251,6 @@ def dummy_spark():
 
         options = mock_options
         format = mock_method
-        read = mock_property
 
         _jvm = Mock()
         _jvm.net.snowflake.spark.snowflake.Utils.runQuery.return_value = True
