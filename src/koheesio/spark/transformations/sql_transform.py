@@ -27,8 +27,11 @@ class SqlTransform(SqlBaseStep, Transformation):
     """
 
     def execute(self):
-        # table_name = get_random_string(prefix="sql_transform")
-        # self.df.createTempView(table_name)
+        table_name = get_random_string(prefix="sql_transform")
+        self.params = {**self.params, "table_name": table_name}
 
-        # query = self.query.format(table_name=table_name, **{k: v for k, v in self.params.items() if k != "table_name"})
-        self.output.df = self.spark.sql(sqlQuery=self.query, args=self.params)
+        df = self.df
+        df.createOrReplaceTempView(table_name)
+        query = self.query
+
+        self.output.df = self.spark.sql(query)

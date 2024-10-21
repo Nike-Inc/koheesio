@@ -137,10 +137,10 @@ def dummy_df(spark):
 @pytest.fixture(scope="class")
 def sample_df_to_partition(spark):
     """
-    | paritition | Value
-    |----|----|
-    | BE | 12 |
-    | FR | 20 |
+    | partition | Value |
+    |-----------|-------|
+    | BE        | 12    |
+    | FR        | 20    |
     """
     data = [["BE", 12], ["FR", 20]]
     schema = ["partition", "value"]
@@ -172,15 +172,16 @@ def sample_df_with_strings(spark):
 def sample_df_with_timestamp(spark):
     """
     df:
-    | id | a_date              | a_timestamp
-    |----|---------------------|---------------------
-    | 1  | 1970-04-20 12:33:09 |
-    | 2  | 1980-05-21 13:34:08 |
-    | 3  | 1990-06-22 14:35:07 |
+    | id | a_date              | a_timestamp         |
+    |----|---------------------|---------------------|
+    | 1  | 1970-04-20 12:33:09 | 2000-07-01 01:01:00 |
+    | 2  | 1980-05-21 13:34:08 | 2010-08-02 02:02:00 |
+    | 3  | 1990-06-22 14:35:07 | 2020-09-03 03:03:00 |
 
     Schema:
     - id: bigint (nullable = true)
-    - date: timestamp (nullable = true)
+    - a_date: timestamp (nullable = true)
+    - a_timestamp: timestamp (nullable = true)
     """
     data = [
         (1, datetime.datetime(1970, 4, 20, 12, 33, 9), datetime.datetime(2000, 7, 1, 1, 1)),
@@ -257,6 +258,30 @@ def dummy_spark(spark, sample_df_with_strings) -> SparkContextData:
     with mock.patch.object(spark_reader, 'options', side_effect=mock_options):
         with mock.patch.object(spark_reader, 'load', return_value=sample_df_with_strings):
             yield SparkContextData(spark, _options_dict)
+
+
+@pytest.fixture(scope="class")
+def mock_df(spark) -> mock.Mock:
+    """Fixture to mock a DataFrame's methods."""
+    # create a local DataFrame so we can get the spec of the DataFrame
+    df = spark.range(1)
+
+    # mock the df.write method
+    mock_df_write = mock.create_autospec(type(df.write))
+
+    # mock the save method
+    mock_df_write.save = mock.Mock(return_value=None)
+
+    # mock the format, option(s), and mode methods
+    mock_df_write.format.return_value = mock_df_write
+    mock_df_write.options.return_value = mock_df_write
+    mock_df_write.option.return_value = mock_df_write
+    mock_df_write.mode.return_value = mock_df_write
+
+    # now create a mock DataFrame with the mocked write method
+    mock_df = mock.create_autospec(type(df), instance=True)
+    mock_df.write = mock_df_write
+    yield mock_df
 
 
 def await_job_completion(spark, timeout=300, query_id=None):

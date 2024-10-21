@@ -296,14 +296,14 @@ class RunQueryPython(SnowflakeStep):
     ).execute()
     ```
     """
-    # try:
-    #     from snowflake import connector as snowflake_conn
-    # except ImportError as e:
-    #     raise ImportError(
-    #         "You need to have the `snowflake-connector-python` package installed to use the Snowflake steps that "
-    #         "are based around RunQuery. You can install this in Koheesio by adding `koheesio[snowflake]` to your "
-    #         "dependencies."
-    #     ) from e
+    try:
+        from snowflake import connector as snowflake_conn
+    except ImportError as e:
+        raise ImportError(
+            "You need to have the `snowflake-connector-python` package installed to use the Snowflake steps that "
+            "are based around RunQuery. You can install this in Koheesio by adding `koheesio[snowflake]` to your "
+            "dependencies."
+        ) from e
 
     @property
     def conn(self):

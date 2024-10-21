@@ -60,9 +60,14 @@ class SqlBaseStep(Step, ExtraParamsMixin, ABC):
     @property
     def query(self):
         """Returns the query while performing params replacement"""
-        query = self.sql.replace("${", "{") if self.sql else self.sql
-        if "{" in query:
-            query = query.format(**self.params)
+        # query = self.sql.replace("${", "{") if self.sql else self.sql
+        # if "{" in query:
+        #     query = query.format(**self.params)
+
+        query = self.sql
+
+        for key, value in self.params.items():
+            query = query.replace(f"${{{key}}}", value)
 
         self.log.debug(f"Generated query: {query}")
         return query

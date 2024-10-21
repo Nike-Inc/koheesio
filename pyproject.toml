@@ -66,6 +66,9 @@ delta = ["delta-spark>=3.2.1"]
 excel = ["openpyxl>=3.0.0"]
 # Tableau dependencies
 tableau = ["tableauhyperapi>=0.0.19484", "tableauserverclient>=0.25"]
+# Snowflake dependencies
+snowflake = ["snowflake-connector-python>=3.12.0"]
+# Development dependencies
 dev = ["black", "isort", "ruff", "mypy", "pylint", "colorama", "types-PyYAML"]
 test = [
   "chispa",
@@ -183,6 +186,7 @@ features = [
   "excel",
   "se",
   "box",
+  "snowflake",
   "tableau",
   "dev",
 ]
@@ -249,6 +253,7 @@ features = [
   "sftp",
   "delta",
   "excel",
+  "snowflake",
   "tableau",
   "dev",
   "test",
@@ -408,8 +413,9 @@ features = [
   "box",
   "pandas",
   "pyspark",
-  # "se",
+#   "se",
   "sftp",
+  "snowflake",
   "delta",
   "excel",
   "tableau",

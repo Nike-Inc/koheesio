@@ -90,6 +90,7 @@ class SparkStep(Step, ABC):
 
     @property
     def is_remote_spark_session(self) -> bool:
+        # TODO: make this a helper function that we can use outside the SparkStep class
         """Check if the current SparkSession is a remote session"""
         return check_if_pyspark_connect_is_supported() and self.spark.conf.get("spark.remote")
 

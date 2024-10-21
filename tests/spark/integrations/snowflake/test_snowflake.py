@@ -94,46 +94,34 @@ class TestTableQuery:
     options = {"table": "table", **COMMON_OPTIONS}
 
     def test_execute(self, dummy_spark):
-        with mock.patch.object(SparkSession, "getActiveSession") as mock_spark:
-            mock_spark.return_value = dummy_spark
-
-            k = DbTableQuery(**self.options).execute()
-            assert k.df.count() == 1
+        k = DbTableQuery(**self.options).execute()
+        assert k.df.count() == 3
 
 
 class TestTableExists:
     table_exists_options = {"table": "table", **COMMON_OPTIONS}
 
     def test_execute(self, dummy_spark):
-        with mock.patch.object(SparkSession, "getActiveSession") as mock_spark:
-            mock_spark.return_value = dummy_spark
-
-            k = TableExists(**self.table_exists_options).execute()
-            assert k.exists is True
+        k = TableExists(**self.table_exists_options).execute()
+        assert k.exists is True
 
 
 class TestCreateOrReplaceTableFromDataFrame:
     options = {"table": "table", **COMMON_OPTIONS}
 
     def test_execute(self, dummy_spark, dummy_df):
-        with mock.patch.object(SparkSession, "getActiveSession") as mock_spark:
-            mock_spark.return_value = dummy_spark
-
-            k = CreateOrReplaceTableFromDataFrame(**self.options, df=dummy_df).execute()
-            assert k.snowflake_schema == "id BIGINT"
-            assert k.query == "CREATE OR REPLACE TABLE db.schema.table (id BIGINT)"
-            assert len(k.input_schema) > 0
+        k = CreateOrReplaceTableFromDataFrame(**self.options, df=dummy_df).execute()
+        assert k.snowflake_schema == "id BIGINT"
+        assert k.query == "CREATE OR REPLACE TABLE db.schema.table (id BIGINT)"
+        assert len(k.input_schema) > 0
 
 
 class TestGetTableSchema:
     get_table_schema_options = {"table": "table", **COMMON_OPTIONS}
 
     def test_execute(self, dummy_spark):
-        with mock.patch.object(SparkSession, "getActiveSession") as mock_spark:
-            mock_spark.return_value = dummy_spark
-
-            k = GetTableSchema(**self.get_table_schema_options)
-            assert len(k.execute().table_schema.fields) == 1
+        k = GetTableSchema(**self.get_table_schema_options)
+        assert len(k.execute().table_schema.fields) == 1
 
 
 class TestAddColumn:
@@ -180,14 +168,22 @@ class TestGrantPrivilegesOnView:
 
 
 class TestSnowflakeWriter:
-    def test_execute(self, dummy_spark):
+    def test_execute(self, mock_df):
         k = SnowflakeWriter(
             **COMMON_OPTIONS,
             table="foo",
-            df=dummy_spark.load(),
+            df=mock_df,
             mode=BatchOutputMode.OVERWRITE,
         )
         k.execute()
+
+        # Debugging: Print the call args list of the format method
+        print(f"Format call args list: {mock_df.write.format.call_args_list}")
+
+        # check that the format was set to snowflake
+        mocked_format: Mock = mock_df.write.format
+        assert mocked_format.call_args[0][0] == "snowflake"
+        mock_df.write.format.assert_called_with("snowflake")
 
 
 class TestSyncTableAndDataFrameSchema:

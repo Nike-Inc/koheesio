@@ -201,6 +201,8 @@ def validate_interval(interval: str):
     """
     try:
         expr(f"interval '{interval}'")
+        # TODO: if remote, do it like koheesio.spark.delta.DeltaTableStep.exists
+        #  meaning: create a dataframe and call take(1) on it
     except ParseException as e:
         raise ValueError(f"Value '{interval}' is not a valid interval.") from e
     return interval
