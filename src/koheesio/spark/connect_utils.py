@@ -1,5 +1,5 @@
 import inspect
-from typing import Optional, TypeAlias, Union
+from typing import TypeAlias, Union
 
 from pyspark import sql
 from pyspark.errors import exceptions
@@ -7,7 +7,7 @@ from pyspark.errors import exceptions
 from koheesio.spark.utils import check_if_pyspark_connect_is_supported
 
 
-def get_active_session() -> Optional[Union["sql.SparkSession", "sql.connect.session.SparkSession"]]:  # type: ignore
+def get_active_session() -> Union["sql.SparkSession", "sql.connect.session.SparkSession"]:  # type: ignore
     if check_if_pyspark_connect_is_supported():
         from pyspark.sql.connect.session import SparkSession as ConnectSparkSession
 
@@ -16,6 +16,12 @@ def get_active_session() -> Optional[Union["sql.SparkSession", "sql.connect.sess
         )
     else:
         session = sql.SparkSession.getActiveSession()
+
+    if not session:
+        raise RuntimeError(
+            "No active Spark session found. Please create a Spark session before using module connect_utils."
+            " Or perform local import of the module."
+        )
 
     return session
 

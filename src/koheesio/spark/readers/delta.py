@@ -8,10 +8,10 @@ DeltaTableStreamReader
     Reads data from a Delta table and returns a DataStream
 """
 
+from __future__ import annotations
+
 from typing import Any, Dict, Optional, Union
 
-from pydantic import InstanceOf
-from pyspark import sql
 from pyspark.sql import DataFrameReader
 from pyspark.sql import functions as f
 from pyspark.sql.streaming.readwriter import DataStreamReader
@@ -84,9 +84,10 @@ class DeltaTableReader(Reader):
     """
 
     table: Union[DeltaTableStep, str] = Field(default=..., description="The table to read")
-    #FIXME
+    # FIXME
     # filter_cond: InstanceOf[Optional[Union["sql.Column", "sql.connect.column.Column", str]]] = Field(
-    filter_cond: Any = Field(
+    # filter_cond: Optional[Union[ForwardRef("sql.Column"), ForwardRef("sql.connect.column.Column"), str]] = Field(
+    filter_cond: Optional[Union[Any, str]] = Field(
         default=None,
         alias="filterCondition",
         description="Filter condition to apply to the dataframe. Filters can be provided by using Column or string "
