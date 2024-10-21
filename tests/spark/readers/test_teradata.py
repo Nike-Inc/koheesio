@@ -1,8 +1,5 @@
-from unittest import mock
-
 import pytest
 
-from koheesio.spark import SparkSession
 from koheesio.spark.readers.teradata import TeradataReader
 
 pytestmark = pytest.mark.spark

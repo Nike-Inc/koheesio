@@ -5,10 +5,12 @@ Extract -> Transform -> Load
 """
 
 from datetime import datetime
+from typing import Any, Union
+
+from pyspark import sql
 
 from koheesio import Step
 from koheesio.models import Field, InstanceOf, conlist
-from koheesio.spark import DataFrame
 from koheesio.spark.readers import Reader
 from koheesio.spark.transformations import Transformation
 from koheesio.spark.writers import Writer
@@ -92,11 +94,17 @@ class EtlTask(Step):
     class Output(Step.Output):
         """Output class for EtlTask"""
 
-        source_df: DataFrame = Field(default=..., description="The Spark DataFrame produced by .extract() method")
-        transform_df: DataFrame = Field(default=..., description="The Spark DataFrame produced by .transform() method")
-        target_df: DataFrame = Field(default=..., description="The Spark DataFrame used by .load() method")
+        # FIXME
+        # source_df: InstanceOf[Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]] = Field(
+        source_df: Any = Field(default=..., description="The Spark DataFrame produced by .extract() method")
+        # FIXME
+        # transform_df: InstanceOf[Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]] = Field(
+        transform_df: Any = Field(default=..., description="The Spark DataFrame produced by .transform() method")
+        # FIXME
+        # target_df: InstanceOf[Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]] = Field(
+        target_df: Any = Field(default=..., description="The Spark DataFrame used by .load() method")
 
-    def extract(self) -> DataFrame:
+    def extract(self) -> Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]:
         """Read from Source
 
         logging is handled by the Reader.execute()-method's @do_execute decorator
@@ -104,7 +112,9 @@ class EtlTask(Step):
         reader: Reader = self.source
         return reader.read()
 
-    def transform(self, df: DataFrame) -> DataFrame:
+    def transform(
+        self, df: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]
+    ) -> Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]:
         """Transform recursively
 
         logging is handled by the Transformation.execute()-method's @do_execute decorator
@@ -113,7 +123,9 @@ class EtlTask(Step):
             df = t.transform(df)
         return df
 
-    def load(self, df: DataFrame) -> DataFrame:
+    def load(
+        self, df: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]
+    ) -> Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]:
         """Write to Target
 
         logging is handled by the Writer.execute()-method's @do_execute decorator

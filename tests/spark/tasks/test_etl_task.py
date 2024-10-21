@@ -1,6 +1,4 @@
-import delta
 import pytest
-
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.functions import col, lit
 
@@ -11,6 +9,7 @@ from koheesio.spark.readers.delta import DeltaTableReader, DeltaTableStreamReade
 from koheesio.spark.readers.dummy import DummyReader
 from koheesio.spark.transformations.sql_transform import SqlTransform
 from koheesio.spark.transformations.transform import Transform
+from koheesio.spark.utils import SPARK_MINOR_VERSION
 from koheesio.spark.writers.delta import DeltaTableStreamWriter, DeltaTableWriter
 from koheesio.spark.writers.dummy import DummyWriter
 
@@ -70,22 +69,36 @@ def test_delta_task(spark):
 
 
 def test_delta_stream_task(spark, checkpoint_folder):
+    from koheesio.spark.connect_utils import is_remote_session
+
     delta_table = DeltaTableStep(table="delta_stream_table")
     DummyReader(range=5).read().write.format("delta").mode("append").saveAsTable("delta_stream_table")
     writer = DeltaTableStreamWriter(table="delta_stream_table_out", checkpoint_location=checkpoint_folder)
 
+    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
+        transformations = [
+            # FIXME: Temp view is not working in remote sessions: https://issues.apache.org/jira/browse/SPARK-45957
+            SqlTransform(
+                sql="SELECT ${field} FROM ${table_name} WHERE id = 0",
+                table_name="temp_view",
+                field="id",
+            ),
+            Transform(dummy_function2, name="pari"),
+        ]
+    else:
+        transformations = [
+            SqlTransform(
+                sql="SELECT ${field} FROM ${table_name} WHERE id = 0",
+                table_name="temp_view",
+                field="id",
+            ),
+            Transform(dummy_function2, name="pari"),
+        ]
+
     delta_task = EtlTask(
         source=DeltaTableStreamReader(table=delta_table),
         target=writer,
-        transformations=[
-            # TODO: SqlTransform doesn't work with streaming
-            # SqlTransform(
-            #     sql="SELECT ${field} FROM ${table_name} WHERE id = 0",
-            #     table_name="temp_view",
-            #     field="id",
-            # ),
-            Transform(dummy_function2, name="pari"),
-        ],
+        transformations=transformations,
     )
 
     delta_task.run()

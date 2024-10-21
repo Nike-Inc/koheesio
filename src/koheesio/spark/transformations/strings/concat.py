@@ -2,12 +2,12 @@
 Concatenates multiple input columns together into a single column, optionally using a given separator.
 """
 
-from typing import List, Optional
+from typing import List, Optional, Union
 
+from pyspark import sql
 from pyspark.sql.functions import col, concat, concat_ws
 
 from koheesio.models import Field, field_validator
-from koheesio.spark import DataFrame
 from koheesio.spark.transformations import ColumnsTransformation
 
 
@@ -122,7 +122,7 @@ class Concat(ColumnsTransformation):
 
         return target_column_value
 
-    def execute(self) -> DataFrame:
+    def execute(self) -> Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]:
         columns = [col(s) for s in self.get_columns()]
         self.output.df = self.df.withColumn(
             self.target_column, concat_ws(self.spacer, *columns) if self.spacer else concat(*columns)

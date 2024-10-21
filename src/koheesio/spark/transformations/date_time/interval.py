@@ -102,14 +102,10 @@ from koheesio.spark.transformations.date_time.interval import (
     DateTimeAddInterval,
 )
 
-input_df = spark.createDataFrame(
-    [(1, "2022-01-01 00:00:00")], ["id", "my_column"]
-)
+input_df = spark.createDataFrame([(1, "2022-01-01 00:00:00")], ["id", "my_column"])
 
 # add 1 day to my_column and store the result in a new column called 'one_day_later'
-output_df = DateTimeAddInterval(
-    column="my_column", target_column="one_day_later", interval="1 day"
-).transform(input_df)
+output_df = DateTimeAddInterval(column="my_column", target_column="one_day_later", interval="1 day").transform(input_df)
 ```
 __output_df__:
 
@@ -124,15 +120,13 @@ from __future__ import annotations
 
 from typing import Literal, Union
 
+from pyspark import sql
 from pyspark.sql import Column as SparkColumn
 from pyspark.sql.functions import col, expr
-from pyspark.sql.utils import ParseException
 
-from koheesio.logger import warn
 from koheesio.models import Field, field_validator
-from koheesio.spark import SPARK_MINOR_VERSION, Column
 from koheesio.spark.transformations import ColumnsTransformationWithTarget
-from koheesio.spark.utils import get_column_name
+from koheesio.spark.utils import SPARK_MINOR_VERSION
 
 # if spark version is 3.5 or higher, we have to account for the connect mode
 if SPARK_MINOR_VERSION >= 3.5:
@@ -165,7 +159,7 @@ class DateTimeColumn(SparkColumn):
         return adjust_time(self, operation="subtract", interval=value)
 
     @classmethod
-    def from_column(cls, column: Column):
+    def from_column(cls, column: Union["sql.Column", "sql.connect.column.Column"]):
         """Create a DateTimeColumn from an existing Column"""
         if isinstance(column, SparkColumn):
             return DateTimeColumn(column._jc)
@@ -199,16 +193,19 @@ def validate_interval(interval: str):
     ValueError
         If the interval string is invalid
     """
+    from koheesio.spark.connect_utils import ParseException, get_active_session, is_remote_session
+
     try:
-        expr(f"interval '{interval}'")
-        # TODO: if remote, do it like koheesio.spark.delta.DeltaTableStep.exists
-        #  meaning: create a dataframe and call take(1) on it
+        if is_remote_session():
+            get_active_session().sql(f"SELECT interval '{interval}'")  # type: ignore
+        else:
+            expr(f"interval '{interval}'")
     except ParseException as e:
         raise ValueError(f"Value '{interval}' is not a valid interval.") from e
     return interval
 
 
-def dt_column(column: Union[str, Column]) -> DateTimeColumn:
+def dt_column(column: Union[str, "sql.Column", "sql.connect.column.Column"]) -> DateTimeColumn:
     """Convert a column to a DateTimeColumn
 
     Aims to be a drop-in replacement for `pyspark.sql.functions.col` that returns a DateTimeColumn instead of a Column.
@@ -232,12 +229,14 @@ def dt_column(column: Union[str, Column]) -> DateTimeColumn:
     """
     if isinstance(column, str):
         column = col(column)
-    elif not isinstance(column, Column):
+    elif type(column) not in ("pyspark.sql.Column", "pyspark.sql.connect.column.Column"):
         raise TypeError(f"Expected column to be of type str or Column, got {type(column)} instead.")
     return DateTimeColumn.from_column(column)
 
 
-def adjust_time(column: Column, operation: Operations, interval: str) -> Column:
+def adjust_time(
+    column: Union["sql.Column", "sql.connect.column.Column"], operation: Operations, interval: str
+) -> Union["sql.Column", "sql.connect.column.Column"]:
     """
     Adjusts a datetime column by adding or subtracting an interval value.
 
@@ -292,6 +291,8 @@ def adjust_time(column: Column, operation: Operations, interval: str) -> Column:
     Column
         The adjusted datetime column.
     """
+    from koheesio.spark.connect_utils import get_column_name
+
     # check that value is a valid interval
     interval = validate_interval(interval)
 
@@ -363,7 +364,7 @@ class DateTimeAddInterval(ColumnsTransformationWithTarget):
     # validators
     validate_interval = field_validator("interval")(validate_interval)
 
-    def func(self, column: Column):
+    def func(self, column: Union["sql.Column", "sql.connect.column.Column"]):
         return adjust_time(column, operation=self.operation, interval=self.interval)
 
 

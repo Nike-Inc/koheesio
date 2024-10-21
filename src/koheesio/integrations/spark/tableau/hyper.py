@@ -1,24 +1,11 @@
 import os
-from typing import Any, List, Optional, Union
 from abc import ABC, abstractmethod
 from pathlib import PurePath
 from tempfile import TemporaryDirectory
-
-from tableauhyperapi import (
-    NOT_NULLABLE,
-    NULLABLE,
-    Connection,
-    CreateMode,
-    HyperProcess,
-    Inserter,
-    SqlType,
-    TableDefinition,
-    TableName,
-    Telemetry,
-)
+from typing import Any, List, Optional, Union
 
 from pydantic import Field, conlist
-
+from pyspark import sql
 from pyspark.sql.functions import col
 from pyspark.sql.types import (
     BooleanType,
@@ -34,10 +21,22 @@ from pyspark.sql.types import (
     StructType,
     TimestampType,
 )
+from tableauhyperapi import (
+    NOT_NULLABLE,
+    NULLABLE,
+    Connection,
+    CreateMode,
+    HyperProcess,
+    Inserter,
+    SqlType,
+    TableDefinition,
+    TableName,
+    Telemetry,
+)
 
-from koheesio.spark import SPARK_MINOR_VERSION, DataFrame
 from koheesio.spark.readers import SparkStep
 from koheesio.spark.transformations.cast_to_datatype import CastToDatatype
+from koheesio.spark.utils import SPARK_MINOR_VERSION
 from koheesio.steps import Step, StepOutput
 
 
@@ -305,7 +304,9 @@ class HyperFileDataFrameWriter(HyperFileWriter):
     ```
     """
 
-    df: DataFrame = Field(default=..., description="Spark DataFrame to write to the Hyper file")
+    # FIXME
+    # df: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"] = Field(
+    df: Any = Field(default=..., description="Spark DataFrame to write to the Hyper file")
     table_definition: Optional[TableDefinition] = None  # table_definition is not required for this class
 
     @staticmethod
@@ -363,7 +364,7 @@ class HyperFileDataFrameWriter(HyperFileWriter):
 
         return td
 
-    def clean_dataframe(self) -> DataFrame:
+    def clean_dataframe(self) -> Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]:
         """
         - Replace NULLs for string and numeric columns
         - Convert data types to ensure compatibility with Tableau Hyper API

@@ -1,13 +1,13 @@
 from datetime import datetime
+from typing import Union
 from unittest import mock
 
 import chispa
+import pydantic
 import pytest
 from conftest import await_job_completion
+from pyspark import sql
 
-import pydantic
-
-from koheesio.spark import DataFrame
 from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.readers.delta import DeltaTableReader
 from koheesio.spark.snowflake import (
@@ -48,7 +48,7 @@ def snowflake_staging_file(tmp_path_factory, random_uuid, logger):
 
 @pytest.fixture
 def foreach_batch_stream_local(checkpoint_folder, snowflake_staging_file):
-    def append_to_memory(df: DataFrame, batchId: int):
+    def append_to_memory(df: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"], batchId: int):
         df.write.mode("append").parquet(snowflake_staging_file)
 
     return ForEachBatchStreamWriter(

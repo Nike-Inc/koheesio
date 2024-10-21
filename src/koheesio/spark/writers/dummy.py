@@ -2,8 +2,9 @@
 
 from typing import Any, Dict, Union
 
+from pyspark import sql
+
 from koheesio.models import Field, PositiveInt, field_validator
-from koheesio.spark import DataFrame
 from koheesio.spark.writers import Writer
 
 
@@ -71,7 +72,7 @@ class DummyWriter(Writer):
 
     def execute(self) -> Output:
         """Execute the DummyWriter"""
-        df: DataFrame = self.df
+        df: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"] = self.df
 
         # noinspection PyProtectedMember
         df_content = df._show_string(self.n, self.truncate, self.vertical)

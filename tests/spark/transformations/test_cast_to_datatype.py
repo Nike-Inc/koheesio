@@ -4,15 +4,14 @@ Test the CastToDatatype cleansing function
 
 import datetime
 from decimal import Decimal
+from typing import Union
 
 import pytest
-
 from pydantic import ValidationError
-
+from pyspark import sql
 from pyspark.sql import functions as f
 
 from koheesio.logger import LoggingFactory
-from koheesio.spark import DataFrame
 from koheesio.spark.transformations.cast_to_datatype import (
     CastToBinary,
     CastToBoolean,
@@ -156,7 +155,9 @@ pytestmark = pytest.mark.spark
         ),
     ],
 )
-def test_happy_flow(input_values, expected, df_with_all_types: DataFrame):
+def test_happy_flow(
+    input_values, expected, df_with_all_types: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]
+):
     log = LoggingFactory.get_logger(name="test_cast_to_datatype")
 
     cast_to_datatype = CastToDatatype(**input_values)

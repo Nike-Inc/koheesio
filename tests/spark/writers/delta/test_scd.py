@@ -1,20 +1,18 @@
 import datetime
-import importlib.metadata
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import pytest
 from delta import DeltaTable
 from delta.tables import DeltaMergeBuilder
-from packaging import version
-
 from pydantic import Field
-
+from pyspark import sql
 from pyspark.sql import Column
 from pyspark.sql import functions as F
 from pyspark.sql.types import Row
 
-from koheesio.spark import SPARK_MINOR_VERSION, DataFrame, current_timestamp_utc
+from koheesio.spark import current_timestamp_utc
 from koheesio.spark.delta import DeltaTableStep
+from koheesio.spark.utils import SPARK_MINOR_VERSION
 from koheesio.spark.writers.delta.scd import SCD2DeltaTableWriter
 
 pytestmark = pytest.mark.spark
@@ -22,9 +20,13 @@ pytestmark = pytest.mark.spark
 skip_reason = "Tests are not working with PySpark 3.5 due to delta calling _sc. Test requires pyspark version >= 4.0"
 
 
-@pytest.mark.skipif(SPARK_MINOR_VERSION < 4.0, reason=skip_reason)
 def test_scd2_custom_logic(spark):
-    def _get_result(target_df: DataFrame, expr: str):
+    from koheesio.spark.connect_utils import is_remote_session
+
+    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
+        pytest.skip(reason=skip_reason)
+
+    def _get_result(target_df: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"], expr: str):
         res = (
             target_df.where(expr)
             .select(
@@ -75,7 +77,7 @@ def test_scd2_custom_logic(spark):
             self,
             delta_table: DeltaTable,
             dest_alias: str,
-            staged: DataFrame,
+            staged: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"],
             merge_key: str,
             columns_to_process: List[str],
             meta_scd2_effective_time_col: str,
@@ -253,8 +255,12 @@ def test_scd2_custom_logic(spark):
     assert result == expected
 
 
-@pytest.mark.skipif(SPARK_MINOR_VERSION < 4.0, reason=skip_reason)
 def test_scd2_logic(spark):
+    from koheesio.spark.connect_utils import is_remote_session
+
+    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
+        pytest.skip(reason=skip_reason)
+
     changes_data = [
         [("key1", "value1", "scd1-value11", "2024-05-01"), ("key2", "value2", "scd1-value21", "2024-04-01")],
         [("key1", "value1_updated", "scd1-value12", "2024-05-02"), ("key3", "value3", "scd1-value31", "2024-05-03")],

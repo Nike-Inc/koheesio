@@ -4,17 +4,15 @@ Koheesio step for running data quality rules with Spark Expectations engine.
 
 from typing import Any, Dict, Optional, Union
 
+import pyspark
+from pydantic import Field
+from pyspark import sql
 from spark_expectations.config.user_config import Constants as user_config
 from spark_expectations.core.expectations import (
     SparkExpectations,
     WrappedDataFrameWriter,
 )
 
-from pydantic import Field
-
-import pyspark
-
-from koheesio.spark import DataFrame
 from koheesio.spark.transformations import Transformation
 from koheesio.spark.writers import BatchOutputMode
 
@@ -96,7 +94,9 @@ class SparkExpectationsTransformation(Transformation):
     class Output(Transformation.Output):
         """Output of the SparkExpectationsTransformation step."""
 
-        rules_df: DataFrame = Field(default=..., description="Output dataframe")
+        # FIXME
+        # rules_df: InstanceOf[Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]] = Field(
+        rules_df: Any = Field(default=..., description="Output dataframe")
         se: SparkExpectations = Field(default=..., description="Spark Expectations object")
         error_table_writer: WrappedDataFrameWriter = Field(
             default=..., description="Spark Expectations error table writer"
@@ -158,7 +158,9 @@ class SparkExpectationsTransformation(Transformation):
             write_to_table=False,
             write_to_temp_table=False,
         )
-        def inner(df: DataFrame) -> DataFrame:
+        def inner(
+            df: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"],
+        ) -> Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]:
             """Just a wrapper to be able to use Spark Expectations decorator"""
             return df
 

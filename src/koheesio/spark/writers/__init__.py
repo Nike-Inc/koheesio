@@ -1,11 +1,13 @@
 """The Writer class is used to write the DataFrame to a target."""
 
-from typing import Optional
 from abc import ABC, abstractmethod
 from enum import Enum
+from typing import Any, Optional, Union
+
+from pyspark import sql
 
 from koheesio.models import Field
-from koheesio.spark import DataFrame, SparkStep
+from koheesio.spark import SparkStep
 
 
 # TODO: Investigate if we can clean various OutputModes into a more streamlined structure
@@ -50,7 +52,9 @@ class StreamingOutputMode(str, Enum):
 class Writer(SparkStep, ABC):
     """The Writer class is used to write the DataFrame to a target."""
 
-    df: Optional[DataFrame] = Field(default=None, description="The Spark DataFrame")
+    # FIXME
+    # df: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"] = Field(
+    df: Any = Field(default=None, description="The Spark DataFrame", exclude=True)
     format: str = Field(default="delta", description="The format of the output")
 
     @property
@@ -64,7 +68,7 @@ class Writer(SparkStep, ABC):
         # self.df  # input dataframe
         ...
 
-    def write(self, df: Optional[DataFrame] = None) -> SparkStep.Output:
+    def write(self, df: Optional[Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]] = None) -> SparkStep.Output:
         """Write the DataFrame to the output using execute() and return the output.
 
         If no DataFrame is passed, the self.df will be used.

@@ -1,14 +1,13 @@
 import datetime
 import os
 import sys
+from collections import namedtuple
 from decimal import Decimal
 from pathlib import Path
 from textwrap import dedent
 from unittest import mock
-from collections import namedtuple
 
 import pytest
-
 from pyspark.sql import SparkSession
 from pyspark.sql.types import (
     ArrayType,
@@ -224,7 +223,7 @@ def setup_test_data(spark, delta_file):
     )
 
 
-SparkContextData = namedtuple('SparkContextData', ['spark', 'options_dict'])
+SparkContextData = namedtuple("SparkContextData", ["spark", "options_dict"])
 """A named tuple containing the Spark session and the options dictionary used to create the DataFrame"""
 
 
@@ -255,8 +254,8 @@ def dummy_spark(spark, sample_df_with_strings) -> SparkContextData:
         return spark.read
 
     spark_reader = type(spark.read)
-    with mock.patch.object(spark_reader, 'options', side_effect=mock_options):
-        with mock.patch.object(spark_reader, 'load', return_value=sample_df_with_strings):
+    with mock.patch.object(spark_reader, "options", side_effect=mock_options):
+        with mock.patch.object(spark_reader, "load", return_value=sample_df_with_strings):
             yield SparkContextData(spark, _options_dict)
 
 

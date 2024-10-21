@@ -2,12 +2,13 @@
 Spark Utility functions
 """
 
+import importlib
 import os
-import re
-from typing import Union
 from enum import Enum
+from types import ModuleType
+from typing import Union
 
-from pyspark.sql.column import Column as SparkColumn
+from pyspark import sql
 from pyspark.sql.types import (
     ArrayType,
     BinaryType,
@@ -27,13 +28,40 @@ from pyspark.sql.types import (
     StructType,
     TimestampType,
 )
+from pyspark.version import __version__ as spark_version
 
-from koheesio.spark import (
-    SPARK_MINOR_VERSION,
-    Column,
-    DataFrame,
-    get_spark_minor_version,
-)
+try:
+    from pyspark.sql.utils import AnalysisException  # type: ignore
+except ImportError:
+    from pyspark.errors.exceptions.base import AnalysisException
+
+
+AnalysisException = AnalysisException
+
+
+def get_spark_minor_version() -> float:
+    """Returns the minor version of the spark instance.
+
+    For example, if the spark version is 3.3.2, this function would return 3.3
+    """
+    return float(".".join(spark_version.split(".")[:2]))
+
+
+# shorthand for the get_spark_minor_version function
+SPARK_MINOR_VERSION: float = get_spark_minor_version()
+
+
+def check_if_pyspark_connect_is_supported() -> bool:
+    result = False
+    module_name: str = "pyspark"
+    if SPARK_MINOR_VERSION >= 3.5:
+        try:
+            importlib.import_module(f"{module_name}.sql.connect")
+            result = True
+        except ModuleNotFoundError:
+            result = False
+    return result
+
 
 __all__ = [
     "SparkDatatype",
@@ -45,7 +73,7 @@ __all__ = [
     "show_string",
     "get_spark_minor_version",
     "SPARK_MINOR_VERSION",
-    "get_column_name",
+    "AnalysisException",
 ]
 
 
@@ -179,7 +207,7 @@ def schema_struct_to_schema_str(schema: StructType) -> str:
     return ",\n".join([f"{field.name} {field.dataType.typeName().upper()}" for field in schema.fields])
 
 
-def import_pandas_based_on_pyspark_version():
+def import_pandas_based_on_pyspark_version() -> ModuleType:
     """
     This function checks the installed version of PySpark and then tries to import the appropriate version of pandas.
     If the correct version of pandas is not installed, it raises an ImportError with a message indicating which version
@@ -202,7 +230,12 @@ def import_pandas_based_on_pyspark_version():
         raise ImportError("Pandas module is not installed.") from e
 
 
-def show_string(df: DataFrame, n: int = 20, truncate: Union[bool, int] = True, vertical: bool = False) -> str:
+def show_string(
+    df: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"],  # type: ignore
+    n: int = 20,
+    truncate: Union[bool, int] = True,
+    vertical: bool = False,
+) -> str:
     """Returns a string representation of the DataFrame
     The default implementation of DataFrame.show() hardcodes a print statement, which is not always desirable.
     With this function, you can get the string representation of the DataFrame instead, and choose how to display it.
@@ -228,45 +261,6 @@ def show_string(df: DataFrame, n: int = 20, truncate: Union[bool, int] = True, v
         If set to True, display the DataFrame vertically, by default False
     """
     if SPARK_MINOR_VERSION < 3.5:
-        return df._jdf.showString(n, truncate, vertical)
+        return df._jdf.showString(n, truncate, vertical)  # type: ignore
     # as per spark 3.5, the _show_string method is now available making calls to _jdf.showString obsolete
     return df._show_string(n, truncate, vertical)
-
-
-def get_column_name(col: Column) -> str:
-    """Get the column name from a Column object
-
-    Normally, the name of a Column object is not directly accessible in the regular pyspark API. This function
-    extracts the name of the given column object without needing to provide it in the context of a DataFrame.
-
-    Parameters
-    ----------
-    col: Column
-        The Column object
-
-    Returns
-    -------
-    str
-        The name of the given column
-    """
-    # we have to distinguish between the Column object from pyspark.sql.column and pyspark.sql.connect.column
-    if isinstance(col, SparkColumn):
-        # In case of a 'regular' Column object, we can directly access the name attribute through the _jc attribute
-        return col._jc.toString()
-
-    # check if we are dealing with a Column object from Spark Connect
-    err = ValueError("Column object is not a valid Column object")
-    try:
-        from pyspark.sql.connect.column import Column as ConnectColumn
-        from pyspark.sql.connect.column import Expression
-    except ImportError as e:
-        raise err from e
-
-    if isinstance(col, ConnectColumn):
-        # In case we encounter a Column through Spark Connect, we have to parse the expression to get the name
-        _expr = str(col._expr)
-        match = re.search(r"AS\s+(.*)", _expr)
-        return match.group(1) if match else _expr
-
-    # In case we were not able to determine the correct type of the Column object, we raise an error
-    raise err

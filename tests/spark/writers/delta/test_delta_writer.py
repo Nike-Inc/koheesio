@@ -4,13 +4,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 from conftest import await_job_completion
 from delta import DeltaTable
-
 from pydantic import ValidationError
-
 from pyspark.sql import functions as F
 
-from koheesio.spark import SPARK_MINOR_VERSION, AnalysisException
 from koheesio.spark.delta import DeltaTableStep
+from koheesio.spark.utils import SPARK_MINOR_VERSION, AnalysisException
 from koheesio.spark.writers import BatchOutputMode, StreamingOutputMode
 from koheesio.spark.writers.delta import DeltaTableStreamWriter, DeltaTableWriter
 from koheesio.spark.writers.delta.utils import log_clauses
@@ -49,8 +47,12 @@ def test_delta_partitioning(spark, sample_df_to_partition):
     assert output_df.count() == 2
 
 
-@pytest.mark.skipif(3.4 < SPARK_MINOR_VERSION < 4.0, reason=skip_reason)
 def test_delta_table_merge_all(spark):
+    from koheesio.spark.connect_utils import is_remote_session
+
+    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
+        pytest.skip(reason=skip_reason)
+
     table_name = "test_merge_all_table"
     target_df = spark.createDataFrame(
         [{"id": 1, "value": "no_merge"}, {"id": 2, "value": "expected_merge"}, {"id": 5, "value": "xxxx"}]
@@ -88,8 +90,12 @@ def test_delta_table_merge_all(spark):
     assert result == expected
 
 
-@pytest.mark.skipif(3.4 < SPARK_MINOR_VERSION < 4.0, reason=skip_reason)
 def test_deltatablewriter_with_invalid_conditions(spark, dummy_df):
+    from koheesio.spark.connect_utils import is_remote_session
+
+    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
+        pytest.skip(reason=skip_reason)
+
     table_name = "delta_test_table"
     merge_builder = (
         DeltaTable.forName(sparkSession=spark, tableOrViewName=table_name)
@@ -274,8 +280,12 @@ def test_delta_with_options(spark):
         mock_writer.options.assert_called_once_with(testParam1="testValue1", testParam2="testValue2")
 
 
-@pytest.mark.skipif(3.4 < SPARK_MINOR_VERSION < 4.0, reason=skip_reason)
 def test_merge_from_args(spark, dummy_df):
+    from koheesio.spark.connect_utils import is_remote_session
+
+    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
+        pytest.skip(reason=skip_reason)
+
     table_name = "test_table_merge_from_args"
     dummy_df.write.format("delta").saveAsTable(table_name)
 
@@ -334,8 +344,12 @@ def test_merge_from_args_raise_value_error(spark, output_mode_params):
         )
 
 
-@pytest.mark.skipif(3.4 < SPARK_MINOR_VERSION < 4.0, reason=skip_reason)
 def test_merge_no_table(spark):
+    from koheesio.spark.connect_utils import is_remote_session
+
+    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
+        pytest.skip(reason=skip_reason)
+
     table_name = "test_merge_no_table"
     target_df = spark.createDataFrame(
         [{"id": 1, "value": "no_merge"}, {"id": 2, "value": "expected_merge"}, {"id": 5, "value": "expected_merge"}]

@@ -15,18 +15,17 @@ and seamless integration with Delta tables in Spark.
 
 """
 
-from typing import List, Optional
 from logging import Logger
+from typing import Any, List, Optional, Union
 
 from delta.tables import DeltaMergeBuilder, DeltaTable
-
 from pydantic import InstanceOf
-
+from pyspark import sql
 from pyspark.sql import functions as F
 from pyspark.sql.types import DateType, TimestampType
 
 from koheesio.models import Field
-from koheesio.spark import Column, DataFrame, SparkSession, current_timestamp_utc
+from koheesio.spark import current_timestamp_utc
 from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.writers import Writer
 
@@ -72,7 +71,9 @@ class SCD2DeltaTableWriter(Writer):
     scd2_columns: List[str] = Field(
         default_factory=list, description="List of attributes for scd2 type (track changes)"
     )
-    scd2_timestamp_col: Optional[Column] = Field(
+    # FIXME
+    # scd2_timestamp_col: InstanceOf[Optional[Union["sql.Column", "sql.connect.column.Column"]]] = Field(
+    scd2_timestamp_col: Any = Field(
         default=None,
         description="Timestamp column for SCD2 type (track changes). Default to current_timestamp",
     )
@@ -118,7 +119,11 @@ class SCD2DeltaTableWriter(Writer):
         return attr_clause
 
     @staticmethod
-    def _scd2_timestamp(spark: SparkSession, scd2_timestamp_col: Optional[Column] = None, **_kwargs) -> Column:
+    def _scd2_timestamp(
+        spark: Union["sql.SparkSession", "sql.connect.session.SparkSession"],
+        scd2_timestamp_col: Optional[Union["sql.Column", "sql.connect.column.Column"]] = None,
+        **_kwargs,
+    ) -> Union["sql.Column", "sql.connect.column.Column"]:
         """
         Generate a SCD2 timestamp column.
 
@@ -146,7 +151,7 @@ class SCD2DeltaTableWriter(Writer):
         return scd2_timestamp
 
     @staticmethod
-    def _scd2_end_time(meta_scd2_end_time_col: str, **_kwargs) -> Column:
+    def _scd2_end_time(meta_scd2_end_time_col: str, **_kwargs) -> Union["sql.Column", "sql.connect.column.Column"]:
         """
         Generate a SCD2 end time column.
 
@@ -173,7 +178,9 @@ class SCD2DeltaTableWriter(Writer):
         return scd2_end_time
 
     @staticmethod
-    def _scd2_effective_time(meta_scd2_effective_time_col: str, **_kwargs) -> Column:
+    def _scd2_effective_time(
+        meta_scd2_effective_time_col: str, **_kwargs
+    ) -> Union["sql.Column", "sql.connect.column.Column"]:
         """
         Generate a SCD2 effective time column.
 
@@ -201,7 +208,7 @@ class SCD2DeltaTableWriter(Writer):
         return scd2_effective_time
 
     @staticmethod
-    def _scd2_is_current(**_kwargs) -> Column:
+    def _scd2_is_current(**_kwargs) -> Union["sql.Column", "sql.connect.column.Column"]:
         """
         Generate a SCD2 is_current column.
 
@@ -222,16 +229,16 @@ class SCD2DeltaTableWriter(Writer):
 
     def _prepare_staging(
         self,
-        df: DataFrame,
+        df: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"],
         delta_table: DeltaTable,
-        merge_action_logic: Column,
+        merge_action_logic: Union["sql.Column", "sql.connect.column.Column"],
         meta_scd2_is_current_col: str,
         columns_to_process: List[str],
         src_alias: str,
         dest_alias: str,
         cross_alias: str,
         **_kwargs,
-    ) -> DataFrame:
+    ) -> Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]:
         """
         Prepare a DataFrame for staging.
 
@@ -289,7 +296,7 @@ class SCD2DeltaTableWriter(Writer):
 
     @staticmethod
     def _preserve_existing_target_values(
-        df: DataFrame,
+        df: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"],
         meta_scd2_struct_col_name: str,
         target_auto_generated_columns: List[str],
         src_alias: str,
@@ -297,7 +304,7 @@ class SCD2DeltaTableWriter(Writer):
         dest_alias: str,
         logger: Logger,
         **_kwargs,
-    ) -> DataFrame:
+    ) -> Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]:
         """
         Preserve existing target values in the DataFrame.
 
@@ -358,13 +365,13 @@ class SCD2DeltaTableWriter(Writer):
 
     @staticmethod
     def _add_scd2_columns(
-        df: DataFrame,
+        df: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"],
         meta_scd2_struct_col_name: str,
         meta_scd2_effective_time_col_name: str,
         meta_scd2_end_time_col_name: str,
         meta_scd2_is_current_col_name: str,
         **_kwargs,
-    ) -> DataFrame:
+    ) -> Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]:
         """
         Add SCD2 columns to the DataFrame.
 
@@ -410,7 +417,7 @@ class SCD2DeltaTableWriter(Writer):
         self,
         delta_table: DeltaTable,
         dest_alias: str,
-        staged: DataFrame,
+        staged: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"],
         merge_key: str,
         columns_to_process: List[str],
         meta_scd2_effective_time_col: str,
@@ -473,8 +480,8 @@ class SCD2DeltaTableWriter(Writer):
             If the source DataFrame is missing any of the required merge columns.
 
         """
-        self.df: DataFrame
-        self.spark: SparkSession
+        self.df: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]
+        self.spark: Union["sql.SparkSession", "sql.connect.session.SparkSession"]
         delta_table = DeltaTable.forName(sparkSession=self.spark, tableOrViewName=self.table.table_name)
         src_alias, cross_alias, dest_alias = "src", "cross", "tgt"
 

@@ -3,17 +3,16 @@ Create Spark DataFrame directly from the data stored in a Python variable
 """
 
 import json
-from typing import Any, Dict, Optional, Union
 from enum import Enum
 from functools import partial
 from io import StringIO
+from typing import Any, Dict, Optional, Union
 
 import pandas as pd
-
+from pyspark import sql
 from pyspark.sql.types import StructType
 
 from koheesio.models import ExtraParamsMixin, Field
-from koheesio.spark import DataFrame, SparkSession
 from koheesio.spark.readers import Reader
 
 
@@ -73,7 +72,7 @@ class InMemoryDataReader(Reader, ExtraParamsMixin):
         description="[Optional] Set of extra parameters that should be passed to the appropriate reader (csv / json)",
     )
 
-    def _csv(self) -> DataFrame:
+    def _csv(self) -> Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]:
         """Method for reading CSV data"""
         if isinstance(self.data, list):
             csv_data: str = "\n".join(self.data)
@@ -85,10 +84,8 @@ class InMemoryDataReader(Reader, ExtraParamsMixin):
 
         return df
 
-    def _json(self) -> DataFrame:
+    def _json(self) -> Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]:
         """Method for reading JSON data"""
-        self.spark: SparkSession
-
         if isinstance(self.data, str):
             json_data = [json.loads(self.data)]
         elif isinstance(self.data, list):
@@ -101,7 +98,7 @@ class InMemoryDataReader(Reader, ExtraParamsMixin):
         pandas_df = pd.read_json(StringIO(json.dumps(json_data)), **self.params)  # type: ignore
 
         # Convert pyspark.pandas DataFrame to Spark DataFrame
-        df = self.spark.createDataFrame(pandas_df, schema=self.schema_)
+        df = self.spark.createDataFrame(pandas_df, schema=self.schema_)  # type: ignore
 
         return df
 

@@ -1,9 +1,8 @@
 import pytest
-
 from pyspark.sql import functions as F
 
-from koheesio.spark import AnalysisException, DataFrame
 from koheesio.spark.readers.delta import DeltaTableReader
+from koheesio.spark.utils import AnalysisException
 
 pytestmark = pytest.mark.spark
 
@@ -13,6 +12,8 @@ def test_delta_table_reader(spark):
     df.show()
     actual = df.head().asDict()
     expected = {"id": 0}
+
+    from koheesio.spark.connect_utils import DataFrame
 
     assert isinstance(df, DataFrame)
     assert actual == expected

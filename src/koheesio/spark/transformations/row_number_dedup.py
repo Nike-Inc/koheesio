@@ -6,13 +6,12 @@ See the docstring of the RowNumberDedup class for more information.
 
 from __future__ import annotations
 
-from typing import Optional, Union
+from typing import Any
 
 from pyspark.sql import Window, WindowSpec
 from pyspark.sql.functions import col, desc, row_number
 
 from koheesio.models import Field, conlist, field_validator
-from koheesio.spark import Column
 from koheesio.spark.transformations import ColumnsTransformation
 
 
@@ -41,12 +40,16 @@ class RowNumberDedup(ColumnsTransformation):
         Flag that determines whether the meta columns should be kept in the output DataFrame.
     """
 
-    sort_columns: conlist(Union[str, Column], min_length=0) = Field(
+    # FIXME:
+    # sort_columns: conlist(Union["sql.Column", "sql.connect.column.Column", str], min_length=0) = Field(
+    sort_columns: conlist(Any, min_length=0) = Field(
         default_factory=list,
         alias="sort_column",
         description="List of orderBy columns. If only one column is passed, it can be passed as a single object.",
     )
-    target_column: Optional[Union[str, Column]] = Field(
+    # FIXME:
+    # target_column: Optional[Union["sql.Column", "sql.connect.column.Column", str]] = Field(
+    target_column: Any = Field(
         default="meta_row_number_column",
         alias="target_suffix",
         description="The column to store the result in. If not provided, the result will be stored in the source"
@@ -77,6 +80,8 @@ class RowNumberDedup(ColumnsTransformation):
             The optimized and deduplicated list of sort columns.
         """
         # Convert single string or Column object to a list
+        from koheesio.spark.connect_utils import Column
+
         columns = [columns_value] if isinstance(columns_value, (str, Column)) else [*columns_value]
 
         # Remove empty strings, None, etc.

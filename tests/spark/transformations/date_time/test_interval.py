@@ -1,7 +1,6 @@
 import datetime as dt
 
 import pytest
-
 from pyspark.sql import types as T
 
 from koheesio.logger import LoggingFactory
@@ -122,7 +121,8 @@ def test_interval(input_data, column_name, operation, interval, expected, spark)
 
 
 def test_interval_unhappy(spark):
-    validate_interval("some random b*llsh*t")  # TODO: this should raise an error, but it doesn't in REMOTE mode
+    with pytest.raises(ValueError):
+        validate_interval("some random b*llsh*t")  # TODO: this should raise an error, but it doesn't in REMOTE mode
     # invalid operation
     with pytest.raises(ValueError):
         _ = adjust_time(col("some_col"), "invalid operation", "1 day")
