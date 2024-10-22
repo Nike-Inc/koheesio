@@ -10,7 +10,15 @@ from typing import Optional
 from pydantic import Field
 
 from koheesio import Step, StepOutput
-from koheesio.spark.utils.common import AnalysisException, Column, DataFrame, DataType, ParseException, SparkSession
+from koheesio.spark.utils.common import (
+    AnalysisException,
+    Column,
+    DataFrame,
+    DataStreamReader,
+    DataType,
+    ParseException,
+    SparkSession,
+)
 
 
 class SparkStep(Step, ABC):
@@ -34,4 +42,13 @@ class SparkStep(Step, ABC):
         return get_active_session()
 
 
-__all__ = ["SparkStep", "Column", "DataFrame", "ParseException", "SparkSession", "AnalysisException", "DataType"]
+__all__ = [
+    "SparkStep",
+    "Column",
+    "DataFrame",
+    "ParseException",
+    "SparkSession",
+    "AnalysisException",
+    "DataType",
+    "DataStreamReader",
+]

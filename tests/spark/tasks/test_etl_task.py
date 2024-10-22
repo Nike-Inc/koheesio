@@ -74,26 +74,14 @@ def test_delta_stream_task(spark, checkpoint_folder):
     delta_table = DeltaTableStep(table="delta_stream_table")
     DummyReader(range=5).read().write.format("delta").mode("append").saveAsTable("delta_stream_table")
     writer = DeltaTableStreamWriter(table="delta_stream_table_out", checkpoint_location=checkpoint_folder)
-
-    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
-        transformations = [
-            # FIXME: Temp view is not working in remote sessions: https://issues.apache.org/jira/browse/SPARK-45957
-            SqlTransform(
-                sql="SELECT ${field} FROM ${table_name} WHERE id = 0",
-                table_name="temp_view",
-                field="id",
-            ),
-            Transform(dummy_function2, name="pari"),
-        ]
-    else:
-        transformations = [
-            SqlTransform(
-                sql="SELECT ${field} FROM ${table_name} WHERE id = 0",
-                table_name="temp_view",
-                field="id",
-            ),
-            Transform(dummy_function2, name="pari"),
-        ]
+    transformations = [
+        SqlTransform(
+            sql="SELECT ${field} FROM ${table_name} WHERE id = 0",
+            table_name="temp_view",
+            field="id",
+        ),
+        Transform(dummy_function2, name="pari"),
+    ]
 
     delta_task = EtlTask(
         source=DeltaTableStreamReader(table=delta_table),
@@ -101,13 +89,19 @@ def test_delta_stream_task(spark, checkpoint_folder):
         transformations=transformations,
     )
 
-    delta_task.run()
-    writer.streaming_query.awaitTermination(timeout=20)  # type: ignore
+    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
+        with pytest.raises(RuntimeError) as excinfo:
+            delta_task.run()
 
-    out_df = spark.table("delta_stream_table_out")
-    actual = out_df.head().asDict()
-    expected = {"id": 0, "name": "pari"}
-    assert actual == expected
+        assert "https://issues.apache.org/jira/browse/SPARK-45957" in str(excinfo.value.args[0])
+    else:
+        delta_task.run()
+        writer.streaming_query.awaitTermination(timeout=20)  # type: ignore
+
+        out_df = spark.table("delta_stream_table_out")
+        actual = out_df.head().asDict()
+        expected = {"id": 0, "name": "pari"}
+        assert actual == expected
 
 
 def test_transformations_alias(spark: SparkSession) -> None:

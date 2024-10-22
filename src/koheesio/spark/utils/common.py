@@ -77,11 +77,20 @@ if check_if_pyspark_connect_is_supported():
     ParseException = (CapturedParseException, ConnectParseException)
     DataType: TypeAlias = Union[SqlDataType, ConnectDataType]
 else:
-    from pyspark.errors.exceptions.captured import ParseException  # type: ignore
+    try:
+        from pyspark.errors.exceptions.captured import ParseException  # type: ignore
+    except ImportError:
+        from pyspark.sql.utils import ParseException  # type: ignore
     from pyspark.sql.column import Column  # type: ignore
     from pyspark.sql.dataframe import DataFrame  # type: ignore
     from pyspark.sql.session import SparkSession  # type: ignore
     from pyspark.sql.types import DataType  # type: ignore
+
+    try:
+        from pyspark.sql.streaming.readwriter import DataStreamReader
+    except ImportError:
+        from pyspark.sql.streaming import DataStreamReader  # type: ignore
+
 
 __all__ = [
     "SparkDatatype",
@@ -99,6 +108,7 @@ __all__ = [
     "SparkSession",
     "ParseException",
     "DataType",
+    "DataStreamReader",
 ]
 
 

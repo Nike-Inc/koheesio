@@ -60,7 +60,9 @@ def spark(warehouse_path, random_uuid):
 
     if os.environ.get("SPARK_REMOTE") == "local":
         builder = builder.remote("local")
-        extra_packages.append("org.apache.spark:spark-connect_2.12:3.5.3")
+        from pyspark.version import __version__ as spark_version
+
+        extra_packages.append(f"org.apache.spark:spark-connect_2.12:{spark_version}")
     else:
         builder = builder.master("local[*]")
 
