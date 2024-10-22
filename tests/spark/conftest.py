@@ -9,6 +9,7 @@ from textwrap import dedent
 from unittest import mock
 
 import pytest
+from delta import configure_spark_with_delta_pip
 from pyspark.sql import SparkSession
 from pyspark.sql.types import (
     ArrayType,
@@ -85,15 +86,15 @@ def spark(warehouse_path, random_uuid):
         builder = builder.remote("local").config("spark.connect.grpc.binding.port", "15001")
         from pyspark.version import __version__ as spark_version
 
-        extra_packages.append(f"org.apache.spark:spark-connect_2.12:{spark_version}")
+        builder = configure_spark_with_delta_pip(
+            spark_session_builder=builder, extra_packages=f"org.apache.spark:spark-connect_2.12:{spark_version}"
+        )
     else:
         builder = builder.master("local[*]")
-
-    packages = ",".join(extra_packages + [f"io.delta:delta-spark_2.12:{delta_version}"])
+        builder = configure_spark_with_delta_pip(spark_session_builder=builder)
 
     builder = (
         builder.config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
-        .config("spark.jars.packages", packages)
         .config("spark.sql.warehouse.dir", warehouse_path)
         .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
         .config("spark.sql.session.timeZone", "UTC")
