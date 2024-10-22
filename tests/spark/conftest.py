@@ -64,24 +64,15 @@ def spark(warehouse_path, random_uuid):
     builder = SparkSession.builder.appName("test_session" + random_uuid)
 
     if os.environ.get("SPARK_REMOTE") == "local":
-        # start = 15002
-        # end = 15040
-        # _port = random.randint(start, end)
-        # i = 0
-
-        # while is_port_free(_port):
-        #     _port = random.randint(start, end)
-        #     time.sleep(5)
-        #     i += 1
-
-        #     if i > 10:
-        #         raise Exception(f"Could not find a free port between {start} and {end}")
-
-        builder = builder.remote("local").config("spark.connect.grpc.binding.port", "15001")
+        # SPARK_TESTING is set in environment variables
+        # This triggers spark connect logic
+        # ---->>>> For testing, we use 0 to use an ephemeral port to allow parallel testing.
+        # --->>>>>> See also SPARK-42272.
         from pyspark.version import __version__ as spark_version
 
         builder = configure_spark_with_delta_pip(
-            spark_session_builder=builder, extra_packages=[f"org.apache.spark:spark-connect_2.12:{spark_version}"]
+            spark_session_builder=builder.remote("local"),
+            extra_packages=[f"org.apache.spark:spark-connect_2.12:{spark_version}"],
         )
     else:
         builder = builder.master("local[*]")

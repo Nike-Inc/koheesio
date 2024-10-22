@@ -307,7 +307,6 @@ matrix.version.extra-dependencies = [
     "pyspark35r",
   ] },
 ]
-matrix.version.parallel = { value = false, if = ["pyspark35r"] }
 
 name.".*".env-vars = [
   # set number of workes for parallel testing
@@ -320,10 +319,7 @@ name.".*(pyspark35r).*".env-vars = [
   # enable soark connect, setting to local as it will trigger 
   # spark to start local spark server and enbale remote session
   { key = "SPARK_REMOTE", value = "local" },
-]
-
-name.".*(pyspark35r).*".scripts = [
-  { key = "run", value = "pytest{env:HATCH_TEST_ARGS:} -n auto -m \"not spark\" {args} && pytest{env:HATCH_TEST_ARGS:} -m spark {args}" },
+  { key = "SPARK_TESTING", value = "True" },
 ]
 
 
@@ -345,11 +341,16 @@ filterwarnings = [
   # pyspark.pandas warnings
   "ignore:distutils.*:DeprecationWarning:pyspark.pandas.*",
   "ignore:'PYARROW_IGNORE_TIMEZONE'.*:UserWarning:pyspark.pandas.*",
-  # pyspark.sql.connector warnings
+  # pydantic warnings
+  "ignore:A custom validator is returning a value other than `self`.*.*:UserWarning:pydantic.main.*",
+  # pyspark.sql.connect warnings
   "ignore:is_datetime64tz_dtype.*:DeprecationWarning:pyspark.sql.connect.*",
   "ignore:distutils.*:DeprecationWarning:pyspark.sql.connect.*",
+  # pyspark.sql.pandas warnings
   "ignore:distutils.*:DeprecationWarning:pyspark.sql.pandas.*",
   "ignore:is_datetime64tz_dtype.*:DeprecationWarning:pyspark.sql.pandas.*",
+  "ignore:is_categorical_dtype.*:DeprecationWarning:pyspark.sql.pandas.*",
+  "ignore:iteritems.*:FutureWarning:pyspark.sql.pandas.*",
   # Koheesio warnings
   "ignore:DayTimeIntervalType.*:UserWarning:koheesio.spark.snowflake.*",
 ]
