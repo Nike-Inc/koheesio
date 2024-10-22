@@ -260,8 +260,8 @@ features = [
   "test",
 ]
 
-parallel = false
-retries = 2
+parallel = true
+retries = 0
 retry-delay = 1
 
 [tool.hatch.envs.hatch-test.scripts]
