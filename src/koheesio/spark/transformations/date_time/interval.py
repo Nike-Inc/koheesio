@@ -118,20 +118,15 @@ __output_df__:
 
 from __future__ import annotations
 
-from typing import Literal, Union
+from typing import Literal
 
-from pyspark import sql
 from pyspark.sql import Column as SparkColumn
 from pyspark.sql.functions import col, expr
 
 from koheesio.models import Field, field_validator
-from koheesio.spark import ParseException
+from koheesio.spark import Column, ParseException
 from koheesio.spark.transformations import ColumnsTransformationWithTarget
-from koheesio.spark.utils import SPARK_MINOR_VERSION, get_column_name
-
-# if spark version is 3.5 or higher, we have to account for the connect mode
-if SPARK_MINOR_VERSION >= 3.5:
-    from pyspark.sql.connect.column import Column as ConnectColumn
+from koheesio.spark.utils import check_if_pyspark_connect_is_supported, get_column_name
 
 # create a literal constraining the operations to 'add' and 'subtract'
 Operations = Literal["add", "subtract"]
@@ -160,14 +155,16 @@ class DateTimeColumn(SparkColumn):
         return adjust_time(self, operation="subtract", interval=value)
 
     @classmethod
-    def from_column(cls, column: Union["sql.Column", "sql.connect.column.Column"]):
+    def from_column(cls, column: Column):
         """Create a DateTimeColumn from an existing Column"""
         if isinstance(column, SparkColumn):
             return DateTimeColumn(column._jc)
         return DateTimeColumnConnect(expr=column._expr)
 
 
-if SPARK_MINOR_VERSION >= 3.5:
+# if spark version is 3.5 or higher, we have to account for the connect mode
+if check_if_pyspark_connect_is_supported():
+    from pyspark.sql.connect.column import Column as ConnectColumn
 
     class DateTimeColumnConnect(ConnectColumn):
         """A datetime column that can be adjusted by adding or subtracting an interval value  using the `+` and `-`
@@ -206,7 +203,7 @@ def validate_interval(interval: str):
     return interval
 
 
-def dt_column(column: Union[str, "sql.Column", "sql.connect.column.Column"]) -> DateTimeColumn:
+def dt_column(column: Column) -> DateTimeColumn:
     """Convert a column to a DateTimeColumn
 
     Aims to be a drop-in replacement for `pyspark.sql.functions.col` that returns a DateTimeColumn instead of a Column.
@@ -235,9 +232,7 @@ def dt_column(column: Union[str, "sql.Column", "sql.connect.column.Column"]) -> 
     return DateTimeColumn.from_column(column)
 
 
-def adjust_time(
-    column: Union["sql.Column", "sql.connect.column.Column"], operation: Operations, interval: str
-) -> Union["sql.Column", "sql.connect.column.Column"]:
+def adjust_time(column: Column, operation: Operations, interval: str) -> Column:
     """
     Adjusts a datetime column by adding or subtracting an interval value.
 
@@ -364,7 +359,7 @@ class DateTimeAddInterval(ColumnsTransformationWithTarget):
     # validators
     validate_interval = field_validator("interval")(validate_interval)
 
-    def func(self, column: Union["sql.Column", "sql.connect.column.Column"]):
+    def func(self, column: Column):
         return adjust_time(column, operation=self.operation, interval=self.interval)
 
 

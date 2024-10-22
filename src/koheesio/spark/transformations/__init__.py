@@ -24,7 +24,6 @@ ColumnsTransformationWithTarget
 from abc import ABC, abstractmethod
 from typing import Iterator, List, Optional, Union
 
-from pyspark import sql
 from pyspark.sql import functions as f
 from pyspark.sql.types import DataType
 
@@ -509,9 +508,7 @@ class ColumnsTransformationWithTarget(ColumnsTransformation, ABC):
     )
 
     @abstractmethod
-    def func(
-        self, column: Union["sql.Column", "sql.connect.column.Column"]
-    ) -> Union["sql.Column", "sql.connect.column.Column"]:
+    def func(self, column: Column) -> Column:
         """The function that will be run on a single Column of the DataFrame
 
         The `func` method should be implemented in the child class. This method should return the transformation that

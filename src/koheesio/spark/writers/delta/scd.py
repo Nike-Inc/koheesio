@@ -118,11 +118,7 @@ class SCD2DeltaTableWriter(Writer):
         return attr_clause
 
     @staticmethod
-    def _scd2_timestamp(
-        spark: Union["sql.SparkSession", "sql.connect.session.SparkSession"],
-        scd2_timestamp_col: Optional[Union["sql.Column", "sql.connect.column.Column"]] = None,
-        **_kwargs,
-    ) -> Union["sql.Column", "sql.connect.column.Column"]:
+    def _scd2_timestamp(spark: SparkSession, scd2_timestamp_col: Optional[Column] = None, **_kwargs) -> Column:
         """
         Generate a SCD2 timestamp column.
 
@@ -150,7 +146,7 @@ class SCD2DeltaTableWriter(Writer):
         return scd2_timestamp
 
     @staticmethod
-    def _scd2_end_time(meta_scd2_end_time_col: str, **_kwargs) -> Union["sql.Column", "sql.connect.column.Column"]:
+    def _scd2_end_time(meta_scd2_end_time_col: str, **_kwargs) -> Column:
         """
         Generate a SCD2 end time column.
 
@@ -177,9 +173,7 @@ class SCD2DeltaTableWriter(Writer):
         return scd2_end_time
 
     @staticmethod
-    def _scd2_effective_time(
-        meta_scd2_effective_time_col: str, **_kwargs
-    ) -> Union["sql.Column", "sql.connect.column.Column"]:
+    def _scd2_effective_time(meta_scd2_effective_time_col: str, **_kwargs) -> Column:
         """
         Generate a SCD2 effective time column.
 
@@ -207,7 +201,7 @@ class SCD2DeltaTableWriter(Writer):
         return scd2_effective_time
 
     @staticmethod
-    def _scd2_is_current(**_kwargs) -> Union["sql.Column", "sql.connect.column.Column"]:
+    def _scd2_is_current(**_kwargs) -> Column:
         """
         Generate a SCD2 is_current column.
 
@@ -230,7 +224,7 @@ class SCD2DeltaTableWriter(Writer):
         self,
         df: DataFrame,
         delta_table: DeltaTable,
-        merge_action_logic: Union["sql.Column", "sql.connect.column.Column"],
+        merge_action_logic: Column,
         meta_scd2_is_current_col: str,
         columns_to_process: List[str],
         src_alias: str,

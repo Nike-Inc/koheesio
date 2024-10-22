@@ -303,7 +303,7 @@ matrix.version.extra-dependencies = [
   { value = "pyspark>=3.5,<3.6", if = [
     "pyspark35",
   ] },
-  { value = "pyspark[connect]>=3.5,<3.6 ", if = [
+  { value = "pyspark[connect]>=3.5,<3.6", if = [
     "pyspark35r",
   ] },
 ]
