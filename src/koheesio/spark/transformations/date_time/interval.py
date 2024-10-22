@@ -193,7 +193,7 @@ def validate_interval(interval: str):
     ValueError
         If the interval string is invalid
     """
-    from koheesio.spark.connect_utils import ParseException, get_active_session, is_remote_session
+    from koheesio.spark.utils.connect import ParseException, get_active_session, is_remote_session
 
     try:
         if is_remote_session():
@@ -291,7 +291,7 @@ def adjust_time(
     Column
         The adjusted datetime column.
     """
-    from koheesio.spark.connect_utils import get_column_name
+    from koheesio.spark.utils.connect import get_column_name
 
     # check that value is a valid interval
     interval = validate_interval(interval)

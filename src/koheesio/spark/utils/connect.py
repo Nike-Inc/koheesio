@@ -1,4 +1,3 @@
-import inspect
 from typing import TypeAlias, Union
 
 from pyspark import sql
@@ -64,40 +63,11 @@ ParseException: TypeAlias = (
 )  # type: ignore  # noqa: F811
 
 
-def get_column_name(col: Column) -> str:
-    """Get the column name from a Column object
-
-    Normally, the name of a Column object is not directly accessible in the regular pyspark API. This function
-    extracts the name of the given column object without needing to provide it in the context of a DataFrame.
-
-    Parameters
-    ----------
-    col: Column
-        The Column object
-
-    Returns
-    -------
-    str
-        The name of the given column
-    """
-    # we have to distinguish between the Column object from column from local session and remote
-    if hasattr(col, "_jc"):
-        # In case of a 'regular' Column object, we can directly access the name attribute through the _jc attribute
-        name = col._jc.toString()
-    elif any(cls.__module__ == "pyspark.sql.connect.column" for cls in inspect.getmro(col.__class__)):
-        name = col._expr.name()
-    else:
-        raise ValueError("Column object is not a valid Column object")
-
-    return name
-
-
 __all__ = [
     "DataFrame",
     "Column",
     "SparkSession",
     "ParseException",
-    "get_column_name",
     "get_active_session",
     "is_remote_session",
 ]

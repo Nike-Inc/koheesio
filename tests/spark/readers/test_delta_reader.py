@@ -13,7 +13,7 @@ def test_delta_table_reader(spark):
     actual = df.head().asDict()
     expected = {"id": 0}
 
-    from koheesio.spark.connect_utils import DataFrame
+    from koheesio.spark.utils.connect import DataFrame
 
     assert isinstance(df, DataFrame)
     assert actual == expected

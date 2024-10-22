@@ -2,7 +2,6 @@ from os import environ
 from unittest.mock import patch
 
 import pytest
-
 from pyspark.sql.types import StringType, StructField, StructType
 
 from koheesio.spark.utils import (
@@ -61,7 +60,8 @@ def test_show_string(dummy_df):
 
 def test_column_name():
     from pyspark.sql.functions import col
-    from koheesio.spark.connect_utils import get_column_name
+
+    from koheesio.spark.utils.connect import get_column_name
 
     name = "my_column"
     column = col(name)

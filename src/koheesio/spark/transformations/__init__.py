@@ -341,7 +341,7 @@ class ColumnsTransformation(Transformation, ABC):
         df = df or self.df
         if not df:
             raise RuntimeError("No valid Dataframe was passed")
-        from koheesio.spark.connect_utils import Column
+        from koheesio.spark.utils.connect import Column
 
         if not isinstance(col, Column):
             col = f.col(col)

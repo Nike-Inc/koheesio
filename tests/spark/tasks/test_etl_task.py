@@ -69,7 +69,7 @@ def test_delta_task(spark):
 
 
 def test_delta_stream_task(spark, checkpoint_folder):
-    from koheesio.spark.connect_utils import is_remote_session
+    from koheesio.spark.utils.connect import is_remote_session
 
     delta_table = DeltaTableStep(table="delta_stream_table")
     DummyReader(range=5).read().write.format("delta").mode("append").saveAsTable("delta_stream_table")

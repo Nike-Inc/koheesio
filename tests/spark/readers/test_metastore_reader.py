@@ -9,8 +9,8 @@ def test_metastore_reader(spark):
     df = MetastoreReader(table="klettern.delta_test_table").read()
     actual = df.head().asDict()
     expected = {"id": 0}
-    
-    from koheesio.spark.connect_utils import DataFrame
+
+    from koheesio.spark.utils.connect import DataFrame
 
     assert isinstance(df, DataFrame)
     assert actual == expected

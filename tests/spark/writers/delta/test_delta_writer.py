@@ -48,7 +48,7 @@ def test_delta_partitioning(spark, sample_df_to_partition):
 
 
 def test_delta_table_merge_all(spark):
-    from koheesio.spark.connect_utils import is_remote_session
+    from koheesio.spark.utils.connect import is_remote_session
 
     if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
         pytest.skip(reason=skip_reason)
@@ -91,7 +91,7 @@ def test_delta_table_merge_all(spark):
 
 
 def test_deltatablewriter_with_invalid_conditions(spark, dummy_df):
-    from koheesio.spark.connect_utils import is_remote_session
+    from koheesio.spark.utils.connect import is_remote_session
 
     if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
         pytest.skip(reason=skip_reason)
@@ -281,7 +281,7 @@ def test_delta_with_options(spark):
 
 
 def test_merge_from_args(spark, dummy_df):
-    from koheesio.spark.connect_utils import is_remote_session
+    from koheesio.spark.utils.connect import is_remote_session
 
     if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
         pytest.skip(reason=skip_reason)
@@ -345,7 +345,7 @@ def test_merge_from_args_raise_value_error(spark, output_mode_params):
 
 
 def test_merge_no_table(spark):
-    from koheesio.spark.connect_utils import is_remote_session
+    from koheesio.spark.utils.connect import is_remote_session
 
     if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
         pytest.skip(reason=skip_reason)

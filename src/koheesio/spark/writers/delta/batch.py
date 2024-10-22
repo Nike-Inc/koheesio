@@ -332,7 +332,7 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
         - BatchOutputMode
         - StreamingOutputMode
         """
-        from koheesio.spark.connect_utils import is_remote_session
+        from koheesio.spark.utils.connect import is_remote_session
 
         if (
             choice.upper() in (BatchOutputMode.MERGEALL, BatchOutputMode.MERGE_ALL, BatchOutputMode.MERGE)

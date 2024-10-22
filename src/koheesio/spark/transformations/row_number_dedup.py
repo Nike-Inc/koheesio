@@ -80,7 +80,7 @@ class RowNumberDedup(ColumnsTransformation):
             The optimized and deduplicated list of sort columns.
         """
         # Convert single string or Column object to a list
-        from koheesio.spark.connect_utils import Column
+        from koheesio.spark.utils.connect import Column
 
         columns = [columns_value] if isinstance(columns_value, (str, Column)) else [*columns_value]
 

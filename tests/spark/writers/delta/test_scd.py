@@ -21,7 +21,7 @@ skip_reason = "Tests are not working with PySpark 3.5 due to delta calling _sc. 
 
 
 def test_scd2_custom_logic(spark):
-    from koheesio.spark.connect_utils import is_remote_session
+    from koheesio.spark.utils.connect import is_remote_session
 
     if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
         pytest.skip(reason=skip_reason)
@@ -256,7 +256,7 @@ def test_scd2_custom_logic(spark):
 
 
 def test_scd2_logic(spark):
-    from koheesio.spark.connect_utils import is_remote_session
+    from koheesio.spark.utils.connect import is_remote_session
 
     if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
         pytest.skip(reason=skip_reason)
