@@ -87,7 +87,7 @@ def spark(warehouse_path, random_uuid):
         from pyspark.version import __version__ as spark_version
 
         builder = configure_spark_with_delta_pip(
-            spark_session_builder=builder, extra_packages=f"org.apache.spark:spark-connect_2.12:{spark_version}"
+            spark_session_builder=builder, extra_packages=[f"org.apache.spark:spark-connect_2.12:{spark_version}"]
         )
     else:
         builder = builder.master("local[*]")
