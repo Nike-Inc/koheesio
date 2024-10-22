@@ -163,7 +163,7 @@ class TestSnowflakeSyncTask:
 
         with mock.patch.object(SynchronizeDeltaToSnowflakeTask, "writer", new=foreach_batch_stream_local):
             task.execute()
-            task.writer.await_termination(spark)
+            task.writer.await_termination()
 
         # Validate result
         df = spark.read.parquet(snowflake_staging_file).select("Country", "NumVaccinated", "AvailableDoses")
@@ -183,9 +183,9 @@ class TestSnowflakeSyncTask:
         # Run code
         with mock.patch.object(SynchronizeDeltaToSnowflakeTask, "writer", new=foreach_batch_stream_local):
             # Test that this call doesn't raise exception after all queries were completed
-            task.writer.await_termination(spark)
+            task.writer.await_termination()
             task.execute()
-            await_job_completion()
+            await_job_completion(spark)
 
         # Validate result
         df = spark.read.parquet(snowflake_staging_file).select("Country", "NumVaccinated", "AvailableDoses")
