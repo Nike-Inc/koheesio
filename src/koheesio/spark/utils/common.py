@@ -30,11 +30,11 @@ from pyspark.sql.types import (
 )
 from pyspark.version import __version__ as spark_version
 
-# try:
-#     from pyspark.errors.exceptions.base import AnalysisException
-# except ImportError:
-#     from pyspark.sql.utils import AnalysisException  # type: ignore
-    
+try:
+    from pyspark.errors.exceptions.base import AnalysisException  # type: ignore
+except (ImportError, ModuleNotFoundError):
+    from pyspark.sql.utils import AnalysisException  # type: ignore
+
 
 AnalysisException = AnalysisException
 
@@ -85,7 +85,7 @@ if check_if_pyspark_connect_is_supported():
 else:
     try:
         from pyspark.errors.exceptions.captured import ParseException  # type: ignore
-    except ImportError:
+    except (ImportError, ModuleNotFoundError):
         from pyspark.sql.utils import ParseException  # type: ignore
 
     from pyspark.sql.column import Column  # type: ignore
@@ -95,7 +95,7 @@ else:
 
     try:
         from pyspark.sql.streaming.readwriter import DataStreamReader
-    except ImportError:
+    except (ImportError, ModuleNotFoundError):
         from pyspark.sql.streaming import DataStreamReader  # type: ignore
 
 
