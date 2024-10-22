@@ -60,7 +60,7 @@ class SparkStep(Step, ABC):
         attempted to be retrieved.
         """
         if self.spark is None:
-            from koheesio.spark.utils.connect import get_active_session
+            from koheesio.spark.utils.common import get_active_session
 
             self.spark = get_active_session()
         return self

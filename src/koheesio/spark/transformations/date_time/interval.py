@@ -191,7 +191,8 @@ def validate_interval(interval: str):
     ValueError
         If the interval string is invalid
     """
-    from koheesio.spark.utils.connect import get_active_session, is_remote_session
+    from koheesio.spark.utils.common import get_active_session
+    from koheesio.spark.utils.connect import is_remote_session
 
     try:
         if is_remote_session():

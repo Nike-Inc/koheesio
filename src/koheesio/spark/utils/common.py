@@ -66,8 +66,6 @@ def check_if_pyspark_connect_is_supported() -> bool:
 
 
 if check_if_pyspark_connect_is_supported():
-    # from typing import TypeAlias
-
     from pyspark.errors.exceptions.captured import ParseException as CapturedParseException
     from pyspark.errors.exceptions.connect import ParseException as ConnectParseException
     from pyspark.sql.connect.column import Column as ConnectColumn
@@ -98,6 +96,25 @@ else:
         from pyspark.sql.streaming.readwriter import DataStreamReader
     except ImportError:
         from pyspark.sql.streaming import DataStreamReader  # type: ignore
+
+
+def get_active_session() -> SparkSession:  # type: ignore
+    if check_if_pyspark_connect_is_supported():
+        from pyspark.sql.connect.session import SparkSession as ConnectSparkSession
+
+        session = (
+            ConnectSparkSession.getActiveSession() or sql.SparkSession.getActiveSession()  # type: ignore
+        )
+    else:
+        session = sql.SparkSession.getActiveSession()  # type: ignore
+
+    if not session:
+        raise RuntimeError(
+            "No active Spark session found. Please create a Spark session before using module connect_utils."
+            " Or perform local import of the module."
+        )
+
+    return session
 
 
 __all__ = [

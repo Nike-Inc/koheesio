@@ -61,12 +61,6 @@ def checkpoint_folder(tmp_path_factory, random_uuid, logger):
 @pytest.fixture(scope="session")
 def spark(warehouse_path, random_uuid):
     """Spark session fixture with Delta enabled."""
-    import importlib_metadata
-
-    # os.environ["SPARK_REMOTE"] = "local"
-    delta_version = importlib_metadata.version("delta_spark")
-
-    extra_packages = []
     builder = SparkSession.builder.appName("test_session" + random_uuid)
 
     if os.environ.get("SPARK_REMOTE") == "local":
