@@ -83,9 +83,6 @@ jobs:
         with:
           name: python-artifacts
           path: dist
-      
-      - name: Install Hatch
-        uses: pypa/hatch@install
-
-      - name: Publish package to PyPI
-        run: hatch publish --yes --no-prompt
+  
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

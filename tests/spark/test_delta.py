@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 from unittest.mock import patch
@@ -14,7 +15,7 @@ from koheesio.spark.delta import DeltaTableStep
 
 pytestmark = pytest.mark.spark
 
-log = LoggingFactory.get_logger(name="test_delta")
+log = LoggingFactory.get_logger(name="test_delta", inherit_from_koheesio=True)
 
 
 @pytest.mark.parametrize(
@@ -138,8 +139,19 @@ def test_delta_table_properties_dbx():
 
 @pytest.mark.parametrize("value,expected", [("too.many.dots.given.to.be.a.real.table", pytest.raises(ValidationError))])
 def test_table_failed(value, expected):
-    with pytest.raises(ValidationError):
+    with expected:
         DeltaTableStep(table=value)
 
     dt = DeltaTableStep(table="unknown_table")
     assert dt.exists is False
+
+
+@pytest.mark.parametrize(
+    ["table", "create_if_not_exists", "log_level"], [("unknown", False, "DEBUG"), ("unknown", True, "INFO")]
+)
+def test_exists(caplog, table, create_if_not_exists, log_level):
+    with caplog.at_level(log_level):
+        dt = DeltaTableStep(table=table, create_if_not_exists=create_if_not_exists)
+        dt.log.setLevel(log_level)
+        assert dt.exists is False
+        assert f"The `create_if_not_exists` flag is set to {create_if_not_exists}." in caplog.text
