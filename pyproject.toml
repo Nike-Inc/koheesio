@@ -336,14 +336,14 @@ markers = [
 ]
 filterwarnings = [
   # pyspark.pandas warnings
-  # "ignore:distutils.*:DeprecationWarning:pyspark.pandas.*",
-  # "ignore:'PYARROW_IGNORE_TIMEZONE'.*:UserWarning:pyspark.pandas.*",
-  # "ignore:distutils.*:DeprecationWarning:pyspark.sql.pandas.*",
-  # "ignore:is_datetime64tz_dtype.*:DeprecationWarning:pyspark.sql.pandas.*",
+  "ignore:distutils.*:DeprecationWarning:pyspark.pandas.*",
+  "ignore:'PYARROW_IGNORE_TIMEZONE'.*:UserWarning:pyspark.pandas.*",
+  "ignore:distutils.*:DeprecationWarning:pyspark.sql.pandas.*",
+  "ignore:is_datetime64tz_dtype.*:DeprecationWarning:pyspark.sql.pandas.*",
   # Koheesio warnings
-  # "ignore:DayTimeIntervalType .*:UserWarning:koheesio.spark.snowflake.*",
+  "ignore:DayTimeIntervalType.*:UserWarning:koheesio.spark.snowflake.*",
   # Pytest warnings
-  # "ignore:_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET.*:PytestDeprecationWarning:pytest_asyncio.*",
+  "ignore:.*asyncio_default_fixture_loop_scope.*:pytest.PytestDeprecationWarning:pytest_asyncio.*",
 ]
 
 [tool.coverage.run]
