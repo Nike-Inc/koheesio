@@ -52,6 +52,7 @@ def spark(warehouse_path, random_uuid):
     """Spark session fixture with Delta enabled."""
     import importlib_metadata
 
+    os.environ["SPARK_REMOTE"] = "local"
     delta_version = importlib_metadata.version("delta_spark")
 
     extra_packages = []
