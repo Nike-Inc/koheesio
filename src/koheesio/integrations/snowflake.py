@@ -46,7 +46,7 @@ import json
 from abc import ABC
 from logging import warn
 from textwrap import dedent
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 from koheesio import Step, StepOutput
 from koheesio.models import (
@@ -58,7 +58,6 @@ from koheesio.models import (
     field_validator,
     model_validator,
 )
-from koheesio.spark.snowflake import Query
 
 __all__ = [
     "GrantPrivilegesOnFullyQualifiedObject",
@@ -158,26 +157,34 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):
         "`net.snowflake.spark.snowflake` in other environments and make sure to install required JARs.",
     )
 
-    def get_options(self, by_alias: bool = True, include: Optional[List[str]] = None) -> Dict[str, Any]:
+    def get_options(self, by_alias: bool = True, include: Optional[Set[str]] = None) -> Dict[str, Any]:
         """Get the sfOptions as a dictionary.
+
+        Note
+        ----
+        - Any parameters that are `None` are excluded from the output dictionary.
+        - `sfSchema` and `password` are handled separately.
+        - The values from both 'options' and 'params' (kwargs / extra params) are included as is.
+        - Koheesio specific fields are excluded by default (i.e. `name`, `description`, `format`).
 
         Parameters
         ----------
         by_alias : bool, optional, default=True
             Whether to use the alias names or not. E.g. `sfURL` instead of `url`
-        include : List[str], optional
-            List of keys to include in the output dictionary
+        include : Optional[Set[str]], optional
+            Set of keys to include in the output dictionary. Note: be sure to include all the keys you need.
+            sfSchema and password, options and params, do not need to be included, they are handled separately.
         """
         _model_dump_options = {
             "by_alias": by_alias,
             "exclude_none": True,
             "exclude": {
                 # Exclude koheesio specific fields
-                "params",
                 "name",
                 "description",
                 "format"
-                # options should be specifically implemented
+                # options and params are specifically implemented
+                "params",
                 "options",
                 # schema and password have to be handled separately
                 "sfSchema",
@@ -230,22 +237,11 @@ class SnowflakeTableStep(SnowflakeStep, ABC):
         return f"{self.database}.{self.sfSchema}.{self.table}"
 
 
-class SnowflakeRunQueryBase(SnowflakeStep, ABC):
-    """Base class for RunQuery and RunQueryPython"""
-
-    query: str = Field(default=..., description="The query to run", alias="sql")
-
-    @field_validator("query")
-    def validate_query(cls, query):
-        """Replace escape characters"""
-        return query.replace("\\n", "\n").replace("\\t", "\t").strip()
-
-
 QueryResults = List[Tuple[Any]]
 """Type alias for the results of a query"""
 
 
-class SnowflakeRunQueryPython(SnowflakeRunQueryBase):
+class SnowflakeRunQueryPython(SnowflakeStep):
     """
     Run a query on Snowflake using the Python connector
 
@@ -263,6 +259,8 @@ class SnowflakeRunQueryPython(SnowflakeRunQueryBase):
     ).execute()
     ```
     """
+    query: str = Field(default=..., description="The query to run", alias="sql")
+    account: str = Field(default=..., description="Snowflake Account Name", alias="account")
 
     snowflake_conn: Any = None
 
@@ -281,23 +279,36 @@ class SnowflakeRunQueryPython(SnowflakeRunQueryBase):
             )
         return self
 
+    @field_validator("query")
+    def validate_query(cls, query):
+        """Replace escape characters"""
+        return query.replace("\\n", "\n").replace("\\t", "\t").strip()
+
     class Output(StepOutput):
         """Output class for RunQueryPython"""
 
-        results: Optional[QueryResults] = Field(default=..., description="The results of the query")
+        results: Optional[QueryResults] = Field(default_factory=list, description="The results of the query")
 
     @property
     def conn(self):
-        sf_options = dict(
-            url=self.url,
-            user=self.user,
-            role=self.role,
-            warehouse=self.warehouse,
-            database=self.database,
-            schema=self.sfSchema,
-            authenticator=self.authenticator,
+        sf_options = self.get_options(
+            by_alias=False, include={
+                "url",
+                "user",
+                "role",
+                "warehouse",
+                "database",
+                "authenticator",
+                "account",
+            }
         )
-        return self.snowflake_conn.connect(**self.get_options(by_alias=False))
+        return self.snowflake_conn.connect(**sf_options)
+
+    def __enter__(self):
+        return self.conn
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.conn.close()
 
     @property
     def cursor(self):

@@ -318,7 +318,7 @@ class Query(SnowflakeReader):
         query = query.replace("\\n", "\n").replace("\\t", "\t").strip()
         return query
 
-    def get_options(self, by_alias: bool = True):
+    def get_options(self, by_alias: bool = True, include: Set[str] = None):
         """add query to options"""
         options = super().get_options(by_alias)
         options["query"] = self.query
@@ -1002,3 +1002,39 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeStep):
     def run(self):
         """alias of execute"""
         return self.execute()
+
+
+class AddColumn(SnowflakeStep):
+    """
+    Add an empty column to a Snowflake table with given name and DataType
+
+    Example
+    -------
+    ```python
+    AddColumn(
+        database="MY_DB",
+        schema_="MY_SCHEMA",
+        warehouse="MY_WH",
+        user="gid.account@nike.com",
+        password=Secret("super-secret-password"),
+        role="APPLICATION.SNOWFLAKE.ADMIN",
+        table="MY_TABLE",
+        col="MY_COL",
+        dataType=StringType(),
+    ).execute()
+    ```
+    """
+
+    table: str = Field(default=..., description="The name of the Snowflake table")
+    column: str = Field(default=..., description="The name of the new column")
+    type: f.DataType = Field(default=..., description="The DataType represented as a Spark DataType")
+
+    class Output(SnowflakeStep.Output):
+        """Output class for AddColumn"""
+
+        query: str = Field(default=..., description="Query that was executed to add the column")
+
+    def execute(self):
+        query = f"ALTER TABLE {self.table} ADD COLUMN {self.column} {map_spark_type(self.type)}".upper()
+        self.output.query = query
+        RunQuery(**self.get_options(), query=query).execute()
