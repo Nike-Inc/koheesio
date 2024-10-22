@@ -21,11 +21,16 @@ from koheesio.spark.utils.common import (
     SparkSession,
 )
 
-# TODO: Move to spark/__init__.py after reorganizing the code
-# Will be used for typing checks and consistency, specifically for PySpark >=3.5
-DataFrame = PySparkSQLDataFrame
-SparkSession = OriginalSparkSession
-AnalysisException = SparkAnalysisException
+__all__ = [
+    "SparkStep",
+    "Column",
+    "DataFrame",
+    "ParseException",
+    "SparkSession",
+    "AnalysisException",
+    "DataType",
+    "DataStreamReader",
+]
 
 
 class SparkStep(Step, ABC):
@@ -57,15 +62,3 @@ class SparkStep(Step, ABC):
         if self.spark is None:
             self.spark = SparkSession.getActiveSession()
         return self
-
-
-__all__ = [
-    "SparkStep",
-    "Column",
-    "DataFrame",
-    "ParseException",
-    "SparkSession",
-    "AnalysisException",
-    "DataType",
-    "DataStreamReader",
-]
