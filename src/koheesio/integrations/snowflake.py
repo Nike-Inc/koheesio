@@ -44,9 +44,10 @@ from __future__ import annotations
 
 import json
 from abc import ABC
+from contextlib import contextmanager
 from logging import warn
 from textwrap import dedent
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Union
 
 from koheesio import Step, StepOutput
 from koheesio.models import (
@@ -64,7 +65,6 @@ __all__ = [
     "GrantPrivilegesOnObject",
     "GrantPrivilegesOnTable",
     "GrantPrivilegesOnView",
-    "RunQuery",
     "SnowflakeRunQueryPython",
     "SnowflakeBaseModel",
     "SnowflakeStep",
@@ -157,7 +157,7 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):
         "`net.snowflake.spark.snowflake` in other environments and make sure to install required JARs.",
     )
 
-    def get_options(self, by_alias: bool = True, include: Optional[Set[str]] = None) -> Dict[str, Any]:
+    def get_options(self, by_alias: bool = True, include: Set[str] = None) -> Dict[str, Any]:
         """Get the sfOptions as a dictionary.
 
         Note
@@ -171,48 +171,54 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):
         ----------
         by_alias : bool, optional, default=True
             Whether to use the alias names or not. E.g. `sfURL` instead of `url`
-        include : Optional[Set[str]], optional
-            Set of keys to include in the output dictionary. Note: be sure to include all the keys you need.
-            sfSchema and password, options and params, do not need to be included, they are handled separately.
+        include : Optional[Set[str]], optional, default=None
+            Set of keys to include in the output dictionary. When None is provided, all fields will be returned.
+            Note: be sure to include all the keys you need.
         """
-        _model_dump_options = {
-            "by_alias": by_alias,
-            "exclude_none": True,
-            "exclude": {
+        fields = self.model_dump(
+            by_alias=by_alias,
+            exclude_none=True,
+            exclude={
                 # Exclude koheesio specific fields
                 "name",
                 "description",
                 "format"
-                # options and params are specifically implemented
+                # options and params are separately implemented
                 "params",
                 "options",
                 # schema and password have to be handled separately
                 "sfSchema",
                 "password",
             },
-        }
-        if include:
-            _model_dump_options["include"] = {*include}
-
-        options = self.model_dump(**_model_dump_options)
+        )
 
         # handle schema and password
-        options.update(
+        fields.update(
             {
                 "sfSchema" if by_alias else "schema": self.sfSchema,
                 "sfPassword" if by_alias else "password": self.password.get_secret_value(),
             }
         )
 
-        return {
-            key: value
-            for key, value in {
-                **self.options,
-                **options,
-                **self.params,
-            }.items()
-            if value is not None
-        }
+        # handle include
+        if include:
+            # user specified filter
+            fields = {key: value for key, value in fields.items() if key in include}
+        else:
+            # default filter
+            include = {"options", "params"}
+
+        # handle options
+        if "options" in include:
+            options = fields.pop("options", self.options)
+            fields.update(**options)
+
+        # handle params
+        if "params" in include:
+            params = fields.pop("params", self.params)
+            fields.update(**params)
+
+        return {key: value for key, value in fields.items() if value}
 
 
 class SnowflakeStep(SnowflakeBaseModel, Step, ABC):
@@ -222,7 +228,7 @@ class SnowflakeStep(SnowflakeBaseModel, Step, ABC):
 class SnowflakeTableStep(SnowflakeStep, ABC):
     """Expands the SnowflakeStep, adding a 'table' parameter"""
 
-    table: str = Field(default=..., description="The name of the table", alias="dbtable")
+    table: str = Field(default=..., description="The name of the table")
 
     @property
     def full_name(self):
@@ -237,7 +243,7 @@ class SnowflakeTableStep(SnowflakeStep, ABC):
         return f"{self.database}.{self.sfSchema}.{self.table}"
 
 
-QueryResults = List[Tuple[Any]]
+QueryResults = List[Any]
 """Type alias for the results of a query"""
 
 
@@ -259,69 +265,82 @@ class SnowflakeRunQueryPython(SnowflakeStep):
     ).execute()
     ```
     """
+
     query: str = Field(default=..., description="The query to run", alias="sql")
     account: str = Field(default=..., description="Snowflake Account Name", alias="account")
 
+    # for internal use
     snowflake_conn: Any = None
 
-    @model_validator(mode="after")
-    def validate_snowflake_connector(self):
+    class Output(SnowflakeStep.Output):
+        """Output class for RunQueryPython"""
+
+        results: List = Field(default_factory=list, description="The results of the query")
+
+    @field_validator("snowflake_conn")
+    def validate_snowflake_connector(cls, _snowflake_conn):
         """Validate that the Snowflake connector is installed"""
         try:
             from snowflake import connector as snowflake_connector
 
-            self.snowflake_conn = snowflake_connector
+            return snowflake_connector
         except ImportError:
             warn(
                 "You need to have the `snowflake-connector-python` package installed to use the Snowflake steps that "
                 "are based around SnowflakeRunQueryPython. You can install this in Koheesio by adding "
                 "`koheesio[snowflake]` to your package dependencies."
             )
-        return self
 
     @field_validator("query")
     def validate_query(cls, query):
-        """Replace escape characters"""
-        return query.replace("\\n", "\n").replace("\\t", "\t").strip()
+        """Replace escape characters, strip whitespace, ensure it is not empty"""
+        query = query.replace("\\n", "\n").replace("\\t", "\t").strip()
+        if not query:
+            raise ValueError("Query cannot be empty")
+        return query
 
-    class Output(StepOutput):
-        """Output class for RunQueryPython"""
-
-        results: Optional[QueryResults] = Field(default_factory=list, description="The results of the query")
-
-    @property
-    def conn(self):
-        sf_options = self.get_options(
-            by_alias=False, include={
+    def get_options(self, by_alias=False, include=None):
+        if include is None:
+            include = {
+                "account",
                 "url",
+                "authenticator",
                 "user",
                 "role",
                 "warehouse",
                 "database",
-                "authenticator",
-                "account",
+                "schema",
+                "password",
             }
-        )
-        return self.snowflake_conn.connect(**sf_options)
-
-    def __enter__(self):
-        return self.conn
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.conn.close()
+        return super().get_options(by_alias=by_alias, include=include)
 
     @property
-    def cursor(self):
-        return self.conn.cursor()
+    @contextmanager
+    def conn(self):
+        if not self.snowflake_conn:
+            raise ValueError("Snowflake connector is not installed. Please install `snowflake-connector-python`.")
+
+        sf_options = self.get_options()
+        _conn = self.snowflake_conn.connect(**sf_options)
+        self.log.info(f"Connected to Snowflake account: {sf_options['account']}")
+
+        try:
+            yield _conn
+        finally:
+            if _conn:
+                _conn.close()
+
+    def get_query(self):
+        """allows to customize the query"""
+        return self.query
 
     def execute(self) -> None:
         """Execute the query"""
-        self.conn.cursor().execute(self.query)
-        self.conn.close()
-
-
-RunQuery = SnowflakeRunQueryPython
-"""Added for backwards compatibility"""
+        with self.conn as conn:
+            cursors = conn.execute_string(self.get_query())
+            for cursor in cursors:
+                self.log.debug(f"Cursor executed: {cursor}")
+                self.output.results.extend(cursor.fetchall())
 
 
 class TableExists(SnowflakeTableStep):

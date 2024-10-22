@@ -188,7 +188,7 @@ def map_spark_type(spark_type: t.DataType):
     # fmt: on
 
 
-class SnowflakeSparkStep(SnowflakeBaseModel, SparkStep, ABC):
+class SnowflakeSparkStep(SparkStep, SnowflakeBaseModel, ABC):
     """Expands the SnowflakeBaseModel so that it can be used as a SparkStep"""
 
 
