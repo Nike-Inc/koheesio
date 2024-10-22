@@ -42,7 +42,9 @@ format : str, optional, default="snowflake"
 
 from __future__ import annotations
 import json
-from typing import Any, Dict, List, Optional, Set, Union
+from collections.abc import Iterable
+from logging import warn
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 from abc import ABC
 from textwrap import dedent
 
@@ -62,9 +64,8 @@ __all__ = [
     "GrantPrivilegesOnObject",
     "GrantPrivilegesOnTable",
     "GrantPrivilegesOnView",
-    # "Query",
     "RunQuery",
-    "RunQueryPython",
+    "SnowflakeRunQueryPython",
     "SnowflakeBaseModel",
     "SnowflakeStep",
     "SnowflakeTableStep",
@@ -156,13 +157,32 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):
         "`net.snowflake.spark.snowflake` in other environments and make sure to install required JARs.",
     )
 
-    def get_options(self, by_alias: bool = True) -> Dict[str, Any]:
-        """Get the sfOptions as a dictionary."""
-        options = self.model_dump(
-            by_alias=by_alias,
-            exclude_none=True,
-            exclude={"params", "name", "description", "options", "sfSchema", "password", "format"},
-        )
+    def get_options(self, by_alias: bool = True, include: Optional[List[str]] = None) -> Dict[str, Any]:
+        """Get the sfOptions as a dictionary.
+
+        Parameters
+        ----------
+        by_alias : bool, optional, default=True
+            Whether to use the alias names or not. E.g. `sfURL` instead of `url`
+        include : List[str], optional
+            List of keys to include in the output dictionary
+        """
+        _model_dump_options = {
+            "by_alias": by_alias,
+            "exclude_none": True,
+            "exclude": {
+                # Exclude koheesio specific fields
+                "params", "name", "description", "format"
+                # options should be specifically implemented
+                "options",
+                # schema and password have to be handled separately
+                "sfSchema", "password",
+            }
+        }
+        if include:
+            _model_dump_options["include"] = {*include}
+
+        options = self.model_dump(**_model_dump_options)
 
         # handle schema and password
         options.update(
@@ -205,7 +225,7 @@ class SnowflakeTableStep(SnowflakeStep, ABC):
         return f"{self.database}.{self.sfSchema}.{self.table}"
 
 
-class RunQueryBase(SnowflakeStep, ABC):
+class SnowflakeRunQueryBase(SnowflakeStep, ABC):
     """Base class for RunQuery and RunQueryPython"""
 
     query: str = Field(default=..., description="The query to run", alias="sql")
@@ -216,7 +236,11 @@ class RunQueryBase(SnowflakeStep, ABC):
         return query.replace("\\n", "\n").replace("\\t", "\t").strip()
 
 
-class RunQueryPython(SnowflakeStep):
+QueryResults = List[Tuple[Any]]
+"""Type alias for the results of a query"""
+
+
+class SnowflakeRunQueryPython(SnowflakeRunQueryBase):
     """
     Run a query on Snowflake using the Python connector
 
@@ -234,22 +258,38 @@ class RunQueryPython(SnowflakeStep):
     ).execute()
     ```
     """
-    # try:
-    #     from snowflake import connector as snowflake_conn
-    # except ImportError as e:
-    #     raise ImportError(
-    #         "You need to have the `snowflake-connector-python` package installed to use the Snowflake steps that "
-    #         "are based around RunQuery. You can install this in Koheesio by adding `koheesio[snowflake]` to your "
-    #         "dependencies."
-    #     ) from e
+    snowflake_conn: Any = None
+
+    @model_validator(mode="after")
+    def validate_snowflake_connector(self):
+        """Validate that the Snowflake connector is installed"""
+        try:
+            from snowflake import connector as snowflake_connector
+            self.snowflake_conn = snowflake_connector
+        except ImportError as e:
+            warn(
+                "You need to have the `snowflake-connector-python` package installed to use the Snowflake steps that "
+                "are based around SnowflakeRunQueryPython. You can install this in Koheesio by adding "
+                "`koheesio[snowflake]` to your package dependencies."
+            )
+        return self
 
     class Output(StepOutput):
         """Output class for RunQueryPython"""
 
-        result: Optional[Any] = Field(default=..., description="The result of the query")
+        results: Optional[QueryResults] = Field(default=..., description="The results of the query")
 
     @property
     def conn(self):
+        sf_options = dict(
+            url=self.url,
+            user=self.user,
+            role=self.role,
+            warehouse=self.warehouse,
+            database=self.database,
+            schema=self.sfSchema,
+            authenticator=self.authenticator,
+        )
         return self.snowflake_conn.connect(**self.get_options(by_alias=False))
 
     @property
@@ -262,7 +302,8 @@ class RunQueryPython(SnowflakeStep):
         self.conn.close()
 
 
-RunQuery = RunQueryPython
+RunQuery = SnowflakeRunQueryPython
+"""Added for backwards compatibility"""
 
 
 class TableExists(SnowflakeTableStep):
