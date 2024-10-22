@@ -74,6 +74,7 @@ if check_if_pyspark_connect_is_supported():
     from pyspark.sql.connect.dataframe import DataFrame as ConnectDataFrame
     from pyspark.sql.connect.proto.types_pb2 import DataType as ConnectDataType
     from pyspark.sql.connect.session import SparkSession as ConnectSparkSession
+    from pyspark.sql.streaming.readwriter import DataStreamReader
     from pyspark.sql.types import DataType as SqlDataType
 
     Column = Union[sql.Column, ConnectColumn]
@@ -81,11 +82,13 @@ if check_if_pyspark_connect_is_supported():
     SparkSession = Union[sql.SparkSession, ConnectSparkSession]
     ParseException = (CapturedParseException, ConnectParseException)
     DataType = Union[SqlDataType, ConnectDataType]
+    DataStreamReader = DataStreamReader
 else:
     try:
         from pyspark.errors.exceptions.captured import ParseException  # type: ignore
     except ImportError:
         from pyspark.sql.utils import ParseException  # type: ignore
+
     from pyspark.sql.column import Column  # type: ignore
     from pyspark.sql.dataframe import DataFrame  # type: ignore
     from pyspark.sql.session import SparkSession  # type: ignore
