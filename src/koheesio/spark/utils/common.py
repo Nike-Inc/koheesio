@@ -30,6 +30,25 @@ from pyspark.sql.types import (
 )
 from pyspark.version import __version__ as spark_version
 
+__all__ = [
+    "SparkDatatype",
+    "import_pandas_based_on_pyspark_version",
+    "on_databricks",
+    "schema_struct_to_schema_str",
+    "spark_data_type_is_array",
+    "spark_data_type_is_numeric",
+    "show_string",
+    "get_spark_minor_version",
+    "SPARK_MINOR_VERSION",
+    "AnalysisException",
+    "Column",
+    "DataFrame",
+    "SparkSession",
+    "ParseException",
+    "DataType",
+    "DataStreamReader",
+]
+
 try:
     from pyspark.errors.exceptions.base import AnalysisException  # type: ignore
 except (ImportError, ModuleNotFoundError):
@@ -88,6 +107,8 @@ else:
     except (ImportError, ModuleNotFoundError):
         from pyspark.sql.utils import ParseException  # type: ignore
 
+    ParseException = ParseException
+
     from pyspark.sql.column import Column  # type: ignore
     from pyspark.sql.dataframe import DataFrame  # type: ignore
     from pyspark.sql.session import SparkSession  # type: ignore
@@ -97,6 +118,8 @@ else:
         from pyspark.sql.streaming.readwriter import DataStreamReader
     except (ImportError, ModuleNotFoundError):
         from pyspark.sql.streaming import DataStreamReader  # type: ignore
+
+    DataStreamReader = DataStreamReader
 
 
 def get_active_session() -> SparkSession:  # type: ignore
@@ -116,26 +139,6 @@ def get_active_session() -> SparkSession:  # type: ignore
         )
 
     return session
-
-
-__all__ = [
-    "SparkDatatype",
-    "import_pandas_based_on_pyspark_version",
-    "on_databricks",
-    "schema_struct_to_schema_str",
-    "spark_data_type_is_array",
-    "spark_data_type_is_numeric",
-    "show_string",
-    "get_spark_minor_version",
-    "SPARK_MINOR_VERSION",
-    "AnalysisException",
-    "Column",
-    "DataFrame",
-    "SparkSession",
-    "ParseException",
-    "DataType",
-    "DataStreamReader",
-]
 
 
 class SparkDatatype(Enum):

@@ -1,7 +1,8 @@
 from typing import Optional
 
-from koheesio.spark.utils import check_if_pyspark_connect_is_supported
-from koheesio.spark.utils.common import SparkSession, get_active_session
+from pyspark.sql import SparkSession
+
+from koheesio.spark.utils.common import check_if_pyspark_connect_is_supported, get_active_session
 
 __all__ = ["is_remote_session"]
 

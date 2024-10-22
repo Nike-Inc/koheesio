@@ -9,8 +9,8 @@ from py4j.protocol import Py4JJavaError  # type: ignore
 from pyspark.sql.types import DataType
 
 from koheesio.models import Field, field_validator, model_validator
-from koheesio.spark import DataFrame, SparkStep
-from koheesio.spark.utils import AnalysisException, on_databricks
+from koheesio.spark import AnalysisException, DataFrame, SparkStep
+from koheesio.spark.utils import on_databricks
 
 
 class DeltaTableStep(SparkStep):
