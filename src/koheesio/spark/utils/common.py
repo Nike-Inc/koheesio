@@ -30,10 +30,11 @@ from pyspark.sql.types import (
 )
 from pyspark.version import __version__ as spark_version
 
-try:
-    from pyspark.sql.utils import AnalysisException  # type: ignore
-except ImportError:
-    from pyspark.errors.exceptions.base import AnalysisException
+# try:
+#     from pyspark.errors.exceptions.base import AnalysisException
+# except ImportError:
+#     from pyspark.sql.utils import AnalysisException  # type: ignore
+    
 
 AnalysisException = AnalysisException
 

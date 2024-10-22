@@ -103,7 +103,7 @@ jobs:
 #        hatch fmt --check --python=${{ matrix.python-version }}
 
     - name: Run tests
-      run: hatch test --python=${{ matrix.python-version }} -i version=pyspark${{ matrix.pyspark-version }} --maxfail=2
+      run: hatch test --python=${{ matrix.python-version }} -i version=pyspark${{ matrix.pyspark-version }} --verbose --maxfail=2
 
   # https://github.com/marketplace/actions/alls-green#why
   final_check: # This job does nothing and is only used for the branch protection
