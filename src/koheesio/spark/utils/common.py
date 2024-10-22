@@ -7,7 +7,7 @@ import inspect
 import os
 from enum import Enum
 from types import ModuleType
-from typing import TypeAlias, Union
+from typing import Union
 
 from pyspark import sql
 from pyspark.sql.types import (
@@ -63,6 +63,8 @@ def check_if_pyspark_connect_is_supported() -> bool:
 
 
 if check_if_pyspark_connect_is_supported():
+    # from typing import TypeAlias
+
     from pyspark.errors.exceptions.captured import ParseException as CapturedParseException
     from pyspark.errors.exceptions.connect import ParseException as ConnectParseException
     from pyspark.sql.connect.column import Column as ConnectColumn
@@ -71,11 +73,11 @@ if check_if_pyspark_connect_is_supported():
     from pyspark.sql.connect.session import SparkSession as ConnectSparkSession
     from pyspark.sql.types import DataType as SqlDataType
 
-    Column: TypeAlias = Union[sql.Column, ConnectColumn]
-    DataFrame: TypeAlias = Union[sql.DataFrame, ConnectDataFrame]
-    SparkSession: TypeAlias = Union[sql.SparkSession, ConnectSparkSession]
+    Column = Union[sql.Column, ConnectColumn]
+    DataFrame = Union[sql.DataFrame, ConnectDataFrame]
+    SparkSession = Union[sql.SparkSession, ConnectSparkSession]
     ParseException = (CapturedParseException, ConnectParseException)
-    DataType: TypeAlias = Union[SqlDataType, ConnectDataType]
+    DataType = Union[SqlDataType, ConnectDataType]
 else:
     try:
         from pyspark.errors.exceptions.captured import ParseException  # type: ignore
