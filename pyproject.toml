@@ -260,12 +260,12 @@ features = [
   "test",
 ]
 
-parallel = true
+parallel = false
 retries = 2
 retry-delay = 1
 
 [tool.hatch.envs.hatch-test.scripts]
-run = "pytest{env:HATCH_TEST_ARGS:} {args} -n auto"
+run = "pytest{env:HATCH_TEST_ARGS:} {args}"
 run-cov = "coverage run -m pytest{env:HATCH_TEST_ARGS:} {args}"
 cov-combine = "coverage combine"
 cov-report = "coverage report"
@@ -307,6 +307,7 @@ matrix.version.extra-dependencies = [
     "pyspark35r",
   ] },
 ]
+matrix.version.parallel = { value = false, if = ["pyspark35r"] }
 
 name.".*".env-vars = [
   # set number of workes for parallel testing
@@ -321,10 +322,16 @@ name.".*(pyspark35r).*".env-vars = [
   { key = "SPARK_REMOTE", value = "local" },
 ]
 
+name.".*(pyspark35r).*".scripts = [
+  { key = "run", value = "pytest{env:HATCH_TEST_ARGS:} -n auto -m \"not spark\" {args} && pytest{env:HATCH_TEST_ARGS:} -m spark {args}" },
+]
+
+
 [tool.pytest.ini_options]
 addopts = "-q --color=yes --order-scope=module"
 log_level = "CRITICAL"
 testpaths = ["tests"]
+asyncio_default_fixture_loop_scope = "scope"
 markers = [
   "default: added to all tests by default if no other marker expect of standard pytest markers is present",
   "spark: mark a test as a Spark test",
@@ -338,12 +345,12 @@ filterwarnings = [
   # pyspark.pandas warnings
   "ignore:distutils.*:DeprecationWarning:pyspark.pandas.*",
   "ignore:'PYARROW_IGNORE_TIMEZONE'.*:UserWarning:pyspark.pandas.*",
+  # pyspark.sql.connector warnings
+  "ignore:distutils.*:DeprecationWarning:pyspark.sql.connect.*",
   "ignore:distutils.*:DeprecationWarning:pyspark.sql.pandas.*",
   "ignore:is_datetime64tz_dtype.*:DeprecationWarning:pyspark.sql.pandas.*",
   # Koheesio warnings
   "ignore:DayTimeIntervalType.*:UserWarning:koheesio.spark.snowflake.*",
-  # Pytest warnings
-  "ignore:.*asyncio_default_fixture_loop_scope.*:pytest.PytestDeprecationWarning:pytest_asyncio.*",
 ]
 
 [tool.coverage.run]
