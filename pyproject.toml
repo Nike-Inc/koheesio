@@ -346,6 +346,7 @@ filterwarnings = [
   "ignore:distutils.*:DeprecationWarning:pyspark.pandas.*",
   "ignore:'PYARROW_IGNORE_TIMEZONE'.*:UserWarning:pyspark.pandas.*",
   # pyspark.sql.connector warnings
+  "ignore:is_datetime64tz_dtype.*:DeprecationWarning:pyspark.sql.connect.*",
   "ignore:distutils.*:DeprecationWarning:pyspark.sql.connect.*",
   "ignore:distutils.*:DeprecationWarning:pyspark.sql.pandas.*",
   "ignore:is_datetime64tz_dtype.*:DeprecationWarning:pyspark.sql.pandas.*",
