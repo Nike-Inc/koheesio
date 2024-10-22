@@ -13,6 +13,7 @@ from spark_expectations.core.expectations import (
     WrappedDataFrameWriter,
 )
 
+from koheesio.spark import DataFrame
 from koheesio.spark.transformations import Transformation
 from koheesio.spark.writers import BatchOutputMode
 
@@ -94,9 +95,7 @@ class SparkExpectationsTransformation(Transformation):
     class Output(Transformation.Output):
         """Output of the SparkExpectationsTransformation step."""
 
-        # FIXME
-        # rules_df: InstanceOf[Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]] = Field(
-        rules_df: Any = Field(default=..., description="Output dataframe")
+        rules_df: DataFrame = Field(default=..., description="Output dataframe")
         se: SparkExpectations = Field(default=..., description="Spark Expectations object")
         error_table_writer: WrappedDataFrameWriter = Field(
             default=..., description="Spark Expectations error table writer"
@@ -158,9 +157,7 @@ class SparkExpectationsTransformation(Transformation):
             write_to_table=False,
             write_to_temp_table=False,
         )
-        def inner(
-            df: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"],
-        ) -> Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]:
+        def inner(df: DataFrame) -> DataFrame:
             """Just a wrapper to be able to use Spark Expectations decorator"""
             return df
 

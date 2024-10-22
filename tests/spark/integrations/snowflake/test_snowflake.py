@@ -3,7 +3,6 @@ from unittest import mock
 from unittest.mock import Mock, patch
 
 import pytest
-
 from pyspark.sql import SparkSession
 from pyspark.sql import types as t
 

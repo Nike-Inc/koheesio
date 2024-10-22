@@ -9,10 +9,10 @@ from io import StringIO
 from typing import Any, Dict, Optional, Union
 
 import pandas as pd
-from pyspark import sql
 from pyspark.sql.types import StructType
 
 from koheesio.models import ExtraParamsMixin, Field
+from koheesio.spark import DataFrame
 from koheesio.spark.readers import Reader
 
 
@@ -72,7 +72,7 @@ class InMemoryDataReader(Reader, ExtraParamsMixin):
         description="[Optional] Set of extra parameters that should be passed to the appropriate reader (csv / json)",
     )
 
-    def _csv(self) -> Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]:
+    def _csv(self) -> DataFrame:
         """Method for reading CSV data"""
         if isinstance(self.data, list):
             csv_data: str = "\n".join(self.data)
@@ -84,7 +84,7 @@ class InMemoryDataReader(Reader, ExtraParamsMixin):
 
         return df
 
-    def _json(self) -> Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]:
+    def _json(self) -> DataFrame:
         """Method for reading JSON data"""
         if isinstance(self.data, str):
             json_data = [json.loads(self.data)]

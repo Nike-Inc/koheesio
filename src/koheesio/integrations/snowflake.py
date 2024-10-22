@@ -41,10 +41,11 @@ format : str, optional, default="snowflake"
 """
 
 from __future__ import annotations
+
 import json
-from typing import Any, Dict, List, Optional, Set, Union
 from abc import ABC
 from textwrap import dedent
+from typing import Any, Dict, Optional, Union
 
 from koheesio import Step, StepOutput
 from koheesio.models import (
@@ -56,6 +57,7 @@ from koheesio.models import (
     field_validator,
     model_validator,
 )
+from koheesio.spark.snowflake import Query
 
 __all__ = [
     "GrantPrivilegesOnFullyQualifiedObject",
@@ -234,6 +236,7 @@ class RunQueryPython(SnowflakeStep):
     ).execute()
     ```
     """
+
     # try:
     #     from snowflake import connector as snowflake_conn
     # except ImportError as e:
@@ -566,11 +569,10 @@ class TagSnowflakeQuery(Step, ExtraParamsMixin):
     """
 
     options: Dict = Field(
-        default_factory=dict, description="Additional Snowflake options, optionally containing additional preactions")
-
-    preactions: Optional[str] = Field(
-        default="", description="Existing preactions from Snowflake options"
+        default_factory=dict, description="Additional Snowflake options, optionally containing additional preactions"
     )
+
+    preactions: Optional[str] = Field(default="", description="Existing preactions from Snowflake options")
 
     class Output(StepOutput):
         """Output class for AddQueryTag"""

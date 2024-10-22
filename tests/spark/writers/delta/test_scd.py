@@ -1,17 +1,17 @@
 import datetime
-from typing import List, Optional, Union
+from typing import List, Optional
 
 import pytest
 from delta import DeltaTable
 from delta.tables import DeltaMergeBuilder
 from pydantic import Field
-from pyspark import sql
 from pyspark.sql import Column
 from pyspark.sql import functions as F
 from pyspark.sql.types import Row
 
-from koheesio.spark import current_timestamp_utc
+from koheesio.spark import DataFrame
 from koheesio.spark.delta import DeltaTableStep
+from koheesio.spark.functions import current_timestamp_utc
 from koheesio.spark.utils import SPARK_MINOR_VERSION
 from koheesio.spark.writers.delta.scd import SCD2DeltaTableWriter
 
@@ -26,7 +26,7 @@ def test_scd2_custom_logic(spark):
     if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
         pytest.skip(reason=skip_reason)
 
-    def _get_result(target_df: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"], expr: str):
+    def _get_result(target_df: DataFrame, expr: str):
         res = (
             target_df.where(expr)
             .select(
@@ -77,7 +77,7 @@ def test_scd2_custom_logic(spark):
             self,
             delta_table: DeltaTable,
             dest_alias: str,
-            staged: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"],
+            staged: DataFrame,
             merge_key: str,
             columns_to_process: List[str],
             meta_scd2_effective_time_col: str,

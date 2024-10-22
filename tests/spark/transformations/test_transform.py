@@ -1,12 +1,10 @@
-from typing import Any, Dict, Union
+from typing import Any, Dict
 
 import pytest
-
 from pyspark.sql import functions as f
-from pyspark import sql
 
 from koheesio.logger import LoggingFactory
-
+from koheesio.spark import DataFrame
 from koheesio.spark.transformations.transform import Transform
 
 pytestmark = pytest.mark.spark
@@ -14,17 +12,15 @@ pytestmark = pytest.mark.spark
 log = LoggingFactory.get_logger(name="test_transform")
 
 
-def dummy_transform_func(df: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"], target_column: str, value: str):
+def dummy_transform_func(df: DataFrame, target_column: str, value: str):
     return df.withColumn(target_column, f.lit(value))
 
 
-def no_kwargs_dummy_func(df: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]):
+def no_kwargs_dummy_func(df: DataFrame):
     return df
 
 
-def transform_output_test(
-    sdf: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"], expected_data: Dict[str, Any]
-):
+def transform_output_test(sdf: DataFrame, expected_data: Dict[str, Any]):
     return sdf.head().asDict() == expected_data
 
 

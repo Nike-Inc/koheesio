@@ -18,6 +18,7 @@ from pyspark.sql.streaming.readwriter import DataStreamReader
 
 from koheesio.logger import LoggingFactory
 from koheesio.models import Field, ListOfColumns, field_validator, model_validator
+from koheesio.spark import Column
 from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.readers import Reader
 from koheesio.utils import get_random_string
@@ -84,10 +85,7 @@ class DeltaTableReader(Reader):
     """
 
     table: Union[DeltaTableStep, str] = Field(default=..., description="The table to read")
-    # FIXME
-    # filter_cond: InstanceOf[Optional[Union["sql.Column", "sql.connect.column.Column", str]]] = Field(
-    # filter_cond: Optional[Union[ForwardRef("sql.Column"), ForwardRef("sql.connect.column.Column"), str]] = Field(
-    filter_cond: Optional[Union[Any, str]] = Field(
+    filter_cond: Optional[Union[Column, str]] = Field(
         default=None,
         alias="filterCondition",
         description="Filter condition to apply to the dataframe. Filters can be provided by using Column or string "

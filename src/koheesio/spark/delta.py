@@ -6,13 +6,11 @@ import warnings
 from typing import Dict, List, Optional, Union
 
 from py4j.protocol import Py4JJavaError  # type: ignore
-
 from pyspark.sql.types import DataType
-from pyspark import sql
 
 from koheesio.models import Field, field_validator, model_validator
-from koheesio.spark import SparkStep
-from koheesio.spark.utils import on_databricks, AnalysisException
+from koheesio.spark import DataFrame, SparkStep
+from koheesio.spark.utils import AnalysisException, on_databricks
 
 
 class DeltaTableStep(SparkStep):
@@ -256,7 +254,7 @@ class DeltaTableStep(SparkStep):
         return ".".join([n for n in [self.catalog, self.database, self.table] if n])
 
     @property
-    def dataframe(self) -> Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]:
+    def dataframe(self) -> DataFrame:
         """Returns a DataFrame to be able to interact with this table"""
         return self.spark.table(self.table_name)
 
@@ -291,7 +289,7 @@ class DeltaTableStep(SparkStep):
     @property
     def has_change_type(self) -> bool:
         """Checks if a column named `_change_type` is present in the table"""
-        return "_change_type" in self.columns # type: ignore
+        return "_change_type" in self.columns  # type: ignore
 
     @property
     def exists(self) -> bool:

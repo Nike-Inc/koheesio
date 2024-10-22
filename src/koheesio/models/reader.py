@@ -3,11 +3,11 @@ Module for the BaseReader class
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional, Union
+from typing import Optional
 
-from pyspark import sql
 
 from koheesio import Step
+from koheesio.spark import DataFrame
 
 
 class BaseReader(Step, ABC):
@@ -28,7 +28,7 @@ class BaseReader(Step, ABC):
     """
 
     @property
-    def df(self) -> Optional[Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]]:
+    def df(self) -> Optional[DataFrame]:
         """Shorthand for accessing self.output.df
         If the output.df is None, .execute() will be run first
         """
@@ -43,7 +43,7 @@ class BaseReader(Step, ABC):
         """
         pass
 
-    def read(self) -> Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]:
+    def read(self) -> DataFrame:
         """Read from a Reader without having to call the execute() method directly"""
         self.execute()
         return self.output.df

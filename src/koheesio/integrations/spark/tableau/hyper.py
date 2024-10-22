@@ -5,7 +5,6 @@ from tempfile import TemporaryDirectory
 from typing import Any, List, Optional, Union
 
 from pydantic import Field, conlist
-from pyspark import sql
 from pyspark.sql.functions import col
 from pyspark.sql.types import (
     BooleanType,
@@ -34,7 +33,7 @@ from tableauhyperapi import (
     Telemetry,
 )
 
-from koheesio.spark.readers import SparkStep
+from koheesio.spark import DataFrame, SparkStep
 from koheesio.spark.transformations.cast_to_datatype import CastToDatatype
 from koheesio.spark.utils import SPARK_MINOR_VERSION
 from koheesio.steps import Step, StepOutput
@@ -304,9 +303,7 @@ class HyperFileDataFrameWriter(HyperFileWriter):
     ```
     """
 
-    # FIXME
-    # df: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"] = Field(
-    df: Any = Field(default=..., description="Spark DataFrame to write to the Hyper file")
+    df: DataFrame = Field(default=..., description="Spark DataFrame to write to the Hyper file")
     table_definition: Optional[TableDefinition] = None  # table_definition is not required for this class
 
     @staticmethod
@@ -364,7 +361,7 @@ class HyperFileDataFrameWriter(HyperFileWriter):
 
         return td
 
-    def clean_dataframe(self) -> Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]:
+    def clean_dataframe(self) -> DataFrame:
         """
         - Replace NULLs for string and numeric columns
         - Convert data types to ensure compatibility with Tableau Hyper API

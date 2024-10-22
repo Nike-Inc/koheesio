@@ -46,7 +46,6 @@ from copy import deepcopy
 from textwrap import dedent
 from typing import Any, Dict, List, Optional, Set, Union
 
-from pyspark import sql
 from pyspark.sql import Window
 from pyspark.sql import functions as f
 from pyspark.sql import types as t
@@ -62,7 +61,7 @@ from koheesio.models import (
     field_validator,
     model_validator,
 )
-from koheesio.spark import SparkStep
+from koheesio.spark import DataFrame, DataType, SparkStep
 from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.readers.delta import DeltaTableReader, DeltaTableStreamReader
 from koheesio.spark.readers.jdbc import JdbcReader
@@ -881,7 +880,7 @@ class AddColumn(SnowflakeStep):
 
     table: str = Field(default=..., description="The name of the Snowflake table")
     column: str = Field(default=..., description="The name of the new column")
-    type: Union["sql.types.DataType", "sql.connect.proto.types.DataType"] = Field(  # type: ignore
+    type: DataType = Field(  # type: ignore
         default=..., description="The DataType represented as a Spark DataType"
     )
 
@@ -904,9 +903,7 @@ class SyncTableAndDataFrameSchema(SnowflakeStep, SnowflakeTransformation):
     The Snowflake table will take priority in case of type conflicts.
     """
 
-    df: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"] = Field(
-        default=..., description="The Spark DataFrame"
-    )
+    df: DataFrame = Field(default=..., description="The Spark DataFrame")
     table: str = Field(default=..., description="The table name")
     dry_run: Optional[bool] = Field(default=False, description="Only show schema differences, do not apply changes")
 
@@ -1287,7 +1284,7 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeStep):
         """Build a batch write function for merge mode"""
 
         # pylint: disable=unused-argument
-        def inner(dataframe: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"], batchId: int):  # type: ignore
+        def inner(dataframe: DataFrame, batchId: int):  # type: ignore
             self._build_staging_table(dataframe, key_columns, non_key_columns, staging_table)
             self._merge_staging_table_into_target()
 
@@ -1296,10 +1293,8 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeStep):
 
     @staticmethod
     def _compute_latest_changes_per_pk(
-        dataframe: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"],  # type: ignore
-        key_columns: List[str],
-        non_key_columns: List[str],
-    ) -> Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]:  # type: ignore
+        dataframe: DataFrame, key_columns: List[str], non_key_columns: List[str]
+    ) -> DataFrame:
         """Compute the latest changes per primary key"""
         windowSpec = Window.partitionBy(*key_columns).orderBy(f.col("_commit_version").desc())
         ranked_df = (
@@ -1378,7 +1373,7 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeStep):
 
         return query
 
-    def extract(self) -> Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]:  # type: ignore
+    def extract(self) -> DataFrame:
         """
         Extract source table
         """
@@ -1394,7 +1389,7 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeStep):
         self.output.source_df = df
         return df
 
-    def load(self, df) -> Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]:  # type: ignore
+    def load(self, df) -> DataFrame:
         """Load source table into snowflake"""
         if self.synchronisation_mode == BatchOutputMode.MERGE:
             self.log.info(f"Truncating staging table {self.staging_table}")

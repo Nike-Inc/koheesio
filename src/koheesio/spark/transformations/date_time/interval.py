@@ -125,8 +125,9 @@ from pyspark.sql import Column as SparkColumn
 from pyspark.sql.functions import col, expr
 
 from koheesio.models import Field, field_validator
+from koheesio.spark import ParseException
 from koheesio.spark.transformations import ColumnsTransformationWithTarget
-from koheesio.spark.utils import SPARK_MINOR_VERSION
+from koheesio.spark.utils import SPARK_MINOR_VERSION, get_column_name
 
 # if spark version is 3.5 or higher, we have to account for the connect mode
 if SPARK_MINOR_VERSION >= 3.5:
@@ -193,7 +194,7 @@ def validate_interval(interval: str):
     ValueError
         If the interval string is invalid
     """
-    from koheesio.spark.utils.connect import ParseException, get_active_session, is_remote_session
+    from koheesio.spark.utils.connect import get_active_session, is_remote_session
 
     try:
         if is_remote_session():
@@ -291,7 +292,6 @@ def adjust_time(
     Column
         The adjusted datetime column.
     """
-    from koheesio.spark.utils.connect import get_column_name
 
     # check that value is a valid interval
     interval = validate_interval(interval)

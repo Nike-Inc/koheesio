@@ -10,13 +10,13 @@ DataframeLookup
 """
 
 from enum import Enum
-from typing import Any, List, Optional, Union
+from typing import List, Optional, Union
 
-from pyspark import sql
 from pyspark.sql import Column
 from pyspark.sql import functions as f
 
 from koheesio.models import BaseModel, Field, field_validator
+from koheesio.spark import DataFrame
 from koheesio.spark.transformations import Transformation
 
 
@@ -121,12 +121,8 @@ class DataframeLookup(Transformation):
     column from the `right_df` is aliased as `right_value` in the output dataframe.
     """
 
-    # FIXME
-    # df: InstanceOf[Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]] = Field(
-    df: Any = Field(default=None, description="The left Spark DataFrame")
-    # FIXME
-    # other: InstanceOf[Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]] = Field(
-    other: Any = Field(default=None, description="The right Spark DataFrame")
+    df: Optional[DataFrame] = Field(default=None, description="The left Spark DataFrame")
+    other: Optional[DataFrame] = Field(default=None, description="The right Spark DataFrame")
     on: Union[List[JoinMapping], JoinMapping] = Field(
         default=...,
         alias="join_mapping",
@@ -152,14 +148,10 @@ class DataframeLookup(Transformation):
     class Output(Transformation.Output):
         """Output for the lookup transformation"""
 
-        # FIXME
-        # left_df: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"] = Field(
-        left_df: Any = Field(default=..., description="The left Spark DataFrame")
-        # FIXME
-        # right_df: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"] = Field(
-        right_df: Any = Field(default=..., description="The right Spark DataFrame")
+        left_df: DataFrame = Field(default=..., description="The left Spark DataFrame")
+        right_df: DataFrame = Field(default=..., description="The right Spark DataFrame")
 
-    def get_right_df(self) -> Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]:
+    def get_right_df(self) -> DataFrame:
         """Get the right side dataframe"""
         return self.other
 

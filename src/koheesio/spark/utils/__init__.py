@@ -15,6 +15,7 @@ from koheesio.spark.utils.common import (
 
 __all__ = [
     "SparkDatatype",
+    "AnalysisException",
     "import_pandas_based_on_pyspark_version",
     "on_databricks",
     "schema_struct_to_schema_str",
@@ -23,7 +24,6 @@ __all__ = [
     "show_string",
     "get_spark_minor_version",
     "SPARK_MINOR_VERSION",
-    "AnalysisException",
     "check_if_pyspark_connect_is_supported",
     "get_column_name",
 ]

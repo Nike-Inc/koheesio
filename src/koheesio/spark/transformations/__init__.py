@@ -22,14 +22,14 @@ ColumnsTransformationWithTarget
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Iterator, List, Optional, Union
+from typing import Iterator, List, Optional, Union
 
 from pyspark import sql
 from pyspark.sql import functions as f
 from pyspark.sql.types import DataType
 
 from koheesio.models import Field, ListOfColumns, field_validator
-from koheesio.spark import SparkStep
+from koheesio.spark import Column, DataFrame, SparkStep
 from koheesio.spark.utils import SparkDatatype
 
 
@@ -100,9 +100,7 @@ class Transformation(SparkStep, ABC):
     Transformation class will have the `transform` method available. Only the execute method needs to be implemented.
     """
 
-    # FIXME
-    # df: InstanceOf[Optional[Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]]] = Field(
-    df: Any = Field(default=None, description="The Spark DataFrame")
+    df: Optional[DataFrame] = Field(default=None, description="The Spark DataFrame")
 
     @abstractmethod
     def execute(self) -> SparkStep.Output:
@@ -124,9 +122,7 @@ class Transformation(SparkStep, ABC):
         self.output.df = ...  # implement the transformation logic
         raise NotImplementedError
 
-    def transform(
-        self, df: Optional[Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]] = None
-    ) -> Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]:
+    def transform(self, df: Optional[DataFrame] = None) -> DataFrame:
         """Execute the transformation and return the output DataFrame
 
         Note: when creating a child from this, don't implement this transform method. Instead, implement execute!
@@ -252,6 +248,7 @@ class ColumnsTransformation(Transformation, ABC):
             (default: False)
         """
 
+        # FIXME: Check if it can be just None
         run_for_all_data_type: Optional[List[SparkDatatype]] = [None]
         limit_data_type: Optional[List[SparkDatatype]] = [None]
         data_type_strict_mode: bool = False
@@ -290,8 +287,8 @@ class ColumnsTransformation(Transformation, ABC):
 
     def column_type_of_col(
         self,
-        col: Union["sql.Column", "sql.connect.column.Column", str],
-        df: Optional[Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"]] = None,
+        col: Union[Column, str],
+        df: Optional[DataFrame] = None,
         simple_return_mode: bool = True,
     ) -> Union[DataType, str]:
         """

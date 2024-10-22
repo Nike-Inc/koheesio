@@ -5,18 +5,12 @@ Spark step module
 from __future__ import annotations
 
 from abc import ABC
-from typing import Any, Optional, Union
+from typing import Optional
 
 from pydantic import Field
-from pyspark import sql
-from pyspark.sql import functions as F
-
-try:
-    from pyspark.sql.utils import AnalysisException  # type: ignore
-except ImportError:
-    from pyspark.errors.exceptions.base import AnalysisException
 
 from koheesio import Step, StepOutput
+from koheesio.spark.utils.common import AnalysisException, Column, DataFrame, DataType, ParseException, SparkSession
 
 
 class SparkStep(Step, ABC):
@@ -30,19 +24,14 @@ class SparkStep(Step, ABC):
     class Output(StepOutput):
         """Output class for SparkStep"""
 
-        df: Optional[Union["sql.DataFrame", Any]] = Field(  # type: ignore
-            default=None, description="The Spark DataFrame"
-        )
+        df: Optional[DataFrame] = Field(default=None, description="The Spark DataFrame")
 
     @property
-    def spark(self) -> Optional[Union["sql.SparkSession", Any]]:  # type: ignore
+    def spark(self) -> Optional[SparkSession]:
         """Get active SparkSession instance"""
-        return sql.session.SparkSession.getActiveSession()  # type: ignore
+        from koheesio.spark.utils.connect import get_active_session
+
+        return get_active_session()
 
 
-# TODO: Move to spark/functions/__init__.py after reorganizing the code
-def current_timestamp_utc(
-    spark: Union["sql.SparkSession", "sql.connect.session.SparkSession"],
-) -> Union["sql.Column", "sql.connect.column.Column"]:
-    """Get the current timestamp in UTC"""
-    return F.to_utc_timestamp(F.current_timestamp(), spark.conf.get("spark.sql.session.timeZone"))  # type: ignore
+__all__ = ["SparkStep", "Column", "DataFrame", "ParseException", "SparkSession", "AnalysisException", "DataType"]

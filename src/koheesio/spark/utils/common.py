@@ -7,7 +7,7 @@ import inspect
 import os
 from enum import Enum
 from types import ModuleType
-from typing import Union
+from typing import TypeAlias, Union
 
 from pyspark import sql
 from pyspark.sql.types import (
@@ -15,7 +15,6 @@ from pyspark.sql.types import (
     BinaryType,
     BooleanType,
     ByteType,
-    DataType,
     DateType,
     DecimalType,
     DoubleType,
@@ -35,7 +34,6 @@ try:
     from pyspark.sql.utils import AnalysisException  # type: ignore
 except ImportError:
     from pyspark.errors.exceptions.base import AnalysisException
-
 
 AnalysisException = AnalysisException
 
@@ -64,6 +62,27 @@ def check_if_pyspark_connect_is_supported() -> bool:
     return result
 
 
+if check_if_pyspark_connect_is_supported():
+    from pyspark.errors.exceptions.captured import ParseException as CapturedParseException
+    from pyspark.errors.exceptions.connect import ParseException as ConnectParseException
+    from pyspark.sql.connect.column import Column as ConnectColumn
+    from pyspark.sql.connect.dataframe import DataFrame as ConnectDataFrame
+    from pyspark.sql.connect.proto.types_pb2 import DataType as ConnectDataType
+    from pyspark.sql.connect.session import SparkSession as ConnectSparkSession
+    from pyspark.sql.types import DataType as SqlDataType
+
+    Column: TypeAlias = Union[sql.Column, ConnectColumn]
+    DataFrame: TypeAlias = Union[sql.DataFrame, ConnectDataFrame]
+    SparkSession: TypeAlias = Union[sql.SparkSession, ConnectSparkSession]
+    ParseException = (CapturedParseException, ConnectParseException)
+    DataType: TypeAlias = Union[SqlDataType, ConnectDataType]
+else:
+    from pyspark.errors.exceptions.captured import ParseException  # type: ignore
+    from pyspark.sql.column import Column  # type: ignore
+    from pyspark.sql.dataframe import DataFrame  # type: ignore
+    from pyspark.sql.session import SparkSession  # type: ignore
+    from pyspark.sql.types import DataType  # type: ignore
+
 __all__ = [
     "SparkDatatype",
     "import_pandas_based_on_pyspark_version",
@@ -75,6 +94,11 @@ __all__ = [
     "get_spark_minor_version",
     "SPARK_MINOR_VERSION",
     "AnalysisException",
+    "Column",
+    "DataFrame",
+    "SparkSession",
+    "ParseException",
+    "DataType",
 ]
 
 
@@ -156,7 +180,7 @@ class SparkDatatype(Enum):
     VOID = "void"
 
     @property
-    def spark_type(self) -> DataType:
+    def spark_type(self) -> DataType:  # type: ignore
         """Returns the spark type for the given enum value"""
         mapping_dict = {
             "byte": ByteType,
@@ -191,12 +215,12 @@ def on_databricks() -> bool:
     return dbr_version is not None and dbr_version != ""
 
 
-def spark_data_type_is_array(data_type: DataType) -> bool:
+def spark_data_type_is_array(data_type: DataType) -> bool:  # type: ignore
     """Check if the column's dataType is of type ArrayType"""
     return isinstance(data_type, ArrayType)
 
 
-def spark_data_type_is_numeric(data_type: DataType) -> bool:
+def spark_data_type_is_numeric(data_type: DataType) -> bool:  # type: ignore
     """Check if the column's dataType is of type ArrayType"""
     return isinstance(data_type, (IntegerType, LongType, FloatType, DoubleType, DecimalType))
 
@@ -231,12 +255,7 @@ def import_pandas_based_on_pyspark_version() -> ModuleType:
         raise ImportError("Pandas module is not installed.") from e
 
 
-def show_string(
-    df: Union["sql.DataFrame", "sql.connect.dataframe.DataFrame"],  # type: ignore
-    n: int = 20,
-    truncate: Union[bool, int] = True,
-    vertical: bool = False,
-) -> str:
+def show_string(df: DataFrame, n: int = 20, truncate: Union[bool, int] = True, vertical: bool = False) -> str:  # type: ignore
     """Returns a string representation of the DataFrame
     The default implementation of DataFrame.show() hardcodes a print statement, which is not always desirable.
     With this function, you can get the string representation of the DataFrame instead, and choose how to display it.
@@ -267,7 +286,7 @@ def show_string(
     return df._show_string(n, truncate, vertical)
 
 
-def get_column_name(col: Union["sql.Column", "sql.connect.Column"]) -> str:
+def get_column_name(col: Column) -> str:  # type: ignore
     """Get the column name from a Column object
 
     Normally, the name of a Column object is not directly accessible in the regular pyspark API. This function
