@@ -6,7 +6,7 @@ import pytest
 from pyspark.sql import SparkSession
 from pyspark.sql import types as t
 
-from koheesio.spark.snowflake import (
+from koheesio.integrations.spark.snowflake import (
     AddColumn,
     CreateOrReplaceTableFromDataFrame,
     DbTableQuery,
@@ -249,26 +249,6 @@ class TestSyncTableAndDataFrameSchema:
 )
 def test_map_spark_type(input_value, expected):
     assert map_spark_type(input_value) == expected
-
-
-class TestSnowflakeBaseModel:
-    def test_get_options(self, dummy_spark):
-        k = SnowflakeBaseModel(
-            sfURL="url",
-            sfUser="user",
-            sfPassword="password",
-            sfDatabase="database",
-            sfRole="role",
-            sfWarehouse="warehouse",
-            schema="schema",
-        )
-        options = k.get_options()
-        assert options["sfURL"] == "url"
-        assert options["sfUser"] == "user"
-        assert options["sfDatabase"] == "database"
-        assert options["sfRole"] == "role"
-        assert options["sfWarehouse"] == "warehouse"
-        assert options["sfSchema"] == "schema"
 
 
 class TestTagSnowflakeQuery:

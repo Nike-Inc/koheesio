@@ -42,14 +42,13 @@ format : str, optional, default="snowflake"
 
 from __future__ import annotations
 
-import json
+from types import ModuleType
+from typing import Any, Dict, List, Optional, Set, Union
 from abc import ABC
 from contextlib import contextmanager
-from logging import warn
-from textwrap import dedent
-from typing import Any, Dict, List, Optional, Set, Union
 
-from koheesio import Step, StepOutput
+from koheesio import Step
+from koheesio.logger import warn
 from koheesio.models import (
     BaseModel,
     ExtraParamsMixin,
@@ -58,6 +57,7 @@ from koheesio.models import (
     conlist,
     field_validator,
     model_validator,
+    PrivateAttr,
 )
 
 __all__ = [
@@ -69,12 +69,32 @@ __all__ = [
     "SnowflakeBaseModel",
     "SnowflakeStep",
     "SnowflakeTableStep",
-    "TableExists",
+    "safe_import_snowflake_connector"
 ]
 
 # pylint: disable=inconsistent-mro, too-many-lines
 # Turning off inconsistent-mro because we are using ABCs and Pydantic models and Tasks together in the same class
 # Turning off too-many-lines because we are defining a lot of classes in this file
+
+
+def safe_import_snowflake_connector() -> Optional[ModuleType]:
+    """Validate that the Snowflake connector is installed
+
+    Returns
+    -------
+    Optional[ModuleType]
+        The Snowflake connector module if it is installed, otherwise None
+    """
+    try:
+        from snowflake import connector as snowflake_connector
+        return snowflake_connector
+    except (ImportError, ModuleNotFoundError):
+        warn(
+            "You need to have the `snowflake-connector-python` package installed to use the Snowflake steps that are"
+            "based around SnowflakeRunQueryPython. You can install this in Koheesio by adding `koheesio[snowflake]` to "
+            "your package dependencies.",
+            UserWarning
+        )
 
 
 class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):
@@ -101,12 +121,6 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):
     password : SecretStr
         Password for the Snowflake user.
         Alias for `sfPassword`.
-    database : str
-        The database to use for the session after connecting.
-        Alias for `sfDatabase`.
-    sfSchema : str
-        The schema to use for the session after connecting.
-        Alias for `schema` ("schema" is a reserved name in Pydantic, so we use `sfSchema` as main name instead).
     role : str
         The default security role to use for the session after connecting.
         Alias for `sfRole`.
@@ -115,11 +129,14 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):
         Alias for `sfWarehouse`.
     authenticator : Optional[str], optional, default=None
         Authenticator for the Snowflake user. Example: "okta.com".
+    database : Optional[str], optional, default=None
+        The database to use for the session after connecting.
+        Alias for `sfDatabase`.
+    sfSchema : Optional[str], optional, default=None
+        The schema to use for the session after connecting.
+        Alias for `schema` ("schema" is a reserved name in Pydantic, so we use `sfSchema` as main name instead).
     options : Optional[Dict[str, Any]], optional, default={"sfCompress": "on", "continue_on_error": "off"}
         Extra options to pass to the Snowflake connector.
-    format : str, optional, default="snowflake"
-        The default `snowflake` format can be used natively in Databricks, use `net.snowflake.spark.snowflake` in other
-        environments and make sure to install required JARs.
     """
 
     url: str = Field(
@@ -130,15 +147,6 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):
     )
     user: str = Field(default=..., alias="sfUser", description="Login name for the Snowflake user")
     password: SecretStr = Field(default=..., alias="sfPassword", description="Password for the Snowflake user")
-    authenticator: Optional[str] = Field(
-        default=None,
-        description="Authenticator for the Snowflake user",
-        examples=["okta.com"],
-    )
-    database: str = Field(
-        default=..., alias="sfDatabase", description="The database to use for the session after connecting"
-    )
-    sfSchema: str = Field(default=..., alias="schema", description="The schema to use for the session after connecting")
     role: str = Field(
         default=..., alias="sfRole", description="The default security role to use for the session after connecting"
     )
@@ -147,14 +155,20 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):
         alias="sfWarehouse",
         description="The default virtual warehouse to use for the session after connecting",
     )
+    authenticator: Optional[str] = Field(
+        default=None,
+        description="Authenticator for the Snowflake user",
+        examples=["okta.com"],
+    )
+    database: Optional[str] = Field(
+        default=None, alias="sfDatabase", description="The database to use for the session after connecting"
+    )
+    sfSchema: Optional[str] = Field(
+        default=..., alias="schema", description="The schema to use for the session after connecting"
+    )
     options: Optional[Dict[str, Any]] = Field(
         default={"sfCompress": "on", "continue_on_error": "off"},
         description="Extra options to pass to the Snowflake connector",
-    )
-    format: str = Field(
-        default="snowflake",
-        description="The default `snowflake` format can be used natively in Databricks, use "
-        "`net.snowflake.spark.snowflake` in other environments and make sure to install required JARs.",
     )
 
     def get_options(self, by_alias: bool = True, include: Set[str] = None) -> Dict[str, Any]:
@@ -175,21 +189,22 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):
             Set of keys to include in the output dictionary. When None is provided, all fields will be returned.
             Note: be sure to include all the keys you need.
         """
+        exclude_set = {
+            # Exclude koheesio specific fields
+            "name",
+            "description",
+            # options and params are separately implemented
+            "params",
+            "options",
+            # schema and password have to be handled separately
+            "sfSchema",
+            "password",
+        } - (include or set())
+
         fields = self.model_dump(
             by_alias=by_alias,
             exclude_none=True,
-            exclude={
-                # Exclude koheesio specific fields
-                "name",
-                "description",
-                "format"
-                # options and params are separately implemented
-                "params",
-                "options",
-                # schema and password have to be handled separately
-                "sfSchema",
-                "password",
-            },
+            exclude=exclude_set,
         )
 
         # handle schema and password
@@ -238,13 +253,9 @@ class SnowflakeTableStep(SnowflakeStep, ABC):
         Returns
         -------
         str
-            Snowflake Complete tablename (database.schema.table)
+            Snowflake Complete table name (database.schema.table)
         """
         return f"{self.database}.{self.sfSchema}.{self.table}"
-
-
-QueryResults = List[Any]
-"""Type alias for the results of a query"""
 
 
 class SnowflakeRunQueryPython(SnowflakeStep):
@@ -266,30 +277,16 @@ class SnowflakeRunQueryPython(SnowflakeStep):
     ```
     """
 
-    query: str = Field(default=..., description="The query to run", alias="sql")
+    query: str = Field(default=..., description="The query to run", alias="sql", serialization_alias="query")
     account: str = Field(default=..., description="Snowflake Account Name", alias="account")
 
     # for internal use
-    snowflake_conn: Any = None
+    _snowflake_connector: Optional[ModuleType] = PrivateAttr(default_factory=safe_import_snowflake_connector)
 
     class Output(SnowflakeStep.Output):
         """Output class for RunQueryPython"""
 
         results: List = Field(default_factory=list, description="The results of the query")
-
-    @field_validator("snowflake_conn")
-    def validate_snowflake_connector(cls, _snowflake_conn):
-        """Validate that the Snowflake connector is installed"""
-        try:
-            from snowflake import connector as snowflake_connector
-
-            return snowflake_connector
-        except ImportError:
-            warn(
-                "You need to have the `snowflake-connector-python` package installed to use the Snowflake steps that "
-                "are based around SnowflakeRunQueryPython. You can install this in Koheesio by adding "
-                "`koheesio[snowflake]` to your package dependencies."
-            )
 
     @field_validator("query")
     def validate_query(cls, query):
@@ -317,11 +314,11 @@ class SnowflakeRunQueryPython(SnowflakeStep):
     @property
     @contextmanager
     def conn(self):
-        if not self.snowflake_conn:
-            raise ValueError("Snowflake connector is not installed. Please install `snowflake-connector-python`.")
+        if not self._snowflake_connector:
+            raise RuntimeError("Snowflake connector is not installed. Please install `snowflake-connector-python`.")
 
         sf_options = self.get_options()
-        _conn = self.snowflake_conn.connect(**sf_options)
+        _conn = self._snowflake_connector.connect(**sf_options)
         self.log.info(f"Connected to Snowflake account: {sf_options['account']}")
 
         try:
@@ -343,58 +340,7 @@ class SnowflakeRunQueryPython(SnowflakeStep):
                 self.output.results.extend(cursor.fetchall())
 
 
-class TableExists(SnowflakeTableStep):
-    """
-    Check if the table exists in Snowflake by using INFORMATION_SCHEMA.
-
-    Example
-    -------
-    ```python
-    k = TableExists(
-        url="foo.snowflakecomputing.com",
-        user="YOUR_USERNAME",
-        password="***",
-        database="db",
-        schema="schema",
-        table="table",
-    )
-    ```
-    """
-
-    class Output(StepOutput):
-        """Output class for TableExists"""
-
-        exists: bool = Field(default=..., description="Whether or not the table exists")
-
-    def execute(self):
-        query = (
-            dedent(
-                # Force upper case, due to case-sensitivity of where clause
-                f"""
-                SELECT *
-                FROM INFORMATION_SCHEMA.TABLES
-                WHERE TABLE_CATALOG     = '{self.database}'
-                  AND TABLE_SCHEMA      = '{self.sfSchema}'
-                  AND TABLE_TYPE        = 'BASE TABLE'
-                  AND upper(TABLE_NAME) = '{self.table.upper()}'
-                """  # nosec B608: hardcoded_sql_expressions
-            )
-            .upper()
-            .strip()
-        )
-
-        self.log.debug(f"Query that was executed to check if the table exists:\n{query}")
-
-        df = Query(**self.get_options(), query=query).read()
-
-        exists = df.count() > 0
-        self.log.info(
-            f"Table '{self.database}.{self.sfSchema}.{self.table}' {'exists' if exists else 'does not exist'}"
-        )
-        self.output.exists = exists
-
-
-class GrantPrivilegesOnObject(SnowflakeStep):
+class GrantPrivilegesOnObject(SnowflakeRunQueryPython):
     """
     A wrapper on Snowflake GRANT privileges
 
@@ -406,6 +352,8 @@ class GrantPrivilegesOnObject(SnowflakeStep):
 
     Parameters
     ----------
+    account : str
+        Snowflake Account Name.
     warehouse : str
         The name of the warehouse. Alias for `sfWarehouse`
     user : str
@@ -456,8 +404,9 @@ class GrantPrivilegesOnObject(SnowflakeStep):
         validation_alias="roles",
         description="The Role or list of Roles to grant the privileges to",
     )
+    query: str = "GRANT {privileges} ON {type} {object} TO ROLE {role}"
 
-    class Output(SnowflakeStep.Output):
+    class Output(SnowflakeRunQueryPython.Output):
         """Output class for GrantPrivilegesOnObject"""
 
         query: conlist(str, min_length=1) = Field(
@@ -509,7 +458,12 @@ class GrantPrivilegesOnObject(SnowflakeStep):
         query : str
             The Query that performs the grant
         """
-        query = f"GRANT {','.join(self.privileges)} ON {self.type} {self.object} TO ROLE {role}".upper()
+        query = self.query.format(
+            privileges=",".join(self.privileges),
+            type=self.type,
+            object=self.object,
+            role=role,
+        )
         return query
 
     def execute(self):
@@ -519,7 +473,12 @@ class GrantPrivilegesOnObject(SnowflakeStep):
         for role in roles:
             query = self.get_query(role)
             self.output.query.append(query)
-            RunQuery(**self.get_options(), query=query).execute()
+
+            # Create a new instance of SnowflakeRunQueryPython with the current query
+            instance = SnowflakeRunQueryPython.from_step(self, query=query)
+            instance.execute()
+            print(f"{instance.output = }")
+            self.output.results.extend(instance.output.results)
 
 
 class GrantPrivilegesOnFullyQualifiedObject(GrantPrivilegesOnObject):
@@ -586,90 +545,3 @@ class GrantPrivilegesOnView(GrantPrivilegesOnFullyQualifiedObject):
         description="The name of the View to grant Privileges on. This should be just the name of the view; so "
         "without Database and Schema, use sfDatabase/database and sfSchema/schema to set those instead.",
     )
-
-
-class TagSnowflakeQuery(Step, ExtraParamsMixin):
-    """
-    Provides Snowflake query tag pre-action that can be used to easily find queries through SF history search
-    and further group them for debugging and cost tracking purposes.
-
-    Takes in query tag attributes as kwargs and additional Snowflake options dict that can optionally contain
-    other set of pre-actions to be applied to a query, in that case existing pre-action aren't dropped, query tag
-    pre-action will be added to them.
-
-    Passed Snowflake options dictionary is not modified in-place, instead anew dictionary containing updated pre-actions
-    is returned.
-
-    Notes
-    -----
-    See this article for explanation: https://select.dev/posts/snowflake-query-tags
-
-    Arbitrary tags can be applied, such as team, dataset names, business capability, etc.
-
-    Example
-    -------
-    #### Using `options` parameter
-    ```python
-    query_tag = AddQueryTag(
-        options={"preactions": "ALTER SESSION"},
-        task_name="cleanse_task",
-        pipeline_name="ingestion-pipeline",
-        etl_date="2022-01-01",
-        pipeline_execution_time="2022-01-01T00:00:00",
-        task_execution_time="2022-01-01T01:00:00",
-        environment="dev",
-        trace_id="e0fdec43-a045-46e5-9705-acd4f3f96045",
-        span_id="cb89abea-1c12-471f-8b12-546d2d66f6cb",
-        ),
-    ).execute().options
-    ```
-    In this example, the query tag pre-action will be added to the Snowflake options.
-
-    #### Using `preactions` parameter
-    Instead of using `options` parameter, you can also use `preactions` parameter to provide existing preactions.
-    ```python
-    query_tag = AddQueryTag(
-        preactions="ALTER SESSION"
-        ...
-    ).execute().options
-    ```
-
-    The result will be the same as in the previous example.
-
-    #### Using `get_options` method
-    The shorthand method `get_options` can be used to get the options dictionary.
-    ```python
-    query_tag = AddQueryTag(...).get_options()
-    ```
-    """
-
-    options: Dict = Field(
-        default_factory=dict, description="Additional Snowflake options, optionally containing additional preactions"
-    )
-
-    preactions: Optional[str] = Field(default="", description="Existing preactions from Snowflake options")
-
-    class Output(StepOutput):
-        """Output class for AddQueryTag"""
-
-        options: Dict = Field(default=..., description="Snowflake options dictionary with added query tag preaction")
-
-    def execute(self) -> TagSnowflakeQuery.Output:
-        """Add query tag preaction to Snowflake options"""
-        tag_json = json.dumps(self.extra_params, indent=4, sort_keys=True)
-        tag_preaction = f"ALTER SESSION SET QUERY_TAG = '{tag_json}';"
-        preactions = self.options.get("preactions", self.preactions)
-        # update options with new preactions
-        self.output.options = {**self.options, "preactions": f"{preactions}\n{tag_preaction}".strip()}
-
-    def get_options(self) -> Dict:
-        """shorthand method to get the options dictionary
-
-        Functionally equivalent to running `execute().options`
-
-        Returns
-        -------
-        Dict
-            Snowflake options dictionary with added query tag preaction
-        """
-        return self.execute().options
