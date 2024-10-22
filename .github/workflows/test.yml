@@ -67,6 +67,7 @@ jobs:
 
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
 #        os: [ubuntu-latest, windows-latest, macos-latest]  # FIXME: Add Windows and macOS
         os: [ubuntu-latest]
@@ -102,7 +103,7 @@ jobs:
 #        hatch fmt --check --python=${{ matrix.python-version }}
 
     - name: Run tests
-      run: hatch test --python=${{ matrix.python-version }} -i version=pyspark${{ matrix.pyspark-version }}
+      run: hatch test --python=${{ matrix.python-version }} -i version=pyspark${{ matrix.pyspark-version }} --verbose
 
   # https://github.com/marketplace/actions/alls-green#why
   final_check: # This job does nothing and is only used for the branch protection

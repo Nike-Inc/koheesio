@@ -1,9 +1,7 @@
 import datetime
 import os
-import random
 import socket
 import sys
-import time
 from collections import namedtuple
 from decimal import Decimal
 from pathlib import Path
@@ -71,20 +69,20 @@ def spark(warehouse_path, random_uuid):
     builder = SparkSession.builder.appName("test_session" + random_uuid)
 
     if os.environ.get("SPARK_REMOTE") == "local":
-        start = 15002
-        end = 15020
-        _port = random.randint(start, end)
-        i = 0
+        # start = 15002
+        # end = 15040
+        # _port = random.randint(start, end)
+        # i = 0
 
-        while is_port_free(_port):
-            _port = random.randint(start, end)
-            time.sleep(5)
-            i += 1
-            
-            if i > 10:
-                raise Exception(f"Could not find a free port between {start} and {end}")
+        # while is_port_free(_port):
+        #     _port = random.randint(start, end)
+        #     time.sleep(5)
+        #     i += 1
 
-        builder = builder.remote("local").config("spark.connect.grpc.binding.port", _port)
+        #     if i > 10:
+        #         raise Exception(f"Could not find a free port between {start} and {end}")
+
+        builder = builder.remote("local").config("spark.connect.grpc.binding.port", "15001")
         from pyspark.version import __version__ as spark_version
 
         extra_packages.append(f"org.apache.spark:spark-connect_2.12:{spark_version}")
