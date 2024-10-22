@@ -5,8 +5,8 @@ import chispa
 import pydantic
 import pytest
 from conftest import await_job_completion
+from pyspark.sql import DataFrame
 
-from koheesio.spark import DataFrame
 from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.readers.delta import DeltaTableReader
 from koheesio.spark.snowflake import (
@@ -133,7 +133,7 @@ class TestSnowflakeSyncTask:
         snowflake_staging_file,
     ):
         # Prepare Delta requirements
-        source_table = DeltaTableStep(database="klettern", table="test_merge")
+        source_table = DeltaTableStep(datbase="klettern", table="test_merge")
         spark.sql(
             f"""
         CREATE OR REPLACE TABLE {source_table.table_name}
@@ -185,7 +185,7 @@ class TestSnowflakeSyncTask:
             # Test that this call doesn't raise exception after all queries were completed
             task.writer.await_termination()
             task.execute()
-            await_job_completion(spark)
+            await_job_completion()
 
         # Validate result
         df = spark.read.parquet(snowflake_staging_file).select("Country", "NumVaccinated", "AvailableDoses")

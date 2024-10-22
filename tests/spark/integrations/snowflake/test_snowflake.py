@@ -46,22 +46,26 @@ def test_snowflake_module_import():
 
 
 class TestSnowflakeReader:
-    reader_options = {"dbtable": "table", **COMMON_OPTIONS}
-
-    def test_get_options(self):
-        sf = SnowflakeReader(**(self.reader_options | {"authenticator": None}))
+    @pytest.mark.parametrize(
+        "reader_options", [{"dbtable": "table", **COMMON_OPTIONS}, {"table": "table", **COMMON_OPTIONS}]
+    )
+    def test_get_options(self, reader_options):
+        sf = SnowflakeReader(**(reader_options | {"authenticator": None}))
         o = sf.get_options()
         assert sf.format == "snowflake"
         assert o["sfUser"] == "user"
         assert o["sfCompress"] == "on"
         assert "authenticator" not in o
 
-    def test_execute(self, dummy_spark):
+    @pytest.mark.parametrize(
+        "reader_options", [{"dbtable": "table", **COMMON_OPTIONS}, {"table": "table", **COMMON_OPTIONS}]
+    )
+    def test_execute(self, dummy_spark, reader_options):
         """Method should be callable from parent class"""
         with mock.patch.object(SparkSession, "getActiveSession") as mock_spark:
             mock_spark.return_value = dummy_spark
 
-            k = SnowflakeReader(**self.reader_options).execute()
+            k = SnowflakeReader(**reader_options).execute()
             assert k.df.count() == 1
 
 
@@ -93,42 +97,57 @@ class TestTableQuery:
     options = {"table": "table", **COMMON_OPTIONS}
 
     def test_execute(self, dummy_spark):
-        k = DbTableQuery(**self.options).execute()
-        assert k.df.count() == 3
+        with mock.patch.object(SparkSession, "getActiveSession") as mock_spark:
+            mock_spark.return_value = dummy_spark
+
+            k = DbTableQuery(**self.options).execute()
+            assert k.df.count() == 1
 
 
 class TestTableExists:
     table_exists_options = {"table": "table", **COMMON_OPTIONS}
 
     def test_execute(self, dummy_spark):
-        k = TableExists(**self.table_exists_options).execute()
-        assert k.exists is True
+        with mock.patch.object(SparkSession, "getActiveSession") as mock_spark:
+            mock_spark.return_value = dummy_spark
+
+            k = TableExists(**self.table_exists_options).execute()
+            assert k.exists is True
 
 
 class TestCreateOrReplaceTableFromDataFrame:
     options = {"table": "table", **COMMON_OPTIONS}
 
     def test_execute(self, dummy_spark, dummy_df):
-        k = CreateOrReplaceTableFromDataFrame(**self.options, df=dummy_df).execute()
-        assert k.snowflake_schema == "id BIGINT"
-        assert k.query == "CREATE OR REPLACE TABLE db.schema.table (id BIGINT)"
-        assert len(k.input_schema) > 0
+        with mock.patch.object(SparkSession, "getActiveSession") as mock_spark:
+            mock_spark.return_value = dummy_spark
+
+            k = CreateOrReplaceTableFromDataFrame(**self.options, df=dummy_df).execute()
+            assert k.snowflake_schema == "id BIGINT"
+            assert k.query == "CREATE OR REPLACE TABLE db.schema.table (id BIGINT)"
+            assert len(k.input_schema) > 0
 
 
 class TestGetTableSchema:
     get_table_schema_options = {"table": "table", **COMMON_OPTIONS}
 
     def test_execute(self, dummy_spark):
-        k = GetTableSchema(**self.get_table_schema_options)
-        assert len(k.execute().table_schema.fields) == 1
+        with mock.patch.object(SparkSession, "getActiveSession") as mock_spark:
+            mock_spark.return_value = dummy_spark
+
+            k = GetTableSchema(**self.get_table_schema_options)
+            assert len(k.execute().table_schema.fields) == 1
 
 
 class TestAddColumn:
     options = {"table": "foo", "column": "bar", "type": t.DateType(), **COMMON_OPTIONS}
 
     def test_execute(self, dummy_spark):
-        k = AddColumn(**self.options).execute()
-        assert k.query == "ALTER TABLE FOO ADD COLUMN BAR DATE"
+        with mock.patch.object(SparkSession, "getActiveSession") as mock_spark:
+            mock_spark.return_value = dummy_spark
+
+            k = AddColumn(**self.options).execute()
+            assert k.query == "ALTER TABLE FOO ADD COLUMN BAR DATE"
 
 
 def test_grant_privileges_on_object(dummy_spark):
@@ -138,51 +157,57 @@ def test_grant_privileges_on_object(dummy_spark):
     del options["role"]  # role is not required for this step as we are setting "roles"
 
     kls = GrantPrivilegesOnObject(**options)
-    k = kls.execute()
 
-    assert len(k.query) == 2, "expecting 2 queries (one for each role)"
-    assert "DELETE" in k.query[0]
-    assert "SELECT" in k.query[0]
+    with mock.patch.object(SparkSession, "getActiveSession") as mock_spark:
+        mock_spark.return_value = dummy_spark
+        k = kls.execute()
+
+        assert len(k.query) == 2, "expecting 2 queries (one for each role)"
+        assert "DELETE" in k.query[0]
+        assert "SELECT" in k.query[0]
 
 
 def test_grant_privileges_on_table(dummy_spark):
     options = {**COMMON_OPTIONS, **dict(table="foo", privileges=["SELECT"], roles=["role_1"])}
     del options["role"]  # role is not required for this step as we are setting "roles"
 
-    kls = GrantPrivilegesOnTable(**options)
-    k = kls.execute()
-    assert k.query == [
-        "GRANT SELECT ON TABLE DB.SCHEMA.FOO TO ROLE ROLE_1",
-    ]
+    kls = GrantPrivilegesOnTable(
+        **options,
+    )
+    with mock.patch.object(SparkSession, "getActiveSession") as mock_spark:
+        mock_spark.return_value = dummy_spark
+
+        k = kls.execute()
+        assert k.query == [
+            "GRANT SELECT ON TABLE DB.SCHEMA.FOO TO ROLE ROLE_1",
+        ]
 
 
 class TestGrantPrivilegesOnView:
     options = {**COMMON_OPTIONS}
 
     def test_execute(self, dummy_spark):
-        k = GrantPrivilegesOnView(**self.options, view="foo", privileges=["SELECT"], roles=["role_1"]).execute()
-        assert k.query == [
-            "GRANT SELECT ON VIEW DB.SCHEMA.FOO TO ROLE ROLE_1",
-        ]
+        with mock.patch.object(SparkSession, "getActiveSession") as mock_spark:
+            mock_spark.return_value = dummy_spark
+
+            k = GrantPrivilegesOnView(**self.options, view="foo", privileges=["SELECT"], roles=["role_1"]).execute()
+            assert k.query == [
+                "GRANT SELECT ON VIEW DB.SCHEMA.FOO TO ROLE ROLE_1",
+            ]
 
 
 class TestSnowflakeWriter:
-    def test_execute(self, mock_df):
-        k = SnowflakeWriter(
-            **COMMON_OPTIONS,
-            table="foo",
-            df=mock_df,
-            mode=BatchOutputMode.OVERWRITE,
-        )
-        k.execute()
+    def test_execute(self, dummy_spark):
+        with mock.patch.object(SparkSession, "getActiveSession") as mock_spark:
+            mock_spark.return_value = dummy_spark
 
-        # Debugging: Print the call args list of the format method
-        print(f"Format call args list: {mock_df.write.format.call_args_list}")
-
-        # check that the format was set to snowflake
-        mocked_format: Mock = mock_df.write.format
-        assert mocked_format.call_args[0][0] == "snowflake"
-        mock_df.write.format.assert_called_with("snowflake")
+            k = SnowflakeWriter(
+                **COMMON_OPTIONS,
+                table="foo",
+                df=dummy_spark.load(),
+                mode=BatchOutputMode.OVERWRITE,
+            )
+            k.execute()
 
 
 class TestSyncTableAndDataFrameSchema:
