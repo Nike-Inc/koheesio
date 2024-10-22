@@ -46,7 +46,7 @@ from copy import deepcopy
 from textwrap import dedent
 from typing import Any, Dict, List, Optional, Set, Union
 
-from pyspark.sql import DataFrame, Window
+from pyspark.sql import Window
 from pyspark.sql import functions as f
 from pyspark.sql import types as t
 
@@ -61,7 +61,7 @@ from koheesio.models import (
     field_validator,
     model_validator,
 )
-from koheesio.spark import SparkStep
+from koheesio.spark import DataFrame, SparkStep
 from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.readers.delta import DeltaTableReader, DeltaTableStreamReader
 from koheesio.spark.readers.jdbc import JdbcReader
@@ -193,7 +193,7 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):
                 "sfSchema": self.sfSchema,
                 "sfRole": self.role,
                 "sfWarehouse": self.warehouse,
-                **self.options,
+                **self.options,  # type: ignore
             }.items()
             if value is not None
         }
@@ -809,7 +809,7 @@ class AddColumn(SnowflakeStep):
 
     table: str = Field(default=..., description="The name of the Snowflake table")
     column: str = Field(default=..., description="The name of the new column")
-    type: f.DataType = Field(default=..., description="The DataType represented as a Spark DataType")
+    type: t.DataType = Field(default=..., description="The DataType represented as a Spark DataType")
 
     class Output(SnowflakeStep.Output):
         """Output class for AddColumn"""
@@ -1094,9 +1094,9 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeStep):
     @property
     def non_key_columns(self) -> List[str]:
         """Columns of source table that aren't part of the (composite) primary key"""
-        lowercase_key_columns: Set[str] = {c.lower() for c in self.key_columns}
+        lowercase_key_columns: Set[str] = {c.lower() for c in self.key_columns}  # type: ignore
         source_table_columns = self.source_table.columns
-        non_key_columns: List[str] = [c for c in source_table_columns if c.lower() not in lowercase_key_columns]
+        non_key_columns: List[str] = [c for c in source_table_columns if c.lower() not in lowercase_key_columns]  # type: ignore
         return non_key_columns
 
     @property
