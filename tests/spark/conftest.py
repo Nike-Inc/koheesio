@@ -1,6 +1,9 @@
 import datetime
 import os
+import random
+import socket
 import sys
+import time
 from collections import namedtuple
 from decimal import Decimal
 from pathlib import Path
@@ -33,6 +36,15 @@ from koheesio.logger import LoggingFactory
 from koheesio.spark.readers.dummy import DummyReader
 
 
+def is_port_free(port):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            s.bind(("localhost", port))
+            return True
+        except socket.error:
+            return False
+
+
 @pytest.fixture(scope="session")
 def warehouse_path(tmp_path_factory, random_uuid, logger):
     fldr = tmp_path_factory.mktemp("spark-warehouse" + random_uuid)
@@ -59,7 +71,20 @@ def spark(warehouse_path, random_uuid):
     builder = SparkSession.builder.appName("test_session" + random_uuid)
 
     if os.environ.get("SPARK_REMOTE") == "local":
-        builder = builder.remote("local").config("spark.connect.grpc.binding.port", "150001")
+        start = 15002
+        end = 15020
+        _port = random.randint(start, end)
+        i = 0
+
+        while is_port_free(_port):
+            _port = random.randint(start, end)
+            time.sleep(5)
+            i += 1
+            
+            if i > 10:
+                raise Exception(f"Could not find a free port between {start} and {end}")
+
+        builder = builder.remote("local").config("spark.connect.grpc.binding.port", _port)
         from pyspark.version import __version__ as spark_version
 
         extra_packages.append(f"org.apache.spark:spark-connect_2.12:{spark_version}")
