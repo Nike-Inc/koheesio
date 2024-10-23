@@ -35,17 +35,18 @@ DeltaTableWriter(
 """
 
 from functools import partial
-from typing import List, Optional, Set, Type, Union
+from typing import Callable, Dict, List, Optional, Set, Type, Union
 
-from delta.tables import DeltaMergeBuilder, DeltaTable
+from delta.tables import DeltaMergeBuilder
 from py4j.protocol import Py4JError
 from pyspark.sql import DataFrameWriter
 
 from koheesio.models import ExtraParamsMixin, Field, field_validator
 from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.utils import on_databricks
+from koheesio.spark.utils.connect import is_remote_session
 from koheesio.spark.writers import BatchOutputMode, StreamingOutputMode, Writer
-from koheesio.spark.writers.delta.utils import log_clauses
+from koheesio.spark.writers.delta.utils import get_delta_table_for_name, log_clauses
 
 
 class DeltaTableWriter(Writer, ExtraParamsMixin):
@@ -157,8 +158,9 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
 
         if self.table.exists:
             merge_builder = self._get_merge_builder(merge_builder)
+            from koheesio.spark.utils.connect import is_remote_session
 
-            if on_databricks():
+            if on_databricks() and not is_remote_session():
                 try:
                     source_alias = merge_builder._jbuilder.getMergePlan().source().alias()
                     target_alias = merge_builder._jbuilder.getMergePlan().target().alias()
@@ -221,7 +223,7 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
 
         if self.table.exists:
             builder = (
-                DeltaTable.forName(sparkSession=self.spark, tableOrViewName=self.table.table_name)
+                get_delta_table_for_name(spark_session=self.spark, table_name=self.table.table_name)
                 .alias(target_alias)
                 .merge(source=self.df.alias(source_alias), condition=merge_cond)
                 .whenMatchedUpdateAll(condition=update_cond)
@@ -268,7 +270,7 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
         target_alias = self.params.get("target_alias", "target")
 
         builder = (
-            DeltaTable.forName(self.spark, self.table.table_name)
+            get_delta_table_for_name(spark_session=self.spark, table_name=self.table.table_name)
             .alias(target_alias)
             .merge(self.df.alias(source_alias), merge_cond)
         )
@@ -332,7 +334,6 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
         - BatchOutputMode
         - StreamingOutputMode
         """
-        from koheesio.spark.utils.connect import is_remote_session
 
         if (
             choice.upper() in (BatchOutputMode.MERGEALL, BatchOutputMode.MERGE_ALL, BatchOutputMode.MERGE)
@@ -361,7 +362,7 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
     @property
     def writer(self) -> Union[DeltaMergeBuilder, DataFrameWriter]:
         """Specify DeltaTableWriter"""
-        map_mode_writer = {
+        map_mode_writer: Dict[str, Callable] = {
             BatchOutputMode.MERGEALL.value: self.__merge_all,
             BatchOutputMode.MERGE.value: self.__merge,
         }
