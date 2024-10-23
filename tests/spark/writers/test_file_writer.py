@@ -1,8 +1,6 @@
 from pathlib import Path
 from unittest.mock import MagicMock
 
-
-from koheesio.spark import DataFrame
 from koheesio.spark.writers import BatchOutputMode
 from koheesio.spark.writers.file_writer import FileFormat, FileWriter
 
@@ -22,7 +20,19 @@ def test_execute(dummy_df, mocker):
 
     mock_df_writer = MagicMock()
 
-    mocker.patch.object(DataFrame, "write", mock_df_writer)
+    from koheesio.spark.utils.connect import is_remote_session
+
+    if is_remote_session():
+        from pyspark.sql import DataFrame as SparkDataFrame
+        from pyspark.sql.connect.dataframe import DataFrame as ConnectDataFrame
+
+        mocker.patch.object(SparkDataFrame, "write", mock_df_writer)
+        mocker.patch.object(ConnectDataFrame, "write", mock_df_writer)
+    else:
+        from pyspark.sql import DataFrame
+
+        mocker.patch.object(DataFrame, "write", mock_df_writer)
+
     mock_df_writer.options.return_value = mock_df_writer
 
     writer.execute()

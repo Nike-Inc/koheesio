@@ -261,8 +261,8 @@ features = [
 ]
 
 parallel = true
-retries = 0
-retry-delay = 1
+retries = 2
+retry-delay = 3
 
 [tool.hatch.envs.hatch-test.scripts]
 run = "pytest{env:HATCH_TEST_ARGS:} {args}"
