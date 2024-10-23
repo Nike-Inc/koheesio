@@ -11,17 +11,16 @@ Prerequisites
 """
 
 import re
-from typing import Any, Dict, Optional, Union
 from abc import ABC
 from datetime import datetime
 from io import BytesIO, StringIO
 from pathlib import PurePath
+from typing import Any, Dict, Optional, Union
 
 import pandas as pd
 from boxsdk import Client, JWTAuth
 from boxsdk.object.file import File
 from boxsdk.object.folder import Folder
-
 from pyspark.sql.functions import expr, lit
 from pyspark.sql.types import StructType
 
@@ -463,7 +462,7 @@ class BoxCsvPathReader(BoxReaderBase):
 
         if len(files) > 0:
             self.log.info(
-                f"A total of {len(files)} files, that match the mask '{self.mask}' has been detected in {self.path}."
+                f"A total of {len(files)} files, that match the mask '{self.filter}' has been detected in {self.path}."
                 f" They will be loaded into Spark Dataframe: {files}"
             )
         else:

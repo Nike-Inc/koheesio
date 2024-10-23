@@ -1,6 +1,5 @@
 import datetime
 import os
-import socket
 import sys
 from collections import namedtuple
 from decimal import Decimal
@@ -35,15 +34,6 @@ from koheesio.logger import LoggingFactory
 from koheesio.spark.readers.dummy import DummyReader
 
 
-def is_port_free(port):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        try:
-            s.bind(("localhost", port))
-            return True
-        except socket.error:
-            return False
-
-
 @pytest.fixture(scope="session")
 def warehouse_path(tmp_path_factory, random_uuid, logger):
     fldr = tmp_path_factory.mktemp("spark-warehouse" + random_uuid)
@@ -62,12 +52,13 @@ def checkpoint_folder(tmp_path_factory, random_uuid, logger):
 def spark(warehouse_path, random_uuid):
     """Spark session fixture with Delta enabled."""
     builder = SparkSession.builder.appName("test_session" + random_uuid)
+    os.environ["SPARK_TESTING"] = "1"
 
-    if os.environ.get("SPARK_REMOTE") == "local":
+    if os.environ.get("SPARK_REMOTE") == "local" or os.environ["SPARK_TESTING"]:
         # SPARK_TESTING is set in environment variables
         # This triggers spark connect logic
         # ---->>>> For testing, we use 0 to use an ephemeral port to allow parallel testing.
-        # --->>>>>> See also SPARK-42272.
+        # --->>>>>> See also https://issues.apache.org/jira/browse/SPARK-42272
         from pyspark.version import __version__ as spark_version
 
         builder = configure_spark_with_delta_pip(

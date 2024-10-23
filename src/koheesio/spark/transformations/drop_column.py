@@ -46,5 +46,5 @@ class DropColumn(ColumnsTransformation):
     """
 
     def execute(self):
-        self.log.info(f"{self.column=}")
+        self.log.info(f"{self.columns=}")
         self.output.df = self.df.drop(*self.columns)

@@ -2,9 +2,11 @@
 This module provides classes for asynchronous steps in the koheesio package.
 """
 
-from typing import Dict, Union
 from abc import ABC
 from asyncio import iscoroutine
+from typing import Dict, Optional, Union
+
+from pydantic import PrivateAttr
 
 from koheesio.steps import Step, StepMetaClass, StepOutput
 
@@ -67,9 +69,7 @@ class AsyncStepOutput(Step.Output):
         --------
         ```python
         step_output = StepOutput(foo="bar")
-        step_output.merge(
-            {"lorem": "ipsum"}
-        )  # step_output will now contain {'foo': 'bar', 'lorem': 'ipsum'}
+        step_output.merge({"lorem": "ipsum"})  # step_output will now contain {'foo': 'bar', 'lorem': 'ipsum'}
         ```
 
         Functionally similar to adding two dicts together; like running `{**dict_a, **dict_b}`.
@@ -106,4 +106,4 @@ class AsyncStep(Step, ABC, metaclass=AsyncStepMetaClass):
         This class represents the output of the asyncio step. It inherits from the AsyncStepOutput class.
         """
 
-    __output__: Output
+    _output: Optional[Output] = PrivateAttr(default=None)

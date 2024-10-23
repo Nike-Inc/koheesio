@@ -14,16 +14,14 @@ to more arbitrary file systems (e.g., SFTP).
 """
 
 import gzip
-from typing import Literal, Optional
 from abc import ABC
 from functools import partial
 from os import linesep
 from tempfile import SpooledTemporaryFile
+from typing import Literal, Optional
 
 from pandas._typing import CompressionOptions as PandasCompressionOptions
-
 from pydantic import InstanceOf
-
 from pyspark import pandas
 
 from koheesio.models import ExtraParamsMixin, Field, constr
@@ -247,6 +245,15 @@ class PandasCsvBufferWriter(BufferWriter, ExtraParamsMixin):
         "Note: Pandas sets this default to 'infer', Koheesio sets this default to 'None' leaving the data uncompressed "
         "by default. Can be set to one of 'infer', 'gzip', 'bz2', 'zip', 'xz', 'zstd', or 'tar'. "
         "See Pandas documentation for more details.",
+    )
+    emptyValue: Optional[str] = Field(
+        default="",
+        description="The string to use for missing values. Koheesio sets this default to an empty string.",
+    )
+
+    nullValue: Optional[str] = Field(
+        default="",
+        description="The string to use for missing values. Koheesio sets this default to an empty string.",
     )
 
     # -- Pandas specific properties --

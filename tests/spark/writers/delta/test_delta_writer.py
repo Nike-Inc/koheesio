@@ -12,12 +12,10 @@ from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.utils import SPARK_MINOR_VERSION
 from koheesio.spark.writers import BatchOutputMode, StreamingOutputMode
 from koheesio.spark.writers.delta import DeltaTableStreamWriter, DeltaTableWriter
-from koheesio.spark.writers.delta.utils import log_clauses
+from koheesio.spark.writers.delta.utils import SparkConnectDeltaTableException, log_clauses
 from koheesio.spark.writers.stream import Trigger
 
 pytestmark = pytest.mark.spark
-
-skip_reason = "Tests are not working with PySpark 3.5 due to delta calling _sc. Test requires pyspark version >= 4.0"
 
 
 def test_delta_table_writer(dummy_df, spark):
@@ -51,9 +49,6 @@ def test_delta_partitioning(spark, sample_df_to_partition):
 def test_delta_table_merge_all(spark):
     from koheesio.spark.utils.connect import is_remote_session
 
-    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
-        pytest.skip(reason=skip_reason)
-
     table_name = "test_merge_all_table"
     target_df = spark.createDataFrame(
         [{"id": 1, "value": "no_merge"}, {"id": 2, "value": "expected_merge"}, {"id": 5, "value": "xxxx"}]
@@ -75,7 +70,7 @@ def test_delta_table_merge_all(spark):
         5: "xxxx",
     }
     DeltaTableWriter(table=table_name, output_mode=BatchOutputMode.APPEND, df=target_df).execute()
-    DeltaTableWriter(
+    merge_writer = DeltaTableWriter(
         table=table_name,
         output_mode=BatchOutputMode.MERGEALL,
         output_mode_params={
@@ -84,18 +79,29 @@ def test_delta_table_merge_all(spark):
             "insert_cond": F.expr("source.value IS NOT NULL"),
         },
         df=source_df,
-    ).execute()
-    result = {
-        list(row.asDict().values())[0]: list(row.asDict().values())[1] for row in spark.read.table(table_name).collect()
-    }
-    assert result == expected
+    )
+
+    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
+        with pytest.raises(SparkConnectDeltaTableException) as exc_info:
+            merge_writer.execute()
+
+        assert str(exc_info.value).startswith("`DeltaTable.forName` is not supported due to delta calling _sc")
+    else:
+        merge_writer.execute()
+        result = {
+            list(row.asDict().values())[0]: list(row.asDict().values())[1]
+            for row in spark.read.table(table_name).collect()
+        }
+        assert result == expected
 
 
 def test_deltatablewriter_with_invalid_conditions(spark, dummy_df):
     from koheesio.spark.utils.connect import is_remote_session
 
     if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
-        pytest.skip(reason=skip_reason)
+        pytest.skip(
+            reason="Tests are not working with PySpark 3.5 due to delta calling _sc. Test requires pyspark version >= 4.0"
+        )
 
     table_name = "delta_test_table"
     merge_builder = (
@@ -284,9 +290,6 @@ def test_delta_with_options(spark):
 def test_merge_from_args(spark, dummy_df):
     from koheesio.spark.utils.connect import is_remote_session
 
-    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
-        pytest.skip(reason=skip_reason)
-
     table_name = "test_table_merge_from_args"
     dummy_df.write.format("delta").saveAsTable(table_name)
 
@@ -314,14 +317,20 @@ def test_merge_from_args(spark, dummy_df):
                 "merge_cond": "source.id=target.id",
             },
         )
-        writer._merge_builder_from_args()
 
-        mock_delta_builder.whenMatchedUpdate.assert_called_once_with(
-            set={"id": "source.id"}, condition="source.id=target.id"
-        )
-        mock_delta_builder.whenNotMatchedInsert.assert_called_once_with(
-            values={"id": "source.id"}, condition="source.id IS NOT NULL"
-        )
+        if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
+            with pytest.raises(SparkConnectDeltaTableException) as exc_info:
+                writer._merge_builder_from_args()
+
+            assert str(exc_info.value).startswith("`DeltaTable.forName` is not supported due to delta calling _sc")
+        else:
+            writer._merge_builder_from_args()
+            mock_delta_builder.whenMatchedUpdate.assert_called_once_with(
+                set={"id": "source.id"}, condition="source.id=target.id"
+            )
+            mock_delta_builder.whenNotMatchedInsert.assert_called_once_with(
+                values={"id": "source.id"}, condition="source.id IS NOT NULL"
+            )
 
 
 @pytest.mark.parametrize(
@@ -347,9 +356,6 @@ def test_merge_from_args_raise_value_error(spark, output_mode_params):
 
 def test_merge_no_table(spark):
     from koheesio.spark.utils.connect import is_remote_session
-
-    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
-        pytest.skip(reason=skip_reason)
 
     table_name = "test_merge_no_table"
     target_df = spark.createDataFrame(
@@ -386,20 +392,29 @@ def test_merge_no_table(spark):
         ],
         "merge_cond": "source.id=target.id",
     }
-
-    DeltaTableWriter(
+    writer1 = DeltaTableWriter(
         df=target_df, table=table_name, output_mode=BatchOutputMode.MERGE, output_mode_params=params
-    ).execute()
-
-    DeltaTableWriter(
+    )
+    writer2 = DeltaTableWriter(
         df=source_df, table=table_name, output_mode=BatchOutputMode.MERGE, output_mode_params=params
-    ).execute()
+    )
+    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
+        writer1.execute()
 
-    result = {
-        list(row.asDict().values())[0]: list(row.asDict().values())[1] for row in spark.read.table(table_name).collect()
-    }
+        with pytest.raises(SparkConnectDeltaTableException) as exc_info:
+            writer2.execute()
 
-    assert result == expected
+        assert str(exc_info.value).startswith("`DeltaTable.forName` is not supported due to delta calling _sc")
+    else:
+        writer1.execute()
+        writer2.execute()
+
+        result = {
+            list(row.asDict().values())[0]: list(row.asDict().values())[1]
+            for row in spark.read.table(table_name).collect()
+        }
+
+        assert result == expected
 
 
 def test_log_clauses(mocker):
