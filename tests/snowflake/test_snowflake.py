@@ -1,8 +1,6 @@
 import importlib
 import sys
-
 from unittest import mock
-from unittest.mock import MagicMock, patch
 
 import pytest
 from pydantic_core._pydantic_core import ValidationError
@@ -16,6 +14,7 @@ from koheesio.integrations.snowflake import (
     SnowflakeStep,
     SnowflakeTableStep,
 )
+from koheesio.integrations.snowflake.test_utils import mock_query
 
 COMMON_OPTIONS = {
     "url": "url",
@@ -26,65 +25,6 @@ COMMON_OPTIONS = {
     "role": "role",
     "warehouse": "warehouse",
 }
-
-
-@pytest.fixture(scope="function")
-def mock_query():
-    """Mock the query execution for SnowflakeRunQueryPython
-
-    This can be used to test the query execution without actually connecting to Snowflake.
-
-    Example
-    -------
-    ```python
-    def test_execute(self, mock_query):
-        # Arrange
-        query = "SELECT * FROM two_row_table"
-        mock_query.expected_data = [('row1',), ('row2',)]
-
-        # Act
-        instance = SnowflakeRunQueryPython(**COMMON_OPTIONS, query=query, account="42")
-        instance.execute()
-
-        # Assert
-        mock_query.assert_called_with(query)
-        assert instance.output.results == mock_query.expected_data
-    ```
-
-    In this example, we are using the mock_query fixture to test the execution of a query.
-    - We set the expected data to a known value by setting `mock_query.expected_data`,
-    - Then, we execute the query.
-    - We then assert that the query was called with the expected query by using `mock_query.assert_called_with` and
-        that the results are as expected.
-    """
-    with patch("koheesio.integrations.snowflake.SnowflakeRunQueryPython.conn", new_callable=MagicMock) as mock_conn:
-        mock_cursor = MagicMock()
-        mock_conn.__enter__.return_value.execute_string.return_value = [mock_cursor]
-
-        class MockQuery:
-            def __init__(self):
-                self.mock_conn = mock_conn
-                self.mock_cursor = mock_cursor
-                self._expected_data = []
-
-            def assert_called_with(self, query):
-                self.mock_conn.__enter__.return_value.execute_string.assert_called_once_with(query)
-                self.mock_cursor.fetchall.return_value = self.expected_data
-
-            @property
-            def expected_data(self):
-                return self._expected_data
-
-            @expected_data.setter
-            def expected_data(self, data):
-                self._expected_data = data
-                self.set_expected_data()
-
-            def set_expected_data(self):
-                self.mock_cursor.fetchall.return_value = self.expected_data
-
-        mock_query_instance = MockQuery()
-        yield mock_query_instance
 
 
 class TestGrantPrivilegesOnObject:
@@ -164,7 +104,6 @@ class TestSnowflakeRunQueryPython:
         _2 = SnowflakeRunQueryPython(**COMMON_OPTIONS, sql="SELECT foo", account="42")
         _3 = SnowflakeRunQueryPython(**COMMON_OPTIONS, query="SELECT foo", account="42")
 
-
     def test_get_options(self):
         """Test that the options are correctly generated"""
         # Arrange
@@ -208,6 +147,7 @@ class TestSnowflakeRunQueryPython:
         # Arrange -- remove the snowflake connector
         with mock.patch.dict("sys.modules", {"snowflake": None}):
             from koheesio.integrations.snowflake import safe_import_snowflake_connector
+
             # Act & Assert -- first test for the warning, then test for the error
             match_text = "You need to have the `snowflake-connector-python` package installed"
             with pytest.warns(UserWarning, match=match_text):
@@ -216,6 +156,7 @@ class TestSnowflakeRunQueryPython:
                 instance = SnowflakeRunQueryPython(**COMMON_OPTIONS, query="<REDACTED>", account="42")
             with pytest.raises(RuntimeError):
                 instance.execute()
+
 
 class TestSnowflakeBaseModel:
 

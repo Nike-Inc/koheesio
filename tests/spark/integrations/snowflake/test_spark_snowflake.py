@@ -1,22 +1,20 @@
+import logging
 from textwrap import dedent
 from unittest import mock
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
-from pyspark.sql import SparkSession
+
 from pyspark.sql import types as t
 
+from koheesio.integrations.snowflake.test_utils import mock_query
 from koheesio.integrations.spark.snowflake import (
     AddColumn,
     CreateOrReplaceTableFromDataFrame,
     DbTableQuery,
     GetTableSchema,
-    GrantPrivilegesOnObject,
-    GrantPrivilegesOnTable,
-    GrantPrivilegesOnView,
     Query,
     RunQuery,
-    SnowflakeBaseModel,
     SnowflakeReader,
     SnowflakeWriter,
     SyncTableAndDataFrameSchema,
@@ -58,35 +56,44 @@ class TestSnowflakeReader:
 
     def test_execute(self, dummy_spark):
         """Method should be callable from parent class"""
-        with mock.patch.object(SparkSession, "getActiveSession") as mock_spark:
-            mock_spark.return_value = dummy_spark
-
-            k = SnowflakeReader(**self.reader_options).execute()
-            assert k.df.count() == 1
+        k = SnowflakeReader(**self.reader_options).execute()
+        assert k.df.count() == 3
 
 
 class TestRunQuery:
-    query_options = {"query": "query", **COMMON_OPTIONS}
+    def test_deprecation(self):
+        """Test for the deprecation warning"""
+        with pytest.warns(
+            DeprecationWarning, match="The RunQuery class is deprecated and will be removed in a future release."
+        ):
+            try:
+                kls = RunQuery(
+                    **COMMON_OPTIONS,
+                    query="<deprecated>",
+                )
+            except RuntimeError:
+                pass  # Ignore any RuntimeError that occur after the warning
 
-    def test_get_options(self):
-        k = RunQuery(**self.query_options)
-        o = k.get_options()
+    def test_spark_connect(self, spark):
+        """Test that we get a RuntimeError when using a SparkSession without a JVM"""
+        from koheesio.spark.utils.connect import is_remote_session
 
-        assert o["host"] == o["sfURL"]
+        if not is_remote_session(spark):
+            pytest.skip(reason="Test only runs when we have a remote SparkSession")
 
-    def test_execute(self, dummy_spark):
-        pass
+        with pytest.raises(RuntimeError):
+            kls = RunQuery(
+                **COMMON_OPTIONS,
+                query="<deprecated>",
+            )
 
 
 class TestQuery:
-    query_options = {"query": "query", **COMMON_OPTIONS}
+    options = {"query": "query", **COMMON_OPTIONS}
 
     def test_execute(self, dummy_spark):
-        with mock.patch.object(SparkSession, "getActiveSession") as mock_spark:
-            mock_spark.return_value = dummy_spark
-
-            k = Query(**self.query_options)
-            assert k.df.count() == 1
+        k = Query(**self.options).execute()
+        assert k.df.count() == 3
 
 
 class TestTableQuery:
@@ -97,73 +104,32 @@ class TestTableQuery:
         assert k.df.count() == 3
 
 
-class TestTableExists:
-    table_exists_options = {"table": "table", **COMMON_OPTIONS}
-
-    def test_execute(self, dummy_spark):
-        k = TableExists(**self.table_exists_options).execute()
-        assert k.exists is True
-
-
 class TestCreateOrReplaceTableFromDataFrame:
-    options = {"table": "table", **COMMON_OPTIONS}
+    options = {"table": "table", "account": "bar", **COMMON_OPTIONS}
 
-    def test_execute(self, dummy_spark, dummy_df):
+    def test_execute(self, dummy_spark, dummy_df, mock_query):
         k = CreateOrReplaceTableFromDataFrame(**self.options, df=dummy_df).execute()
         assert k.snowflake_schema == "id BIGINT"
         assert k.query == "CREATE OR REPLACE TABLE db.schema.table (id BIGINT)"
         assert len(k.input_schema) > 0
+        mock_query.assert_called_with(k.query)
 
 
 class TestGetTableSchema:
-    get_table_schema_options = {"table": "table", **COMMON_OPTIONS}
+    options = {"table": "table", **COMMON_OPTIONS}
 
     def test_execute(self, dummy_spark):
-        k = GetTableSchema(**self.get_table_schema_options)
-        assert len(k.execute().table_schema.fields) == 1
+        k = GetTableSchema(**self.options)
+        assert len(k.execute().table_schema.fields) == 2
 
 
 class TestAddColumn:
-    options = {"table": "foo", "column": "bar", "type": t.DateType(), **COMMON_OPTIONS}
+    options = {"table": "foo", "column": "bar", "type": t.DateType(), "account": "foo", **COMMON_OPTIONS}
 
-    def test_execute(self, dummy_spark):
+    def test_execute(self, dummy_spark, mock_query):
         k = AddColumn(**self.options).execute()
         assert k.query == "ALTER TABLE FOO ADD COLUMN BAR DATE"
-
-
-def test_grant_privileges_on_object(dummy_spark):
-    options = dict(
-        **COMMON_OPTIONS, object="foo", type="TABLE", privileges=["DELETE", "SELECT"], roles=["role_1", "role_2"]
-    )
-    del options["role"]  # role is not required for this step as we are setting "roles"
-
-    kls = GrantPrivilegesOnObject(**options)
-    k = kls.execute()
-
-    assert len(k.query) == 2, "expecting 2 queries (one for each role)"
-    assert "DELETE" in k.query[0]
-    assert "SELECT" in k.query[0]
-
-
-def test_grant_privileges_on_table(dummy_spark):
-    options = {**COMMON_OPTIONS, **dict(table="foo", privileges=["SELECT"], roles=["role_1"])}
-    del options["role"]  # role is not required for this step as we are setting "roles"
-
-    kls = GrantPrivilegesOnTable(**options)
-    k = kls.execute()
-    assert k.query == [
-        "GRANT SELECT ON TABLE DB.SCHEMA.FOO TO ROLE ROLE_1",
-    ]
-
-
-class TestGrantPrivilegesOnView:
-    options = {**COMMON_OPTIONS}
-
-    def test_execute(self, dummy_spark):
-        k = GrantPrivilegesOnView(**self.options, view="foo", privileges=["SELECT"], roles=["role_1"]).execute()
-        assert k.query == [
-            "GRANT SELECT ON VIEW DB.SCHEMA.FOO TO ROLE ROLE_1",
-        ]
+        mock_query.assert_called_with(k.query)
 
 
 class TestSnowflakeWriter:
@@ -176,9 +142,6 @@ class TestSnowflakeWriter:
         )
         k.execute()
 
-        # Debugging: Print the call args list of the format method
-        print(f"Format call args list: {mock_df.write.format.call_args_list}")
-
         # check that the format was set to snowflake
         mocked_format: Mock = mock_df.write.format
         assert mocked_format.call_args[0][0] == "snowflake"
@@ -186,9 +149,10 @@ class TestSnowflakeWriter:
 
 
 class TestSyncTableAndDataFrameSchema:
-    @mock.patch("koheesio.spark.snowflake.AddColumn")
-    @mock.patch("koheesio.spark.snowflake.GetTableSchema")
+    @mock.patch("koheesio.integrations.spark.snowflake.AddColumn")
+    @mock.patch("koheesio.integrations.spark.snowflake.GetTableSchema")
     def test_execute(self, mock_get_table_schema, mock_add_column, spark, caplog):
+        # Arrange
         from pyspark.sql.types import StringType, StructField, StructType
 
         df = spark.createDataFrame(data=[["val"]], schema=["foo"])
@@ -201,7 +165,11 @@ class TestSyncTableAndDataFrameSchema:
             mock.Mock(table_schema=sf_schema_after),
         ]
 
-        with caplog.at_level("DEBUG"):
+        logger = logging.getLogger("koheesio")
+        logger.setLevel(logging.WARNING)
+
+        # Act and Assert -- dry run
+        with caplog.at_level(logging.WARNING):
             k = SyncTableAndDataFrameSchema(
                 **COMMON_OPTIONS,
                 table="foo",
@@ -213,12 +181,13 @@ class TestSyncTableAndDataFrameSchema:
             assert "Columns to be added to Spark DataFrame: {'bar'}" in caplog.text
             assert k.new_df_schema == StructType()
 
+        # Act and Assert -- execute
         k = SyncTableAndDataFrameSchema(
             **COMMON_OPTIONS,
             table="foo",
             df=df,
         ).execute()
-        assert k.df.columns == ["bar", "foo"]
+        assert sorted(k.df.columns) == ["bar", "foo"]
 
 
 @pytest.mark.parametrize(
@@ -249,6 +218,40 @@ class TestSyncTableAndDataFrameSchema:
 )
 def test_map_spark_type(input_value, expected):
     assert map_spark_type(input_value) == expected
+
+
+class TestTableExists:
+    options = dict(
+        sfURL="url",
+        sfUser="user",
+        sfPassword="password",
+        sfDatabase="database",
+        sfRole="role",
+        sfWarehouse="warehouse",
+        schema="schema",
+        table="table",
+    )
+
+    def test_table_exists(self, dummy_spark):
+        # Arrange
+        te = TableExists(**self.options)
+        expected_query = dedent(
+            """
+            SELECT *
+            FROM INFORMATION_SCHEMA.TABLES
+            WHERE TABLE_CATALOG     = 'DATABASE'
+              AND TABLE_SCHEMA      = 'SCHEMA'
+              AND TABLE_TYPE        = 'BASE TABLE'
+              AND UPPER(TABLE_NAME) = 'TABLE'
+            """
+        ).strip()
+
+        # Act
+        output = te.execute()
+
+        # Assert that the query is as expected and that we got exists as True
+        assert dummy_spark.options_dict["query"] == expected_query
+        assert output.exists
 
 
 class TestTagSnowflakeQuery:
@@ -290,40 +293,3 @@ class TestTagSnowflakeQuery:
         assert tagged_options["otherSfOption"] == "value"
         preactions = tagged_options["preactions"].replace("    ", "").replace("\n", "")
         assert preactions == expected_preactions
-
-
-def test_table_exists(spark):
-    # Create a TableExists instance
-    te = TableExists(
-        sfURL="url",
-        sfUser="user",
-        sfPassword="password",
-        sfDatabase="database",
-        sfRole="role",
-        sfWarehouse="warehouse",
-        schema="schema",
-        table="table",
-    )
-
-    expected_query = dedent(
-        """
-        SELECT *
-        FROM INFORMATION_SCHEMA.TABLES
-        WHERE TABLE_CATALOG     = 'DATABASE'
-          AND TABLE_SCHEMA      = 'SCHEMA'
-          AND TABLE_TYPE        = 'BASE TABLE'
-          AND UPPER(TABLE_NAME) = 'TABLE'
-        """
-    ).strip()
-
-    # Create a Mock object for the Query class
-    mock_query = Mock(spec=Query)
-    mock_query.read.return_value = spark.range(1)
-
-    # Patch the Query class to return the mock_query when instantiated
-    with patch("koheesio.spark.snowflake.Query", return_value=mock_query) as mock_query_class:
-        # Execute the SnowflakeBaseModel instance
-        te.execute()
-
-        # Assert that the query is as expected
-        assert mock_query_class.call_args[1]["query"] == expected_query

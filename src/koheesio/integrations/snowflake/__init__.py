@@ -42,10 +42,10 @@ format : str, optional, default="snowflake"
 
 from __future__ import annotations
 
-from types import ModuleType
 from typing import Any, Dict, List, Optional, Set, Union
 from abc import ABC
 from contextlib import contextmanager
+from types import ModuleType
 
 from koheesio import Step
 from koheesio.logger import warn
@@ -53,11 +53,11 @@ from koheesio.models import (
     BaseModel,
     ExtraParamsMixin,
     Field,
+    PrivateAttr,
     SecretStr,
     conlist,
     field_validator,
     model_validator,
-    PrivateAttr,
 )
 
 __all__ = [
@@ -69,7 +69,7 @@ __all__ = [
     "SnowflakeBaseModel",
     "SnowflakeStep",
     "SnowflakeTableStep",
-    "safe_import_snowflake_connector"
+    "safe_import_snowflake_connector",
 ]
 
 # pylint: disable=inconsistent-mro, too-many-lines
@@ -87,13 +87,14 @@ def safe_import_snowflake_connector() -> Optional[ModuleType]:
     """
     try:
         from snowflake import connector as snowflake_connector
+
         return snowflake_connector
     except (ImportError, ModuleNotFoundError):
         warn(
             "You need to have the `snowflake-connector-python` package installed to use the Snowflake steps that are"
             "based around SnowflakeRunQueryPython. You can install this in Koheesio by adding `koheesio[snowflake]` to "
             "your package dependencies.",
-            UserWarning
+            UserWarning,
         )
 
 

@@ -3,18 +3,20 @@ from textwrap import dedent
 from unittest import mock
 
 import chispa
-import pydantic
 import pytest
 from conftest import await_job_completion
 
+import pydantic
+
 from koheesio.integrations.snowflake import SnowflakeRunQueryPython
-from koheesio.spark import DataFrame
-from koheesio.spark.delta import DeltaTableStep
-from koheesio.spark.readers.delta import DeltaTableReader
+from koheesio.integrations.snowflake.test_utils import mock_query
 from koheesio.integrations.spark.snowflake import (
     SnowflakeWriter,
     SynchronizeDeltaToSnowflakeTask,
 )
+from koheesio.spark import DataFrame
+from koheesio.spark.delta import DeltaTableStep
+from koheesio.spark.readers.delta import DeltaTableReader
 from koheesio.spark.writers import BatchOutputMode, StreamingOutputMode
 from koheesio.spark.writers.delta import DeltaTableWriter
 from koheesio.spark.writers.stream import ForEachBatchStreamWriter
@@ -471,12 +473,16 @@ class TestMergeQuery:
             pk_columns=["Country"],
             non_pk_columns=["NumVaccinated", "AvailableDoses"],
         )
-        expected_query = """
-        MERGE INTO target_table target
-        USING tmp_table temp ON target.Country = temp.Country
-        WHEN MATCHED AND temp._change_type = 'update_postimage' THEN UPDATE SET NumVaccinated = temp.NumVaccinated, AvailableDoses = temp.AvailableDoses
-        WHEN NOT MATCHED AND temp._change_type != 'delete' THEN INSERT (Country, NumVaccinated, AvailableDoses) VALUES (temp.Country, temp.NumVaccinated, temp.AvailableDoses)
-        """
+        expected_query = dedent(
+            """
+            MERGE INTO target_table target
+            USING tmp_table temp ON target.Country = temp.Country
+            WHEN MATCHED AND temp._change_type = 'update_postimage'
+                THEN UPDATE SET NumVaccinated = temp.NumVaccinated, AvailableDoses = temp.AvailableDoses
+            WHEN NOT MATCHED AND temp._change_type != 'delete'
+                THEN INSERT (Country, NumVaccinated, AvailableDoses)
+                VALUES (temp.Country, temp.NumVaccinated, temp.AvailableDoses)"""
+        ).strip()
 
         assert query == expected_query
 
@@ -488,12 +494,17 @@ class TestMergeQuery:
             non_pk_columns=["NumVaccinated", "AvailableDoses"],
             enable_deletion=True,
         )
-        expected_query = """
-        MERGE INTO target_table target
-        USING tmp_table temp ON target.Country = temp.Country
-        WHEN MATCHED AND temp._change_type = 'update_postimage' THEN UPDATE SET NumVaccinated = temp.NumVaccinated, AvailableDoses = temp.AvailableDoses
-        WHEN NOT MATCHED AND temp._change_type != 'delete' THEN INSERT (Country, NumVaccinated, AvailableDoses) VALUES (temp.Country, temp.NumVaccinated, temp.AvailableDoses)
-        WHEN MATCHED AND temp._change_type = 'delete' THEN DELETE"""
+        expected_query = dedent(
+            """
+            MERGE INTO target_table target
+            USING tmp_table temp ON target.Country = temp.Country
+            WHEN MATCHED AND temp._change_type = 'update_postimage'
+                THEN UPDATE SET NumVaccinated = temp.NumVaccinated, AvailableDoses = temp.AvailableDoses
+            WHEN NOT MATCHED AND temp._change_type != 'delete'
+                THEN INSERT (Country, NumVaccinated, AvailableDoses)
+                VALUES (temp.Country, temp.NumVaccinated, temp.AvailableDoses)
+            WHEN MATCHED AND temp._change_type = 'delete' THEN DELETE"""
+        ).strip()
 
         assert query == expected_query
 

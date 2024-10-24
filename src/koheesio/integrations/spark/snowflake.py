@@ -5,7 +5,7 @@ Every class in this module is a subclass of `Step` or `Task` and is used to perf
 
 Notes
 -----
-Every Step in this module is based on [SnowflakeBaseModel](./snowflake.md#koheesio.spark.snowflake.SnowflakeBaseModel).
+Every Step in this module is based on [SnowflakeBaseModel](./snowflake.md#koheesio.integrations.snowflake.SnowflakeBaseModel).
 The following parameters are available for every Step.
 
 Parameters
@@ -39,21 +39,21 @@ format : str, optional, default="snowflake"
     The default `snowflake` format can be used natively in Databricks, use `net.snowflake.spark.snowflake` in other
     environments and make sure to install required JARs.
 """
-
+import json
 from abc import ABC
 from copy import deepcopy
-from textwrap import dedent
-from typing import Dict, List, Optional, Set, Union
+from textwrap import dedent, wrap
+from typing import Callable, Dict, List, Optional, Set, Union
 
 from pyspark.sql import Window
 from pyspark.sql import functions as f
 from pyspark.sql import types as t
 
-from koheesio import StepOutput
+from koheesio import Step, StepOutput
 from koheesio.integrations.snowflake import *
 from koheesio.logger import LoggingFactory, warn
 from koheesio.models import (
-    Field,
+    ExtraParamsMixin, Field,
     field_validator,
     model_validator,
 )
@@ -88,6 +88,8 @@ __all__ = [
     "SyncTableAndDataFrameSchema",
     "SynchronizeDeltaToSnowflakeTask",
     "TableExists",
+    "TagSnowflakeQuery",
+    "map_spark_type",
 ]
 
 # pylint: disable=inconsistent-mro, too-many-lines
@@ -191,7 +193,6 @@ def map_spark_type(spark_type: t.DataType):
 class SnowflakeSparkStep(SparkStep, SnowflakeBaseModel, ABC):
     """Expands the SnowflakeBaseModel so that it can be used as a SparkStep"""
 
-
 class SnowflakeTableStep(SnowflakeStep, ABC):
     """Expands the SnowflakeStep, adding a 'table' parameter"""
 
@@ -210,7 +211,7 @@ class SnowflakeTableStep(SnowflakeStep, ABC):
         return f"{self.database}.{self.sfSchema}.{self.table}"
 
 
-class SnowflakeReader(SnowflakeBaseModel, JdbcReader):
+class SnowflakeReader(SnowflakeBaseModel, JdbcReader, SparkStep):
     """
     Wrapper around JdbcReader for Snowflake.
 
@@ -237,8 +238,12 @@ class SnowflakeReader(SnowflakeBaseModel, JdbcReader):
         https://docs.snowflake.com/en/user-guide/spark-connector-use#setting-configuration-options-for-the-connector
     """
 
+    format: str = Field(default="snowflake", description="The format to use when writing to Snowflake")
     driver: Optional[str] = None  # overriding `driver` property of JdbcReader, because it is not required by Snowflake
 
+    def execute(self):
+        """Read from Snowflake"""
+        super().execute()
 
 class SnowflakeTransformation(SnowflakeBaseModel, Transformation, ABC):
     """Adds Snowflake parameters to the Transformation class"""
@@ -267,6 +272,22 @@ class RunQuery(SnowflakeSparkStep):
 
     query: str = Field(default=..., description="The query to run", alias="sql")
 
+    @model_validator(mode="after")
+    def validate_spark_and_deprecate(self):
+        """If we do not have a spark session with a JVM, we can not use spark to run the query"""
+        warn(
+            "The RunQuery class is deprecated and will be removed in a future release. "
+            "Please use the Python connector for Snowflake instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        if not hasattr(self.spark, "_jvm"):
+            raise RuntimeError(
+                "Your Spark session does not have a JVM and cannot run Snowflake query using RunQuery implementation. "
+                "Please update your code to use python connector for Snowflake."
+            )
+        return self
+
     @field_validator("query")
     def validate_query(cls, query):
         """Replace escape characters, strip whitespace, ensure it is not empty"""
@@ -276,19 +297,13 @@ class RunQuery(SnowflakeSparkStep):
         return query
 
     def execute(self) -> None:
-        # if we have a spark session with a JVM, we can use spark to run the query
-        if self.spark and hasattr(self.spark, "_jvm"):
-            # Executing the RunQuery without `host` option throws:
-            # An error occurred while calling z:net.snowflake.spark.snowflake.Utils.runQuery.
-            # : java.util.NoSuchElementException: key not found: host
-            options = self.get_options()
-            options["host"] = self.url
-            # noinspection PyProtectedMember
-            self.spark._jvm.net.snowflake.spark.snowflake.Utils.runQuery(self.get_options(), self.query)
-            return
-
-        # otherwise, we can use the snowflake connector to run the query
-        RunQueryPython.from_basemodel(self).execute()
+        # Executing the RunQuery without `host` option raises the following error:
+        #   An error occurred while calling z:net.snowflake.spark.snowflake.Utils.runQuery.
+        #   : java.util.NoSuchElementException: key not found: host
+        options = self.get_options()
+        options["host"] = self.url
+        # noinspection PyProtectedMember
+        self.spark._jvm.net.snowflake.spark.snowflake.Utils.runQuery(self.get_options(), self.query)
 
 
 class Query(SnowflakeReader):
@@ -430,6 +445,7 @@ class CreateOrReplaceTableFromDataFrame(SnowflakeTransformation):
 
     """
 
+    account: str = Field(default=..., description="The Snowflake account")
     table: str = Field(default=..., alias="table_name", description="The name of the (new) table")
 
     class Output(SnowflakeTransformation.Output):
@@ -454,7 +470,7 @@ class CreateOrReplaceTableFromDataFrame(SnowflakeTransformation):
         query = f"CREATE OR REPLACE TABLE {table_name} ({snowflake_schema})"
         self.output.query = query
 
-        RunQuery(**self.get_options(), query=query).execute()
+        SnowflakeRunQueryPython(**self.get_options(), query=query).execute()
 
 
 class GetTableSchema(SnowflakeStep):
@@ -526,6 +542,7 @@ class AddColumn(SnowflakeStep):
     type: DataType = Field(  # type: ignore
         default=..., description="The DataType represented as a Spark DataType"
     )
+    account: str = Field(default=..., description="The Snowflake account")
 
     class Output(SnowflakeStep.Output):
         """Output class for AddColumn"""
@@ -535,7 +552,7 @@ class AddColumn(SnowflakeStep):
     def execute(self):
         query = f"ALTER TABLE {self.table} ADD COLUMN {self.column} {map_spark_type(self.type)}".upper()
         self.output.query = query
-        RunQuery(**self.get_options(), query=query).execute()
+        SnowflakeRunQueryPython(**self.get_options(), query=query).execute()
 
 
 class SyncTableAndDataFrameSchema(SnowflakeStep, SnowflakeTransformation):
@@ -548,7 +565,7 @@ class SyncTableAndDataFrameSchema(SnowflakeStep, SnowflakeTransformation):
 
     df: DataFrame = Field(default=..., description="The Spark DataFrame")
     table: str = Field(default=..., description="The table name")
-    dry_run: Optional[bool] = Field(default=False, description="Only show schema differences, do not apply changes")
+    dry_run: bool = Field(default=False, description="Only show schema differences, do not apply changes")
 
     class Output(SparkStep.Output):
         """Output class for SyncTableAndDataFrameSchema"""
@@ -567,17 +584,20 @@ class SyncTableAndDataFrameSchema(SnowflakeStep, SnowflakeTransformation):
         # spark side
         df_schema = self.df.schema
         self.output.original_df_schema = deepcopy(df_schema)  # using deepcopy to avoid storing in place changes
-        df_cols = [c.name.lower() for c in df_schema]
+        df_cols = {c.name.lower() for c in df_schema}
 
         # snowflake side
-        sf_schema = GetTableSchema(**self.get_options(), table=self.table).execute().table_schema
+        _options = {**self.get_options(), "table": self.table}
+        sf_schema = GetTableSchema(**_options).execute().table_schema
         self.output.original_sf_schema = sf_schema
-        sf_cols = [c.name.lower() for c in sf_schema]
+        sf_cols = {c.name.lower() for c in sf_schema}
 
         if self.dry_run:
             # Display differences between Spark DataFrame and Snowflake schemas
             # and provide dummy values that are expected as class outputs.
+            _sf_diff = df_cols - sf_cols
             self.log.warning(f"Columns to be added to Snowflake table: {set(df_cols) - set(sf_cols)}")
+            _df_diff = sf_cols - df_cols
             self.log.warning(f"Columns to be added to Spark DataFrame: {set(sf_cols) - set(df_cols)}")
 
             self.output.new_df_schema = t.StructType()
@@ -623,15 +643,16 @@ class SnowflakeWriter(SnowflakeBaseModel, Writer):
 
     See Also
     --------
-    - [koheesio.steps.writers.Writer](writers/index.md#koheesio.spark.writers.Writer)
-    - [koheesio.steps.writers.BatchOutputMode](writers/index.md#koheesio.spark.writers.BatchOutputMode)
-    - [koheesio.steps.writers.StreamingOutputMode](writers/index.md#koheesio.spark.writers.StreamingOutputMode)
+    - [koheesio.spark.writers.Writer](writers/index.md#koheesio.spark.writers.Writer)
+    - [koheesio.spark.writers.BatchOutputMode](writers/index.md#koheesio.spark.writers.BatchOutputMode)
+    - [koheesio.spark.writers.StreamingOutputMode](writers/index.md#koheesio.spark.writers.StreamingOutputMode)
     """
 
     table: str = Field(default=..., description="Target table name")
     insert_type: Optional[BatchOutputMode] = Field(
         BatchOutputMode.APPEND, alias="mode", description="The insertion type, append or overwrite"
     )
+    format: str = Field("snowflake", description="The format to use when writing to Snowflake")
 
     def execute(self):
         """Write to Snowflake"""
@@ -641,7 +662,7 @@ class SnowflakeWriter(SnowflakeBaseModel, Writer):
         ).save()
 
 
-class SynchronizeDeltaToSnowflakeTask(SnowflakeStep):
+class SynchronizeDeltaToSnowflakeTask(SnowflakeSparkStep):
     """
     Synchronize a Delta table to a Snowflake table
 
@@ -653,6 +674,7 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeStep):
     -------
     ```python
     SynchronizeDeltaToSnowflakeTask(
+        account="acme",
         url="acme.snowflakecomputing.com",
         user="admin",
         role="ADMIN",
@@ -699,16 +721,20 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeStep):
         description="In case of debugging, set `persist_staging` to True to retain the staging table for inspection "
         "after synchronization.",
     )
-
     enable_deletion: Optional[bool] = Field(
         default=False,
         description="In case of merge synchronisation_mode add deletion statement in merge query.",
+    )
+    account: Optional[str] = Field(
+        default=None,
+        description="The Snowflake account to connect to. "
+        "If not provided, the `truncate_table` and `drop_table` methods will fail.",
     )
 
     writer_: Optional[Union[ForEachBatchStreamWriter, SnowflakeWriter]] = None
 
     @field_validator("staging_table_name")
-    def _validate_staging_table(cls, staging_table_name):
+    def _validate_staging_table(cls, staging_table_name) -> str:
         """Validate the staging table name and return it if it's valid."""
         if "." in staging_table_name:
             raise ValueError(
@@ -717,7 +743,7 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeStep):
         return staging_table_name
 
     @model_validator(mode="before")
-    def _checkpoint_location_check(cls, values: Dict):
+    def _checkpoint_location_check(cls, values: Dict) -> Dict:
         """Give a warning if checkpoint location is given but not expected and vice versa"""
         streaming = values.get("streaming")
         checkpoint_location = values.get("checkpoint_location")
@@ -730,7 +756,7 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeStep):
         return values
 
     @model_validator(mode="before")
-    def _synch_mode_check(cls, values: Dict):
+    def _synch_mode_check(cls, values: Dict) -> Dict:
         """Validate requirements for various synchronisation modes"""
         streaming = values.get("streaming")
         synchronisation_mode = values.get("synchronisation_mode")
@@ -760,7 +786,7 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeStep):
         return non_key_columns
 
     @property
-    def staging_table(self):
+    def staging_table(self) -> str:
         """Intermediate table on snowflake where staging results are stored"""
         if stg_tbl_name := self.staging_table_name:
             return stg_tbl_name
@@ -768,12 +794,13 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeStep):
         return f"{self.source_table.table}_stg"
 
     @property
-    def reader(self):
+    def reader(self) -> Union[DeltaTableReader, DeltaTableStreamReader]:
         """
         DeltaTable reader
 
         Returns:
         --------
+        DeltaTableReader
             DeltaTableReader the will yield source delta table
         """
         # Wrap in lambda functions to mimic lazy evaluation.
@@ -851,23 +878,23 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeStep):
             self.writer_ = self._get_writer()
         return self.writer_
 
-    def truncate_table(self, snowflake_table):
+    def truncate_table(self, snowflake_table) -> None:
         """Truncate a given snowflake table"""
         truncate_query = f"""TRUNCATE TABLE IF EXISTS {snowflake_table}"""
-        query_executor = RunQuery(
+        query_executor = SnowflakeRunQueryPython(
             **self.get_options(),
             query=truncate_query,
         )
         query_executor.execute()
 
-    def drop_table(self, snowflake_table):
+    def drop_table(self, snowflake_table) -> None:
         """Drop a given snowflake table"""
         self.log.warning(f"Dropping table {snowflake_table} from snowflake")
         drop_table_query = f"""DROP TABLE IF EXISTS {snowflake_table}"""
-        query_executor = RunQuery(**self.get_options(), query=drop_table_query)
+        query_executor = SnowflakeRunQueryPython(**self.get_options(), query=drop_table_query)
         query_executor.execute()
 
-    def _merge_batch_write_fn(self, key_columns, non_key_columns, staging_table):
+    def _merge_batch_write_fn(self, key_columns, non_key_columns, staging_table) -> Callable:
         """Build a batch write function for merge mode"""
 
         # pylint: disable=unused-argument
@@ -893,7 +920,7 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeStep):
         )
         return ranked_df
 
-    def _build_staging_table(self, dataframe, key_columns, non_key_columns, staging_table):
+    def _build_staging_table(self, dataframe, key_columns, non_key_columns, staging_table) -> None:
         """Build snowflake staging table"""
         ranked_df = self._compute_latest_changes_per_pk(dataframe, key_columns, non_key_columns)
         batch_writer = SnowflakeWriter(
@@ -922,7 +949,7 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeStep):
     @staticmethod
     def _build_sf_merge_query(
         target_table: str, stage_table: str, pk_columns: List[str], non_pk_columns, enable_deletion: bool = False
-    ):
+    ) -> str:
         """Build a CDF merge query string
 
         Parameters
@@ -949,14 +976,17 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeStep):
         assignment_string = ", ".join(f"{k} = temp.{k}" for k in non_pk_columns)
         values_string = ", ".join(f"temp.{k}" for k in all_fields)
 
-        query = f"""
-        MERGE INTO {target_table} target
-        USING {stage_table} temp ON {key_join_string}
-        WHEN MATCHED AND temp._change_type = 'update_postimage' THEN UPDATE SET {assignment_string}
-        WHEN NOT MATCHED AND temp._change_type != 'delete' THEN INSERT ({columns_string}) VALUES ({values_string})
-        """  # nosec B608: hardcoded_sql_expressions
-        if enable_deletion:
-            query += "WHEN MATCHED AND temp._change_type = 'delete' THEN DELETE"
+        query = dedent(
+            f"""
+            MERGE INTO {target_table} target
+            USING {stage_table} temp ON {key_join_string}
+            WHEN MATCHED AND temp._change_type = 'update_postimage'
+                THEN UPDATE SET {assignment_string}
+            WHEN NOT MATCHED AND temp._change_type != 'delete'
+                THEN INSERT ({columns_string})
+                VALUES ({values_string})
+            {"WHEN MATCHED AND temp._change_type = 'delete' THEN DELETE" if enable_deletion else ""}"""
+        ).strip()  # nosec B608: hardcoded_sql_expressions
 
         return query
 
@@ -999,42 +1029,89 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeStep):
                 self.writer.await_termination()
             self.drop_table(self.staging_table)
 
-    def run(self):
-        """alias of execute"""
-        return self.execute()
 
-
-class AddColumn(SnowflakeStep):
+class TagSnowflakeQuery(Step, ExtraParamsMixin):
     """
-    Add an empty column to a Snowflake table with given name and DataType
+    Provides Snowflake query tag pre-action that can be used to easily find queries through SF history search
+    and further group them for debugging and cost tracking purposes.
+
+    Takes in query tag attributes as kwargs and additional Snowflake options dict that can optionally contain
+    other set of pre-actions to be applied to a query, in that case existing pre-action aren't dropped, query tag
+    pre-action will be added to them.
+
+    Passed Snowflake options dictionary is not modified in-place, instead anew dictionary containing updated pre-actions
+    is returned.
+
+    Notes
+    -----
+    See this article for explanation: https://select.dev/posts/snowflake-query-tags
+
+    Arbitrary tags can be applied, such as team, dataset names, business capability, etc.
 
     Example
     -------
+    #### Using `options` parameter
     ```python
-    AddColumn(
-        database="MY_DB",
-        schema_="MY_SCHEMA",
-        warehouse="MY_WH",
-        user="gid.account@nike.com",
-        password=Secret("super-secret-password"),
-        role="APPLICATION.SNOWFLAKE.ADMIN",
-        table="MY_TABLE",
-        col="MY_COL",
-        dataType=StringType(),
-    ).execute()
+    query_tag = AddQueryTag(
+        options={"preactions": "ALTER SESSION"},
+        task_name="cleanse_task",
+        pipeline_name="ingestion-pipeline",
+        etl_date="2022-01-01",
+        pipeline_execution_time="2022-01-01T00:00:00",
+        task_execution_time="2022-01-01T01:00:00",
+        environment="dev",
+        trace_id="e0fdec43-a045-46e5-9705-acd4f3f96045",
+        span_id="cb89abea-1c12-471f-8b12-546d2d66f6cb",
+        ),
+    ).execute().options
+    ```
+    In this example, the query tag pre-action will be added to the Snowflake options.
+
+    #### Using `preactions` parameter
+    Instead of using `options` parameter, you can also use `preactions` parameter to provide existing preactions.
+    ```python
+    query_tag = AddQueryTag(
+        preactions="ALTER SESSION"
+        ...
+    ).execute().options
+    ```
+
+    The result will be the same as in the previous example.
+
+    #### Using `get_options` method
+    The shorthand method `get_options` can be used to get the options dictionary.
+    ```python
+    query_tag = AddQueryTag(...).get_options()
     ```
     """
 
-    table: str = Field(default=..., description="The name of the Snowflake table")
-    column: str = Field(default=..., description="The name of the new column")
-    type: f.DataType = Field(default=..., description="The DataType represented as a Spark DataType")
+    options: Dict = Field(
+        default_factory=dict, description="Additional Snowflake options, optionally containing additional preactions"
+    )
 
-    class Output(SnowflakeStep.Output):
-        """Output class for AddColumn"""
+    preactions: Optional[str] = Field(default="", description="Existing preactions from Snowflake options")
 
-        query: str = Field(default=..., description="Query that was executed to add the column")
+    class Output(StepOutput):
+        """Output class for AddQueryTag"""
 
-    def execute(self):
-        query = f"ALTER TABLE {self.table} ADD COLUMN {self.column} {map_spark_type(self.type)}".upper()
-        self.output.query = query
-        RunQuery(**self.get_options(), query=query).execute()
+        options: Dict = Field(default=..., description="Snowflake options dictionary with added query tag preaction")
+
+    def execute(self) -> Output:
+        """Add query tag preaction to Snowflake options"""
+        tag_json = json.dumps(self.extra_params, indent=4, sort_keys=True)
+        tag_preaction = f"ALTER SESSION SET QUERY_TAG = '{tag_json}';"
+        preactions = self.options.get("preactions", self.preactions)
+        # update options with new preactions
+        self.output.options = {**self.options, "preactions": f"{preactions}\n{tag_preaction}".strip()}
+
+    def get_options(self) -> Dict:
+        """shorthand method to get the options dictionary
+
+        Functionally equivalent to running `execute().options`
+
+        Returns
+        -------
+        Dict
+            Snowflake options dictionary with added query tag preaction
+        """
+        return self.execute().options
