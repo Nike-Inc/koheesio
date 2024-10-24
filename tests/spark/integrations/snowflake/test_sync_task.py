@@ -24,7 +24,6 @@ from koheesio.spark.writers.stream import ForEachBatchStreamWriter
 pytestmark = pytest.mark.spark
 
 COMMON_OPTIONS = {
-    "source_table": DeltaTableStep(table=""),
     "target_table": "foo.bar",
     "key_columns": [
         "Country",
@@ -373,6 +372,13 @@ class TestMerge:
 
 
 class TestValidations:
+    options = {**COMMON_OPTIONS}
+
+    @pytest.fixture(autouse=True, scope="class")
+    def set_spark(self, spark):
+        self.options["source_table"] = DeltaTableStep(table="<foo>")
+        yield spark
+
     @pytest.mark.parametrize(
         "sync_mode,streaming",
         [
@@ -386,7 +392,7 @@ class TestValidations:
         task = SynchronizeDeltaToSnowflakeTask(
             streaming=streaming,
             synchronisation_mode=sync_mode,
-            **COMMON_OPTIONS,
+            **self.options,
         )
 
         assert task.reader.streaming == streaming
@@ -435,10 +441,8 @@ class TestValidations:
             task = SynchronizeDeltaToSnowflakeTask(
                 streaming=streaming,
                 synchronisation_mode=sync_mode,
-                **COMMON_OPTIONS,
+                **self.options,
             )
-            print(f"{task.writer = }")
-            print(f"{type(task.writer) = }")
             assert isinstance(task.writer, expected_writer_type)
 
     def test_merge_cdf_enabled(self, spark):
