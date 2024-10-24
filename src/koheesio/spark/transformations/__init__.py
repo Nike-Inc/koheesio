@@ -21,8 +21,8 @@ ColumnsTransformationWithTarget
     Extended ColumnsTransformation class with an additional `target_column` field
 """
 
-from abc import ABC, abstractmethod
 from typing import Iterator, List, Optional, Union
+from abc import ABC, abstractmethod
 
 from pyspark.sql import functions as f
 from pyspark.sql.types import DataType

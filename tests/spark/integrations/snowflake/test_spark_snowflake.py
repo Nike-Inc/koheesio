@@ -1,3 +1,4 @@
+# flake8: noqa: F811
 import logging
 from textwrap import dedent
 from unittest import mock
@@ -67,7 +68,7 @@ class TestRunQuery:
             DeprecationWarning, match="The RunQuery class is deprecated and will be removed in a future release."
         ):
             try:
-                kls = RunQuery(
+                _ = RunQuery(
                     **COMMON_OPTIONS,
                     query="<deprecated>",
                 )
@@ -82,7 +83,7 @@ class TestRunQuery:
             pytest.skip(reason="Test only runs when we have a remote SparkSession")
 
         with pytest.raises(RuntimeError):
-            kls = RunQuery(
+            _ = RunQuery(
                 **COMMON_OPTIONS,
                 query="<deprecated>",
             )

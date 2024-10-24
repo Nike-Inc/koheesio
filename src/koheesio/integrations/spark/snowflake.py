@@ -39,11 +39,12 @@ format : str, optional, default="snowflake"
     The default `snowflake` format can be used natively in Databricks, use `net.snowflake.spark.snowflake` in other
     environments and make sure to install required JARs.
 """
+
 import json
+from typing import Callable, Dict, List, Optional, Set, Union
 from abc import ABC
 from copy import deepcopy
 from textwrap import dedent, wrap
-from typing import Callable, Dict, List, Optional, Set, Union
 
 from pyspark.sql import Window
 from pyspark.sql import functions as f
@@ -52,11 +53,7 @@ from pyspark.sql import types as t
 from koheesio import Step, StepOutput
 from koheesio.integrations.snowflake import *
 from koheesio.logger import LoggingFactory, warn
-from koheesio.models import (
-    ExtraParamsMixin, Field,
-    field_validator,
-    model_validator,
-)
+from koheesio.models import ExtraParamsMixin, Field, field_validator, model_validator
 from koheesio.spark import DataFrame, DataType, SparkStep
 from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.readers.delta import DeltaTableReader, DeltaTableStreamReader
@@ -193,6 +190,7 @@ def map_spark_type(spark_type: t.DataType):
 class SnowflakeSparkStep(SparkStep, SnowflakeBaseModel, ABC):
     """Expands the SnowflakeBaseModel so that it can be used as a SparkStep"""
 
+
 class SnowflakeTableStep(SnowflakeStep, ABC):
     """Expands the SnowflakeStep, adding a 'table' parameter"""
 
@@ -245,6 +243,7 @@ class SnowflakeReader(SnowflakeBaseModel, JdbcReader, SparkStep):
         """Read from Snowflake"""
         super().execute()
 
+
 class SnowflakeTransformation(SnowflakeBaseModel, Transformation, ABC):
     """Adds Snowflake parameters to the Transformation class"""
 
@@ -279,7 +278,7 @@ class RunQuery(SnowflakeSparkStep):
             "The RunQuery class is deprecated and will be removed in a future release. "
             "Please use the Python connector for Snowflake instead.",
             DeprecationWarning,
-            stacklevel=2
+            stacklevel=2,
         )
         if not hasattr(self.spark, "_jvm"):
             raise RuntimeError(
@@ -539,9 +538,7 @@ class AddColumn(SnowflakeStep):
 
     table: str = Field(default=..., description="The name of the Snowflake table")
     column: str = Field(default=..., description="The name of the new column")
-    type: DataType = Field(  # type: ignore
-        default=..., description="The DataType represented as a Spark DataType"
-    )
+    type: DataType = Field(default=..., description="The DataType represented as a Spark DataType")  # type: ignore
     account: str = Field(default=..., description="The Snowflake account")
 
     class Output(SnowflakeStep.Output):

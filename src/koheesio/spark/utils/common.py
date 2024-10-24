@@ -5,9 +5,9 @@ Spark Utility functions
 import importlib
 import inspect
 import os
+from typing import Union
 from enum import Enum
 from types import ModuleType
-from typing import Union
 
 from pyspark import sql
 from pyspark.sql.types import (
@@ -86,8 +86,12 @@ def check_if_pyspark_connect_is_supported() -> bool:
 
 
 if check_if_pyspark_connect_is_supported():
-    from pyspark.errors.exceptions.captured import ParseException as CapturedParseException
-    from pyspark.errors.exceptions.connect import ParseException as ConnectParseException
+    from pyspark.errors.exceptions.captured import (
+        ParseException as CapturedParseException,
+    )
+    from pyspark.errors.exceptions.connect import (
+        ParseException as ConnectParseException,
+    )
     from pyspark.sql.connect.column import Column as ConnectColumn
     from pyspark.sql.connect.dataframe import DataFrame as ConnectDataFrame
     from pyspark.sql.connect.proto.types_pb2 import DataType as ConnectDataType
@@ -126,9 +130,7 @@ def get_active_session() -> SparkSession:  # type: ignore
     if check_if_pyspark_connect_is_supported():
         from pyspark.sql.connect.session import SparkSession as ConnectSparkSession
 
-        session = (
-            ConnectSparkSession.getActiveSession() or sql.SparkSession.getActiveSession()  # type: ignore
-        )
+        session = ConnectSparkSession.getActiveSession() or sql.SparkSession.getActiveSession()  # type: ignore
     else:
         session = sql.SparkSession.getActiveSession()  # type: ignore
 

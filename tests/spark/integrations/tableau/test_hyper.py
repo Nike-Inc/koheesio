@@ -2,6 +2,7 @@ from datetime import datetime
 from pathlib import Path, PurePath
 
 import pytest
+
 from pyspark.sql.functions import lit
 
 from koheesio.integrations.spark.tableau.hyper import (

@@ -10,6 +10,7 @@ This test should raise an ImportError hence pytest.raises(ImportError) is expect
 from unittest import mock
 
 import pytest
+
 from pyspark.sql import SparkSession
 
 from koheesio.models import SecretStr

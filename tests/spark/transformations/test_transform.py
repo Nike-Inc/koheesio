@@ -1,6 +1,7 @@
 from typing import Any, Dict
 
 import pytest
+
 from pyspark.sql import functions as f
 
 from koheesio.logger import LoggingFactory
