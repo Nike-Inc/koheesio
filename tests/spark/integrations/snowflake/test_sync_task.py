@@ -1,4 +1,5 @@
 from datetime import datetime
+from textwrap import dedent
 from unittest import mock
 
 import chispa
@@ -6,11 +7,11 @@ import pydantic
 import pytest
 from conftest import await_job_completion
 
+from koheesio.integrations.snowflake import SnowflakeRunQueryPython
 from koheesio.spark import DataFrame
 from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.readers.delta import DeltaTableReader
-from koheesio.spark.snowflake import (
-    RunQuery,
+from koheesio.integrations.spark.snowflake import (
     SnowflakeWriter,
     SynchronizeDeltaToSnowflakeTask,
 )
@@ -124,7 +125,7 @@ class TestSnowflakeSyncTask:
         task.execute()
         chispa.assert_df_equality(task.output.target_df, df)
 
-    @mock.patch.object(RunQuery, "execute")
+    @mock.patch.object(SnowflakeRunQueryPython, "execute")
     def test_merge(
         self,
         mocked_sf_query_execute,
@@ -132,42 +133,46 @@ class TestSnowflakeSyncTask:
         foreach_batch_stream_local,
         snowflake_staging_file,
     ):
-        # Prepare Delta requirements
+        # Arrange - Prepare Delta requirements
         source_table = DeltaTableStep(database="klettern", table="test_merge")
         spark.sql(
-            f"""
-        CREATE OR REPLACE TABLE {source_table.table_name}
-        (Country STRING, NumVaccinated LONG, AvailableDoses LONG)
-        USING DELTA
-        TBLPROPERTIES ('delta.enableChangeDataFeed' = true);
-        """
+            dedent(
+                f"""
+                CREATE OR REPLACE TABLE {source_table.table_name}
+                (Country STRING, NumVaccinated LONG, AvailableDoses LONG)
+                USING DELTA
+                TBLPROPERTIES ('delta.enableChangeDataFeed' = true);
+                """
+            )
         )
 
-        # Prepare local representation of snowflake
+        # Arrange - Prepare local representation of snowflake
         task = SynchronizeDeltaToSnowflakeTask(
             streaming=True,
             synchronisation_mode=BatchOutputMode.MERGE,
-            **{**COMMON_OPTIONS, "source_table": source_table},
+            **{**COMMON_OPTIONS, "source_table": source_table, "account": "sf_account"},
         )
 
-        # Perform actions
+        # Arrange - Add data to previously empty Delta table
         spark.sql(
-            f"""INSERT INTO {source_table.table_name} VALUES
-            ("Australia", 100, 3000),
-            ("USA", 10000, 20000),
-            ("UK", 7000, 10000);
-        """
+            dedent(
+                f"""
+                INSERT INTO {source_table.table_name} VALUES
+                ("Australia", 100, 3000),
+                ("USA", 10000, 20000),
+                ("UK", 7000, 10000);
+                """
+            )
         )
 
-        # Run code
-
+        # Act - Run code
+        # Note: We are using the foreach_batch_stream_local fixture to simulate writing to a live environment
         with mock.patch.object(SynchronizeDeltaToSnowflakeTask, "writer", new=foreach_batch_stream_local):
             task.execute()
             task.writer.await_termination()
 
-        # Validate result
+        # Assert - Validate result
         df = spark.read.parquet(snowflake_staging_file).select("Country", "NumVaccinated", "AvailableDoses")
-
         chispa.assert_df_equality(
             df,
             spark.sql(f"SELECT * FROM {source_table.table_name}"),
@@ -437,12 +442,14 @@ class TestValidations:
     def test_merge_cdf_enabled(self, spark):
         table = DeltaTableStep(database="klettern", table="sync_test_table")
         spark.sql(
-            f"""
-        CREATE OR REPLACE TABLE {table.table_name}
-        (Country STRING, NumVaccinated INT, AvailableDoses INT)
-        USING DELTA
-        TBLPROPERTIES ('delta.enableChangeDataFeed' = false);
-        """
+            dedent(
+                f"""
+                CREATE OR REPLACE TABLE {table.table_name}
+                (Country STRING, NumVaccinated INT, AvailableDoses INT)
+                USING DELTA
+                TBLPROPERTIES ('delta.enableChangeDataFeed' = false);
+                """
+            )
         )
         task = SynchronizeDeltaToSnowflakeTask(
             streaming=True,
