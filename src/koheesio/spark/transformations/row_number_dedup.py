@@ -8,10 +8,11 @@ from __future__ import annotations
 
 from typing import Optional, Union
 
-from pyspark.sql import Column, Window, WindowSpec
+from pyspark.sql import Window, WindowSpec
 from pyspark.sql.functions import col, desc, row_number
 
 from koheesio.models import Field, conlist, field_validator
+from koheesio.spark import Column
 from koheesio.spark.transformations import ColumnsTransformation
 
 
@@ -75,7 +76,6 @@ class RowNumberDedup(ColumnsTransformation):
         List[Union[str, Column]]
             The optimized and deduplicated list of sort columns.
         """
-        # Convert single string or Column object to a list
         columns = [columns_value] if isinstance(columns_value, (str, Column)) else [*columns_value]
 
         # Remove empty strings, None, etc.

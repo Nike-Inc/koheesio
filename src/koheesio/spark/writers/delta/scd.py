@@ -15,20 +15,21 @@ and seamless integration with Delta tables in Spark.
 
 """
 
-from typing import List, Optional
+from typing import List, Optional, Union
 from logging import Logger
 
 from delta.tables import DeltaMergeBuilder, DeltaTable
 
 from pydantic import InstanceOf
 
-from pyspark.sql import Column
+from pyspark import sql
 from pyspark.sql import functions as F
 from pyspark.sql.types import DateType, TimestampType
 
 from koheesio.models import Field
-from koheesio.spark import DataFrame, SparkSession, current_timestamp_utc
+from koheesio.spark import Column, DataFrame, SparkSession
 from koheesio.spark.delta import DeltaTableStep
+from koheesio.spark.functions import current_timestamp_utc
 from koheesio.spark.writers import Writer
 
 
@@ -73,7 +74,7 @@ class SCD2DeltaTableWriter(Writer):
     scd2_columns: List[str] = Field(
         default_factory=list, description="List of attributes for scd2 type (track changes)"
     )
-    scd2_timestamp_col: Optional[Column] = Field(
+    scd2_timestamp_col: Column = Field(
         default=None,
         description="Timestamp column for SCD2 type (track changes). Default to current_timestamp",
     )

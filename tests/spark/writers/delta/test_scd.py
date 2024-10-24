@@ -11,14 +11,23 @@ from pyspark.sql import Column
 from pyspark.sql import functions as F
 from pyspark.sql.types import Row
 
-from koheesio.spark import DataFrame, current_timestamp_utc
+from koheesio.spark import DataFrame
 from koheesio.spark.delta import DeltaTableStep
+from koheesio.spark.functions import current_timestamp_utc
+from koheesio.spark.utils import SPARK_MINOR_VERSION
 from koheesio.spark.writers.delta.scd import SCD2DeltaTableWriter
 
 pytestmark = pytest.mark.spark
 
+skip_reason = "Tests are not working with PySpark 3.5 due to delta calling _sc. Test requires pyspark version >= 4.0"
+
 
 def test_scd2_custom_logic(spark):
+    from koheesio.spark.utils.connect import is_remote_session
+
+    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
+        pytest.skip(reason=skip_reason)
+
     def _get_result(target_df: DataFrame, expr: str):
         res = (
             target_df.where(expr)
@@ -249,6 +258,11 @@ def test_scd2_custom_logic(spark):
 
 
 def test_scd2_logic(spark):
+    from koheesio.spark.utils.connect import is_remote_session
+
+    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
+        pytest.skip(reason=skip_reason)
+
     changes_data = [
         [("key1", "value1", "scd1-value11", "2024-05-01"), ("key2", "value2", "scd1-value21", "2024-04-01")],
         [("key1", "value1_updated", "scd1-value12", "2024-05-02"), ("key3", "value3", "scd1-value31", "2024-05-03")],

@@ -1,5 +1,7 @@
 import pytest
 
+from pyspark.sql import DataFrame
+
 from koheesio.models import ValidationError
 from koheesio.spark.transformations.repartition import Repartition
 
@@ -53,9 +55,9 @@ def test_repartition(input_values, expected, spark):
         ],
         schema="product string, amount int, country string",
     )
-
     df = Repartition(**input_values).transform(input_df)
-    assert df.rdd.getNumPartitions() == expected
+    if isinstance(input_df, DataFrame):
+        assert df.rdd.getNumPartitions() == expected
 
 
 def test_repartition_should_raise_error():

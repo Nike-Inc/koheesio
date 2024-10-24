@@ -21,16 +21,14 @@ ColumnsTransformationWithTarget
     Extended ColumnsTransformation class with an additional `target_column` field
 """
 
-from typing import List, Optional, Union
+from typing import Iterator, List, Optional, Union
 from abc import ABC, abstractmethod
 
-from pyspark.sql import Column
 from pyspark.sql import functions as f
-from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.types import DataType
 
 from koheesio.models import Field, ListOfColumns, field_validator
-from koheesio.spark import SparkStep
+from koheesio.spark import Column, DataFrame, SparkStep
 from koheesio.spark.utils import SparkDatatype
 
 
@@ -58,9 +56,7 @@ class Transformation(SparkStep, ABC):
 
     class AddOne(Transformation):
         def execute(self):
-            self.output.df = self.df.withColumn(
-                "new_column", f.col("old_column") + 1
-            )
+            self.output.df = self.df.withColumn("new_column", f.col("old_column") + 1)
     ```
 
     In the example above, the `execute` method is implemented to add 1 to the values of the `old_column` and store the
@@ -251,6 +247,7 @@ class ColumnsTransformation(Transformation, ABC):
             (default: False)
         """
 
+        # FIXME: Check if it can be just None
         run_for_all_data_type: Optional[List[SparkDatatype]] = [None]
         limit_data_type: Optional[List[SparkDatatype]] = [None]
         data_type_strict_mode: bool = False
@@ -288,7 +285,10 @@ class ColumnsTransformation(Transformation, ABC):
         return self.ColumnConfig.data_type_strict_mode
 
     def column_type_of_col(
-        self, col: Union[str, Column], df: Optional[DataFrame] = None, simple_return_mode: bool = True
+        self,
+        col: Union[Column, str],
+        df: Optional[DataFrame] = None,
+        simple_return_mode: bool = True,
     ) -> Union[DataType, str]:
         """
         Returns the dataType of a Column object as a string.
@@ -343,7 +343,12 @@ class ColumnsTransformation(Transformation, ABC):
 
         # ask the JVM for the name of the column
         # noinspection PyProtectedMember
-        col_name = col._jc.toString()
+
+        col_name = (
+            col._expr._unparsed_identifier
+            if col.__class__.__module__ == "pyspark.sql.connect.column"
+            else col._jc.toString()  # type: ignore  # noqa: E721
+        )
 
         # In order to check the datatype of the column, we have to ask the DataFrame its schema
         df_col = [c for c in df.schema if c.name == col_name][0]
@@ -403,14 +408,14 @@ class ColumnsTransformation(Transformation, ABC):
 
     def get_limit_data_types(self):
         """Get the limit_data_type as a list of strings"""
-        return [dt.value for dt in self.ColumnConfig.limit_data_type]
+        return [dt.value for dt in self.ColumnConfig.limit_data_type]  # type: ignore
 
-    def get_columns(self) -> iter:
+    def get_columns(self) -> Iterator[str]:
         """Return an iterator of the columns"""
         # If `run_for_all_is_set` is True, we want to run the transformation for all columns of a given type
         if self.run_for_all_is_set:
             columns = []
-            for data_type in self.ColumnConfig.run_for_all_data_type:
+            for data_type in self.ColumnConfig.run_for_all_data_type:  # type: ignore
                 columns += self.get_all_columns_of_specific_type(data_type)
         else:
             columns = self.columns
@@ -521,7 +526,7 @@ class ColumnsTransformationWithTarget(ColumnsTransformation, ABC):
         """
         raise NotImplementedError
 
-    def get_columns_with_target(self) -> iter:
+    def get_columns_with_target(self) -> Iterator[tuple[str, str]]:
         """Return an iterator of the columns
 
         Works just like in get_columns from the  ColumnsTransformation class except that it handles the `target_column`

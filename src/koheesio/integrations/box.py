@@ -12,16 +12,16 @@ Prerequisites
 
 import re
 from typing import Any, Dict, Optional, Union
-from abc import ABC, abstractmethod
+from abc import ABC
 from datetime import datetime
-from io import BytesIO
+from io import BytesIO, StringIO
 from pathlib import PurePath
 
+import pandas as pd
 from boxsdk import Client, JWTAuth
 from boxsdk.object.file import File
 from boxsdk.object.folder import Folder
 
-from pyspark.sql import DataFrame
 from pyspark.sql.functions import expr, lit
 from pyspark.sql.types import StructType
 
@@ -354,15 +354,6 @@ class BoxReaderBase(Box, Reader, ABC):
         description="[Optional] Set of extra parameters that should be passed to the Spark reader.",
     )
 
-    class Output(StepOutput):
-        """Make default reader output optional to gracefully handle 'no-files / folder' cases."""
-
-        df: Optional[DataFrame] = Field(default=None, description="The Spark DataFrame")
-
-    @abstractmethod
-    def execute(self) -> Output:
-        raise NotImplementedError
-
 
 class BoxCsvFileReader(BoxReaderBase):
     """
@@ -412,9 +403,12 @@ class BoxCsvFileReader(BoxReaderBase):
         for f in self.file:
             self.log.debug(f"Reading contents of file with the ID '{f}' into Spark DataFrame")
             file = self.client.file(file_id=f)
-            data = file.content().decode("utf-8").splitlines()
-            rdd = self.spark.sparkContext.parallelize(data)
-            temp_df = self.spark.read.csv(rdd, header=True, schema=self.schema_, **self.params)
+            data = file.content().decode("utf-8")
+
+            data_buffer = StringIO(data)
+            temp_df_pandas = pd.read_csv(data_buffer, header=0, dtype=str if not self.schema_ else None, **self.params)  # type: ignore
+            temp_df = self.spark.createDataFrame(temp_df_pandas, schema=self.schema_)
+
             temp_df = (
                 temp_df
                 # fmt: off
@@ -610,16 +604,12 @@ class BoxFileWriter(BoxFolderBase):
     from koheesio.steps.integrations.box import BoxFileWriter
 
     auth_params = {...}
-    f1 = BoxFileWriter(
-        **auth_params, path="/foo/bar", file="path/to/my/file.ext"
-    ).execute()
+    f1 = BoxFileWriter(**auth_params, path="/foo/bar", file="path/to/my/file.ext").execute()
     # or
     import io
 
     b = io.BytesIO(b"my-sample-data")
-    f2 = BoxFileWriter(
-        **auth_params, path="/foo/bar", file=b, name="file.ext"
-    ).execute()
+    f2 = BoxFileWriter(**auth_params, path="/foo/bar", file=b, name="file.ext").execute()
     ```
     """
 

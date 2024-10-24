@@ -6,12 +6,11 @@ is a function that accepts a DataFrame (df) and any number of keyword args.
 
 from __future__ import annotations
 
-from typing import Callable, Dict
+from typing import Callable, Dict, Optional
 from functools import partial
 
-from pyspark.sql import DataFrame
-
 from koheesio.models import ExtraParamsMixin, Field
+from koheesio.spark import DataFrame
 from koheesio.spark.transformations import Transformation
 from koheesio.utils import get_args_for_func
 
@@ -73,7 +72,7 @@ class Transform(Transformation, ExtraParamsMixin):
 
     func: Callable = Field(default=None, description="The function to be called on the DataFrame.")
 
-    def __init__(self, func: Callable, params: Dict = None, df: DataFrame = None, **kwargs):
+    def __init__(self, func: Callable, params: Dict = None, df: Optional[DataFrame] = None, **kwargs):
         params = {**(params or {}), **kwargs}
         super().__init__(func=func, params=params, df=df)
 

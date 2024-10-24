@@ -7,11 +7,10 @@ from typing import Dict, List, Optional, Union
 
 from py4j.protocol import Py4JJavaError  # type: ignore
 
-from pyspark.sql import DataFrame
 from pyspark.sql.types import DataType
 
 from koheesio.models import Field, field_validator, model_validator
-from koheesio.spark import AnalysisException, SparkStep
+from koheesio.spark import AnalysisException, DataFrame, SparkStep
 from koheesio.spark.utils import on_databricks
 
 
@@ -291,7 +290,7 @@ class DeltaTableStep(SparkStep):
     @property
     def has_change_type(self) -> bool:
         """Checks if a column named `_change_type` is present in the table"""
-        return "_change_type" in self.columns
+        return "_change_type" in self.columns  # type: ignore
 
     @property
     def exists(self) -> bool:
@@ -300,7 +299,9 @@ class DeltaTableStep(SparkStep):
         result = False
 
         try:
-            self.spark.table(self.table_name)
+            # In Spark remote session it is not enough to call just spark.table(self.table_name)
+            # as it will not raise an exception, we have to make action call on table to check if it exists
+            self.spark.table(self.table_name).take(1)
             result = True
         except AnalysisException as e:
             err_msg = str(e).lower()

@@ -4,10 +4,8 @@ from typing import Optional
 from abc import ABC, abstractmethod
 from enum import Enum
 
-from pyspark.sql import DataFrame
-
 from koheesio.models import Field
-from koheesio.spark import SparkStep
+from koheesio.spark import DataFrame, SparkStep
 
 
 # TODO: Investigate if we can clean various OutputModes into a more streamlined structure
@@ -52,7 +50,7 @@ class StreamingOutputMode(str, Enum):
 class Writer(SparkStep, ABC):
     """The Writer class is used to write the DataFrame to a target."""
 
-    df: Optional[DataFrame] = Field(default=None, description="The Spark DataFrame")
+    df: Optional[DataFrame] = Field(default=None, description="The Spark DataFrame", exclude=True)
     format: str = Field(default="delta", description="The format of the output")
 
     @property

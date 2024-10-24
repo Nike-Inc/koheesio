@@ -1,9 +1,8 @@
 import pytest
 
 from pyspark.sql import functions as F
-from pyspark.sql.dataframe import DataFrame
 
-from koheesio.spark import AnalysisException
+from koheesio.spark import AnalysisException, DataFrame
 from koheesio.spark.readers.delta import DeltaTableReader
 
 pytestmark = pytest.mark.spark
@@ -61,8 +60,11 @@ def test_delta_table_cdf_reader(spark, streaming_dummy_df, random_uuid):
 
 def test_delta_reader_view(spark):
     reader = DeltaTableReader(table="delta_test_table")
+
     with pytest.raises(AnalysisException):
         _ = spark.table(reader.view)
+        # In Spark remote session the above statetment will not raise an exception
+        _ = spark.table(reader.view).take(1)
     reader.read()
     df = spark.table(reader.view)
     assert df.count() == 10

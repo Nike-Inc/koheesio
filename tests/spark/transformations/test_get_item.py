@@ -55,7 +55,10 @@ def test_transform_get_item(input_values, input_data, input_schema, expected, sp
     input_df = spark.createDataFrame(data=input_data, schema=input_schema)
     gi = GetItem(**input_values)
     output_df = gi.transform(input_df)
-    actual = output_df.orderBy(input_schema[0]).select(gi.target_column).rdd.map(lambda r: r[0]).collect()
+    target_column = gi.target_column
+    actual = [
+        row.asDict()[target_column] for row in output_df.orderBy(input_schema[0]).select(gi.target_column).collect()
+    ]
     assert actual == expected
 
 

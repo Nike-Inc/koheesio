@@ -1,11 +1,3 @@
-import os
-from unittest.mock import patch
-
-import pytest
-
-from pyspark.sql.types import StringType, StructField, StructType
-
-from koheesio.spark.utils import on_databricks, schema_struct_to_schema_str
 from koheesio.utils import get_args_for_func, get_random_string
 
 

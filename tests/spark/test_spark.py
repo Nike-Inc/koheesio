@@ -14,7 +14,8 @@ import pytest
 from pyspark.sql import SparkSession
 
 from koheesio.models import SecretStr
-from koheesio.spark import SparkStep
+from koheesio.spark import DataFrame, SparkStep
+from koheesio.spark.transformations.transform import Transform
 
 pytestmark = pytest.mark.spark
 
@@ -49,3 +50,13 @@ class TestSparkStep:
         spark = SparkSession.builder.appName("pytest-pyspark-local-testing-implicit").master("local[*]").getOrCreate()
         step = SparkStep()
         assert step.spark is spark
+
+    def test_transformation(self):
+        from pyspark.sql import functions as F
+
+        def dummy_function(df: DataFrame):
+            return df.withColumn("hello", F.lit("world"))
+
+        test_transformation = Transform(dummy_function)
+
+        assert test_transformation

@@ -1,5 +1,4 @@
 import pytest
-from conftest import await_job_completion
 
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.functions import col, lit
@@ -11,6 +10,7 @@ from koheesio.spark.readers.delta import DeltaTableReader, DeltaTableStreamReade
 from koheesio.spark.readers.dummy import DummyReader
 from koheesio.spark.transformations.sql_transform import SqlTransform
 from koheesio.spark.transformations.transform import Transform
+from koheesio.spark.utils import SPARK_MINOR_VERSION
 from koheesio.spark.writers.delta import DeltaTableStreamWriter, DeltaTableWriter
 from koheesio.spark.writers.dummy import DummyWriter
 
@@ -70,27 +70,39 @@ def test_delta_task(spark):
 
 
 def test_delta_stream_task(spark, checkpoint_folder):
+    from koheesio.spark.utils.connect import is_remote_session
+
     delta_table = DeltaTableStep(table="delta_stream_table")
     DummyReader(range=5).read().write.format("delta").mode("append").saveAsTable("delta_stream_table")
+    writer = DeltaTableStreamWriter(table="delta_stream_table_out", checkpoint_location=checkpoint_folder)
+    transformations = [
+        SqlTransform(
+            sql="SELECT ${field} FROM ${table_name} WHERE id = 0",
+            table_name="temp_view",
+            field="id",
+        ),
+        Transform(dummy_function2, name="pari"),
+    ]
 
     delta_task = EtlTask(
         source=DeltaTableStreamReader(table=delta_table),
-        target=DeltaTableStreamWriter(table="delta_stream_table_out", checkpoint_location=checkpoint_folder),
-        transformations=[
-            SqlTransform(
-                sql="SELECT ${field} FROM ${table_name} WHERE id = 0", table_name="temp_view", params={"field": "id"}
-            ),
-            Transform(dummy_function2, name="pari"),
-        ],
+        target=writer,
+        transformations=transformations,
     )
 
-    delta_task.run()
-    await_job_completion(timeout=20)
+    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
+        with pytest.raises(RuntimeError) as excinfo:
+            delta_task.run()
 
-    out_df = spark.table("delta_stream_table_out")
-    actual = out_df.head().asDict()
-    expected = {"id": 0, "name": "pari"}
-    assert actual == expected
+        assert "https://issues.apache.org/jira/browse/SPARK-45957" in str(excinfo.value.args[0])
+    else:
+        delta_task.run()
+        writer.streaming_query.awaitTermination(timeout=20)  # type: ignore
+
+        out_df = spark.table("delta_stream_table_out")
+        actual = out_df.head().asDict()
+        expected = {"id": 0, "name": "pari"}
+        assert actual == expected
 
 
 def test_transformations_alias(spark: SparkSession) -> None:

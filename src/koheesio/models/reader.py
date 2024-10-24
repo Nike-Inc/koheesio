@@ -2,13 +2,11 @@
 Module for the BaseReader class
 """
 
-from typing import Optional, TypeVar
+from typing import Optional
 from abc import ABC, abstractmethod
 
 from koheesio import Step
-
-# Define a type variable that can be any type of DataFrame
-DataFrameType = TypeVar("DataFrameType")
+from koheesio.spark import DataFrame
 
 
 class BaseReader(Step, ABC):
@@ -29,7 +27,7 @@ class BaseReader(Step, ABC):
     """
 
     @property
-    def df(self) -> Optional[DataFrameType]:
+    def df(self) -> Optional[DataFrame]:
         """Shorthand for accessing self.output.df
         If the output.df is None, .execute() will be run first
         """
@@ -44,7 +42,7 @@ class BaseReader(Step, ABC):
         """
         pass
 
-    def read(self) -> DataFrameType:
+    def read(self) -> DataFrame:
         """Read from a Reader without having to call the execute() method directly"""
         self.execute()
         return self.output.df

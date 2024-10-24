@@ -149,7 +149,7 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
     )
     format: str = "delta"  # The format to use for writing the dataframe to the Delta table
 
-    _merge_builder: DeltaMergeBuilder = None
+    _merge_builder: Optional[DeltaMergeBuilder] = None
 
     # noinspection PyProtectedMember
     def __merge(self, merge_builder: Optional[DeltaMergeBuilder] = None) -> Union[DeltaMergeBuilder, DataFrameWriter]:
@@ -286,6 +286,7 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
         """Validate `output_mode` value"""
         if isinstance(mode, str):
             mode = cls.get_output_mode(mode, options={StreamingOutputMode, BatchOutputMode})
+
         if not isinstance(mode, BatchOutputMode) and not isinstance(mode, StreamingOutputMode):
             raise AttributeError(
                 f"""
@@ -294,6 +295,7 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
                 Streaming Mode - {StreamingOutputMode.__doc__}
                 """
             )
+
         return str(mode.value)
 
     @field_validator("table")
@@ -331,8 +333,16 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
         - BatchOutputMode
         - StreamingOutputMode
         """
+        from koheesio.spark.utils.connect import is_remote_session
+
+        if (
+            choice.upper() in (BatchOutputMode.MERGEALL, BatchOutputMode.MERGE_ALL, BatchOutputMode.MERGE)
+            and is_remote_session()
+        ):
+            raise RuntimeError(f"Output mode {choice.upper()} is not supported in remote mode")
+
         for enum_type in options:
-            if choice.upper() in [om.value.upper() for om in enum_type]:
+            if choice.upper() in [om.value.upper() for om in enum_type]:  # type: ignore
                 return getattr(enum_type, choice.upper())
         raise AttributeError(
             f"""

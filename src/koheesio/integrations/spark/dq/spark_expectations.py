@@ -13,8 +13,9 @@ from spark_expectations.core.expectations import (
 from pydantic import Field
 
 import pyspark
-from pyspark.sql import DataFrame
+from pyspark import sql
 
+from koheesio.spark import DataFrame
 from koheesio.spark.transformations import Transformation
 from koheesio.spark.writers import BatchOutputMode
 

@@ -19,7 +19,6 @@ from tableauhyperapi import (
 
 from pydantic import Field, conlist
 
-from pyspark.sql import DataFrame
 from pyspark.sql.functions import col
 from pyspark.sql.types import (
     BooleanType,
@@ -36,9 +35,9 @@ from pyspark.sql.types import (
     TimestampType,
 )
 
-from koheesio.spark.readers import SparkStep
+from koheesio.spark import DataFrame, SparkStep
 from koheesio.spark.transformations.cast_to_datatype import CastToDatatype
-from koheesio.spark.utils import spark_minor_version
+from koheesio.spark.utils import SPARK_MINOR_VERSION
 from koheesio.steps import Step, StepOutput
 
 
@@ -352,7 +351,7 @@ class HyperFileDataFrameWriter(HyperFileWriter):
 
         # Handling the TimestampNTZType for Spark 3.4+
         # Mapping both TimestampType and TimestampNTZType to NTZ type of Hyper
-        if spark_minor_version >= 3.4:
+        if SPARK_MINOR_VERSION >= 3.4:
             from pyspark.sql.types import TimestampNTZType
 
             type_mapping[TimestampNTZType()] = SqlType.timestamp
@@ -407,7 +406,7 @@ class HyperFileDataFrameWriter(HyperFileWriter):
 
         # Handling the TimestampNTZType for Spark 3.4+
         # Any TimestampType column will be cast to TimestampNTZType for compatibility with Tableau Hyper API
-        if spark_minor_version >= 3.4:
+        if SPARK_MINOR_VERSION >= 3.4:
             from pyspark.sql.types import TimestampNTZType
 
             for t_col in timestamp_cols:
