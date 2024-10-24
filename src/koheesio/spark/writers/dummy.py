@@ -4,6 +4,7 @@ from typing import Any, Dict, Union
 
 from koheesio.models import Field, PositiveInt, field_validator
 from koheesio.spark import DataFrame
+from koheesio.spark.utils import show_string
 from koheesio.spark.writers import Writer
 
 
@@ -74,7 +75,7 @@ class DummyWriter(Writer):
         df: DataFrame = self.df
 
         # noinspection PyProtectedMember
-        df_content = df._show_string(self.n, self.truncate, self.vertical)
+        df_content = show_string(df=df, n=self.n, truncate=self.truncate, vertical=self.vertical)
 
         # logs the equivalent of doing df.show()
         self.log.info(f"content of df that was passed to DummyWriter:\n{df_content}")

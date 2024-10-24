@@ -2,6 +2,7 @@ from datetime import datetime
 from pathlib import Path, PurePath
 
 import pytest
+from pyspark.sql.functions import lit
 
 from koheesio.integrations.spark.tableau.hyper import (
     NOT_NULLABLE,
@@ -89,13 +90,19 @@ class TestHyper:
         assert df.dtypes == [("string", "string"), ("int", "int"), ("timestamp", "timestamp")]
 
     def test_hyper_file_dataframe_writer(self, data_path, df_with_all_types):
+        df = df_with_all_types.drop("void", "byte", "binary", "array", "map", "float")
+        df2 = df.select([lit(None).alias(col) for col in df.columns])
+        df = df.union(df2)
+        df = df.withColumn("decimal", df["decimal"].cast("decimal(28,3)"))
+
         hw = HyperFileDataFrameWriter(
             name="test",
-            df=df_with_all_types.drop("void", "byte", "binary", "array", "map", "float"),
+            df=df.drop("void", "byte", "binary", "array", "map", "float"),
         ).execute()
 
         df = HyperFileReader(path=PurePath(hw.hyper_path)).execute().df
-        assert df.count() == 1
+
+        assert df.count() == 2
         assert df.dtypes == [
             ("short", "smallint"),
             ("integer", "int"),

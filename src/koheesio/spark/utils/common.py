@@ -7,7 +7,7 @@ import inspect
 import os
 from enum import Enum
 from types import ModuleType
-from typing import TypeAlias, Union
+from typing import Union
 
 from pyspark import sql
 from pyspark.sql.types import (
@@ -30,10 +30,30 @@ from pyspark.sql.types import (
 )
 from pyspark.version import __version__ as spark_version
 
+__all__ = [
+    "SparkDatatype",
+    "import_pandas_based_on_pyspark_version",
+    "on_databricks",
+    "schema_struct_to_schema_str",
+    "spark_data_type_is_array",
+    "spark_data_type_is_numeric",
+    "show_string",
+    "get_spark_minor_version",
+    "SPARK_MINOR_VERSION",
+    "AnalysisException",
+    "Column",
+    "DataFrame",
+    "SparkSession",
+    "ParseException",
+    "DataType",
+    "DataStreamReader",
+]
+
 try:
+    from pyspark.errors.exceptions.base import AnalysisException  # type: ignore
+except (ImportError, ModuleNotFoundError):
     from pyspark.sql.utils import AnalysisException  # type: ignore
-except ImportError:
-    from pyspark.errors.exceptions.base import AnalysisException
+
 
 AnalysisException = AnalysisException
 
@@ -56,8 +76,11 @@ def check_if_pyspark_connect_is_supported() -> bool:
     if SPARK_MINOR_VERSION >= 3.5:
         try:
             importlib.import_module(f"{module_name}.sql.connect")
+            from pyspark.sql.connect.column import Column
+
+            _col: Column
             result = True
-        except ModuleNotFoundError:
+        except (ModuleNotFoundError, ImportError):
             result = False
     return result
 
@@ -69,37 +92,53 @@ if check_if_pyspark_connect_is_supported():
     from pyspark.sql.connect.dataframe import DataFrame as ConnectDataFrame
     from pyspark.sql.connect.proto.types_pb2 import DataType as ConnectDataType
     from pyspark.sql.connect.session import SparkSession as ConnectSparkSession
+    from pyspark.sql.streaming.readwriter import DataStreamReader
     from pyspark.sql.types import DataType as SqlDataType
 
-    Column: TypeAlias = Union[sql.Column, ConnectColumn]
-    DataFrame: TypeAlias = Union[sql.DataFrame, ConnectDataFrame]
-    SparkSession: TypeAlias = Union[sql.SparkSession, ConnectSparkSession]
+    Column = Union[sql.Column, ConnectColumn]
+    DataFrame = Union[sql.DataFrame, ConnectDataFrame]
+    SparkSession = Union[sql.SparkSession, ConnectSparkSession]
     ParseException = (CapturedParseException, ConnectParseException)
-    DataType: TypeAlias = Union[SqlDataType, ConnectDataType]
+    DataType = Union[SqlDataType, ConnectDataType]
+    DataStreamReader = DataStreamReader
 else:
-    from pyspark.errors.exceptions.captured import ParseException  # type: ignore
+    try:
+        from pyspark.errors.exceptions.captured import ParseException  # type: ignore
+    except (ImportError, ModuleNotFoundError):
+        from pyspark.sql.utils import ParseException  # type: ignore
+
+    ParseException = ParseException
+
     from pyspark.sql.column import Column  # type: ignore
     from pyspark.sql.dataframe import DataFrame  # type: ignore
     from pyspark.sql.session import SparkSession  # type: ignore
     from pyspark.sql.types import DataType  # type: ignore
 
-__all__ = [
-    "SparkDatatype",
-    "import_pandas_based_on_pyspark_version",
-    "on_databricks",
-    "schema_struct_to_schema_str",
-    "spark_data_type_is_array",
-    "spark_data_type_is_numeric",
-    "show_string",
-    "get_spark_minor_version",
-    "SPARK_MINOR_VERSION",
-    "AnalysisException",
-    "Column",
-    "DataFrame",
-    "SparkSession",
-    "ParseException",
-    "DataType",
-]
+    try:
+        from pyspark.sql.streaming.readwriter import DataStreamReader
+    except (ImportError, ModuleNotFoundError):
+        from pyspark.sql.streaming import DataStreamReader  # type: ignore
+
+    DataStreamReader = DataStreamReader
+
+
+def get_active_session() -> SparkSession:  # type: ignore
+    if check_if_pyspark_connect_is_supported():
+        from pyspark.sql.connect.session import SparkSession as ConnectSparkSession
+
+        session = (
+            ConnectSparkSession.getActiveSession() or sql.SparkSession.getActiveSession()  # type: ignore
+        )
+    else:
+        session = sql.SparkSession.getActiveSession()  # type: ignore
+
+    if not session:
+        raise RuntimeError(
+            "No active Spark session found. Please create a Spark session before using module connect_utils."
+            " Or perform local import of the module."
+        )
+
+    return session
 
 
 class SparkDatatype(Enum):

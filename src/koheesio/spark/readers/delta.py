@@ -14,11 +14,10 @@ from typing import Any, Dict, Optional, Union
 
 from pyspark.sql import DataFrameReader
 from pyspark.sql import functions as f
-from pyspark.sql.streaming.readwriter import DataStreamReader
 
 from koheesio.logger import LoggingFactory
 from koheesio.models import Field, ListOfColumns, field_validator, model_validator
-from koheesio.spark import Column
+from koheesio.spark import Column, DataStreamReader
 from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.readers import Reader
 from koheesio.utils import get_random_string

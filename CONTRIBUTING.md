@@ -19,7 +19,7 @@ If you have any questions or concerns please feel free to contact us at [opensou
 
 * Create a feature branch off of `main` before you start your work.
     * Please avoid working directly on the `main` branch.
-* Setup the required package manager [poetry](#-package-manager)
+* Setup the required package manager [hatch](#-package-manager)
 * Setup the dev environment [see below](#-dev-environment-setup)
 * Make commits of logical units.
     * You may be asked to squash unnecessary commits down to logical units.

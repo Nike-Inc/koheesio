@@ -7,8 +7,9 @@ from delta import DeltaTable
 from pydantic import ValidationError
 from pyspark.sql import functions as F
 
+from koheesio.spark import AnalysisException
 from koheesio.spark.delta import DeltaTableStep
-from koheesio.spark.utils import SPARK_MINOR_VERSION, AnalysisException
+from koheesio.spark.utils import SPARK_MINOR_VERSION
 from koheesio.spark.writers import BatchOutputMode, StreamingOutputMode
 from koheesio.spark.writers.delta import DeltaTableStreamWriter, DeltaTableWriter
 from koheesio.spark.writers.delta.utils import log_clauses

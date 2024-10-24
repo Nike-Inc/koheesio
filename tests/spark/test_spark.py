@@ -10,8 +10,11 @@ This test should raise an ImportError hence pytest.raises(ImportError) is expect
 from unittest import mock
 
 import pytest
+from pyspark.sql import SparkSession
 
 from koheesio.models import SecretStr
+from koheesio.spark import DataFrame, SparkStep
+from koheesio.spark.transformations.transform import Transform
 
 pytestmark = pytest.mark.spark
 
@@ -32,3 +35,27 @@ class TestSparkImportFailures:
                 SparkSession.builder.appName("tests").getOrCreate()
 
             pass
+
+
+class TestSparkStep:
+    """Test SparkStep class"""
+
+    def test_spark_property_with_session(self):
+        spark = SparkSession.builder.appName("pytest-pyspark-local-testing-explicit").master("local[*]").getOrCreate()
+        step = SparkStep(spark=spark)
+        assert step.spark is spark
+
+    def test_spark_property_without_session(self):
+        spark = SparkSession.builder.appName("pytest-pyspark-local-testing-implicit").master("local[*]").getOrCreate()
+        step = SparkStep()
+        assert step.spark is spark
+
+    def test_transformation(self):
+        from pyspark.sql import functions as F
+
+        def dummy_function(df: DataFrame):
+            return df.withColumn("hello", F.lit("world"))
+
+        test_transformation = Transform(dummy_function)
+
+        assert test_transformation

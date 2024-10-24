@@ -1,5 +1,6 @@
 import datetime
 import os
+import socket
 import sys
 from collections import namedtuple
 from decimal import Decimal
@@ -8,6 +9,7 @@ from textwrap import dedent
 from unittest import mock
 
 import pytest
+from delta import configure_spark_with_delta_pip
 from pyspark.sql import SparkSession
 from pyspark.sql.types import (
     ArrayType,
@@ -33,6 +35,15 @@ from koheesio.logger import LoggingFactory
 from koheesio.spark.readers.dummy import DummyReader
 
 
+def is_port_free(port):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            s.bind(("localhost", port))
+            return True
+        except socket.error:
+            return False
+
+
 @pytest.fixture(scope="session")
 def warehouse_path(tmp_path_factory, random_uuid, logger):
     fldr = tmp_path_factory.mktemp("spark-warehouse" + random_uuid)
@@ -50,25 +61,25 @@ def checkpoint_folder(tmp_path_factory, random_uuid, logger):
 @pytest.fixture(scope="session")
 def spark(warehouse_path, random_uuid):
     """Spark session fixture with Delta enabled."""
-    os.environ["SPARK_REMOTE"] = "local"
-    import importlib_metadata
-
-    delta_version = importlib_metadata.version("delta_spark")
-
-    extra_packages = []
     builder = SparkSession.builder.appName("test_session" + random_uuid)
 
     if os.environ.get("SPARK_REMOTE") == "local":
-        builder = builder.remote("local")
-        extra_packages.append("org.apache.spark:spark-connect_2.12:3.5.3")
+        # SPARK_TESTING is set in environment variables
+        # This triggers spark connect logic
+        # ---->>>> For testing, we use 0 to use an ephemeral port to allow parallel testing.
+        # --->>>>>> See also SPARK-42272.
+        from pyspark.version import __version__ as spark_version
+
+        builder = configure_spark_with_delta_pip(
+            spark_session_builder=builder.remote("local"),
+            extra_packages=[f"org.apache.spark:spark-connect_2.12:{spark_version}"],
+        )
     else:
         builder = builder.master("local[*]")
-
-    packages = ",".join(extra_packages + [f"io.delta:delta-spark_2.12:{delta_version}"])
+        builder = configure_spark_with_delta_pip(spark_session_builder=builder)
 
     builder = (
         builder.config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
-        .config("spark.jars.packages", packages)
         .config("spark.sql.warehouse.dir", warehouse_path)
         .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
         .config("spark.sql.session.timeZone", "UTC")

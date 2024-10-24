@@ -9,8 +9,8 @@ from py4j.protocol import Py4JJavaError  # type: ignore
 from pyspark.sql.types import DataType
 
 from koheesio.models import Field, field_validator, model_validator
-from koheesio.spark import DataFrame, SparkStep
-from koheesio.spark.utils import AnalysisException, on_databricks
+from koheesio.spark import AnalysisException, DataFrame, SparkStep
+from koheesio.spark.utils import on_databricks
 
 
 class DeltaTableStep(SparkStep):
@@ -293,7 +293,8 @@ class DeltaTableStep(SparkStep):
 
     @property
     def exists(self) -> bool:
-        """Check if table exists"""
+        """Check if table exists.
+        Depending on the value of the boolean flag `create_if_not_exists` a different logging level is provided."""
         result = False
 
         try:
@@ -303,8 +304,16 @@ class DeltaTableStep(SparkStep):
             result = True
         except AnalysisException as e:
             err_msg = str(e).lower()
+            common_message = (
+                f"Table `{self.table}` doesn't exist. "
+                f"The `create_if_not_exists` flag is set to {self.create_if_not_exists}."
+            )
+
             if err_msg.startswith("[table_or_view_not_found]") or err_msg.startswith("table or view not found"):
-                self.log.error(f"Table `{self.table}` doesn't exist.")
+                if self.create_if_not_exists:
+                    self.log.info(" ".join((common_message, "Therefore the table will be created.")))
+                else:
+                    self.log.error(" ".join((common_message, "Therefore the table will not be created.")))
             else:
                 raise e
 

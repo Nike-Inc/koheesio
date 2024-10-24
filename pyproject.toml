@@ -59,10 +59,11 @@ async_http = [
 box = ["boxsdk[jwt]==3.8.1"]
 pandas = ["pandas>=1.3", "setuptools", "numpy<2.0.0"]
 pyspark = ["pyspark>=3.2.0", "pyarrow>13"]
+pyspark_connect = ["pyspark[connect]>=3.5"]
 se = ["spark-expectations>=2.1.0"]
 # SFTP dependencies in to_csv line_iterator
 sftp = ["paramiko>=2.6.0"]
-delta = ["delta-spark>=3.2.1"]
+delta = ["delta-spark>=2.2"]
 excel = ["openpyxl>=3.0.0"]
 # Tableau dependencies
 tableau = ["tableauhyperapi>=0.0.19484", "tableauserverclient>=0.25"]
@@ -261,10 +262,10 @@ features = [
 
 parallel = true
 retries = 2
-retry-delay = 1
+retry-delay = 3
 
 [tool.hatch.envs.hatch-test.scripts]
-run = "pytest{env:HATCH_TEST_ARGS:} {args} -n auto"
+run = "pytest{env:HATCH_TEST_ARGS:} {args}"
 run-cov = "coverage run -m pytest{env:HATCH_TEST_ARGS:} {args}"
 cov-combine = "coverage combine"
 cov-report = "coverage report"
@@ -301,6 +302,8 @@ matrix.version.extra-dependencies = [
   ] },
   { value = "pyspark>=3.5,<3.6", if = [
     "pyspark35",
+  ] },
+  { value = "pyspark[connect]>=3.5,<3.6", if = [
     "pyspark35r",
   ] },
 ]
@@ -316,12 +319,15 @@ name.".*(pyspark35r).*".env-vars = [
   # enable soark connect, setting to local as it will trigger 
   # spark to start local spark server and enbale remote session
   { key = "SPARK_REMOTE", value = "local" },
+  { key = "SPARK_TESTING", value = "True" },
 ]
+
 
 [tool.pytest.ini_options]
 addopts = "-q --color=yes --order-scope=module"
 log_level = "CRITICAL"
 testpaths = ["tests"]
+asyncio_default_fixture_loop_scope = "scope"
 markers = [
   "default: added to all tests by default if no other marker expect of standard pytest markers is present",
   "spark: mark a test as a Spark test",
@@ -335,10 +341,18 @@ filterwarnings = [
   # pyspark.pandas warnings
   "ignore:distutils.*:DeprecationWarning:pyspark.pandas.*",
   "ignore:'PYARROW_IGNORE_TIMEZONE'.*:UserWarning:pyspark.pandas.*",
+  # pydantic warnings
+  "ignore:A custom validator is returning a value other than `self`.*.*:UserWarning:pydantic.main.*",
+  # pyspark.sql.connect warnings
+  "ignore:is_datetime64tz_dtype.*:DeprecationWarning:pyspark.sql.connect.*",
+  "ignore:distutils.*:DeprecationWarning:pyspark.sql.connect.*",
+  # pyspark.sql.pandas warnings
   "ignore:distutils.*:DeprecationWarning:pyspark.sql.pandas.*",
   "ignore:is_datetime64tz_dtype.*:DeprecationWarning:pyspark.sql.pandas.*",
+  "ignore:is_categorical_dtype.*:DeprecationWarning:pyspark.sql.pandas.*",
+  "ignore:iteritems.*:FutureWarning:pyspark.sql.pandas.*",
   # Koheesio warnings
-  "ignore:DayTimeIntervalType .*:UserWarning:koheesio.spark.snowflake.*",
+  "ignore:DayTimeIntervalType.*:UserWarning:koheesio.spark.snowflake.*",
 ]
 
 [tool.coverage.run]
@@ -413,7 +427,7 @@ features = [
   "box",
   "pandas",
   "pyspark",
-#   "se",
+  #   "se",
   "sftp",
   "snowflake",
   "delta",
@@ -423,7 +437,6 @@ features = [
   "test",
   "docs",
 ]
-extra-dependencies = ["pyspark[connect]==3.5.3"]
 
 
 ###  ~~~~~~~~~~~~~~~~~~  ###
