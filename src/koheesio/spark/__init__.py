@@ -4,8 +4,8 @@ Spark step module
 
 from __future__ import annotations
 
-from typing import Optional
 from abc import ABC
+from typing import Optional
 
 from pydantic import Field
 
@@ -16,9 +16,11 @@ from koheesio.spark.utils.common import (
     Column,
     DataFrame,
     DataStreamReader,
+    DataStreamWriter,
     DataType,
     ParseException,
     SparkSession,
+    StreamingQuery,
 )
 
 __all__ = [
@@ -30,6 +32,8 @@ __all__ = [
     "AnalysisException",
     "DataType",
     "DataStreamReader",
+    "DataStreamWriter",
+    "StreamingQuery",
 ]
 
 

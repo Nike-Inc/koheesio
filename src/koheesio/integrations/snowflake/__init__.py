@@ -42,10 +42,10 @@ format : str, optional, default="snowflake"
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Set, Union
 from abc import ABC
 from contextlib import contextmanager
 from types import ModuleType
+from typing import Any, Dict, Generator, List, Optional, Set, Union
 
 from koheesio import Step
 from koheesio.logger import warn
@@ -96,9 +96,10 @@ def safe_import_snowflake_connector() -> Optional[ModuleType]:
             "your package dependencies.",
             UserWarning,
         )
+        return None
 
 
-class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):
+class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc]
     """
     BaseModel for setting up Snowflake Driver options.
 
@@ -172,7 +173,7 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):
         description="Extra options to pass to the Snowflake connector",
     )
 
-    def get_options(self, by_alias: bool = True, include: Set[str] = None) -> Dict[str, Any]:
+    def get_options(self, by_alias: bool = True, include: Optional[Set[str]] = None) -> Dict[str, Any]:
         """Get the sfOptions as a dictionary.
 
         Note
@@ -202,7 +203,7 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):
             "password",
         } - (include or set())
 
-        fields = self.model_dump(
+        fields = self.model_dump(  # type: ignore[attr-defined]
             by_alias=by_alias,
             exclude_none=True,
             exclude=exclude_set,
@@ -231,7 +232,7 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):
 
         # handle params
         if "params" in include:
-            params = fields.pop("params", self.params)
+            params = fields.pop("params", self.params)  # type: ignore[attr-defined]
             fields.update(**params)
 
         return {key: value for key, value in fields.items() if value}
@@ -247,7 +248,7 @@ class SnowflakeTableStep(SnowflakeStep, ABC):
     table: str = Field(default=..., description="The name of the table")
 
     @property
-    def full_name(self):
+    def full_name(self) -> str:
         """
         Returns the fullname of snowflake table based on schema and database parameters.
 
@@ -290,14 +291,14 @@ class SnowflakeRunQueryPython(SnowflakeStep):
         results: List = Field(default_factory=list, description="The results of the query")
 
     @field_validator("query")
-    def validate_query(cls, query):
+    def validate_query(cls, query: str) -> str:
         """Replace escape characters, strip whitespace, ensure it is not empty"""
         query = query.replace("\\n", "\n").replace("\\t", "\t").strip()
         if not query:
             raise ValueError("Query cannot be empty")
         return query
 
-    def get_options(self, by_alias=False, include=None):
+    def get_options(self, by_alias: bool = False, include: Optional[Set[str]] = None) -> Dict[str, Any]:
         if include is None:
             include = {
                 "account",
@@ -314,13 +315,13 @@ class SnowflakeRunQueryPython(SnowflakeStep):
 
     @property
     @contextmanager
-    def conn(self):
+    def conn(self) -> Generator:
         if not self._snowflake_connector:
             raise RuntimeError("Snowflake connector is not installed. Please install `snowflake-connector-python`.")
 
         sf_options = self.get_options()
         _conn = self._snowflake_connector.connect(**sf_options)
-        self.log.info(f"Connected to Snowflake account: {sf_options['account']}")
+        self.log.info(f"Connected to Snowflake account: {sf_options['account']}")  # type: ignore[union-attr]
 
         try:
             yield _conn
@@ -328,7 +329,7 @@ class SnowflakeRunQueryPython(SnowflakeStep):
             if _conn:
                 _conn.close()
 
-    def get_query(self):
+    def get_query(self) -> str:
         """allows to customize the query"""
         return self.query
 
@@ -337,8 +338,8 @@ class SnowflakeRunQueryPython(SnowflakeStep):
         with self.conn as conn:
             cursors = conn.execute_string(self.get_query())
             for cursor in cursors:
-                self.log.debug(f"Cursor executed: {cursor}")
-                self.output.results.extend(cursor.fetchall())
+                self.log.debug(f"Cursor executed: {cursor}")  # type: ignore[union-attr]
+                self.output.results.extend(cursor.fetchall())  # type: ignore[attr-defined]
 
 
 class GrantPrivilegesOnObject(SnowflakeRunQueryPython):
@@ -393,13 +394,13 @@ class GrantPrivilegesOnObject(SnowflakeRunQueryPython):
     object: str = Field(default=..., description="The name of the object to grant privileges on")
     type: str = Field(default=..., description="The type of object to grant privileges on, e.g. TABLE, VIEW")
 
-    privileges: Union[conlist(str, min_length=1), str] = Field(
+    privileges: Union[conlist(str, min_length=1), str] = Field(  # type: ignore[valid-type]
         default=...,
         alias="permissions",
         description="The Privilege/Permission or list of Privileges/Permissions to grant on the given object. "
         "See https://docs.snowflake.com/en/sql-reference/sql/grant-privilege.html",
     )
-    roles: Union[conlist(str, min_length=1), str] = Field(
+    roles: Union[conlist(str, min_length=1), str] = Field(  # type: ignore[valid-type]
         default=...,
         alias="role",
         validation_alias="roles",
@@ -410,12 +411,12 @@ class GrantPrivilegesOnObject(SnowflakeRunQueryPython):
     class Output(SnowflakeRunQueryPython.Output):
         """Output class for GrantPrivilegesOnObject"""
 
-        query: conlist(str, min_length=1) = Field(
+        query: conlist(str, min_length=1) = Field(  # type: ignore[valid-type]
             default=..., description="Query that was executed to grant privileges", validate_default=False
         )
 
     @model_validator(mode="before")
-    def set_roles_privileges(cls, values):
+    def set_roles_privileges(cls, values: dict) -> dict:
         """Coerce roles and privileges to be lists if they are not already."""
         roles_value = values.get("roles") or values.get("role")
         privileges_value = values.get("privileges")
@@ -431,7 +432,7 @@ class GrantPrivilegesOnObject(SnowflakeRunQueryPython):
         return values
 
     @model_validator(mode="after")
-    def validate_object_and_object_type(self):
+    def validate_object_and_object_type(self) -> "GrantPrivilegesOnObject":
         """Validate that the object and type are set."""
         object_value = self.object
         if not object_value:
@@ -446,7 +447,7 @@ class GrantPrivilegesOnObject(SnowflakeRunQueryPython):
 
         return self
 
-    def get_query(self, role: str):
+    def get_query(self, role: str) -> str:  # type: ignore[override]
         """Build the GRANT query
 
         Parameters
@@ -467,19 +468,19 @@ class GrantPrivilegesOnObject(SnowflakeRunQueryPython):
         )
         return query
 
-    def execute(self):
-        self.output.query = []
+    def execute(self) -> None:
+        self.output.query = []  # type: ignore[attr-defined]
         roles = self.roles
 
         for role in roles:
             query = self.get_query(role)
-            self.output.query.append(query)
+            self.output.query.append(query)  # type: ignore[attr-defined]
 
             # Create a new instance of SnowflakeRunQueryPython with the current query
             instance = SnowflakeRunQueryPython.from_step(self, query=query)
-            instance.execute()
-            print(f"{instance.output = }")
-            self.output.results.extend(instance.output.results)
+            instance.execute()  # type: ignore[attr-defined]
+            print(f"{instance.output = }")  # type: ignore[attr-defined]
+            self.output.results.extend(instance.output.results)  # type: ignore[attr-defined]
 
 
 class GrantPrivilegesOnFullyQualifiedObject(GrantPrivilegesOnObject):
@@ -512,7 +513,7 @@ class GrantPrivilegesOnFullyQualifiedObject(GrantPrivilegesOnObject):
     """
 
     @model_validator(mode="after")
-    def set_object_name(self):
+    def set_object_name(self) -> "GrantPrivilegesOnFullyQualifiedObject":
         """Set the object name to be fully qualified, i.e. database.schema.object_name"""
         # database, schema, obj_name
         db = self.database

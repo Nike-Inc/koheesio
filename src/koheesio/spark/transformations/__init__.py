@@ -21,8 +21,8 @@ ColumnsTransformationWithTarget
     Extended ColumnsTransformation class with an additional `target_column` field
 """
 
-from typing import Iterator, List, Optional, Union
 from abc import ABC, abstractmethod
+from typing import Iterator, List, Optional, Union
 
 from pyspark.sql import functions as f
 from pyspark.sql.types import DataType
@@ -56,9 +56,7 @@ class Transformation(SparkStep, ABC):
 
     class AddOne(Transformation):
         def execute(self):
-            self.output.df = self.df.withColumn(
-                "new_column", f.col("old_column") + 1
-            )
+            self.output.df = self.df.withColumn("new_column", f.col("old_column") + 1)
     ```
 
     In the example above, the `execute` method is implemented to add 1 to the values of the `old_column` and store the
@@ -104,7 +102,7 @@ class Transformation(SparkStep, ABC):
     df: Optional[DataFrame] = Field(default=None, description="The Spark DataFrame")
 
     @abstractmethod
-    def execute(self) -> SparkStep.Output:
+    def execute(self) -> None:
         """Execute on a Transformation should handle self.df (input) and set self.output.df (output)
 
         This method should be implemented in the child class. The input DataFrame is available as `self.df` and the
@@ -120,7 +118,7 @@ class Transformation(SparkStep, ABC):
         """
         # self.df  # input dataframe
         # self.output.df # output dataframe
-        self.output.df = ...  # implement the transformation logic
+        self.output.df = ...  # type:ignore[attr-defined] # implement the transformation logic
         raise NotImplementedError
 
     def transform(self, df: Optional[DataFrame] = None) -> DataFrame:
@@ -147,7 +145,7 @@ class Transformation(SparkStep, ABC):
         if not self.df:
             raise RuntimeError("No valid Dataframe was passed")
         self.execute()
-        return self.output.df
+        return self.output.df  # type: ignore[attr-defined]
 
 
 class ColumnsTransformation(Transformation, ABC):
@@ -250,12 +248,12 @@ class ColumnsTransformation(Transformation, ABC):
         """
 
         # FIXME: Check if it can be just None
-        run_for_all_data_type: Optional[List[SparkDatatype]] = [None]
-        limit_data_type: Optional[List[SparkDatatype]] = [None]
+        run_for_all_data_type: Optional[List[SparkDatatype]] = None
+        limit_data_type: Optional[List[SparkDatatype]] = None
         data_type_strict_mode: bool = False
 
     @field_validator("columns", mode="before")
-    def set_columns(cls, columns_value):
+    def set_columns(cls, columns_value: ListOfColumns) -> ListOfColumns:
         """Validate columns through the columns configuration provided"""
         columns = columns_value
         run_for_all_data_type = cls.ColumnConfig.run_for_all_data_type
@@ -279,7 +277,7 @@ class ColumnsTransformation(Transformation, ABC):
     @property
     def limit_data_type_is_set(self) -> bool:
         """Returns True if limit_data_type is set"""
-        return self.ColumnConfig.limit_data_type[0] is not None
+        return self.ColumnConfig.limit_data_type[0] is not None  # type: ignore[index]
 
     @property
     def data_type_strict_mode_is_set(self) -> bool:
@@ -340,14 +338,11 @@ class ColumnsTransformation(Transformation, ABC):
         if not df:
             raise RuntimeError("No valid Dataframe was passed")
 
-        if not isinstance(col, Column):
-            col = f.col(col)
-
-        # ask the JVM for the name of the column
-        # noinspection PyProtectedMember
+        if not isinstance(col, Column):  # type:ignore[misc, arg-type]
+            col = f.col(col)  # type:ignore[arg-type]
 
         col_name = (
-            col._expr._unparsed_identifier
+            col._expr._unparsed_identifier  # type:ignore[union-attr]
             if col.__class__.__module__ == "pyspark.sql.connect.column"
             else col._jc.toString()  # type: ignore  # noqa: E721
         )
@@ -389,7 +384,7 @@ class ColumnsTransformation(Transformation, ABC):
         ]
         return columns_of_given_type
 
-    def is_column_type_correct(self, column):
+    def is_column_type_correct(self, column: Column | str) -> bool:
         """Check if column type is correct and handle it if not, when limit_data_type is set"""
         if not self.limit_data_type_is_set:
             return True
@@ -405,10 +400,10 @@ class ColumnsTransformation(Transformation, ABC):
             )
 
         # Otherwise, throws a warning that the Column object is not of a given type
-        self.log.warning(f"Column `{column}` is not of type `{limit_data_types}` and will be skipped.")
+        self.log.warning(f"Column `{column}` is not of type `{limit_data_types}` and will be skipped.")  # type:ignore[union-attr]
         return False
 
-    def get_limit_data_types(self):
+    def get_limit_data_types(self) -> list:
         """Get the limit_data_type as a list of strings"""
         return [dt.value for dt in self.ColumnConfig.limit_data_type]  # type: ignore
 
@@ -420,7 +415,7 @@ class ColumnsTransformation(Transformation, ABC):
             for data_type in self.ColumnConfig.run_for_all_data_type:  # type: ignore
                 columns += self.get_all_columns_of_specific_type(data_type)
         else:
-            columns = self.columns
+            columns = self.columns  # type:ignore[assignment]
 
         for column in columns:
             if self.is_column_type_correct(column):
@@ -557,7 +552,7 @@ class ColumnsTransformationWithTarget(ColumnsTransformation, ABC):
 
             yield target_column, column
 
-    def execute(self):
+    def execute(self) -> None:
         """Execute on a ColumnsTransformationWithTarget handles self.df (input) and set self.output.df (output)
         This can be left unchanged, and hence should not be implemented in the child class.
         """
@@ -565,9 +560,9 @@ class ColumnsTransformationWithTarget(ColumnsTransformation, ABC):
 
         for target_column, column in self.get_columns_with_target():
             func = self.func  # select the applicable function
-            df = df.withColumn(
+            df = df.withColumn(  # type:ignore[union-attr]
                 target_column,
-                func(f.col(column)),
+                func(f.col(column)),  # type:ignore[arg-type]
             )
 
-        self.output.df = df
+        self.output.df = df  # type:ignore[attr-defined]

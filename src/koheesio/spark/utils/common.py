@@ -5,9 +5,9 @@ Spark Utility functions
 import importlib
 import inspect
 import os
-from typing import Union
 from enum import Enum
 from types import ModuleType
+from typing import Union
 
 from pyspark import sql
 from pyspark.sql.types import (
@@ -47,6 +47,8 @@ __all__ = [
     "ParseException",
     "DataType",
     "DataStreamReader",
+    "DataStreamWriter",
+    "StreamingQuery",
 ]
 
 try:
@@ -96,7 +98,8 @@ if check_if_pyspark_connect_is_supported():
     from pyspark.sql.connect.dataframe import DataFrame as ConnectDataFrame
     from pyspark.sql.connect.proto.types_pb2 import DataType as ConnectDataType
     from pyspark.sql.connect.session import SparkSession as ConnectSparkSession
-    from pyspark.sql.streaming.readwriter import DataStreamReader
+    from pyspark.sql.streaming.query import StreamingQuery
+    from pyspark.sql.streaming.readwriter import DataStreamReader, DataStreamWriter
     from pyspark.sql.types import DataType as SqlDataType
 
     Column = Union[sql.Column, ConnectColumn]
@@ -105,6 +108,8 @@ if check_if_pyspark_connect_is_supported():
     ParseException = (CapturedParseException, ConnectParseException)
     DataType = Union[SqlDataType, ConnectDataType]
     DataStreamReader = DataStreamReader
+    DataStreamWriter = DataStreamWriter
+    StreamingQuery = StreamingQuery
 else:
     try:
         from pyspark.errors.exceptions.captured import ParseException  # type: ignore
@@ -119,11 +124,13 @@ else:
     from pyspark.sql.types import DataType  # type: ignore
 
     try:
-        from pyspark.sql.streaming.readwriter import DataStreamReader
+        from pyspark.sql.streaming.query import StreamingQuery
+        from pyspark.sql.streaming.readwriter import DataStreamReader, DataStreamWriter
     except (ImportError, ModuleNotFoundError):
-        from pyspark.sql.streaming import DataStreamReader  # type: ignore
-
+        from pyspark.sql.streaming import DataStreamReader, DataStreamWriter, StreamingQuery  # type: ignore
     DataStreamReader = DataStreamReader
+    DataStreamWriter = DataStreamWriter
+    StreamingQuery = StreamingQuery
 
 
 def get_active_session() -> SparkSession:  # type: ignore
