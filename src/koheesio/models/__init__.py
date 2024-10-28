@@ -9,14 +9,15 @@ A Model class can be exceptionally handy when you need similar Pydantic models i
 Transformation and Reader classes.
 """
 
-from typing import Annotated, Any, Dict, List, Optional, Union
 from abc import ABC
 from functools import cached_property
 from pathlib import Path
+from typing import Annotated, Any, Dict, List, Optional, Union
+
+from pydantic import *  # noqa
 
 # to ensure that koheesio.models is a drop in replacement for pydantic
 from pydantic import BaseModel as PydanticBaseModel
-from pydantic import *  # noqa
 from pydantic._internal._generics import PydanticGenericMetadata
 from pydantic._internal._model_construction import ModelMetaclass
 
@@ -36,7 +37,7 @@ __all__ = [
 
 
 # pylint: disable=function-redefined
-class BaseModel(PydanticBaseModel, ABC):
+class BaseModel(PydanticBaseModel, ABC):  # type: ignore[no-redef]
     """
     Base model for all models.
 
@@ -222,7 +223,7 @@ class BaseModel(PydanticBaseModel, ABC):
     description: Optional[str] = Field(default=None, description="Description of the Model")
 
     @model_validator(mode="after")
-    def _validate_name_and_description(self):
+    def _validate_name_and_description(self):  # type: ignore[no-untyped-def]
         """
         Validates the 'name' and 'description' of the Model according to the rules outlined in the class docstring.
         """
@@ -246,7 +247,7 @@ class BaseModel(PydanticBaseModel, ABC):
         return LoggingFactory.get_logger(name=self.__class__.__name__, inherit_from_koheesio=True)
 
     @classmethod
-    def from_basemodel(cls, basemodel: BaseModel, **kwargs) -> InstanceOf[BaseModel]:
+    def from_basemodel(cls, basemodel: BaseModel, **kwargs) -> InstanceOf[BaseModel]:  # type: ignore[no-untyped-def]
         """Returns a new BaseModel instance based on the data of another BaseModel"""
         kwargs = {**basemodel.model_dump(), **kwargs}
         return cls(**kwargs)
@@ -354,7 +355,7 @@ class BaseModel(PydanticBaseModel, ABC):
         return cls.from_context(_context)
 
     @classmethod
-    def lazy(cls):
+    def lazy(cls):  # type: ignore[no-untyped-def]
         """Constructs the model without doing validation
 
         Essentially an alias to BaseModel.construct()
@@ -388,10 +389,10 @@ class BaseModel(PydanticBaseModel, ABC):
         """
         return self.merge(other)
 
-    def __enter__(self):
+    def __enter__(self):  # type: ignore[no-untyped-def]
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb):  # type: ignore[no-untyped-def]
         if exc_type is not None:
             # An exception occurred. We log it and raise it again.
             self.log.exception(f"An exception occurred: {exc_val}")
@@ -401,7 +402,7 @@ class BaseModel(PydanticBaseModel, ABC):
         self.validate()
         return True
 
-    def __getitem__(self, name) -> Any:
+    def __getitem__(self, name) -> Any:  # type: ignore[no-untyped-def]
         """Get Item dunder method for BaseModel
 
         Allows for subscriptable (`class[key]`) type of access to the data.
@@ -425,7 +426,7 @@ class BaseModel(PydanticBaseModel, ABC):
         """
         return self.__getattribute__(name)
 
-    def __setitem__(self, key: str, value: Any):
+    def __setitem__(self, key: str, value: Any):  # type: ignore[no-untyped-def]
         """Set Item dunder method for BaseModel
 
         Allows for subscribing / assigning to `class[key]`
@@ -459,7 +460,7 @@ class BaseModel(PydanticBaseModel, ABC):
         """
         return hasattr(self, key)
 
-    def get(self, key: str, default: Optional[Any] = None):
+    def get(self, key: str, default: Optional[Any] = None) -> Any:
         """Get an attribute of the model, but don't fail if not present
 
         Similar to dict.get()
@@ -488,7 +489,7 @@ class BaseModel(PydanticBaseModel, ABC):
             return self.__getitem__(key)
         return default
 
-    def merge(self, other: Union[Dict, BaseModel]):
+    def merge(self, other: Union[Dict, BaseModel]) -> BaseModel:
         """Merge key,value map with self
 
         Functionally similar to adding two dicts together; like running `{**dict_a, **dict_b}`.
@@ -515,7 +516,7 @@ class BaseModel(PydanticBaseModel, ABC):
 
         return self
 
-    def set(self, key: str, value: Any):
+    def set(self, key: str, value: Any) -> None:
         """Allows for subscribing / assigning to `class[key]`.
 
         Examples
@@ -552,7 +553,7 @@ class BaseModel(PydanticBaseModel, ABC):
         """
         return self.model_dump()
 
-    def to_json(self, pretty: bool = False):
+    def to_json(self, pretty: bool = False) -> str:
         """Converts the BaseModel instance to a JSON string
 
         BaseModel offloads the serialization and deserialization of the JSON string to Context class. Context uses
@@ -596,7 +597,7 @@ class BaseModel(PydanticBaseModel, ABC):
         return _context.to_yaml(clean=clean)
 
     # noinspection PyMethodOverriding
-    def validate(self) -> BaseModel:
+    def validate(self) -> BaseModel:  # type: ignore[override]
         """Validate the BaseModel instance
 
         This method is used to validate the BaseModel instance. It is used in conjunction with the lazy method to
@@ -646,19 +647,19 @@ class ExtraParamsMixin(PydanticBaseModel):
     params: Dict[str, Any] = Field(default_factory=dict)
 
     @cached_property
-    def extra_params(self) -> Dict[str, Any]:
+    def extra_params(self) -> Optional[Dict[str, Any]]:
         """Extract params (passed as arbitrary kwargs) from values and move them to params dict"""
         # noinspection PyUnresolvedReferences
         return self.model_extra
 
     @model_validator(mode="after")
-    def _move_extra_params_to_params(self):
+    def _move_extra_params_to_params(self):  # type: ignore[no-untyped-def]
         """Move extra_params to params dict"""
-        self.params = {**self.params, **self.extra_params}
+        self.params = {**self.params, **self.extra_params}  # type: ignore[assignment]
         return self
 
 
-def _list_of_columns_validation(columns_value):
+def _list_of_columns_validation(columns_value: Union[str, list]) -> list:
     """
     Performs validation for ListOfColumns type. Will ensure that there are no duplicate columns, empty strings, etc.
     In case an individual column is passed, it will coerce it to a list.

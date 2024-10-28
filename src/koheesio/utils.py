@@ -4,10 +4,10 @@ Utility functions
 
 import inspect
 import uuid
-from typing import Any, Callable, Dict, Optional, Tuple
 from functools import partial
 from importlib import import_module
 from pathlib import Path
+from typing import Any, Callable, Dict, Optional, Tuple
 
 __all__ = [
     "get_args_for_func",
@@ -94,8 +94,8 @@ def get_random_string(length: int = 64, prefix: Optional[str] = None) -> str:
     return f"{uuid.uuid4().hex}"[0:length]
 
 
-def convert_str_to_bool(value) -> Any:
+def convert_str_to_bool(value: str) -> Any:
     """Converts a string to a boolean if the string is either 'true' or 'false'"""
     if isinstance(value, str) and (v := value.lower()) in ["true", "false"]:
-        value = v == "true"
-    return value
+        converted_value = v == "true"
+    return converted_value

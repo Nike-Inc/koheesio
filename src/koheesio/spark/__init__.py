@@ -54,7 +54,7 @@ class SparkStep(Step, ABC):
         df: Optional[DataFrame] = Field(default=None, description="The Spark DataFrame")
 
     @model_validator(mode="after")
-    def _get_active_spark_session(self):
+    def _get_active_spark_session(self) -> SparkStep:
         """Return active SparkSession instance
         If a user provides a SparkSession instance, it will be returned. Otherwise, an active SparkSession will be
         attempted to be retrieved.

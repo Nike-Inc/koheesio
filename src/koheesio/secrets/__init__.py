@@ -3,8 +3,8 @@
 Contains abstract class for various secret integrations also known as SecretContext.
 """
 
-from typing import Optional
 from abc import ABC, abstractmethod
+from typing import Optional
 
 from koheesio import Step, StepOutput
 from koheesio.context import Context
@@ -37,7 +37,7 @@ class Secret(Step, ABC):
         context: Context = Field(default=..., description="Koheesio context")
 
     @classmethod
-    def encode_secret_values(cls, data: dict):
+    def encode_secret_values(cls, data: dict) -> dict:
         """Encode secret values in the dictionary.
 
         Ensures that all values in the dictionary are wrapped in SecretStr.
@@ -47,7 +47,7 @@ class Secret(Step, ABC):
             if isinstance(value, dict):
                 encoded_dict[key] = cls.encode_secret_values(value)
             else:
-                encoded_dict[key] = SecretStr(value)
+                encoded_dict[key] = SecretStr(value)  # type: ignore[assignment]
         return encoded_dict
 
     @abstractmethod
@@ -57,16 +57,16 @@ class Secret(Step, ABC):
         """
         ...
 
-    def execute(self):
+    def execute(self) -> None:
         """
         Main method to handle secrets protection and context creation with "root-parent-secrets" structure.
         """
         context = Context(self.encode_secret_values(data={self.root: {self.parent: self._get_secrets()}}))
-        self.output.context = self.context.merge(context=context)
+        self.output.context = self.context.merge(context=context)  # type: ignore[attr-defined, union-attr]
 
     def get(self) -> Context:
         """
         Convenience method to return context with secrets.
         """
         self.execute()
-        return self.output.context
+        return self.output.context  # type: ignore[attr-defined]

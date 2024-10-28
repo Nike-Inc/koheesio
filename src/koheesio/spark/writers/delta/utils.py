@@ -4,7 +4,7 @@ This module provides utility functions while working with delta framework.
 
 from typing import Optional
 
-from py4j.java_gateway import JavaObject
+from py4j.java_gateway import JavaObject  # type: ignore[import-untyped]
 
 
 def log_clauses(clauses: JavaObject, source_alias: str, target_alias: str) -> Optional[str]:
@@ -39,7 +39,7 @@ def log_clauses(clauses: JavaObject, source_alias: str, target_alias: str) -> Op
 
     if not clauses.isEmpty():
         clauses_type = clauses.last().nodeName().replace("DeltaMergeInto", "")
-        _processed_clauses = {}
+        _processed_clauses: dict = {}
 
         for i in range(0, clauses.length()):
             clause = clauses.apply(i)

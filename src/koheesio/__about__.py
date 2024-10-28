@@ -32,7 +32,7 @@ Source: {SOURCE}
 
 
 # fmt: off
-def _about():  # pragma: no cover
+def _about() -> str:  # pragma: no cover
     """Return the Koheesio logo and version/about information as a string
     Note: this code is not meant to be readable, instead it is written to be as compact as possible
     """

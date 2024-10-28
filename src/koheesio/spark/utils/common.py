@@ -86,8 +86,12 @@ def check_if_pyspark_connect_is_supported() -> bool:
 
 
 if check_if_pyspark_connect_is_supported():
-    from pyspark.errors.exceptions.captured import ParseException as CapturedParseException
-    from pyspark.errors.exceptions.connect import ParseException as ConnectParseException
+    from pyspark.errors.exceptions.captured import (
+        ParseException as CapturedParseException,
+    )
+    from pyspark.errors.exceptions.connect import (
+        ParseException as ConnectParseException,
+    )
     from pyspark.sql.connect.column import Column as ConnectColumn
     from pyspark.sql.connect.dataframe import DataFrame as ConnectDataFrame
     from pyspark.sql.connect.proto.types_pb2 import DataType as ConnectDataType
@@ -126,9 +130,7 @@ def get_active_session() -> SparkSession:  # type: ignore
     if check_if_pyspark_connect_is_supported():
         from pyspark.sql.connect.session import SparkSession as ConnectSparkSession
 
-        session = (
-            ConnectSparkSession.getActiveSession() or sql.SparkSession.getActiveSession()  # type: ignore
-        )
+        session = ConnectSparkSession.getActiveSession() or sql.SparkSession.getActiveSession()  # type: ignore
     else:
         session = sql.SparkSession.getActiveSession()  # type: ignore
 
@@ -219,7 +221,7 @@ class SparkDatatype(Enum):
     VOID = "void"
 
     @property
-    def spark_type(self) -> DataType:  # type: ignore
+    def spark_type(self) -> type:
         """Returns the spark type for the given enum value"""
         mapping_dict = {
             "byte": ByteType,
@@ -344,7 +346,7 @@ def get_column_name(col: Column) -> str:  # type: ignore
     # we have to distinguish between the Column object from column from local session and remote
     if hasattr(col, "_jc"):
         # In case of a 'regular' Column object, we can directly access the name attribute through the _jc attribute
-        name = col._jc.toString()
+        name = col._jc.toString()  # type: ignore[operator]
     elif any(cls.__module__ == "pyspark.sql.connect.column" for cls in inspect.getmro(col.__class__)):
         name = col._expr.name()
     else:

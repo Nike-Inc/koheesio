@@ -3,9 +3,9 @@ Classes to ease interaction with Slack
 """
 
 import json
-from typing import Any, Dict, Optional
 from datetime import datetime
 from textwrap import dedent
+from typing import Any, Dict, Optional
 
 from koheesio.models import ConfigDict, Field
 from koheesio.notifications import NotificationSeverity
@@ -34,7 +34,7 @@ class SlackNotification(HttpPostStep):
     channel: Optional[str] = Field(default=None, description="Slack channel id")
     headers: Optional[Dict[str, Any]] = {"Content-type": "application/json"}
 
-    def get_payload(self):
+    def get_payload(self) -> str:
         """
         Generate payload with `Block Kit`.
         More details: https://api.slack.com/block-kit
@@ -56,11 +56,11 @@ class SlackNotification(HttpPostStep):
         }
 
         if self.channel:
-            payload["channel"] = self.channel
+            payload["channel"] = self.channel  # type: ignore[assignment]
 
         return json.dumps(payload)
 
-    def execute(self):
+    def execute(self) -> None:
         """
         Generate payload and send post request
         """
@@ -99,7 +99,7 @@ class SlackNotificationWithSeverity(SlackNotification):
 
     model_config = ConfigDict(use_enum_values=False)
 
-    def get_payload_message(self):
+    def get_payload_message(self) -> str:
         """
         Generate payload message based on the predefined set of parameters
         """
@@ -113,7 +113,7 @@ class SlackNotificationWithSeverity(SlackNotification):
             """
         )
 
-    def execute(self):
+    def execute(self) -> None:
         """
         Generate payload and send post request
         """

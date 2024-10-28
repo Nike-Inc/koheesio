@@ -35,9 +35,9 @@ class DummyStep(Step):
         """Dummy output for testing purposes."""
 
         c: str
-
-    def execute(self):
+        
+    def execute(self) -> None:
         """Dummy execute for testing purposes."""
-        self.output.a = self.a
-        self.output.b = self.b
-        self.output.c = self.a * self.b
+        self.output.a = self.a  # type: ignore[attr-defined]
+        self.output.b = self.b  # type: ignore[attr-defined]
+        self.output.c = self.a * self.b  # type: ignore[attr-defined]

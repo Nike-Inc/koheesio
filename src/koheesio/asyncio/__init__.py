@@ -2,9 +2,9 @@
 This module provides classes for asynchronous steps in the koheesio package.
 """
 
-from typing import Dict, Union
 from abc import ABC
 from asyncio import iscoroutine
+from typing import Dict, Union
 
 from koheesio.steps import Step, StepMetaClass, StepOutput
 
@@ -24,7 +24,7 @@ class AsyncStepMetaClass(StepMetaClass):
 
     """
 
-    def _execute_wrapper(cls, *args, **kwargs):
+    def _execute_wrapper(cls, *args, **kwargs):  # type: ignore[no-untyped-def]
         """Wrapper method for executing asynchronous steps.
 
         This method is called when an asynchronous step is executed. It wraps the
@@ -60,16 +60,14 @@ class AsyncStepOutput(Step.Output):
         Merge key-value map with self.
     """
 
-    def merge(self, other: Union[Dict, StepOutput]):
+    def merge(self, other: Union[Dict, StepOutput]) -> "AsyncStepOutput":
         """Merge key,value map with self
 
         Examples
         --------
         ```python
         step_output = StepOutput(foo="bar")
-        step_output.merge(
-            {"lorem": "ipsum"}
-        )  # step_output will now contain {'foo': 'bar', 'lorem': 'ipsum'}
+        step_output.merge({"lorem": "ipsum"})  # step_output will now contain {'foo': 'bar', 'lorem': 'ipsum'}
         ```
 
         Functionally similar to adding two dicts together; like running `{**dict_a, **dict_b}`.
@@ -84,7 +82,7 @@ class AsyncStepOutput(Step.Output):
 
         if not iscoroutine(other):
             for k, v in other.items():
-                self.set(k, v)
+                self.set(k, v)  # type: ignore[attr-defined]
 
         return self
 

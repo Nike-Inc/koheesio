@@ -56,10 +56,13 @@ class Writer(SparkStep, ABC):
     @property
     def streaming(self) -> bool:
         """Check if the DataFrame is a streaming DataFrame or not."""
+        if not self.df:
+            raise RuntimeError("No valid Dataframe was passed")
+
         return self.df.isStreaming
 
     @abstractmethod
-    def execute(self):
+    def execute(self) -> None:
         """Execute on a Writer should handle writing of the self.df (input) as a minimum"""
         # self.df  # input dataframe
         ...
@@ -74,4 +77,4 @@ class Writer(SparkStep, ABC):
         if not self.df:
             raise RuntimeError("No valid Dataframe was passed")
         self.execute()
-        return self.output
+        return self.output  # type: ignore[return-value]

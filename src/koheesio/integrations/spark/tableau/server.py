@@ -1,19 +1,13 @@
 import os
-from typing import ContextManager, Optional, Union
 from enum import Enum
 from pathlib import PurePath
+from typing import Any, ContextManager, Optional, Union
 
-import urllib3
-from tableauserverclient import (
-    DatasourceItem,
-    Pager,
-    PersonalAccessTokenAuth,
-    ProjectItem,
-    Server,
-    TableauAuth,
-)
-
+import urllib3  # type: ignore
 from pydantic import Field, SecretStr
+from tableauserverclient import DatasourceItem, PersonalAccessTokenAuth, ProjectItem, TableauAuth
+from tableauserverclient.server.pager import Pager
+from tableauserverclient.server.server import Server
 
 from koheesio.models import model_validator
 from koheesio.steps import Step, StepOutput
@@ -68,21 +62,21 @@ class TableauServer(Step):
         description="ID of the project on the Tableau server",
     )
 
-    def __init__(self, **data):
+    def __init__(self, **data: Any) -> None:
         super().__init__(**data)
-        self.server = None
+        self.server: Optional[Server] = None
 
     @model_validator(mode="after")
-    def validate_project(cls, data: dict) -> dict:
+    def validate_project(self) -> "TableauServer":
         """Validate when project and project_id are provided at the same time."""
-        project = data.get("project")
-        project_id = data.get("project_id")
 
-        if project and project_id:
+        if self.project and self.project_id:
             raise ValueError("Both 'project' and 'project_id' parameters cannot be provided at the same time.")
 
-        if not project and not project_id:
+        if not self.project_id and not self.project_id:
             raise ValueError("Either 'project' or 'project_id' parameters should be provided, none is set")
+
+        return self
 
     @property
     def auth(self) -> ContextManager:
@@ -103,10 +97,11 @@ class TableauServer(Step):
         # Suppress 'InsecureRequestWarning'
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+        tableau_auth: Union[TableauAuth, PersonalAccessTokenAuth]
         tableau_auth = TableauAuth(username=self.user, password=self.password.get_secret_value(), site_id=self.site_id)
 
         if self.token_name and self.token_value:
-            self.log.info(
+            self.log.info(  # type: ignore[union-attr]
                 "Token details provided, this will take precedence over username and password authentication."
             )
             tableau_auth = PersonalAccessTokenAuth(
@@ -139,19 +134,19 @@ class TableauServer(Step):
         """
 
         with self.auth:
-            all_projects = Pager(self.server.projects)
+            all_projects = Pager(self.server.projects)  # type: ignore[union-attr]
             parent, lim_p = None, []
 
             for project in all_projects:
                 if project.id == self.project_id:
                     lim_p = [project]
-                    self.log.info(f"\nProject ID provided directly:\n\tName: {lim_p[0].name}\n\tID: {lim_p[0].id}")
+                    self.log.info(f"\nProject ID provided directly:\n\tName: {lim_p[0].name}\n\tID: {lim_p[0].id}")  # type: ignore[union-attr]
                     break
 
                 # Identify parent project
                 if project.name.strip() == self.parent_project and not self.project_id:
                     parent = project
-                    self.log.info(f"\nParent project identified:\n\tName: {parent.name}\n\tID: {parent.id}")
+                    self.log.info(f"\nParent project identified:\n\tName: {parent.name}\n\tID: {parent.id}")  # type: ignore[union-attr]
 
                 # Identify project(s)
                 if project.name.strip() == self.project and not self.project_id:
@@ -171,10 +166,10 @@ class TableauServer(Step):
             elif len(lim_p) == 0:
                 raise ValueError("Working project could not be identified.")
             else:
-                self.log.info(f"\nWorking project identified:\n\tName: {lim_p[0].name}\n\tID: {lim_p[0].id}")
+                self.log.info(f"\nWorking project identified:\n\tName: {lim_p[0].name}\n\tID: {lim_p[0].id}")  # type: ignore[union-attr]
                 return lim_p[0]
 
-    def execute(self):
+    def execute(self) -> None:
         raise NotImplementedError("Method `execute` must be implemented in the subclass.")
 
 
@@ -208,24 +203,24 @@ class TableauHyperPublisher(TableauServer):
             default=..., description="DatasourceItem object representing the published datasource"
         )
 
-    def execute(self):
+    def execute(self) -> None:
         # Ensure that the Hyper File exists
         if not os.path.isfile(self.hyper_path):
             raise FileNotFoundError(f"Hyper file not found at: {self.hyper_path.as_posix()}")
 
         with self.auth:
             # Finally, publish the Hyper File to the Tableau server
-            self.log.info(f'Publishing Hyper File located at: "{self.hyper_path.as_posix()}"')
-            self.log.debug(f"Create mode: {self.publish_mode}")
+            self.log.info(f'Publishing Hyper File located at: "{self.hyper_path.as_posix()}"')  # type: ignore[union-attr]
+            self.log.debug(f"Create mode: {self.publish_mode}")  # type: ignore[union-attr]
 
-            datasource_item = self.server.datasources.publish(
-                datasource_item=DatasourceItem(project_id=self.working_project.id, name=self.datasource_name),
+            datasource_item = self.server.datasources.publish(  # type: ignore[union-attr]
+                datasource_item=DatasourceItem(project_id=str(self.working_project.id), name=self.datasource_name),  # type: ignore[union-attr]
                 file=self.hyper_path.as_posix(),
                 mode=self.publish_mode,
             )
-            self.log.info(f"Published datasource to Tableau server with the id: {datasource_item.id}")
+            self.log.info(f"Published datasource to Tableau server with the id: {datasource_item.id}")  # type: ignore[union-attr]
 
-            self.output.datasource_item = datasource_item
+            self.output.datasource_item = datasource_item  # type: ignore[union-attr, attr-defined]
 
-    def publish(self):
+    def publish(self) -> None:
         self.execute()

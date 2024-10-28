@@ -4,8 +4,8 @@ This module contains Okta integration steps.
 
 from __future__ import annotations
 
+from logging import Filter, LogRecord
 from typing import Dict, Optional, Union
-from logging import Filter
 
 from requests import HTTPError
 
@@ -26,7 +26,7 @@ class Okta(HttpPostStep):
     )
 
     @model_validator(mode="before")
-    def _set_auth_param(cls, v):
+    def _set_auth_param(cls, v: dict) -> dict:
         """
         Assign auth parameter with Okta client and secret to the params dictionary.
         If auth parameter already exists, it will be overwritten.
@@ -43,9 +43,9 @@ class LoggerOktaTokenFilter(Filter):
         self.__okta_object = okta_object
         super().__init__(name=name)
 
-    def filter(self, record):
+    def filter(self, record: LogRecord) -> bool:
         # noinspection PyUnresolvedReferences
-        if token := self.__okta_object.output.token:
+        if token := self.__okta_object.output.token:  # type: ignore[attr-defined]
             token_value = token.get_secret_value()
             record.msg = record.msg.replace(token_value, "<SECRET_TOKEN>")
 
@@ -79,30 +79,34 @@ class OktaAccessToken(Okta):
 
         token: Optional[SecretStr] = Field(default=None, description="Okta authentication token")
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs):  # type: ignore[no-untyped-def]
         _logger = LoggingFactory.get_logger(name=self.__class__.__name__, inherit_from_koheesio=True)
         logger_filter = LoggerOktaTokenFilter(okta_object=self)
         _logger.addFilter(logger_filter)
         super().__init__(**kwargs)
 
-    def execute(self):
+    def execute(self) -> None:
         """
         Execute an HTTP Post call to Okta service and retrieve the access token.
         """
         HttpPostStep.execute(self)
 
         # noinspection PyUnresolvedReferences
-        status_code = self.output.status_code
+        status_code = self.output.status_code  # type: ignore[attr-defined]
         # noinspection PyUnresolvedReferences
-        raw_payload = self.output.raw_payload
+        raw_payload = self.output.raw_payload  # type: ignore[attr-defined]
 
         if status_code != 200:
-            raise HTTPError(f"Request failed with '{status_code}' code. Payload: {raw_payload}")
+            raise HTTPError(
+                f"Request failed with '{status_code}' code. Payload: {raw_payload}",
+                response=self.output.response_raw,  # type: ignore[attr-defined]
+                request=None,
+            )
 
         # noinspection PyUnresolvedReferences
-        json_payload = self.output.json_payload
+        json_payload = self.output.json_payload  # type: ignore[attr-defined]
 
         if token := json_payload.get("access_token"):
-            self.output.token = SecretStr(token)
+            self.output.token = SecretStr(token)  # type: ignore[attr-defined]
         else:
             raise ValueError(f"No 'access_token' found in the Okta response: {json_payload}")

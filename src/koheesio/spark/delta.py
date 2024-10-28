@@ -122,7 +122,7 @@ class DeltaTableStep(SparkStep):
     )
 
     @field_validator("default_create_properties")
-    def _adjust_default_properties(cls, default_create_properties):
+    def _adjust_default_properties(cls, default_create_properties: dict) -> dict:
         """Adjust default properties based on environment."""
         if on_databricks():
             default_create_properties["delta.autoOptimize.autoCompact"] = True
@@ -134,19 +134,19 @@ class DeltaTableStep(SparkStep):
         return default_create_properties
 
     @model_validator(mode="after")
-    def _validate_catalog_database_table(self):
+    def _validate_catalog_database_table(self) -> "DeltaTableStep":
         """Validate that catalog, database/schema, and table are correctly set"""
         database, catalog, table = self.database, self.catalog, self.table
 
         try:
-            self.log.debug(f"Value of `table` input parameter: {table}")
+            self.log.debug(f"Value of `table` input parameter: {table}")  # type: ignore[union-attr]
             catalog, database, table = table.split(".")
-            self.log.debug("Catalog, database and table were given")
+            self.log.debug("Catalog, database and table were given")  # type: ignore[union-attr]
         except ValueError as e:
             if str(e) == "not enough values to unpack (expected 3, got 1)":
-                self.log.debug("Only table name was given")
+                self.log.debug("Only table name was given")  # type: ignore[union-attr]
             elif str(e) == "not enough values to unpack (expected 3, got 2)":
-                self.log.debug("Only table name and database name were given")
+                self.log.debug("Only table name and database name were given")  # type: ignore[union-attr]
                 database, table = table.split(".")
             else:
                 raise ValueError(f"Unable to parse values for Table: {table}") from e
@@ -163,7 +163,7 @@ class DeltaTableStep(SparkStep):
             Persisted properties as a dictionary.
         """
         persisted_properties = {}
-        raw_options = self.spark.sql(f"SHOW TBLPROPERTIES {self.table_name}").collect()
+        raw_options = self.spark.sql(f"SHOW TBLPROPERTIES {self.table_name}").collect()  # type: ignore[union-attr]
 
         for ro in raw_options:
             key, value = ro.asDict().values()
@@ -184,7 +184,7 @@ class DeltaTableStep(SparkStep):
         props = self.get_persisted_properties()
         return props.get("delta.enableChangeDataFeed", "false") == "true"
 
-    def add_property(self, key: str, value: Union[str, int, bool], override: bool = False):
+    def add_property(self, key: str, value: Union[str, int, bool], override: bool = False) -> None:
         """Alter table and set table property.
 
         Parameters
@@ -205,23 +205,23 @@ class DeltaTableStep(SparkStep):
 
             try:
                 # noinspection SqlNoDataSourceInspection
-                self.spark.sql(f"ALTER TABLE {self.table_name} SET TBLPROPERTIES ({property_pair})")
-                self.log.debug(f"Table `{self.table_name}` has been altered. Property `{property_pair}` added.")
+                self.spark.sql(f"ALTER TABLE {self.table_name} SET TBLPROPERTIES ({property_pair})")  # type: ignore[union-attr]
+                self.log.debug(f"Table `{self.table_name}` has been altered. Property `{property_pair}` added.")  # type: ignore[union-attr]
             except Py4JJavaError as e:
                 msg = f"Property `{key}` can not be applied to table `{self.table_name}`. Exception: {e}"
-                self.log.warning(msg)
+                self.log.warning(msg)  # type: ignore[union-attr]
                 warnings.warn(msg)
 
         if self.exists:
             if key in persisted_properties and persisted_properties[key] != v_str:
                 if override:
-                    self.log.debug(
+                    self.log.debug(  # type: ignore[union-attr]
                         f"Property `{key}` presents in `{self.table_name}` and has value `{persisted_properties[key]}`."
                         f"Override is enabled.The value will be changed to `{v_str}`."
                     )
                     _alter_table()
                 else:
-                    self.log.debug(
+                    self.log.debug(  # type: ignore[union-attr]
                         f"Skipping adding property `{key}`, because it is already set "
                         f"for table `{self.table_name}` to `{v_str}`. To override it, provide override=True"
                     )
@@ -230,7 +230,7 @@ class DeltaTableStep(SparkStep):
         else:
             self.default_create_properties[key] = v_str
 
-    def add_properties(self, properties: Dict[str, Union[str, bool, int]], override: bool = False):
+    def add_properties(self, properties: Dict[str, Union[str, bool, int]], override: bool = False) -> None:
         """Alter table and add properties.
 
         Parameters
@@ -245,7 +245,7 @@ class DeltaTableStep(SparkStep):
             v_str = str(v) if not isinstance(v, bool) else str(v).lower()
             self.add_property(key=k, value=v_str, override=override)
 
-    def execute(self):
+    def execute(self) -> None:
         """Nothing to execute on a Table"""
 
     @property
@@ -256,7 +256,7 @@ class DeltaTableStep(SparkStep):
     @property
     def dataframe(self) -> DataFrame:
         """Returns a DataFrame to be able to interact with this table"""
-        return self.spark.table(self.table_name)
+        return self.spark.table(self.table_name)  # type: ignore[union-attr]
 
     @property
     def columns(self) -> Optional[List[str]]:
@@ -298,9 +298,15 @@ class DeltaTableStep(SparkStep):
         result = False
 
         try:
-            # In Spark remote session it is not enough to call just spark.table(self.table_name)
-            # as it will not raise an exception, we have to make action call on table to check if it exists
-            self.spark.table(self.table_name).take(1)
+            from koheesio.spark.utils.connect import is_remote_session
+
+            _df = self.spark.table(self.table_name)  # type: ignore[union-attr]
+
+            if is_remote_session():
+                # In Spark remote session it is not enough to call just spark.table(self.table_name)
+                # as it will not raise an exception, we have to make action call on table to check if it exists
+                _df.take(1)
+
             result = True
         except AnalysisException as e:
             err_msg = str(e).lower()
@@ -311,9 +317,9 @@ class DeltaTableStep(SparkStep):
 
             if err_msg.startswith("[table_or_view_not_found]") or err_msg.startswith("table or view not found"):
                 if self.create_if_not_exists:
-                    self.log.info(" ".join((common_message, "Therefore the table will be created.")))
+                    self.log.info(" ".join((common_message, "Therefore the table will be created.")))  # type: ignore[union-attr]
                 else:
-                    self.log.error(" ".join((common_message, "Therefore the table will not be created.")))
+                    self.log.error(" ".join((common_message, "Therefore the table will not be created.")))  # type: ignore[union-attr]
             else:
                 raise e
 
