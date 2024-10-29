@@ -73,7 +73,7 @@ class KafkaReader(Reader, ExtraParamsMixin):
     streaming: Optional[bool] = Field(
         default=False, description="Whether to read the kafka topic as a stream or not. Defaults to False."
     )
-    params: Optional[Dict[str, str]] = Field(
+    params: Dict[str, str] = Field(
         default_factory=dict,
         alias="kafka_options",
         description="Arbitrary options to be applied when creating NSP Reader. If a user provides values for "
@@ -82,24 +82,24 @@ class KafkaReader(Reader, ExtraParamsMixin):
     )
 
     @property
-    def stream_reader(self):
+    def stream_reader(self) -> Reader:
         """Returns the Spark readStream object."""
         return self.spark.readStream
 
     @property
-    def batch_reader(self):
+    def batch_reader(self) -> Reader:
         """Returns the Spark read object for batch processing."""
         return self.spark.read
 
     @property
-    def reader(self):
+    def reader(self) -> Reader:
         """Returns the appropriate reader based on the streaming flag."""
         if self.streaming:
             return self.stream_reader
         return self.batch_reader
 
     @property
-    def options(self):
+    def options(self) -> Dict[str, str]:
         """Merge fixed parameters with arbitrary options provided by user."""
         return {
             **self.params,
@@ -108,7 +108,7 @@ class KafkaReader(Reader, ExtraParamsMixin):
         }
 
     @property
-    def logged_option_keys(self):
+    def logged_option_keys(self) -> set:
         """Keys that are allowed to be logged for the options."""
         return {
             "kafka.bootstrap.servers",
@@ -122,11 +122,11 @@ class KafkaReader(Reader, ExtraParamsMixin):
             "kafka.group.id",
         }
 
-    def execute(self):
+    def execute(self) -> Reader.Output:
         applied_options = {k: v for k, v in self.options.items() if k in self.logged_option_keys}
         self.log.debug(f"Applying options {applied_options}")
 
-        self.output.df = self.reader.format("kafka").options(**self.options).load()
+        self.output.df = self.reader.format("kafka").options(**self.options).load()  # type: ignore
 
 
 class KafkaStreamReader(KafkaReader):

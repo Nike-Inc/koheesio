@@ -43,7 +43,7 @@ format : str, optional, default="snowflake"
 from __future__ import annotations
 
 import json
-from typing import Callable, Dict, List, Optional, Set, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Union
 from abc import ABC
 from copy import deepcopy
 from textwrap import dedent
@@ -96,7 +96,7 @@ __all__ = [
 # Turning off too-many-lines because we are defining a lot of classes in this file
 
 
-def map_spark_type(spark_type: t.DataType):
+def map_spark_type(spark_type: t.DataType) -> str:
     """
     Translates Spark DataFrame Schema type to SnowFlake type
 
@@ -193,24 +193,6 @@ class SnowflakeSparkStep(SparkStep, SnowflakeBaseModel, ABC):
     """Expands the SnowflakeBaseModel so that it can be used as a SparkStep"""
 
 
-class SnowflakeTableStep(SnowflakeStep, ABC):
-    """Expands the SnowflakeStep, adding a 'table' parameter"""
-
-    table: str = Field(default=..., description="The name of the table", alias="dbtable")
-
-    @property
-    def full_name(self):
-        """
-        Returns the fullname of snowflake table based on schema and database parameters.
-
-        Returns
-        -------
-        str
-            Snowflake Complete tablename (database.schema.table)
-        """
-        return f"{self.database}.{self.sfSchema}.{self.table}"
-
-
 class SnowflakeReader(SnowflakeBaseModel, JdbcReader, SparkStep):
     """
     Wrapper around JdbcReader for Snowflake.
@@ -239,9 +221,10 @@ class SnowflakeReader(SnowflakeBaseModel, JdbcReader, SparkStep):
     """
 
     format: str = Field(default="snowflake", description="The format to use when writing to Snowflake")
-    driver: Optional[str] = None  # overriding `driver` property of JdbcReader, because it is not required by Snowflake
+    # overriding `driver` property of JdbcReader, because it is not required by Snowflake
+    driver: Optional[str] = None  # type: ignore
 
-    def execute(self):
+    def execute(self) -> SparkStep.Output:
         """Read from Snowflake"""
         super().execute()
 
@@ -274,7 +257,7 @@ class RunQuery(SnowflakeSparkStep):
     query: str = Field(default=..., description="The query to run", alias="sql")
 
     @model_validator(mode="after")
-    def validate_spark_and_deprecate(self):
+    def validate_spark_and_deprecate(self) -> RunQuery:
         """If we do not have a spark session with a JVM, we can not use spark to run the query"""
         warn(
             "The RunQuery class is deprecated and will be removed in a future release. "
@@ -290,14 +273,14 @@ class RunQuery(SnowflakeSparkStep):
         return self
 
     @field_validator("query")
-    def validate_query(cls, query):
+    def validate_query(cls, query: str) -> str:
         """Replace escape characters, strip whitespace, ensure it is not empty"""
         query = query.replace("\\n", "\n").replace("\\t", "\t").strip()
         if not query:
             raise ValueError("Query cannot be empty")
         return query
 
-    def execute(self) -> None:
+    def execute(self) -> RunQuery.Output:
         # Executing the RunQuery without `host` option raises the following error:
         #   An error occurred while calling z:net.snowflake.spark.snowflake.Utils.runQuery.
         #   : java.util.NoSuchElementException: key not found: host
@@ -329,12 +312,12 @@ class Query(SnowflakeReader):
     query: str = Field(default=..., description="The query to run")
 
     @field_validator("query")
-    def validate_query(cls, query):
+    def validate_query(cls, query: str) -> str:
         """Replace escape characters"""
         query = query.replace("\\n", "\n").replace("\\t", "\t").strip()
         return query
 
-    def get_options(self, by_alias: bool = True, include: Set[str] = None):
+    def get_options(self, by_alias: bool = True, include: Set[str] = None) -> Dict[str, Any]:
         """add query to options"""
         options = super().get_options(by_alias)
         options["query"] = self.query
@@ -386,7 +369,7 @@ class TableExists(SnowflakeTableStep):
 
         exists: bool = Field(default=..., description="Whether or not the table exists")
 
-    def execute(self):
+    def execute(self) -> Output:
         query = (
             dedent(
                 # Force upper case, due to case-sensitivity of where clause
@@ -458,7 +441,7 @@ class CreateOrReplaceTableFromDataFrame(SnowflakeTransformation):
         )
         query: str = Field(default=..., description="Query that was executed to create the table")
 
-    def execute(self):
+    def execute(self) -> Output:
         self.output.df = self.df
 
         input_schema = self.df.schema
@@ -548,7 +531,7 @@ class AddColumn(SnowflakeStep):
 
         query: str = Field(default=..., description="Query that was executed to add the column")
 
-    def execute(self):
+    def execute(self) -> Output:
         query = f"ALTER TABLE {self.table} ADD COLUMN {self.column} {map_spark_type(self.type)}".upper()
         self.output.query = query
         SnowflakeRunQueryPython(**self.get_options(), query=query).execute()
@@ -577,7 +560,7 @@ class SyncTableAndDataFrameSchema(SnowflakeStep, SnowflakeTransformation):
             default=False, description="Flag to indicate whether Snowflake schema has been altered"
         )
 
-    def execute(self):
+    def execute(self) -> Output:
         self.log.warning("Snowflake table will always take a priority in case of data type conflicts!")
 
         # spark side
@@ -618,7 +601,7 @@ class SyncTableAndDataFrameSchema(SnowflakeStep, SnowflakeTransformation):
 
             if self.output.sf_table_altered:
                 sf_schema = GetTableSchema(**self.get_options(), table=self.table).execute().table_schema
-                sf_cols = [c.name.lower() for c in sf_schema]
+                sf_cols = {c.name.lower() for c in sf_schema}
 
             self.output.new_sf_schema = sf_schema
 
@@ -628,7 +611,7 @@ class SyncTableAndDataFrameSchema(SnowflakeStep, SnowflakeTransformation):
                 sf_col_name = sf_col.name.lower()
                 if sf_col_name not in df_cols:
                     sf_col_type = sf_col.dataType
-                    df = df.withColumn(sf_col_name, f.lit(None).cast(sf_col_type))
+                    df = df.withColumn(sf_col_name, f.lit(None).cast(sf_col_type))  # type: ignore
 
             # Put DataFrame columns in the same order as the Snowflake table
             df = df.select(*sf_cols)
@@ -653,7 +636,7 @@ class SnowflakeWriter(SnowflakeBaseModel, Writer):
     )
     format: str = Field("snowflake", description="The format to use when writing to Snowflake")
 
-    def execute(self):
+    def execute(self) -> SnowflakeWriter.Output:
         """Write to Snowflake"""
         self.log.debug(f"writing to {self.table} with mode {self.insert_type}")
         self.df.write.format(self.format).options(**self.get_options()).option("dbtable", self.table).mode(
@@ -710,12 +693,12 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeSparkStep):
         default_factory=list,
         description="Key columns on which merge statements will be MERGE statement will be applied.",
     )
-    streaming: Optional[bool] = Field(
+    streaming: bool = Field(
         default=False,
         description="Should synchronisation happen in streaming or in batch mode. Streaming is supported in 'APPEND' "
         "and 'MERGE' mode. Batch is supported in 'OVERWRITE' and 'APPEND' mode.",
     )
-    persist_staging: Optional[bool] = Field(
+    persist_staging: bool = Field(
         default=False,
         description="In case of debugging, set `persist_staging` to True to retain the staging table for inspection "
         "after synchronization.",
@@ -733,7 +716,7 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeSparkStep):
     writer_: Optional[Union[ForEachBatchStreamWriter, SnowflakeWriter]] = None
 
     @field_validator("staging_table_name")
-    def _validate_staging_table(cls, staging_table_name) -> str:
+    def _validate_staging_table(cls, staging_table_name: str) -> str:
         """Validate the staging table name and return it if it's valid."""
         if "." in staging_table_name:
             raise ValueError(
@@ -771,7 +754,7 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeSparkStep):
             raise ValueError("Synchronisation mode can't be 'OVERWRITE' with streaming enabled")
         if synchronisation_mode == BatchOutputMode.MERGE and streaming is False:
             raise ValueError("Synchronisation mode can't be 'MERGE' with streaming disabled")
-        if synchronisation_mode == BatchOutputMode.MERGE and len(key_columns) < 1:
+        if synchronisation_mode == BatchOutputMode.MERGE and len(key_columns) < 1:  # type: ignore
             raise ValueError("MERGE synchronisation mode requires a list of PK columns in `key_columns`.")
 
         return values
@@ -850,7 +833,7 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeSparkStep):
             (BatchOutputMode.MERGE, True): lambda: ForEachBatchStreamWriter(
                 checkpointLocation=self.checkpoint_location,
                 batch_function=self._merge_batch_write_fn(
-                    key_columns=self.key_columns,
+                    key_columns=self.key_columns,  # type: ignore
                     non_key_columns=self.non_key_columns,
                     staging_table=self.staging_table,
                 ),
@@ -877,23 +860,23 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeSparkStep):
             self.writer_ = self._get_writer()
         return self.writer_
 
-    def truncate_table(self, snowflake_table) -> None:
+    def truncate_table(self, snowflake_table: str) -> None:
         """Truncate a given snowflake table"""
-        truncate_query = f"""TRUNCATE TABLE IF EXISTS {snowflake_table}"""
+        truncate_query = f"""TRUNCATE TABLE IF EXISTS {snowflake_table}"""  # nosec B608: hardcoded_sql_expressions
         query_executor = SnowflakeRunQueryPython(
             **self.get_options(),
             query=truncate_query,
         )
         query_executor.execute()
 
-    def drop_table(self, snowflake_table) -> None:
+    def drop_table(self, snowflake_table: str) -> None:
         """Drop a given snowflake table"""
         self.log.warning(f"Dropping table {snowflake_table} from snowflake")
-        drop_table_query = f"""DROP TABLE IF EXISTS {snowflake_table}"""
+        drop_table_query = f"""DROP TABLE IF EXISTS {snowflake_table}"""  # nosec B608: hardcoded_sql_expressions
         query_executor = SnowflakeRunQueryPython(**self.get_options(), query=drop_table_query)
         query_executor.execute()
 
-    def _merge_batch_write_fn(self, key_columns, non_key_columns, staging_table) -> Callable:
+    def _merge_batch_write_fn(self, key_columns: List[str], non_key_columns: List[str], staging_table: str) -> Callable:
         """Build a batch write function for merge mode"""
 
         # pylint: disable=unused-argument

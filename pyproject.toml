@@ -607,14 +607,14 @@ python_version = "3.10"
 files = ["koheesio/**/*.py"]
 plugins = ["pydantic.mypy"]
 pretty = true
+warn_unused_configs = true
 check_untyped_defs = false
 disallow_untyped_calls = false
 disallow_untyped_defs = true
-warn_unused_configs = true
 warn_no_return = false
 implicit_optional = true
 allow_untyped_globals = true
-disable_error_code = ["attr-defined", "return-value"]
+disable_error_code = ["attr-defined", "return-value", "union-attr", "override"]
 
 [tool.pylint.main]
 fail-under = 9.5

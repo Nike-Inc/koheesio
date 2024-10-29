@@ -38,15 +38,15 @@ class Repartition(ColumnsTransformation):
     """
 
     columns: Optional[ListOfColumns] = Field(default="", alias="column", description="Name of the source column(s)")
-    numPartitions: Optional[int] = Field(
+    num_partitions: Optional[int] = Field(
         default=None,
-        alias="num_partitions",
+        alias="numPartitions",
         description="The number of partitions to repartition to. If omitted, the default number of partitions is used "
         "as defined by the spark config 'spark.sql.shuffle.partitions'.",
     )
 
     @model_validator(mode="before")
-    def _validate_field_and_num_partitions(cls, values):
+    def _validate_field_and_num_partitions(cls, values: dict) -> dict:
         """Ensure that at least one of the fields 'columns' and 'num_partitions' is provided."""
         columns_value = values.get("columns") or values.get("column")
         num_partitions_value = values.get("numPartitions") or values.get("num_partitions")
@@ -57,10 +57,10 @@ class Repartition(ColumnsTransformation):
         values["numPartitions"] = num_partitions_value
         return values
 
-    def execute(self):
+    def execute(self) -> ColumnsTransformation.Output:
         # Prepare columns input:
         columns = self.df.columns if self.columns == ["*"] else self.columns
         # Prepare repartition input:
         #  num_partitions comes first, but if it is not provided it should not be included as None.
-        repartition_inputs = [i for i in [self.numPartitions, *columns] if i]
+        repartition_inputs = [i for i in [self.num_partitions, *columns] if i]  # type: ignore
         self.output.df = self.df.repartition(*repartition_inputs)

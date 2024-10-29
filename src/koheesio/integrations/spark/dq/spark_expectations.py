@@ -13,7 +13,6 @@ from spark_expectations.core.expectations import (
 from pydantic import Field
 
 import pyspark
-from pyspark import sql
 
 from koheesio.spark import DataFrame
 from koheesio.spark.transformations import Transformation

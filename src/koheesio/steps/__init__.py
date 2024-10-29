@@ -550,7 +550,7 @@ class Step(BaseModel, metaclass=StepMetaClass):
         """
         raise NotImplementedError
 
-    def run(self) -> None:
+    def run(self) -> InstanceOf[StepOutput]:
         """Alias to .execute()"""
         return self.execute()
 

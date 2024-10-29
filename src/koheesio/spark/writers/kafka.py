@@ -74,12 +74,12 @@ class KafkaWriter(Writer, ExtraParamsMixin):
         return self.output.streaming_query
 
     @property
-    def _trigger(self):
-        """return the trigger value as a Trigger object if it is not already one."""
+    def _trigger(self) -> dict[str, str]:
+        """return the value of the Trigger object"""
         return self.trigger.value
 
     @field_validator("trigger")
-    def _validate_trigger(cls, trigger):
+    def _validate_trigger(cls, trigger: Optional[Union[Trigger, str, Dict]]) -> Trigger:
         """Validate the trigger value and convert it to a Trigger object if it is not already one."""
         return Trigger.from_any(trigger)
 
@@ -131,7 +131,7 @@ class KafkaWriter(Writer, ExtraParamsMixin):
         return self.stream_writer if self.streaming else self.batch_writer
 
     @property
-    def options(self):
+    def options(self) -> Dict[str, str]:
         """retrieve the kafka options incl topic and broker.
 
         Returns
@@ -151,7 +151,7 @@ class KafkaWriter(Writer, ExtraParamsMixin):
         return options
 
     @property
-    def logged_option_keys(self):
+    def logged_option_keys(self) -> set:
         """keys to be logged"""
         return {
             "kafka.bootstrap.servers",
@@ -163,7 +163,7 @@ class KafkaWriter(Writer, ExtraParamsMixin):
             "checkpointLocation",
         }
 
-    def execute(self):
+    def execute(self) -> Writer.Output:
         """Effectively write the data from the dataframe (streaming of batch) to kafka topic.
 
         Returns

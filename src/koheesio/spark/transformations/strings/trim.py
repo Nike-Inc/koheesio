@@ -114,7 +114,7 @@ class Trim(ColumnsTransformationWithTarget):
         default="left-right", description="On which side to remove the spaces. Either 'left', 'right' or 'left-right'"
     )
 
-    def func(self, column: Column):
+    def func(self, column: Column) -> Column:
         if self.direction == "left":
             return f.ltrim(column)
 

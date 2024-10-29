@@ -29,7 +29,7 @@ class DeltaTableStreamWriter(StreamWriter, DeltaTableWriter):
             description="The maximum number of new files to be considered in every trigger (default: 1000).",
         )
 
-    def execute(self):
+    def execute(self) -> DeltaTableWriter.Output:
         if self.batch_function:
             self.streaming_query = self.writer.start()
         # elif self.streaming and self.is_remote_spark_session:

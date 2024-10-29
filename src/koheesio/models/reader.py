@@ -36,7 +36,7 @@ class BaseReader(Step, ABC):
         return self.output.df  # type: ignore[attr-defined]
 
     @abstractmethod
-    def execute(self) -> None:
+    def execute(self) -> Step.Output:
         """Execute on a Reader should handle self.output.df (output) as a minimum
         Read from whichever source -> store result in self.output.df
         """

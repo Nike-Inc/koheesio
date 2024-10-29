@@ -38,9 +38,9 @@ def uuid5_namespace(ns: Optional[Union[str, uuid.UUID]]) -> uuid.UUID:
 
 def hash_uuid5(
     input_value: str,
-    namespace: Optional[Union[str, uuid.UUID]] = "",
-    extra_string: Optional[str] = "",
-):
+    namespace: Union[str, uuid.UUID] = "",
+    extra_string: str = "",
+) -> str:
     """pure python implementation of HashUUID5
 
     See: https://docs.python.org/3/library/uuid.html#uuid.uuid5
@@ -49,9 +49,9 @@ def hash_uuid5(
     ----------
     input_value : str
         value that will be hashed
-    namespace : Optional[str | uuid.UUID]
+    namespace : str | uuid.UUID, optional, default=""
         namespace DNS
-    extra_string : Optional[str]
+    extra_string : str, optional, default=""
         optional extra string that will be prepended to the input_value
 
     Returns
@@ -127,7 +127,7 @@ class HashUUID5(Transformation):
         description="List of columns that should be hashed. Should contain the name of at least 1 column. A list of "
         "columns or a single column can be specified. For example: `['column1', 'column2']` or `'column1'`",
     )
-    delimiter: Optional[str] = Field(default="|", description="Separator for the string that will eventually be hashed")
+    delimiter: str = Field(default="|", description="Separator for the string that will eventually be hashed")
     namespace: Optional[Union[str, uuid.UUID]] = Field(default="", description="Namespace DNS")
     extra_string: Optional[str] = Field(
         default="",
@@ -138,7 +138,7 @@ class HashUUID5(Transformation):
     description: str = "Generate a UUID with the UUID5 algorithm"
 
     @field_validator("source_columns")
-    def _set_columns(cls, columns):
+    def _set_columns(cls, columns: ListOfColumns) -> ListOfColumns:
         """Ensures every column is wrapped in backticks"""
         columns = [f"`{column}`" for column in columns]
         return columns

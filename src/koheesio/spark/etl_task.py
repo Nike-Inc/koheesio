@@ -122,7 +122,7 @@ class EtlTask(Step):
         writer.write(df)
         return df
 
-    def execute(self):
+    def execute(self) -> Step.Output:
         """Run the ETL process"""
         self.log.info(f"Task started at {self.etl_date}")
 
@@ -134,7 +134,3 @@ class EtlTask(Step):
 
         # load to target
         self.output.target_df = self.load(self.output.transform_df)
-
-    def run(self):
-        """alias of execute"""
-        return self.execute()

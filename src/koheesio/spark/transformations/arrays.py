@@ -27,10 +27,10 @@ from typing import Any
 from abc import ABC
 from functools import reduce
 
-from pyspark.sql import Column
 from pyspark.sql import functions as F
 
 from koheesio.models import Field
+from koheesio.spark import Column
 from koheesio.spark.transformations import ColumnsTransformationWithTarget
 from koheesio.spark.utils import (
     SPARK_MINOR_VERSION,
@@ -277,7 +277,7 @@ class ArrayNullNanProcess(ArrayTransformation):
             The processed column with NaN and/or NULL values removed from elements.
         """
 
-        def apply_logic(x: Column):
+        def apply_logic(x: Column) -> Column:
             if self.keep_nan is False and self.keep_null is False:
                 logic = x.isNotNull() & ~F.isnan(x)
             elif self.keep_nan is False:
@@ -467,7 +467,7 @@ class ArrayMedian(ArrayNullNanProcess):
     ```
     """
 
-    def func(self, column: Column) -> Column:
+    def func(self, column: Column) -> Column:  # type: ignore
         """Calculate the median of the values in the array"""
         # Call for processing of nan values
         column = super().func(column)

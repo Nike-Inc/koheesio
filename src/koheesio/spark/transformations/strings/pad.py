@@ -82,7 +82,7 @@ class Pad(ColumnsTransformationWithTarget):
         default="left", description='On which side to add the characters . Either "left" or "right". Defaults to "left"'
     )
 
-    def func(self, column: Column):
+    def func(self, column: Column) -> Column:
         func = lpad if self.direction == "left" else rpad
         return func(column, self.length, self.character)
 

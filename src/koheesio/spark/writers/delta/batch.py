@@ -138,7 +138,7 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
         alias="outputMode",
         description=f"{BatchOutputMode.__doc__}\n{StreamingOutputMode.__doc__}",
     )
-    params: Optional[dict] = Field(
+    params: dict = Field(
         default_factory=dict,
         alias="output_mode_params",
         description="Additional parameters to use for specific mode",
@@ -208,9 +208,7 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
 
     def __merge_all(self) -> Union[DeltaMergeBuilder, DataFrameWriter]:
         """Merge dataframes using DeltaMergeBuilder or DataFrameWriter"""
-        merge_cond = self.params.get("merge_cond", None)
-
-        if merge_cond is None:
+        if merge_cond := self.params.get("merge_cond") is None:
             raise ValueError(
                 "Provide `merge_cond` in DeltaTableWriter(output_mode_params={'merge_cond':'<str or Column>'})"
             )
@@ -233,7 +231,7 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
 
         return self.__merge(merge_builder=builder)
 
-    def _get_merge_builder(self, provided_merge_builder=None) -> DeltaMergeBuilder:
+    def _get_merge_builder(self, provided_merge_builder: DeltaMergeBuilder = None) -> DeltaMergeBuilder:
         """Resolves the merge builder. If provided, it will be used, otherwise it will be created from the args"""
 
         # A merge builder has been already created - case for merge_all
@@ -261,7 +259,7 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
             "See documentation for options."
         )
 
-    def _merge_builder_from_args(self):
+    def _merge_builder_from_args(self) -> DeltaMergeBuilder:
         """Creates the DeltaMergeBuilder from the provided configuration"""
         merge_clauses = self.params.get("merge_builder", None)
         merge_cond = self.params.get("merge_cond", None)
@@ -282,7 +280,7 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
         return builder
 
     @field_validator("output_mode")
-    def _validate_output_mode(cls, mode):
+    def _validate_output_mode(cls, mode: Union[str, BatchOutputMode, StreamingOutputMode]) -> str:
         """Validate `output_mode` value"""
         if isinstance(mode, str):
             mode = cls.get_output_mode(mode, options={StreamingOutputMode, BatchOutputMode})
@@ -299,14 +297,14 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
         return str(mode.value)
 
     @field_validator("table")
-    def _validate_table(cls, table):
+    def _validate_table(cls, table: Union[DeltaTableStep, str]) -> Union[DeltaTableStep, str]:
         """Validate `table` value"""
         if isinstance(table, str):
             return DeltaTableStep(table=table)
         return table
 
     @field_validator("params")
-    def _validate_params(cls, params):
+    def _validate_params(cls, params: dict) -> dict:
         """Validates params. If an array of merge clauses is provided, they will be validated against the available
         ones in DeltaMergeBuilder"""
 
@@ -365,11 +363,13 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
         map_mode_writer = {
             BatchOutputMode.MERGEALL.value: self.__merge_all,
             BatchOutputMode.MERGE.value: self.__merge,
-        }
+        }.get(
+            self.output_mode, self.__data_frame_writer
+        )  # type: ignore
 
-        return map_mode_writer.get(self.output_mode, self.__data_frame_writer)()
+        return map_mode_writer()  # type: ignore
 
-    def execute(self):
+    def execute(self) -> Writer.Output:
         _writer = self.writer
 
         if self.table.create_if_not_exists and not self.table.exists:

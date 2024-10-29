@@ -97,14 +97,14 @@ class AutoLoader(Reader):
     )
 
     @field_validator("format")
-    def validate_format(cls, format_specified):
+    def validate_format(cls, format_specified: Union[str, AutoLoaderFormat]) -> str:
         """Validate `format` value"""
         if isinstance(format_specified, str):
             if format_specified.upper() in [f.value.upper() for f in AutoLoaderFormat]:
                 format_specified = getattr(AutoLoaderFormat, format_specified.upper())
         return str(format_specified.value)
 
-    def get_options(self):
+    def get_options(self) -> Dict[str, Any]:
         """Get the options for the autoloader"""
         self.options.update(
             {
@@ -118,10 +118,10 @@ class AutoLoader(Reader):
     def reader(self) -> DataStreamReader:
         reader = self.spark.readStream.format("cloudFiles")
         if self.schema_ is not None:
-            reader = reader.schema(self.schema_)
+            reader = reader.schema(self.schema_)  # type: ignore
         reader = reader.options(**self.get_options())
         return reader
 
-    def execute(self):
+    def execute(self) -> Reader.Output:
         """Reads from the given location with the given options using Autoloader"""
         self.output.df = self.reader().load(self.location)

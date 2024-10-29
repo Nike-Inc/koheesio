@@ -102,7 +102,7 @@ class Transformation(SparkStep, ABC):
     df: Optional[DataFrame] = Field(default=None, description="The Spark DataFrame")
 
     @abstractmethod
-    def execute(self) -> None:
+    def execute(self) -> SparkStep.Output:
         """Execute on a Transformation should handle self.df (input) and set self.output.df (output)
 
         This method should be implemented in the child class. The input DataFrame is available as `self.df` and the

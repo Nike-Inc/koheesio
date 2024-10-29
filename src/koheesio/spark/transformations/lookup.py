@@ -143,7 +143,7 @@ class DataframeLookup(Transformation):
     )
 
     @field_validator("on", "targets")
-    def set_list(cls, value):
+    def set_list(cls, value: Union[List[JoinMapping], JoinMapping, List[TargetColumn], TargetColumn]) -> List:
         """Ensure that we can pass either a single object, or a list of objects"""
         return [value] if not isinstance(value, list) else value
 
@@ -161,8 +161,8 @@ class DataframeLookup(Transformation):
         """Execute the lookup transformation"""
         # prepare the right dataframe
         prepared_right_df = self.get_right_df().select(
-            *[join_mapping.column for join_mapping in self.on],
-            *[target.column for target in self.targets],
+            *[join_mapping.column for join_mapping in self.on],  # type: ignore
+            *[target.column for target in self.targets],  # type: ignore
         )
         if self.hint:
             prepared_right_df = prepared_right_df.hint(self.hint)
@@ -171,7 +171,7 @@ class DataframeLookup(Transformation):
         self.output.left_df = self.df
         self.output.right_df = prepared_right_df
         self.output.df = self.df.join(
-            prepared_right_df,
+            prepared_right_df,  # type: ignore
             on=[join_mapping.source_column for join_mapping in self.on],
             how=self.how,
         )

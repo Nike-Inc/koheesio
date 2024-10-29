@@ -2,15 +2,15 @@
 
 from typing import Optional, Union
 
-from pyspark.sql import Column
 from pyspark.sql.functions import col, lit, when
 
 from koheesio.models import Field
+from koheesio.spark import Column
 from koheesio.spark.transformations import ColumnsTransformationWithTarget
 from koheesio.spark.utils import SparkDatatype
 
 
-def replace(column: Union[Column, str], to_value: str, from_value: Optional[str] = None):
+def replace(column: Union[Column, str], to_value: str, from_value: Optional[str] = None) -> Column:
     """Function to replace a particular value in a column with another one"""
     # make sure we have a Column object
     if isinstance(column, str):

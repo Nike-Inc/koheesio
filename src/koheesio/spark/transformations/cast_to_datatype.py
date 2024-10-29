@@ -124,7 +124,7 @@ class CastToDatatype(ColumnsTransformationWithTarget):
     datatype: Union[str, SparkDatatype] = Field(default=..., description="Datatype. Choose from SparkDatatype Enum")
 
     @field_validator("datatype")
-    def validate_datatype(cls, datatype_value) -> SparkDatatype:
+    def validate_datatype(cls, datatype_value: Union[str, SparkDatatype]) -> SparkDatatype:  # type: ignore
         """Validate the datatype."""
         # handle string input
         try:
@@ -142,7 +142,7 @@ class CastToDatatype(ColumnsTransformationWithTarget):
 
     def func(self, column: Column) -> Column:
         # This is to let the IDE explicitly know that the datatype is not a string, but a `SparkDatatype` Enum
-        datatype: SparkDatatype = self.datatype
+        datatype: SparkDatatype = self.datatype  # type: ignore
         return column.cast(datatype.spark_type())
 
 
@@ -631,7 +631,7 @@ class CastToDecimal(CastToDatatype):
     )
 
     @model_validator(mode="after")
-    def validate_scale_and_precisions(self):
+    def validate_scale_and_precisions(self) -> "CastToDecimal":
         """Validate the precision and scale values."""
         precision_value = self.precision
         scale_value = self.scale

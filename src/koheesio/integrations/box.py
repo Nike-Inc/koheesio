@@ -105,15 +105,15 @@ class Box(Step, ABC):
         description="Private key passphrase generated in the app management console.",
     )
 
-    client: SkipValidation[Client] = None
+    client: SkipValidation[Client] = None  # type: ignore
 
-    def init_client(self):
+    def init_client(self) -> None:
         """Set up the Box client."""
         if not self.client:
             self.client = Client(JWTAuth(**self.auth_options))
 
     @property
-    def auth_options(self):
+    def auth_options(self) -> Dict[str, Any]:
         """
         Get a dictionary of authentication options, that can be handily used in the child classes
         """
@@ -126,11 +126,11 @@ class Box(Step, ABC):
             "rsa_private_key_passphrase": self.rsa_private_key_passphrase.get_secret_value(),
         }
 
-    def __init__(self, **data):
+    def __init__(self, **data: dict):
         super().__init__(**data)
         self.init_client()
 
-    def execute(self):
+    def execute(self) -> Step.Output:  # type: ignore
         # Plug to be able to unit test ABC
         pass
 
@@ -167,7 +167,7 @@ class BoxFolderBase(Box):
         folder: Optional[Folder] = Field(default=None, description="Box folder object")
 
     @model_validator(mode="after")
-    def validate_folder_or_path(self):
+    def validate_folder_or_path(self) -> "BoxFolderBase":
         """
         Validations for 'folder' and 'path' parameter usage
         """
@@ -183,13 +183,13 @@ class BoxFolderBase(Box):
         return self
 
     @property
-    def _obj_from_id(self):
+    def _obj_from_id(self) -> Folder:
         """
         Get folder object from identifier
         """
         return self.client.folder(folder_id=self.folder).get() if isinstance(self.folder, str) else self.folder
 
-    def action(self):
+    def action(self) -> Optional[Folder]:
         """
         Placeholder for 'action' method, that should be implemented in the child classes
 
@@ -223,7 +223,7 @@ class BoxFolderGet(BoxFolderBase):
         False, description="Create sub-folders recursively if the path does not exist."
     )
 
-    def _get_or_create_folder(self, current_folder_object, next_folder_name):
+    def _get_or_create_folder(self, current_folder_object: Folder, next_folder_name: str) -> Folder:
         """
         Get or create a folder.
 
@@ -238,6 +238,11 @@ class BoxFolderGet(BoxFolderBase):
         -------
         next_folder_object: Folder
             Next folder object.
+
+        Raises
+        ------
+        BoxFolderNotFoundError
+            If the folder does not exist and 'create_sub_folders' is set to False.
         """
         for item in current_folder_object.get_items():
             if item.type == "folder" and item.name == next_folder_name:
@@ -251,7 +256,7 @@ class BoxFolderGet(BoxFolderBase):
                 "to create required directory structure automatically."
             )
 
-    def action(self):
+    def action(self) -> Folder:
         """
         Get folder action
 
@@ -267,7 +272,9 @@ class BoxFolderGet(BoxFolderBase):
 
         if self.path:
             cleaned_path_parts = [p for p in PurePath(self.path).parts if p.strip() not in [None, "", " ", "/"]]
-            current_folder_object = self.client.folder(folder_id=self.root) if isinstance(self.root, str) else self.root
+            current_folder_object: Union[Folder, str] = (
+                self.client.folder(folder_id=self.root) if isinstance(self.root, str) else self.root
+            )
 
             for next_folder_name in cleaned_path_parts:
                 current_folder_object = self._get_or_create_folder(current_folder_object, next_folder_name)
@@ -295,7 +302,7 @@ class BoxFolderCreate(BoxFolderGet):
     )
 
     @field_validator("folder")
-    def validate_folder(cls, folder):
+    def validate_folder(cls, folder: Any) -> None:
         """
         Validate 'folder' parameter
         """
@@ -322,7 +329,7 @@ class BoxFolderDelete(BoxFolderBase):
     ```
     """
 
-    def action(self):
+    def action(self) -> None:
         """
         Delete folder action
 
@@ -345,7 +352,7 @@ class BoxReaderBase(Box, Reader, ABC):
     """
 
     schema_: Optional[StructType] = Field(
-        None,
+        default=None,
         alias="schema",
         description="[Optional] Schema that will be applied during the creation of Spark DataFrame",
     )
@@ -388,7 +395,7 @@ class BoxCsvFileReader(BoxReaderBase):
 
     file: Union[str, list[str]] = Field(default=..., description="ID or list of IDs for the files to read.")
 
-    def execute(self):
+    def execute(self) -> BoxReaderBase.Output:
         """
         Loop through the list of provided file identifiers and load data into dataframe.
         For traceability purposes the following columns will be added to the dataframe:
@@ -409,6 +416,7 @@ class BoxCsvFileReader(BoxReaderBase):
             temp_df_pandas = pd.read_csv(data_buffer, header=0, dtype=str if not self.schema_ else None, **self.params)  # type: ignore
             temp_df = self.spark.createDataFrame(temp_df_pandas, schema=self.schema_)
 
+            # type: ignore
             temp_df = (
                 temp_df
                 # fmt: off
@@ -450,9 +458,9 @@ class BoxCsvPathReader(BoxReaderBase):
     """
 
     path: str = Field(default=..., description="Box path")
-    filter: Optional[str] = Field(default=r".csv|.txt$", description="[Optional] Regexp to filter folder contents")
+    filter: str = Field(default=r".csv|.txt$", description="[Optional] Regexp to filter folder contents")
 
-    def execute(self):
+    def execute(self) -> BoxReaderBase.Output:
         """
         Identify the list of files from the source Box path that match desired filter and load them into Dataframe
         """
@@ -501,13 +509,13 @@ class BoxFileBase(Box):
     )
     path: Optional[str] = Field(default=None, description="Path to the Box folder, for example: `folder/sub-folder/lz")
 
-    def action(self, file: File, folder: Folder):
+    def action(self, file: File, folder: Folder) -> None:
         """
         Abstract class for File level actions.
         """
         raise NotImplementedError
 
-    def execute(self):
+    def execute(self) -> Box.Output:
         """
         Generic execute method for all BoxToBox interactions. Deals with getting the correct folder and file objects
         from various parameter inputs
@@ -541,7 +549,7 @@ class BoxToBoxFileCopy(BoxFileBase):
     ```
     """
 
-    def action(self, file: File, folder: Folder):
+    def action(self, file: File, folder: Folder) -> None:
         """
         Copy file to the desired destination and extend file description with the processing info
 
@@ -577,7 +585,7 @@ class BoxToBoxFileMove(BoxFileBase):
     ```
     """
 
-    def action(self, file: File, folder: Folder):
+    def action(self, file: File, folder: Folder) -> None:
         """
         Move file to the desired destination and extend file description with the processing info
 
@@ -632,7 +640,7 @@ class BoxFileWriter(BoxFolderBase):
         shared_link: str = Field(default=..., description="Shared link for the Box file")
 
     @model_validator(mode="before")
-    def validate_name_for_binary_data(cls, values):
+    def validate_name_for_binary_data(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate 'file_name' parameter when providing a binary input for 'file'."""
         file, file_name = values.get("file"), values.get("file_name")
         if not isinstance(file, str) and not file_name:
@@ -640,7 +648,7 @@ class BoxFileWriter(BoxFolderBase):
 
         return values
 
-    def action(self):
+    def action(self) -> None:
         _file = self.file
         _name = self.file_name
 

@@ -68,7 +68,7 @@ class InMemoryDataReader(Reader, ExtraParamsMixin):
         description="[Optional] Schema that will be applied during the creation of Spark DataFrame",
     )
 
-    params: Optional[Dict[str, Any]] = Field(
+    params: Dict[str, Any] = Field(
         default_factory=dict,
         description="[Optional] Set of extra parameters that should be passed to the appropriate reader (csv / json)",
     )
@@ -103,7 +103,7 @@ class InMemoryDataReader(Reader, ExtraParamsMixin):
 
         return df
 
-    def execute(self):
+    def execute(self) -> Reader.Output:
         """
         Execute method appropriate to the specific data format
         """

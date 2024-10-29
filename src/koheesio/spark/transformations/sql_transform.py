@@ -27,7 +27,7 @@ class SqlTransform(SqlBaseStep, Transformation):
     ```
     """
 
-    def execute(self):
+    def execute(self) -> Transformation.Output:
         table_name = get_random_string(prefix="sql_transform")
         self.params = {**self.params, "table_name": table_name}
 

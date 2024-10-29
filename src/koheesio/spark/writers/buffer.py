@@ -13,8 +13,10 @@ Pandas. It is not meant to be used for writing huge amounts of data, but rather 
 to more arbitrary file systems (e.g., SFTP).
 """
 
+from __future__ import annotations
+
 import gzip
-from typing import Literal, Optional
+from typing import AnyStr, Literal, Optional
 from abc import ABC
 from functools import partial
 from os import linesep
@@ -27,6 +29,7 @@ from pydantic import InstanceOf
 from pyspark import pandas
 
 from koheesio.models import ExtraParamsMixin, Field, constr
+from koheesio.spark import DataFrame
 from koheesio.spark.writers import Writer
 
 
@@ -53,32 +56,32 @@ class BufferWriter(Writer, ABC):
             default_factory=partial(SpooledTemporaryFile, mode="w+b", max_size=0), exclude=True
         )
 
-        def read(self):
+        def read(self) -> AnyStr:
             """Read the buffer"""
             self.rewind_buffer()
             data = self.buffer.read()
             self.rewind_buffer()
             return data
 
-        def rewind_buffer(self):
+        def rewind_buffer(self):  # type: ignore
             """Rewind the buffer"""
             self.buffer.seek(0)
             return self
 
-        def reset_buffer(self):
+        def reset_buffer(self):  # type: ignore
             """Reset the buffer"""
             self.buffer.truncate(0)
             self.rewind_buffer()
             return self
 
-        def is_compressed(self):
+        def is_compressed(self):  # type: ignore
             """Check if the buffer is compressed."""
             self.rewind_buffer()
             magic_number_present = self.buffer.read(2) == b"\x1f\x8b"
             self.rewind_buffer()
             return magic_number_present
 
-        def compress(self):
+        def compress(self):  # type: ignore
             """Compress the file_buffer in place using GZIP"""
             # check if the buffer is already compressed
             if self.is_compressed():
@@ -95,7 +98,7 @@ class BufferWriter(Writer, ABC):
 
             return self  # to allow for chaining
 
-    def write(self, df=None) -> Output:
+    def write(self, df: DataFrame = None) -> Output:
         """Write the DataFrame to the buffer"""
         self.df = df or self.df
         if not self.df:
@@ -260,7 +263,7 @@ class PandasCsvBufferWriter(BufferWriter, ExtraParamsMixin):
 
         pandas_df: Optional[pandas.DataFrame] = Field(None, description="The Pandas DataFrame that was written")
 
-    def get_options(self, options_type: str = "csv"):
+    def get_options(self, options_type: str = "csv") -> dict:
         """Returns the options to pass to Pandas' to_csv() method."""
         try:
             import pandas as _pd
@@ -294,7 +297,7 @@ class PandasCsvBufferWriter(BufferWriter, ExtraParamsMixin):
 
         return csv_options
 
-    def execute(self):
+    def execute(self) -> BufferWriter.Output:
         """Write the DataFrame to the buffer using Pandas to_csv() method.
         Compression is handled by pandas to_csv() method.
         """
@@ -454,7 +457,7 @@ class PandasJsonBufferWriter(BufferWriter, ExtraParamsMixin):
 
         pandas_df: Optional[pandas.DataFrame] = Field(None, description="The Pandas DataFrame that was written")
 
-    def get_options(self):
+    def get_options(self) -> dict:
         """Returns the options to pass to Pandas' to_json() method."""
         json_options = {
             "orient": self.orient,
@@ -471,7 +474,7 @@ class PandasJsonBufferWriter(BufferWriter, ExtraParamsMixin):
 
         return json_options
 
-    def execute(self):
+    def execute(self) -> BufferWriter.Output:
         """Write the DataFrame to the buffer using Pandas to_json() method."""
         df = self.df
         if self.columns:

@@ -62,7 +62,7 @@ class Writer(SparkStep, ABC):
         return self.df.isStreaming
 
     @abstractmethod
-    def execute(self) -> None:
+    def execute(self) -> SparkStep.Output:
         """Execute on a Writer should handle writing of the self.df (input) as a minimum"""
         # self.df  # input dataframe
         ...

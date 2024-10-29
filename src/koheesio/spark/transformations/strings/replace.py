@@ -2,7 +2,7 @@
 String replacements without using regular expressions.
 """
 
-from typing import Optional
+from typing import Any, Optional
 
 from pyspark.sql import Column
 from pyspark.sql.functions import lit, when
@@ -91,12 +91,12 @@ class Replace(ColumnsTransformationWithTarget):
     new_value: str = Field(default=..., alias="to", description="The new value to replace this with")
 
     @field_validator("original_value", "new_value", mode="before")
-    def cast_values_to_str(cls, value):
+    def cast_values_to_str(cls, value: Optional[str]) -> Optional[str]:
         """Cast values to string if they are not None"""
         if value:
             return str(value)
 
-    def func(self, column: Column):
+    def func(self, column: Column) -> Column:
         when_statement = (
             when(column.isNull(), lit(self.new_value))
             if not self.original_value

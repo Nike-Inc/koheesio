@@ -115,7 +115,7 @@ class SCD2DeltaTableWriter(Writer):
 
         if attrs:
             attr_clause = list(map(lambda attr: f"NOT ({src_alias}.{attr} <=> {dest_alias}.{attr})", attrs))
-            attr_clause = " OR ".join(attr_clause)
+            attr_clause = " OR ".join(attr_clause)  # type: ignore
 
         return attr_clause
 
@@ -148,7 +148,7 @@ class SCD2DeltaTableWriter(Writer):
         return scd2_timestamp
 
     @staticmethod
-    def _scd2_end_time(meta_scd2_end_time_col: str, **_kwargs) -> Column:
+    def _scd2_end_time(meta_scd2_end_time_col: str, **_kwargs: dict) -> Column:
         """
         Generate a SCD2 end time column.
 
@@ -175,7 +175,7 @@ class SCD2DeltaTableWriter(Writer):
         return scd2_end_time
 
     @staticmethod
-    def _scd2_effective_time(meta_scd2_effective_time_col: str, **_kwargs) -> Column:
+    def _scd2_effective_time(meta_scd2_effective_time_col: str, **_kwargs: dict) -> Column:
         """
         Generate a SCD2 effective time column.
 
@@ -203,7 +203,7 @@ class SCD2DeltaTableWriter(Writer):
         return scd2_effective_time
 
     @staticmethod
-    def _scd2_is_current(**_kwargs) -> Column:
+    def _scd2_is_current(**_kwargs: dict) -> Column:
         """
         Generate a SCD2 is_current column.
 
@@ -232,7 +232,7 @@ class SCD2DeltaTableWriter(Writer):
         src_alias: str,
         dest_alias: str,
         cross_alias: str,
-        **_kwargs,
+        **_kwargs: dict,
     ) -> DataFrame:
         """
         Prepare a DataFrame for staging.
@@ -298,7 +298,7 @@ class SCD2DeltaTableWriter(Writer):
         cross_alias: str,
         dest_alias: str,
         logger: Logger,
-        **_kwargs,
+        **_kwargs: dict,
     ) -> DataFrame:
         """
         Preserve existing target values in the DataFrame.
@@ -365,7 +365,7 @@ class SCD2DeltaTableWriter(Writer):
         meta_scd2_effective_time_col_name: str,
         meta_scd2_end_time_col_name: str,
         meta_scd2_is_current_col_name: str,
-        **_kwargs,
+        **_kwargs: dict,
     ) -> DataFrame:
         """
         Add SCD2 columns to the DataFrame.
@@ -416,7 +416,7 @@ class SCD2DeltaTableWriter(Writer):
         merge_key: str,
         columns_to_process: List[str],
         meta_scd2_effective_time_col: str,
-        **_kwargs,
+        **_kwargs: dict,
     ) -> DeltaMergeBuilder:
         """
         Prepare a DeltaMergeBuilder for merging data.

@@ -121,6 +121,7 @@ class RestApiReader(Reader):
         """
         raw_data = self.transport.execute()
 
+        data = None
         if isinstance(raw_data, HttpGetStep.Output):
             data = raw_data.response_json
         elif isinstance(raw_data, AsyncHttpGetStep.Output):

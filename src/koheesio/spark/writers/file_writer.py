@@ -82,7 +82,7 @@ class FileWriter(Writer, ExtraParamsMixin):
             self.log.info(f"Setting extra parameters for the writer: {self.extra_params}")
             writer = writer.options(**self.extra_params)
 
-        writer.save(path=self.path, format=self.format, mode=self.output_mode)
+        writer.save(path=self.path, format=self.format, mode=self.output_mode)  # type: ignore
 
         self.output.df = self.df
 
