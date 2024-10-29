@@ -69,7 +69,7 @@ class FileWriter(Writer, ExtraParamsMixin):
     path: Union[Path, str] = Field(default=..., description="The path to write the file to")
 
     @field_validator("path")
-    def ensure_path_is_str(cls, v: Union[Path, str]) -> FileWriter:
+    def ensure_path_is_str(cls, v: Union[Path, str]) -> str:
         """Ensure that the path is a string as required by Spark."""
         if isinstance(v, Path):
             return str(v.absolute().as_posix())
