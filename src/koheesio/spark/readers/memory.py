@@ -3,13 +3,12 @@ Create Spark DataFrame directly from the data stored in a Python variable
 """
 
 import json
-from typing import Any, Dict, Optional, Union
 from enum import Enum
 from functools import partial
 from io import StringIO
+from typing import Any, Dict, Optional, Union
 
 import pandas as pd
-
 from pyspark.sql.types import StructType
 
 from koheesio.models import ExtraParamsMixin, Field
@@ -79,6 +78,9 @@ class InMemoryDataReader(Reader, ExtraParamsMixin):
             csv_data: str = "\n".join(self.data)
         else:
             csv_data: str = self.data  # type: ignore
+
+        if "header" in self.params and self.params["header"] is True:
+            self.params["header"] = 0
 
         pandas_df = pd.read_csv(StringIO(csv_data), **self.params)  # type: ignore
         df = self.spark.createDataFrame(pandas_df, schema=self.schema_)  # type: ignore

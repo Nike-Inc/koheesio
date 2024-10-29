@@ -35,9 +35,9 @@ class SqlTransform(SqlBaseStep, Transformation):
 
         if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session() and self.df.isStreaming:
             raise RuntimeError(
-                """SQL Transform is not supported in remote sessions with streaming dataframes.
-                               See https://issues.apache.org/jira/browse/SPARK-45957
-                               It is fixed in PySpark 4.0.0"""
+                "SQL Transform is not supported in remote sessions with streaming dataframes."
+                "See https://issues.apache.org/jira/browse/SPARK-45957"
+                "It is fixed in PySpark 4.0.0"
             )
 
         self.df.createOrReplaceTempView(table_name)

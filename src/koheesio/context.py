@@ -14,9 +14,9 @@ For a comprehensive guide on the usage, examples, and additional features of the
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, Iterator, Union
 from collections.abc import Mapping
 from pathlib import Path
+from typing import Any, Dict, Iterator, Union
 
 import jsonpickle  # type: ignore[import-untyped]
 import tomli
@@ -87,8 +87,9 @@ class Context(Mapping):
             if isinstance(arg, Context):
                 kwargs = kwargs.update(arg.to_dict())
 
-        for key, value in kwargs.items():
-            self.__dict__[key] = self.process_value(value)
+        if kwargs:
+            for key, value in kwargs.items():
+                self.__dict__[key] = self.process_value(value)
 
     def __str__(self) -> str:
         """Returns a string representation of the Context."""

@@ -4,8 +4,9 @@ Spark step module
 
 from __future__ import annotations
 
-from typing import Optional
+import warnings
 from abc import ABC
+from typing import Optional
 
 from pydantic import Field
 
@@ -72,3 +73,17 @@ class SparkStep(Step, ABC):
 
             self.spark = get_active_session()
         return self
+
+
+def current_timestamp_utc(spark):
+    warnings.warn(
+        message=(
+            "The current_timestamp_utc function has been moved to the koheesio.spark.functions module."
+            "Import it from there instead. Current import path will be deprecated in the future."
+        ),
+        category=DeprecationWarning,
+        stacklevel=2,
+    )
+    from koheesio.spark.functions import current_timestamp_utc as _current_timestamp_utc
+
+    return _current_timestamp_utc(spark)

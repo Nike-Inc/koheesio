@@ -123,7 +123,7 @@ def test_interval(input_data, column_name, operation, interval, expected, spark)
 
 def test_interval_unhappy(spark):
     with pytest.raises(ValueError):
-        validate_interval("some random b*llsh*t")  # TODO: this should raise an error, but it doesn't in REMOTE mode
+        validate_interval("some random sym*bol*s")
     # invalid operation
     with pytest.raises(ValueError):
         _ = adjust_time(col("some_col"), "invalid operation", "1 day")
