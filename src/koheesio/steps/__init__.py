@@ -20,12 +20,11 @@ import inspect
 import json
 import sys
 import warnings
-from typing import Any, Callable
 from abc import abstractmethod
 from functools import partialmethod, wraps
+from typing import Any, Callable, Union
 
 import yaml
-
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import InstanceOf
 
@@ -63,7 +62,7 @@ class StepOutput(BaseModel):
         Essentially, this method is a wrapper around the validate method of the BaseModel class
         """
         validated_model = self.validate()  # type: ignore[call-arg]
-        return StepOutput.from_basemodel(validated_model)  # type: ignore[attr-defined]
+        return StepOutput.from_basemodel(validated_model)
 
 
 class StepMetaClass(ModelMetaclass):
@@ -79,7 +78,7 @@ class StepMetaClass(ModelMetaclass):
     # noinspection PyPep8Naming
     class _partialmethod_with_self(partialmethod):
         def __get__(self, obj: Any, cls=None):  # type: ignore[no-untyped-def]
-            return self._make_unbound_method().__get__(obj, cls)  # type: ignore[attr-defined]
+            return self._make_unbound_method().__get__(obj, cls)
 
     # Unique object to mark a function as wrapped
     _step_execute_wrapper_sentinel = object()
@@ -144,7 +143,7 @@ class StepMetaClass(ModelMetaclass):
 
         # Check if the sentinel is the same as the class's sentinel. If they are the same,
         # it means the function is already wrapped.
-        is_already_wrapped = sentinel is cls._step_execute_wrapper_sentinel  # type: ignore[attr-defined]
+        is_already_wrapped = sentinel is cls._step_execute_wrapper_sentinel
 
         # Get the wrap count of the function. If the function is not wrapped yet, the default value is 0.
         wrap_count = getattr(execute_method, "_partialmethod_wrap_count", 0)
@@ -163,7 +162,7 @@ class StepMetaClass(ModelMetaclass):
 
             # Set the sentinel attribute to the wrapper. This is done so that we can check
             # if the function is already wrapped.
-            setattr(wrapper, "_step_execute_wrapper_sentinel", cls._step_execute_wrapper_sentinel)  # type: ignore[attr-defined]
+            setattr(wrapper, "_step_execute_wrapper_sentinel", cls._step_execute_wrapper_sentinel)
 
             # Increase the wrap count of the function. This is done to keep track of
             # how many times the function has been wrapped.
@@ -237,10 +236,10 @@ class StepMetaClass(ModelMetaclass):
                 Returns:
                     The unbound method.
                 """
-                return self._make_unbound_method().__get__(obj, cls)  # type: ignore[attr-defined]
+                return self._make_unbound_method().__get__(obj, cls)
 
         _partialmethod_impl = partialmethod if sys.version_info < (3, 11) else _partialmethod_with_self
-        wrapper = _partialmethod_impl(cls._execute_wrapper, execute_method=execute_method)  # type: ignore[attr-defined]
+        wrapper = _partialmethod_impl(cls._execute_wrapper, execute_method=execute_method)
 
         return wrapper
 
@@ -269,7 +268,7 @@ class StepMetaClass(ModelMetaclass):
         """
 
         # check if the method is called through super() in the immediate parent class
-        caller_name = inspect.currentframe().f_back.f_back.f_code.co_name  # type: ignore[union-attr]
+        caller_name = inspect.currentframe().f_back.f_back.f_code.co_name
         is_called_through_super_ = cls._is_called_through_super(step, caller_name)
 
         cls._log_start_message(step=step, skip_logging=is_called_through_super_)
@@ -299,8 +298,8 @@ class StepMetaClass(ModelMetaclass):
         """
 
         if not skip_logging:
-            step.log.info("Start running step")  # type: ignore[union-attr]
-            step.log.debug(f"Step Input: {step.__repr_str__(' ')}")  # type: ignore[misc, union-attr]
+            step.log.info("Start running step")
+            step.log.debug(f"Step Input: {step.__repr_str__(' ')}")  # type: ignore[misc]
 
     @classmethod
     def _log_end_message(cls, step: Step, *_args, skip_logging: bool = False, **_kwargs) -> None:  # type: ignore[no-untyped-def]
@@ -321,8 +320,8 @@ class StepMetaClass(ModelMetaclass):
         """
 
         if not skip_logging:
-            step.log.debug(f"Step Output: {step.output.__repr_str__(' ')}")  # type: ignore[misc, union-attr]
-            step.log.info("Finished running step")  # type: ignore[union-attr]
+            step.log.debug(f"Step Output: {step.output.__repr_str__(' ')}")  # type: ignore[misc]
+            step.log.info("Finished running step")
 
     @classmethod
     def _validate_output(cls, step: Step, *_args, skip_validating: bool = False, **_kwargs) -> None:  # type: ignore[no-untyped-def]
@@ -368,7 +367,9 @@ class StepMetaClass(ModelMetaclass):
 
         if return_value:
             if not isinstance(return_value, StepOutput):
-                msg = f"execute() did not produce output of type {output.name}, returns of the wrong type will be ignored"  # type: ignore[attr-defined]
+                msg = (
+                    f"execute() did not produce output of type {output.name}, returns of the wrong type will be ignored"
+                )
                 warnings.warn(msg)
                 step.log.warning(msg)
 
@@ -534,9 +535,9 @@ class Step(BaseModel, metaclass=StepMetaClass):
     def output(self) -> Output:
         """Interact with the output of the Step"""
         if not self.__output__:
-            self.__output__ = self.Output.lazy()  # type: ignore[attr-defined]
-            self.__output__.name = self.name + ".Output"  # type: ignore[attr-defined, operator]
-            self.__output__.description = "Output for " + self.name  # type: ignore[attr-defined, operator]
+            self.__output__ = self.Output.lazy()
+            self.__output__.name = self.name + ".Output"  # type: ignore[operator]
+            self.__output__.description = "Output for " + self.name  # type: ignore[operator]
         return self.__output__
 
     @output.setter
@@ -668,7 +669,7 @@ class Step(BaseModel, metaclass=StepMetaClass):
 
         return yaml.dump(_result)
 
-    def __getattr__(self, key: str) -> Any | None:
+    def __getattr__(self, key: str) -> Union[Any, None]:
         """__getattr__ dunder
 
         Allows input to be accessed through `self.input_name`
@@ -688,4 +689,4 @@ class Step(BaseModel, metaclass=StepMetaClass):
     @classmethod
     def from_step(cls, step: Step, **kwargs) -> InstanceOf[PydanticBaseModel]:  # type: ignore[no-untyped-def]
         """Returns a new Step instance based on the data of another Step or BaseModel instance"""
-        return cls.from_basemodel(step, **kwargs)  # type: ignore[attr-defined]
+        return cls.from_basemodel(step, **kwargs)

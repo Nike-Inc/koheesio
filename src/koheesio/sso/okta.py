@@ -4,8 +4,8 @@ This module contains Okta integration steps.
 
 from __future__ import annotations
 
-from typing import Dict, Optional, Union
 from logging import Filter, LogRecord
+from typing import Dict, Optional, Union
 
 from requests import HTTPError
 
@@ -45,7 +45,7 @@ class LoggerOktaTokenFilter(Filter):
 
     def filter(self, record: LogRecord) -> bool:
         # noinspection PyUnresolvedReferences
-        if token := self.__okta_object.output.token:  # type: ignore[attr-defined]
+        if token := self.__okta_object.output.token:
             token_value = token.get_secret_value()
             record.msg = record.msg.replace(token_value, "<SECRET_TOKEN>")
 
@@ -92,21 +92,21 @@ class OktaAccessToken(Okta):
         HttpPostStep.execute(self)
 
         # noinspection PyUnresolvedReferences
-        status_code = self.output.status_code  # type: ignore[attr-defined]
+        status_code = self.output.status_code
         # noinspection PyUnresolvedReferences
-        raw_payload = self.output.raw_payload  # type: ignore[attr-defined]
+        raw_payload = self.output.raw_payload
 
         if status_code != 200:
             raise HTTPError(
                 f"Request failed with '{status_code}' code. Payload: {raw_payload}",
-                response=self.output.response_raw,  # type: ignore[attr-defined]
+                response=self.output.response_raw,
                 request=None,
             )
 
         # noinspection PyUnresolvedReferences
-        json_payload = self.output.json_payload  # type: ignore[attr-defined]
+        json_payload = self.output.json_payload
 
         if token := json_payload.get("access_token"):
-            self.output.token = SecretStr(token)  # type: ignore[attr-defined]
+            self.output.token = SecretStr(token)
         else:
             raise ValueError(f"No 'access_token' found in the Okta response: {json_payload}")

@@ -4,10 +4,10 @@ Utility functions
 
 import inspect
 import uuid
-from typing import Any, Callable, Dict, Optional, Tuple
 from functools import partial
 from importlib import import_module
 from pathlib import Path
+from typing import Any, Callable, Dict, Optional, Tuple
 
 __all__ = [
     "get_args_for_func",
@@ -97,7 +97,5 @@ def get_random_string(length: int = 64, prefix: Optional[str] = None) -> str:
 def convert_str_to_bool(value: str) -> Any:
     """Converts a string to a boolean if the string is either 'true' or 'false'"""
     if isinstance(value, str) and (v := value.lower()) in ["true", "false"]:
-        converted_value = v == "true"
-    else:
-        raise ValueError(f"Value '{value}' is not a valid boolean value")
-    return converted_value
+        value = v == "true"
+    return value
