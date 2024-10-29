@@ -609,6 +609,10 @@ disallow_untyped_defs = true
 files = ["koheesio/**/*.py"]
 plugins = ["pydantic.mypy"]
 
+[tool.mypy.overrides]
+# since our execute method's never explicitly return anything
+"src/koheesio/**/*.py" = { ignore_missing_return = true }
+
 [tool.pylint.main]
 fail-under = 9.5
 py-version = "3.10"
