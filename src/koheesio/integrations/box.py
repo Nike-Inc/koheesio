@@ -36,6 +36,7 @@ from koheesio.models import (
     model_validator,
 )
 from koheesio.spark.readers import Reader
+from koheesio.utils import utc_now
 
 
 class BoxFolderNotFoundError(Exception):
@@ -565,11 +566,7 @@ class BoxToBoxFileCopy(BoxFileBase):
         """
         self.log.info(f"Copying '{file.get()}' to '{folder.get()}'...")
         file.copy(parent_folder=folder).update_info(
-            data={
-                "description": "\n".join(
-                    [f"File processed on {datetime.datetime.now(datetime.UTC)}", file.get()["description"]]
-                )
-            }
+            data={"description": "\n".join([f"File processed on {utc_now()}", file.get()["description"]])}
         )
 
 
@@ -605,11 +602,7 @@ class BoxToBoxFileMove(BoxFileBase):
         """
         self.log.info(f"Moving '{file.get()}' to '{folder.get()}'...")
         file.move(parent_folder=folder).update_info(
-            data={
-                "description": "\n".join(
-                    [f"File processed on {datetime.datetime.now(datetime.UTC)}", file.get()["description"]]
-                )
-            }
+            data={"description": "\n".join([f"File processed on {utc_now()}", file.get()["description"]])}
         )
 
 

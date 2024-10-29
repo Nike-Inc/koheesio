@@ -2,12 +2,14 @@
 Utility functions
 """
 
+import datetime
 import inspect
 import uuid
 from typing import Any, Callable, Dict, Optional, Tuple
 from functools import partial
 from importlib import import_module
 from pathlib import Path
+from sys import version_info as PYTHON_VERSION
 
 __all__ = [
     "get_args_for_func",
@@ -16,6 +18,10 @@ __all__ = [
     "get_random_string",
     "convert_str_to_bool",
 ]
+
+
+PYTHON_MINOR_VERSION = PYTHON_VERSION.major + PYTHON_VERSION.minor / 10
+"""float: Python minor version as a float (e.g. 3.7)"""
 
 
 def get_args_for_func(func: Callable, params: Dict) -> Tuple[Callable, Dict[str, Any]]:
@@ -99,3 +105,10 @@ def convert_str_to_bool(value: str) -> Any:
     if isinstance(value, str) and (v := value.lower()) in ["true", "false"]:
         value = v == "true"
     return value
+
+
+def utc_now() -> datetime.datetime:
+    """Get current time in UTC"""
+    if PYTHON_MINOR_VERSION < 3.11:
+        return datetime.datetime.utcnow()
+    return datetime.datetime.now(datetime.timezone.utc)
