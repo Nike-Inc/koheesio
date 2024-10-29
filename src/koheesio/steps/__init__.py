@@ -20,12 +20,11 @@ import inspect
 import json
 import sys
 import warnings
-from typing import Any, Callable
 from abc import abstractmethod
 from functools import partialmethod, wraps
+from typing import Any, Callable, Union
 
 import yaml
-
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import InstanceOf
 
@@ -363,7 +362,9 @@ class StepMetaClass(ModelMetaclass):
 
         if return_value:
             if not isinstance(return_value, StepOutput):
-                msg = f"execute() did not produce output of type {output.name}, returns of the wrong type will be ignored"  # type: ignore[attr-defined]
+                msg = (
+                    f"execute() did not produce output of type {output.name}, returns of the wrong type will be ignored"  # type: ignore[attr-defined]
+                )
                 warnings.warn(msg)
                 step.log.warning(msg)
 
@@ -663,7 +664,7 @@ class Step(BaseModel, metaclass=StepMetaClass):
 
         return yaml.dump(_result)
 
-    def __getattr__(self, key: str) -> Any | None:
+    def __getattr__(self, key: str) -> Union[Any, None]:
         """__getattr__ dunder
 
         Allows input to be accessed through `self.input_name`

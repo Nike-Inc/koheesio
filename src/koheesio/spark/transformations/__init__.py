@@ -21,8 +21,8 @@ ColumnsTransformationWithTarget
     Extended ColumnsTransformation class with an additional `target_column` field
 """
 
-from typing import Iterator, List, Optional, Union
 from abc import ABC, abstractmethod
+from typing import Iterator, List, Optional, Union
 
 from pyspark.sql import functions as f
 from pyspark.sql.types import DataType
@@ -384,7 +384,7 @@ class ColumnsTransformation(Transformation, ABC):
         ]
         return columns_of_given_type
 
-    def is_column_type_correct(self, column: Column | str) -> bool:
+    def is_column_type_correct(self, column: Union[Column, str]) -> bool:
         """Check if column type is correct and handle it if not, when limit_data_type is set"""
         if not self.limit_data_type_is_set:
             return True
@@ -400,9 +400,7 @@ class ColumnsTransformation(Transformation, ABC):
             )
 
         # Otherwise, throws a warning that the Column object is not of a given type
-        self.log.warning(
-            f"Column `{column}` is not of type `{limit_data_types}` and will be skipped."
-        )  # type:ignore[union-attr]
+        self.log.warning(f"Column `{column}` is not of type `{limit_data_types}` and will be skipped.")  # type:ignore[union-attr]
         return False
 
     def get_limit_data_types(self) -> list:

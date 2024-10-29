@@ -12,7 +12,6 @@ import nest_asyncio  # type: ignore[import-untyped]
 import yarl
 from aiohttp import BaseConnector, ClientSession, TCPConnector
 from aiohttp_retry import ExponentialRetry, RetryClient, RetryOptionsBase
-
 from pydantic import Field, SecretStr, field_validator, model_validator
 
 from koheesio.asyncio import AsyncStep, AsyncStepOutput
@@ -207,7 +206,7 @@ class AsyncHttpStep(AsyncStep, ExtraParamsMixin):
         if timeout:
             raise ValueError("timeout is not allowed in AsyncHttpStep. Provide timeout through retry_options.")
 
-    def get_headers(self) -> None | dict:
+    def get_headers(self) -> Union[None, dict]:
         """
         Get the request headers.
 

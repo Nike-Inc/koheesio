@@ -13,8 +13,8 @@ In the above example, the `response` variable will contain the JSON response fro
 """
 
 import json
-from typing import Any, Dict, List, Optional, Union
 from enum import Enum
+from typing import Any, Dict, List, Optional, Union
 
 import requests  # type: ignore[import-untyped]
 
@@ -135,7 +135,7 @@ class HttpStep(Step, ExtraParamsMixin):
         status_code: Optional[int] = Field(default=None, description="The status return code of the request")
 
         @property
-        def json_payload(self) -> dict | list | None:
+        def json_payload(self) -> Union[dict, list, None]:
             """Alias for response_json"""
             return self.response_json
 

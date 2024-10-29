@@ -15,8 +15,8 @@ writer_to_foreachbatch
     function to be used as batch_function for StreamWriter (sub)classes
 """
 
-from typing import Callable, Dict, Optional, Union
 from abc import ABC, abstractmethod
+from typing import Callable, Dict, Optional, Union
 
 from koheesio import Step
 from koheesio.models import ConfigDict, Field, field_validator, model_validator
@@ -264,7 +264,7 @@ class StreamWriter(Writer, ABC):
         return self.trigger.value  # type: ignore[union-attr]
 
     @field_validator("output_mode")
-    def _validate_output_mode(cls, mode: str | StreamingOutputMode) -> str:
+    def _validate_output_mode(cls, mode: Union[str, StreamingOutputMode]) -> str:
         """Ensure that the given mode is a valid StreamingOutputMode"""
         if isinstance(mode, str):
             return mode
