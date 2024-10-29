@@ -58,5 +58,5 @@ class SparkSqlReader(SqlBaseStep, Reader):
     Any arbitrary kwargs passed to the class will be added to params.
     """
 
-    def execute(self):
+    def execute(self) -> Reader.Output:
         self.output.df = self.spark.sql(self.query)

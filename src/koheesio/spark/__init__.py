@@ -4,29 +4,42 @@ Spark step module
 
 from __future__ import annotations
 
-from typing import Optional
+import warnings
 from abc import ABC
+from typing import Optional
 
 from pydantic import Field
 
-from pyspark.sql import Column
-from pyspark.sql import DataFrame as PySparkSQLDataFrame
-from pyspark.sql import SparkSession as OriginalSparkSession
-from pyspark.sql import functions as F
-
-try:
-    from pyspark.sql.utils import AnalysisException as SparkAnalysisException
-except ImportError:
-    from pyspark.errors.exceptions.base import AnalysisException as SparkAnalysisException
-
 from koheesio import Step, StepOutput
 from koheesio.models import model_validator
+from koheesio.spark.utils.common import (
+    AnalysisException,
+    Column,
+    DataFrame,
+    DataFrameReader,
+    DataFrameWriter,
+    DataStreamReader,
+    DataStreamWriter,
+    DataType,
+    ParseException,
+    SparkSession,
+    StreamingQuery,
+)
 
-# TODO: Move to spark/__init__.py after reorganizing the code
-# Will be used for typing checks and consistency, specifically for PySpark >=3.5
-DataFrame = PySparkSQLDataFrame
-SparkSession = OriginalSparkSession
-AnalysisException = SparkAnalysisException
+__all__ = [
+    "SparkStep",
+    "Column",
+    "DataFrame",
+    "ParseException",
+    "SparkSession",
+    "AnalysisException",
+    "DataType",
+    "DataFrameReader",
+    "DataStreamReader",
+    "DataFrameWriter",
+    "DataStreamWriter",
+    "StreamingQuery",
+]
 
 
 class SparkStep(Step, ABC):
@@ -50,17 +63,27 @@ class SparkStep(Step, ABC):
         df: Optional[DataFrame] = Field(default=None, description="The Spark DataFrame")
 
     @model_validator(mode="after")
-    def _get_active_spark_session(self):
+    def _get_active_spark_session(self) -> SparkStep:
         """Return active SparkSession instance
         If a user provides a SparkSession instance, it will be returned. Otherwise, an active SparkSession will be
         attempted to be retrieved.
         """
         if self.spark is None:
-            self.spark = SparkSession.getActiveSession()
+            from koheesio.spark.utils.common import get_active_session
+
+            self.spark = get_active_session()
         return self
 
 
-# TODO: Move to spark/functions/__init__.py after reorganizing the code
-def current_timestamp_utc(spark: SparkSession) -> Column:
-    """Get the current timestamp in UTC"""
-    return F.to_utc_timestamp(F.current_timestamp(), spark.conf.get("spark.sql.session.timeZone"))
+def current_timestamp_utc(spark):
+    warnings.warn(
+        message=(
+            "The current_timestamp_utc function has been moved to the koheesio.spark.functions module."
+            "Import it from there instead. Current import path will be deprecated in the future."
+        ),
+        category=DeprecationWarning,
+        stacklevel=2,
+    )
+    from koheesio.spark.functions import current_timestamp_utc as _current_timestamp_utc
+
+    return _current_timestamp_utc(spark)

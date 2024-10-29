@@ -35,6 +35,6 @@ class ExcelReader(Reader, PandasExcelReader):
         The row to use as the column names
     """
 
-    def execute(self):
+    def execute(self) -> Reader.Output:
         pdf: PandasDataFrame = PandasExcelReader.from_step(self).execute().df
         self.output.df = self.spark.createDataFrame(pdf)

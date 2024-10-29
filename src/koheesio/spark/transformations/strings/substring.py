@@ -2,8 +2,6 @@
 Extracts a substring from a string column starting at the given position.
 """
 
-from typing import Optional
-
 from pyspark.sql import Column
 from pyspark.sql.functions import substring, when
 from pyspark.sql.types import StringType
@@ -63,18 +61,18 @@ class Substring(ColumnsTransformationWithTarget):
     """
 
     start: PositiveInt = Field(default=..., description="The starting position")
-    length: Optional[int] = Field(
+    length: int = Field(
         default=-1,
         description="The target length for the string. use -1 to perform until end",
     )
 
     @field_validator("length")
-    def _valid_length(cls, length_value):
+    def _valid_length(cls, length_value: int) -> int:
         """Integer.maxint fix for Java.
         Python's sys.maxsize is larger which makes f.substring fail"""
         if length_value == -1:
             return 2147483647
         return length_value
 
-    def func(self, column: Column):
+    def func(self, column: Column) -> Column:
         return when(column.isNull(), None).otherwise(substring(column, self.start, self.length)).cast(StringType())

@@ -10,6 +10,7 @@ from pydantic import ValidationError
 from koheesio.asyncio.http import AsyncHttpStep
 from koheesio.steps.http import HttpMethod
 
+# noinspection HttpUrlsUsage
 ASYNC_BASE_URL = "http://httpbin.org"
 ASYNC_GET_ENDPOINT = URL(f"{ASYNC_BASE_URL}/get")
 ASYNC_STATUS_503_ENDPOINT = URL(f"{ASYNC_BASE_URL}/status/503")

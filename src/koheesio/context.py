@@ -14,11 +14,11 @@ For a comprehensive guide on the usage, examples, and additional features of the
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, Union
 from collections.abc import Mapping
 from pathlib import Path
+from typing import Any, Dict, Iterator, Union
 
-import jsonpickle
+import jsonpickle  # type: ignore[import-untyped]
 import tomli
 import yaml
 
@@ -79,7 +79,7 @@ class Context(Mapping):
     - `values()`: Returns all values of the Context.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs):  # type: ignore[no-untyped-def]
         """Initializes the Context object with given arguments."""
         for arg in args:
             if isinstance(arg, dict):
@@ -87,32 +87,33 @@ class Context(Mapping):
             if isinstance(arg, Context):
                 kwargs = kwargs.update(arg.to_dict())
 
-        for key, value in kwargs.items():
-            self.__dict__[key] = self.process_value(value)
+        if kwargs:
+            for key, value in kwargs.items():
+                self.__dict__[key] = self.process_value(value)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Returns a string representation of the Context."""
         return str(dict(self.__dict__))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Returns a string representation of the Context."""
         return self.__str__()
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         """Allows for iteration across a Context"""
         return self.to_dict().__iter__()
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Returns the length of the Context"""
         return self.to_dict().__len__()
 
-    def __getattr__(self, item):
+    def __getattr__(self, item: str) -> Any:
         try:
             return self.get(item, safe=False)
         except KeyError as e:
             raise AttributeError(item) from e
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: str) -> Any:
         """Makes class subscriptable"""
         return self.get(item, safe=False)
 
@@ -248,11 +249,12 @@ class Context(Mapping):
         -------
         Context
         """
-        toml_str = toml_file_or_str
 
         # check if toml_str is pathlike
         if (toml_file := Path(toml_file_or_str)).exists():
             toml_str = toml_file.read_text(encoding="utf-8")
+        else:
+            toml_str = str(toml_file_or_str)
 
         toml_dict = tomli.loads(toml_str)
         return cls.from_dict(toml_dict)
@@ -421,7 +423,7 @@ class Context(Mapping):
             if isinstance(value, Context):
                 result[key] = value.to_dict()
             elif isinstance(value, list):
-                result[key] = [e.to_dict() if isinstance(e, Context) else e for e in value]
+                result[key] = [e.to_dict() if isinstance(e, Context) else e for e in value]  # type: ignore[assignment]
             else:
                 result[key] = value
 

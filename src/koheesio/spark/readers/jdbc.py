@@ -48,7 +48,7 @@ class JdbcReader(Reader):
         url="jdbc:sqlserver://10.xxx.xxx.xxx:1433;databaseName=YOUR_DATABASE",
         user="YOUR_USERNAME",
         password="***",
-        dbtable="schemaname.tablename",
+        dbtable="schema_name.table_name",
         options={"fetchsize": 100},
     )
     df = jdbc_mssql.read()
@@ -73,7 +73,7 @@ class JdbcReader(Reader):
     query: Optional[str] = Field(default=None, description="Query")
     options: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Extra options to pass to spark reader")
 
-    def get_options(self):
+    def get_options(self) -> Dict[str, Any]:
         """
         Dictionary of options required for the specific JDBC driver.
 
@@ -84,10 +84,10 @@ class JdbcReader(Reader):
             "url": self.url,
             "user": self.user,
             "password": self.password,
-            **self.options,
+            **self.options,  # type: ignore
         }
 
-    def execute(self):
+    def execute(self) -> Reader.Output:
         """Wrapper around Spark's jdbc read format"""
 
         # Can't have both dbtable and query empty

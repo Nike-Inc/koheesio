@@ -4,7 +4,6 @@ from typing import Optional, Union
 
 from pytz import all_timezones_set
 
-from pyspark.sql import Column
 from pyspark.sql import functions as f
 from pyspark.sql.functions import (
     col,
@@ -17,10 +16,11 @@ from pyspark.sql.functions import (
 )
 
 from koheesio.models import Field, field_validator, model_validator
+from koheesio.spark import Column
 from koheesio.spark.transformations import ColumnsTransformationWithTarget
 
 
-def change_timezone(column: Union[str, Column], source_timezone: str, target_timezone: str):
+def change_timezone(column: Union[str, Column], source_timezone: str, target_timezone: str) -> Column:
     """Helper function to change from one timezone to another
 
     wrapper around `pyspark.sql.functions.from_utc_timestamp` and `to_utc_timestamp`
@@ -140,7 +140,7 @@ class ChangeTimeZone(ColumnsTransformationWithTarget):
     )
 
     @model_validator(mode="before")
-    def validate_no_duplicate_timezones(cls, values):
+    def validate_no_duplicate_timezones(cls, values: dict) -> dict:
         """Validate that source and target timezone are not the same"""
         from_timezone_value = values.get("from_timezone")
         to_timezone_value = values.get("o_timezone")
@@ -151,7 +151,7 @@ class ChangeTimeZone(ColumnsTransformationWithTarget):
         return values
 
     @field_validator("from_timezone", "to_timezone")
-    def validate_timezone(cls, timezone_value):
+    def validate_timezone(cls, timezone_value: str) -> str:
         """Validate that the timezone is a valid timezone."""
         if timezone_value not in all_timezones_set:
             raise ValueError(
@@ -163,7 +163,7 @@ class ChangeTimeZone(ColumnsTransformationWithTarget):
     def func(self, column: Column) -> Column:
         return change_timezone(column=column, source_timezone=self.from_timezone, target_timezone=self.to_timezone)
 
-    def execute(self):
+    def execute(self) -> ColumnsTransformationWithTarget.Output:
         df = self.df
 
         for target_column, column in self.get_columns_with_target():

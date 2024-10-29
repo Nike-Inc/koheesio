@@ -2,8 +2,8 @@
 Module for the BaseReader class
 """
 
-from typing import Optional, TypeVar
 from abc import ABC, abstractmethod
+from typing import Optional, TypeVar
 
 from koheesio import Step
 
