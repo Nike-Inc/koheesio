@@ -208,7 +208,7 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
 
     def __merge_all(self) -> Union[DeltaMergeBuilder, DataFrameWriter]:
         """Merge dataframes using DeltaMergeBuilder or DataFrameWriter"""
-        if merge_cond := self.params.get("merge_cond") is None:
+        if (merge_cond := self.params.get("merge_cond")) is None:
             raise ValueError(
                 "Provide `merge_cond` in DeltaTableWriter(output_mode_params={'merge_cond':'<str or Column>'})"
             )
@@ -360,14 +360,11 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
     @property
     def writer(self) -> Union[DeltaMergeBuilder, DataFrameWriter]:
         """Specify DeltaTableWriter"""
-        map_mode_writer = {
+        map_mode_to_writer = {
             BatchOutputMode.MERGEALL.value: self.__merge_all,
             BatchOutputMode.MERGE.value: self.__merge,
-        }.get(
-            self.output_mode, self.__data_frame_writer
-        )  # type: ignore
-
-        return map_mode_writer()  # type: ignore
+        }
+        return map_mode_to_writer.get(self.output_mode, self.__data_frame_writer)()  # type: ignore
 
     def execute(self) -> Writer.Output:
         _writer = self.writer
