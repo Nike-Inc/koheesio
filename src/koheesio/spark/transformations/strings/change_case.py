@@ -74,7 +74,7 @@ class LowerCase(ColumnsTransformationWithTarget):
         run_for_all_data_type = [SparkDatatype.STRING]
         limit_data_type = [SparkDatatype.STRING]
 
-    def func(self, column: Column):
+    def func(self, column: Column) -> Column:
         return lower(column)
 
 
@@ -126,7 +126,7 @@ class UpperCase(LowerCase):
     to upper case.
     """
 
-    def func(self, column: Column):
+    def func(self, column: Column) -> Column:
         return upper(column)
 
 
@@ -179,7 +179,7 @@ class TitleCase(LowerCase):
     to title case (each word now starts with an upper case).
     """
 
-    def func(self, column: Column):
+    def func(self, column: Column) -> Column:
         return initcap(column)
 
 

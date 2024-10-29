@@ -6,7 +6,7 @@ See the docstring of the RowNumberDedup class for more information.
 
 from __future__ import annotations
 
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 from pyspark.sql import Window, WindowSpec
 from pyspark.sql.functions import col, desc, row_number
@@ -25,7 +25,7 @@ class RowNumberDedup(ColumnsTransformation):
     the top-row_number row for each group of duplicates.
     The row_number of each row can be stored in a specified target column or a default column named
     "meta_row_number_column". The class also provides an option to preserve meta columns
-    (like the row_numberk column) in the output DataFrame.
+    (like the `row_number` column) in the output DataFrame.
 
     Attributes
     ----------
@@ -59,7 +59,7 @@ class RowNumberDedup(ColumnsTransformation):
     )
 
     @field_validator("sort_columns", mode="before")
-    def set_sort_columns(cls, columns_value):
+    def set_sort_columns(cls, columns_value: Union[str, Column, List[Union[str, Column]]]) -> List[Union[str, Column]]:
         """
         Validates and optimizes the sort_columns parameter.
 
@@ -117,7 +117,7 @@ class RowNumberDedup(ColumnsTransformation):
 
         return Window.partitionBy([*self.get_columns()]).orderBy(*order_clause)
 
-    def execute(self) -> RowNumberDedup.Output:
+    def execute(self) -> RowNumberDedup.Output:  # type: ignore
         """
         Performs the row_number deduplication operation on the DataFrame.
 

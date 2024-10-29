@@ -6,8 +6,11 @@ from typing import Any, Dict, Optional, Union
 
 import pyspark
 from pydantic import Field
-from pyspark import sql
+
+# noinspection PyUnresolvedReferences,PyPep8Naming
 from spark_expectations.config.user_config import Constants as user_config
+
+# noinspection PyUnresolvedReferences
 from spark_expectations.core.expectations import (
     SparkExpectations,
     WrappedDataFrameWriter,

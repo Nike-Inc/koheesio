@@ -11,7 +11,7 @@ from koheesio.spark.transformations import ColumnsTransformationWithTarget
 from koheesio.spark.utils import SparkDatatype
 
 
-def get_item(column: Column, key: Union[str, int]):
+def get_item(column: Column, key: Union[str, int]) -> Column:
     """
     Wrapper around pyspark.sql.functions.getItem
 

@@ -372,3 +372,4 @@
 
 #         # Assert that the query is as expected
 #         assert mock_query_class.call_args[1]["query"] == expected_query
+

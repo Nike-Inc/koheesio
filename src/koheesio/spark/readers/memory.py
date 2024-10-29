@@ -67,7 +67,7 @@ class InMemoryDataReader(Reader, ExtraParamsMixin):
         description="[Optional] Schema that will be applied during the creation of Spark DataFrame",
     )
 
-    params: Optional[Dict[str, Any]] = Field(
+    params: Dict[str, Any] = Field(
         default_factory=dict,
         description="[Optional] Set of extra parameters that should be passed to the appropriate reader (csv / json)",
     )
@@ -78,6 +78,9 @@ class InMemoryDataReader(Reader, ExtraParamsMixin):
             csv_data: str = "\n".join(self.data)
         else:
             csv_data: str = self.data  # type: ignore
+
+        if "header" in self.params and self.params["header"] is True:
+            self.params["header"] = 0
 
         pandas_df = pd.read_csv(StringIO(csv_data), **self.params)  # type: ignore
         df = self.spark.createDataFrame(pandas_df, schema=self.schema_)  # type: ignore
@@ -95,6 +98,7 @@ class InMemoryDataReader(Reader, ExtraParamsMixin):
             json_data = [self.data]
 
         # Use pyspark.pandas to read the JSON data from the string
+        # noinspection PyUnboundLocalVariable
         pandas_df = pd.read_json(StringIO(json.dumps(json_data)), **self.params)  # type: ignore
 
         # Convert pyspark.pandas DataFrame to Spark DataFrame
@@ -102,7 +106,7 @@ class InMemoryDataReader(Reader, ExtraParamsMixin):
 
         return df
 
-    def execute(self):
+    def execute(self) -> Reader.Output:
         """
         Execute method appropriate to the specific data format
         """

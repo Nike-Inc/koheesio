@@ -27,16 +27,18 @@ class SqlTransform(SqlBaseStep, Transformation):
     ```
     """
 
-    def execute(self):
+    def execute(self) -> Transformation.Output:
         table_name = get_random_string(prefix="sql_transform")
         self.params = {**self.params, "table_name": table_name}
 
         from koheesio.spark.utils.connect import is_remote_session
 
         if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session() and self.df.isStreaming:
-            raise RuntimeError("""SQL Transform is not supported in remote sessions with streaming dataframes.
-                               See https://issues.apache.org/jira/browse/SPARK-45957
-                               It is fixed in PySpark 4.0.0""")
+            raise RuntimeError(
+                "SQL Transform is not supported in remote sessions with streaming dataframes."
+                "See https://issues.apache.org/jira/browse/SPARK-45957"
+                "It is fixed in PySpark 4.0.0"
+            )
 
         self.df.createOrReplaceTempView(table_name)
         query = self.query

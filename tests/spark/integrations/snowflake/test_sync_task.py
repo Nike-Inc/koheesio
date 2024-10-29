@@ -1,41 +1,37 @@
-# from datetime import datetime
-# from unittest import mock
+from textwrap import dedent
+from unittest import mock
 
-# import chispa
-# import pydantic
-# import pytest
-# from conftest import await_job_completion
-# from pyspark.sql import DataFrame
+import chispa
+import pytest
+from conftest import await_job_completion
 
-# from koheesio.spark.delta import DeltaTableStep
-# from koheesio.spark.readers.delta import DeltaTableReader
-# from koheesio.spark.snowflake import (
-#     RunQuery,
-#     SnowflakeWriter,
-#     SynchronizeDeltaToSnowflakeTask,
-# )
-# from koheesio.spark.writers import BatchOutputMode, StreamingOutputMode
-# from koheesio.spark.writers.delta import DeltaTableWriter
-# from koheesio.spark.writers.stream import ForEachBatchStreamWriter
+
+from koheesio.integrations.snowflake import SnowflakeRunQueryPython
+from koheesio.integrations.spark.snowflake import (
+    SnowflakeWriter,
+    SynchronizeDeltaToSnowflakeTask,
+)
+from koheesio.spark.delta import DeltaTableStep
+from koheesio.spark.writers import BatchOutputMode
+from koheesio.spark.writers.stream import ForEachBatchStreamWriter
 
 # pytestmark = pytest.mark.spark
 
-# COMMON_OPTIONS = {
-#     "source_table": DeltaTableStep(table=""),
-#     "target_table": "foo.bar",
-#     "key_columns": [
-#         "Country",
-#     ],
-#     "url": "url",
-#     "user": "user",
-#     "password": "password",
-#     "database": "db",
-#     "schema": "schema",
-#     "role": "role",
-#     "warehouse": "warehouse",
-#     "persist_staging": False,
-#     "checkpoint_location": "some_checkpoint_location",
-# }
+COMMON_OPTIONS = {
+    "target_table": "foo.bar",
+    "key_columns": [
+        "Country",
+    ],
+    "url": "url",
+    "user": "user",
+    "password": "password",
+    "database": "db",
+    "schema": "schema",
+    "role": "role",
+    "warehouse": "warehouse",
+    "persist_staging": False,
+    "checkpoint_location": "some_checkpoint_location",
+}
 
 
 # @pytest.fixture(scope="session")
@@ -124,68 +120,72 @@
 #         task.execute()
 #         chispa.assert_df_equality(task.output.target_df, df)
 
-#     @mock.patch.object(RunQuery, "execute")
-#     def test_merge(
-#         self,
-#         mocked_sf_query_execute,
-#         spark,
-#         foreach_batch_stream_local,
-#         snowflake_staging_file,
-#     ):
-#         # Prepare Delta requirements
-#         source_table = DeltaTableStep(datbase="klettern", table="test_merge")
-#         spark.sql(
-#             f"""
-#         CREATE OR REPLACE TABLE {source_table.table_name}
-#         (Country STRING, NumVaccinated LONG, AvailableDoses LONG)
-#         USING DELTA
-#         TBLPROPERTIES ('delta.enableChangeDataFeed' = true);
-#         """
-#         )
+    @mock.patch.object(SnowflakeRunQueryPython, "execute")
+    def test_merge(
+        self,
+        mocked_sf_query_execute,
+        spark,
+        foreach_batch_stream_local,
+        snowflake_staging_file,
+    ):
+        # Arrange - Prepare Delta requirements
+        source_table = DeltaTableStep(database="klettern", table="test_merge")
+        spark.sql(
+            dedent(
+                f"""
+                CREATE OR REPLACE TABLE {source_table.table_name}
+                (Country STRING, NumVaccinated LONG, AvailableDoses LONG)
+                USING DELTA
+                TBLPROPERTIES ('delta.enableChangeDataFeed' = true);
+                """
+            )
+        )
 
-#         # Prepare local representation of snowflake
-#         task = SynchronizeDeltaToSnowflakeTask(
-#             streaming=True,
-#             synchronisation_mode=BatchOutputMode.MERGE,
-#             **{**COMMON_OPTIONS, "source_table": source_table},
-#         )
+        # Arrange - Prepare local representation of snowflake
+        task = SynchronizeDeltaToSnowflakeTask(
+            streaming=True,
+            synchronisation_mode=BatchOutputMode.MERGE,
+            **{**COMMON_OPTIONS, "source_table": source_table, "account": "sf_account"},
+        )
 
-#         # Perform actions
-#         spark.sql(
-#             f"""INSERT INTO {source_table.table_name} VALUES
-#             ("Australia", 100, 3000),
-#             ("USA", 10000, 20000),
-#             ("UK", 7000, 10000);
-#         """
-#         )
+        # Arrange - Add data to previously empty Delta table
+        spark.sql(
+            dedent(
+                f"""
+                INSERT INTO {source_table.table_name} VALUES
+                ("Australia", 100, 3000),
+                ("USA", 10000, 20000),
+                ("UK", 7000, 10000);
+                """
+            )
+        )
 
-#         # Run code
+        # Act - Run code
+        # Note: We are using the foreach_batch_stream_local fixture to simulate writing to a live environment
+        with mock.patch.object(SynchronizeDeltaToSnowflakeTask, "writer", new=foreach_batch_stream_local):
+            task.execute()
+            task.writer.await_termination()
 
-#         with mock.patch.object(SynchronizeDeltaToSnowflakeTask, "writer", new=foreach_batch_stream_local):
-#             task.execute()
-#             task.writer.await_termination()
-
-#         # Validate result
-#         df = spark.read.parquet(snowflake_staging_file).select("Country", "NumVaccinated", "AvailableDoses")
-
-#         chispa.assert_df_equality(
-#             df,
-#             spark.sql(f"SELECT * FROM {source_table.table_name}"),
-#             ignore_row_order=True,
-#             ignore_column_order=True,
-#         )
-#         assert df.count() == 3
+        # Assert - Validate result
+        df = spark.read.parquet(snowflake_staging_file).select("Country", "NumVaccinated", "AvailableDoses")
+        chispa.assert_df_equality(
+            df,
+            spark.sql(f"SELECT * FROM {source_table.table_name}"),
+            ignore_row_order=True,
+            ignore_column_order=True,
+        )
+        assert df.count() == 3
 
 #         # Perform update
 #         spark.sql(f"""INSERT INTO {source_table.table_name} VALUES ("BELGIUM", 10, 100)""")
 #         spark.sql(f"UPDATE {source_table.table_name} SET NumVaccinated = 20 WHERE Country = 'Belgium'")
 
-#         # Run code
-#         with mock.patch.object(SynchronizeDeltaToSnowflakeTask, "writer", new=foreach_batch_stream_local):
-#             # Test that this call doesn't raise exception after all queries were completed
-#             task.writer.await_termination()
-#             task.execute()
-#             await_job_completion()
+        # Run code
+        with mock.patch.object(SynchronizeDeltaToSnowflakeTask, "writer", new=foreach_batch_stream_local):
+            # Test that this call doesn't raise exception after all queries were completed
+            task.writer.await_termination()
+            task.execute()
+            await_job_completion(spark)
 
 #         # Validate result
 #         df = spark.read.parquet(snowflake_staging_file).select("Country", "NumVaccinated", "AvailableDoses")
@@ -365,22 +365,29 @@
 #         )
 
 
-# class TestValidations:
-#     @pytest.mark.parametrize(
-#         "sync_mode,streaming",
-#         [
-#             (BatchOutputMode.OVERWRITE, False),
-#             (BatchOutputMode.MERGE, True),
-#             (BatchOutputMode.APPEND, False),
-#             (BatchOutputMode.APPEND, True),
-#         ],
-#     )
-#     def test_snowflake_sync_task_allowed_options(self, sync_mode: BatchOutputMode, streaming: bool):
-#         task = SynchronizeDeltaToSnowflakeTask(
-#             streaming=streaming,
-#             synchronisation_mode=sync_mode,
-#             **COMMON_OPTIONS,
-#         )
+class TestValidations:
+    options = {**COMMON_OPTIONS}
+
+    @pytest.fixture(autouse=True, scope="class")
+    def set_spark(self, spark):
+        self.options["source_table"] = DeltaTableStep(table="<foo>")
+        yield spark
+
+    @pytest.mark.parametrize(
+        "sync_mode,streaming",
+        [
+            (BatchOutputMode.OVERWRITE, False),
+            (BatchOutputMode.MERGE, True),
+            (BatchOutputMode.APPEND, False),
+            (BatchOutputMode.APPEND, True),
+        ],
+    )
+    def test_snowflake_sync_task_allowed_options(self, sync_mode: BatchOutputMode, streaming: bool):
+        task = SynchronizeDeltaToSnowflakeTask(
+            streaming=streaming,
+            synchronisation_mode=sync_mode,
+            **self.options,
+        )
 
 #         assert task.reader.streaming == streaming
 
@@ -407,86 +414,95 @@
 #                 **{**COMMON_OPTIONS, "key_columns": []},
 #             )
 
-#     @pytest.mark.parametrize(
-#         "sync_mode, streaming, expected_writer_type",
-#         [
-#             (BatchOutputMode.OVERWRITE, False, SnowflakeWriter),
-#             (BatchOutputMode.MERGE, True, ForEachBatchStreamWriter),
-#             (BatchOutputMode.APPEND, False, SnowflakeWriter),
-#             (BatchOutputMode.APPEND, True, ForEachBatchStreamWriter),
-#         ],
-#     )
-#     def test_snowflake_sync_task_allowed_writers(
-#         self, sync_mode: BatchOutputMode, streaming: bool, expected_writer_type: type
-#     ):
-#         # Overload dynamic retrieval of source schema
-#         with mock.patch.object(
-#             SynchronizeDeltaToSnowflakeTask,
-#             "non_key_columns",
-#             new=["NumVaccinated", "AvailableDoses"],
-#         ):
-#             task = SynchronizeDeltaToSnowflakeTask(
-#                 streaming=streaming,
-#                 synchronisation_mode=sync_mode,
-#                 **COMMON_OPTIONS,
-#             )
-#             print(f"{task.writer = }")
-#             print(f"{type(task.writer) = }")
-#             assert isinstance(task.writer, expected_writer_type)
+    @pytest.mark.parametrize(
+        "sync_mode, streaming, expected_writer_type",
+        [
+            (BatchOutputMode.OVERWRITE, False, SnowflakeWriter),
+            (BatchOutputMode.MERGE, True, ForEachBatchStreamWriter),
+            (BatchOutputMode.APPEND, False, SnowflakeWriter),
+            (BatchOutputMode.APPEND, True, ForEachBatchStreamWriter),
+        ],
+    )
+    def test_snowflake_sync_task_allowed_writers(
+        self, sync_mode: BatchOutputMode, streaming: bool, expected_writer_type: type
+    ):
+        # Overload dynamic retrieval of source schema
+        with mock.patch.object(
+            SynchronizeDeltaToSnowflakeTask,
+            "non_key_columns",
+            new=["NumVaccinated", "AvailableDoses"],
+        ):
+            task = SynchronizeDeltaToSnowflakeTask(
+                streaming=streaming,
+                synchronisation_mode=sync_mode,
+                **self.options,
+            )
+            assert isinstance(task.writer, expected_writer_type)
 
-#     def test_merge_cdf_enabled(self, spark):
-#         table = DeltaTableStep(database="klettern", table="sync_test_table")
-#         spark.sql(
-#             f"""
-#         CREATE OR REPLACE TABLE {table.table_name}
-#         (Country STRING, NumVaccinated INT, AvailableDoses INT)
-#         USING DELTA
-#         TBLPROPERTIES ('delta.enableChangeDataFeed' = false);
-#         """
-#         )
-#         task = SynchronizeDeltaToSnowflakeTask(
-#             streaming=True,
-#             synchronisation_mode=BatchOutputMode.MERGE,
-#             **{**COMMON_OPTIONS, "source_table": table},
-#         )
-#         assert task.source_table.is_cdf_active is False
+    def test_merge_cdf_enabled(self, spark):
+        table = DeltaTableStep(database="klettern", table="sync_test_table")
+        spark.sql(
+            dedent(
+                f"""
+                CREATE OR REPLACE TABLE {table.table_name}
+                (Country STRING, NumVaccinated INT, AvailableDoses INT)
+                USING DELTA
+                TBLPROPERTIES ('delta.enableChangeDataFeed' = false);
+                """
+            )
+        )
+        task = SynchronizeDeltaToSnowflakeTask(
+            streaming=True,
+            synchronisation_mode=BatchOutputMode.MERGE,
+            **{**COMMON_OPTIONS, "source_table": table},
+        )
+        assert task.source_table.is_cdf_active is False
 
 #         # Fail if ChangeDataFeed is not enabled
 #         with pytest.raises(RuntimeError):
 #             task.execute()
 
 
-# class TestMergeQuery:
-#     def test_merge_query_no_delete(self):
-#         query = SynchronizeDeltaToSnowflakeTask._build_sf_merge_query(
-#             target_table="target_table",
-#             stage_table="tmp_table",
-#             pk_columns=["Country"],
-#             non_pk_columns=["NumVaccinated", "AvailableDoses"],
-#         )
-#         expected_query = """
-#         MERGE INTO target_table target
-#         USING tmp_table temp ON target.Country = temp.Country
-#         WHEN MATCHED AND temp._change_type = 'update_postimage' THEN UPDATE SET NumVaccinated = temp.NumVaccinated, AvailableDoses = temp.AvailableDoses
-#         WHEN NOT MATCHED AND temp._change_type != 'delete' THEN INSERT (Country, NumVaccinated, AvailableDoses) VALUES (temp.Country, temp.NumVaccinated, temp.AvailableDoses)
-#         """
+class TestMergeQuery:
+    def test_merge_query_no_delete(self):
+        query = SynchronizeDeltaToSnowflakeTask._build_sf_merge_query(
+            target_table="target_table",
+            stage_table="tmp_table",
+            pk_columns=["Country"],
+            non_pk_columns=["NumVaccinated", "AvailableDoses"],
+        )
+        expected_query = dedent(
+            """
+            MERGE INTO target_table target
+            USING tmp_table temp ON target.Country = temp.Country
+            WHEN MATCHED AND temp._change_type = 'update_postimage'
+                THEN UPDATE SET NumVaccinated = temp.NumVaccinated, AvailableDoses = temp.AvailableDoses
+            WHEN NOT MATCHED AND temp._change_type != 'delete'
+                THEN INSERT (Country, NumVaccinated, AvailableDoses)
+                VALUES (temp.Country, temp.NumVaccinated, temp.AvailableDoses)"""
+        ).strip()
 
 #         assert query == expected_query
 
-#     def test_merge_query_with_delete(self):
-#         query = SynchronizeDeltaToSnowflakeTask._build_sf_merge_query(
-#             target_table="target_table",
-#             stage_table="tmp_table",
-#             pk_columns=["Country"],
-#             non_pk_columns=["NumVaccinated", "AvailableDoses"],
-#             enable_deletion=True,
-#         )
-#         expected_query = """
-#         MERGE INTO target_table target
-#         USING tmp_table temp ON target.Country = temp.Country
-#         WHEN MATCHED AND temp._change_type = 'update_postimage' THEN UPDATE SET NumVaccinated = temp.NumVaccinated, AvailableDoses = temp.AvailableDoses
-#         WHEN NOT MATCHED AND temp._change_type != 'delete' THEN INSERT (Country, NumVaccinated, AvailableDoses) VALUES (temp.Country, temp.NumVaccinated, temp.AvailableDoses)
-#         WHEN MATCHED AND temp._change_type = 'delete' THEN DELETE"""
+    def test_merge_query_with_delete(self):
+        query = SynchronizeDeltaToSnowflakeTask._build_sf_merge_query(
+            target_table="target_table",
+            stage_table="tmp_table",
+            pk_columns=["Country"],
+            non_pk_columns=["NumVaccinated", "AvailableDoses"],
+            enable_deletion=True,
+        )
+        expected_query = dedent(
+            """
+            MERGE INTO target_table target
+            USING tmp_table temp ON target.Country = temp.Country
+            WHEN MATCHED AND temp._change_type = 'update_postimage'
+                THEN UPDATE SET NumVaccinated = temp.NumVaccinated, AvailableDoses = temp.AvailableDoses
+            WHEN NOT MATCHED AND temp._change_type != 'delete'
+                THEN INSERT (Country, NumVaccinated, AvailableDoses)
+                VALUES (temp.Country, temp.NumVaccinated, temp.AvailableDoses)
+            WHEN MATCHED AND temp._change_type = 'delete' THEN DELETE"""
+        ).strip()
 
 #         assert query == expected_query
 

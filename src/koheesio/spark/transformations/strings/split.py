@@ -67,13 +67,13 @@ class SplitAll(ColumnsTransformationWithTarget):
 
     split_pattern: str = Field(default=..., description="The pattern to split the column contents.")
 
-    def func(self, column: Column):
+    def func(self, column: Column) -> Column:
         return split(column, pattern=self.split_pattern)
 
 
 class SplitAtFirstMatch(SplitAll):
     """
-    Like SplitAll, but only splits the string once. You can specify whether you want the first or second part..
+    Like SplitAll, but only splits the string once. You can specify whether you want the first or second part.
 
     Note
     ----
@@ -128,7 +128,7 @@ class SplitAtFirstMatch(SplitAll):
         description="Takes the first part of the split when true, the second part when False. Other parts are ignored.",
     )
 
-    def func(self, column: Column):
+    def func(self, column: Column) -> Column:
         split_func = split(column, pattern=self.split_pattern)
 
         # first part

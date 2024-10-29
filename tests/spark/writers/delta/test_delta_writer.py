@@ -17,6 +17,8 @@ from koheesio.spark.writers.stream import Trigger
 
 pytestmark = pytest.mark.spark
 
+skip_reason = "Tests are not working with PySpark 3.5 due to delta calling _sc. Test requires pyspark version >= 4.0"
+
 
 def test_delta_table_writer(dummy_df, spark):
     table_name = "test_table"
@@ -48,6 +50,9 @@ def test_delta_partitioning(spark, sample_df_to_partition):
 
 def test_delta_table_merge_all(spark):
     from koheesio.spark.utils.connect import is_remote_session
+
+    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
+        pytest.skip(reason=skip_reason) #TODO: pytest.catch
 
     table_name = "test_merge_all_table"
     target_df = spark.createDataFrame(

@@ -6,6 +6,7 @@ on:
   pull_request:
     branches:
     - main
+    - release/*
   workflow_dispatch:
     inputs:
       logLevel:
@@ -40,8 +41,8 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.ref }}
         repository: ${{ github.event.pull_request.head.repo.full_name }}
-    - name: Fetch main branch
-      run: git fetch origin main:main
+    - name: Fetch target branch
+      run: git fetch origin ${{ github.event.pull_request.base.ref || 'main'}}:${{ github.event.pull_request.base.ref || 'main'}}
     - name: Check changes
       id: check
       run: |

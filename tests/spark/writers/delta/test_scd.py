@@ -10,13 +10,18 @@ from pyspark.sql import functions as F
 from pyspark.sql.types import Row
 
 from koheesio.spark import DataFrame
+from koheesio.spark import DataFrame
 from koheesio.spark.delta import DeltaTableStep
+from koheesio.spark.functions import current_timestamp_utc
+from koheesio.spark.utils import SPARK_MINOR_VERSION
 from koheesio.spark.functions import current_timestamp_utc
 from koheesio.spark.utils import SPARK_MINOR_VERSION
 from koheesio.spark.writers.delta.scd import SCD2DeltaTableWriter
 from koheesio.spark.writers.delta.utils import SparkConnectDeltaTableException
 
 pytestmark = pytest.mark.spark
+
+skip_reason = "Tests are not working with PySpark 3.5 due to delta calling _sc. Test requires pyspark version >= 4.0"
 
 skip_reason = "Tests are not working with PySpark 3.5 due to delta calling _sc. Test requires pyspark version >= 4.0"
 

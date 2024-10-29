@@ -80,12 +80,12 @@ class SFTPWriteMode(str, Enum):
     UPDATE = "update"
 
     @classmethod
-    def from_string(cls, mode: str):
+    def from_string(cls, mode: str) -> "SFTPWriteMode":
         """Return the SFTPWriteMode for the given string."""
         return cls[mode.upper()]
 
     @property
-    def write_mode(self):
+    def write_mode(self) -> str:
         """Return the write mode for the given SFTPWriteMode."""
         if self in {SFTPWriteMode.OVERWRITE, SFTPWriteMode.BACKUP, SFTPWriteMode.EXCLUSIVE, SFTPWriteMode.UPDATE}:
             return "wb"  # Overwrite, Backup, Exclusive, Update modes set the file to be written from the beginning
@@ -149,7 +149,7 @@ class SFTPWriter(Writer):
 
     mode: SFTPWriteMode = Field(
         default=SFTPWriteMode.OVERWRITE,
-        description="Write mode: overwrite, append, ignore, exclusive, backup, or update." + SFTPWriteMode.__doc__,
+        description="Write mode: overwrite, append, ignore, exclusive, backup, or update." + SFTPWriteMode.__doc__,  # type: ignore
     )
 
     # private attrs
@@ -180,26 +180,26 @@ class SFTPWriter(Writer):
         return data
 
     @field_validator("host")
-    def validate_sftp_host(cls, v) -> str:
+    def validate_sftp_host(cls, host: str) -> str:
         """Validate the host"""
         # remove the sftp:// prefix if present
-        if v.startswith("sftp://"):
-            v = v.replace("sftp://", "")
+        if host.startswith("sftp://"):
+            host = host.replace("sftp://", "")
 
         # remove the trailing slash if present
-        if v.endswith("/"):
-            v = v[:-1]
+        if host.endswith("/"):
+            host = host[:-1]
 
-        return v
+        return host
 
     @property
-    def write_mode(self):
+    def write_mode(self) -> str:
         """Return the write mode for the given SFTPWriteMode."""
         mode = SFTPWriteMode.from_string(self.mode)  # Convert string to SFTPWriteMode
         return mode.write_mode
 
     @property
-    def transport(self):
+    def transport(self) -> Transport:
         """Return the transport for the SFTP connection. If it doesn't exist, create it.
 
         If the username and password are provided, use them to connect to the SFTP server.
@@ -225,14 +225,14 @@ class SFTPWriter(Writer):
                 raise e
         return self._client
 
-    def _close_client(self):
+    def _close_client(self) -> None:
         """Close the SFTP client and transport."""
         if self.client:
             self.client.close()
         if self.transport:
             self.transport.close()
 
-    def write_file(self, file_path: str, buffer_output: InstanceOf[BufferWriter.Output]):
+    def write_file(self, file_path: str, buffer_output: InstanceOf[BufferWriter.Output]) -> None:
         """
         Using Paramiko, write the data in the buffer to SFTP.
         """
@@ -293,7 +293,7 @@ class SFTPWriter(Writer):
         # Then overwrite the file
         self.write_file(file_path, buffer_output)
 
-    def execute(self):
+    def execute(self) -> Writer.Output:
         buffer_output: InstanceOf[BufferWriter.Output] = self.buffer_writer.write(self.df)
 
         # write buffer to the SFTP server
@@ -378,7 +378,7 @@ class SendCsvToSftp(PandasCsvBufferWriter, SFTPWriter):
     For more details on the CSV parameters, refer to the PandasCsvBufferWriter class documentation.
     """
 
-    buffer_writer: PandasCsvBufferWriter = Field(default=None, validate_default=False)
+    buffer_writer: Optional[PandasCsvBufferWriter] = Field(default=None, validate_default=False)
 
     @model_validator(mode="after")
     def set_up_buffer_writer(self) -> "SendCsvToSftp":
@@ -386,7 +386,7 @@ class SendCsvToSftp(PandasCsvBufferWriter, SFTPWriter):
         self.buffer_writer = PandasCsvBufferWriter(**self.get_options(options_type="koheesio_pandas_buffer_writer"))
         return self
 
-    def execute(self):
+    def execute(self) -> SFTPWriter.Output:
         SFTPWriter.execute(self)
 
 
@@ -460,7 +460,7 @@ class SendJsonToSftp(PandasJsonBufferWriter, SFTPWriter):
     For more details on the JSON parameters, refer to the PandasJsonBufferWriter class documentation.
     """
 
-    buffer_writer: PandasJsonBufferWriter = Field(default=None, validate_default=False)
+    buffer_writer: Optional[PandasJsonBufferWriter] = Field(default=None, validate_default=False)
 
     @model_validator(mode="after")
     def set_up_buffer_writer(self) -> "SendJsonToSftp":
@@ -470,5 +470,5 @@ class SendJsonToSftp(PandasJsonBufferWriter, SFTPWriter):
         )
         return self
 
-    def execute(self):
+    def execute(self) -> SFTPWriter.Output:
         SFTPWriter.execute(self)

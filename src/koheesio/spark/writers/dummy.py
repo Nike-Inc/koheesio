@@ -43,7 +43,7 @@ class DummyWriter(Writer):
     )
 
     @field_validator("truncate")
-    def int_truncate(cls, truncate_value) -> int:
+    def int_truncate(cls, truncate_value: Union[int, bool]) -> int:
         """
         Truncate is either a bool or an int.
 
@@ -72,12 +72,8 @@ class DummyWriter(Writer):
 
     def execute(self) -> Output:
         """Execute the DummyWriter"""
-        df: DataFrame = self.df
-
-        # noinspection PyProtectedMember
-        df_content = show_string(df=df, n=self.n, truncate=self.truncate, vertical=self.vertical)
-
         # logs the equivalent of doing df.show()
+        df_content = show_string(df=self.df, n=self.n, truncate=self.truncate, vertical=self.vertical)
         self.log.info(f"content of df that was passed to DummyWriter:\n{df_content}")
 
         self.output.head = self.df.head().asDict()

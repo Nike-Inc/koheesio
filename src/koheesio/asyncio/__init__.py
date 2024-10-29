@@ -18,15 +18,13 @@ class AsyncStepMetaClass(StepMetaClass):
     It inherits from the StepMetaClass and provides additional functionality for
     executing asynchronous steps.
 
-    Attributes:
-        None
-
-    Methods:
-        _execute_wrapper: Wrapper method for executing asynchronous steps.
+    Methods
+    -------
+    _execute_wrapper: Wrapper method for executing asynchronous steps.
 
     """
 
-    def _execute_wrapper(cls, *args, **kwargs):
+    def _execute_wrapper(cls, *args, **kwargs):  # type: ignore[no-untyped-def]
         """Wrapper method for executing asynchronous steps.
 
         This method is called when an asynchronous step is executed. It wraps the
@@ -62,7 +60,7 @@ class AsyncStepOutput(Step.Output):
         Merge key-value map with self.
     """
 
-    def merge(self, other: Union[Dict, StepOutput]):
+    def merge(self, other: Union[Dict, StepOutput]) -> "AsyncStepOutput":
         """Merge key,value map with self
 
         Examples
@@ -89,6 +87,7 @@ class AsyncStepOutput(Step.Output):
         return self
 
 
+# noinspection PyUnresolvedReferences
 class AsyncStep(Step, ABC, metaclass=AsyncStepMetaClass):
     """
     Asynchronous step class that inherits from Step and uses the AsyncStepMetaClass metaclass.

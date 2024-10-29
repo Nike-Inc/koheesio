@@ -29,7 +29,7 @@ Additionally, this module provides two transformation classes that can be used a
 These classes are subclasses of `ColumnsTransformationWithTarget` and hence can be used to perform transformations on
 multiple columns at once.
 
-The above transformations both use the provided `asjust_time()` function to perform the actual transformation.
+The above transformations both use the provided `adjust_time()` function to perform the actual transformation.
 
 See also:
 ---------
@@ -118,15 +118,15 @@ __output_df__:
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, Union
 
 from pyspark.sql import Column as SparkColumn
 from pyspark.sql.functions import col, expr
 
 from koheesio.models import Field, field_validator
-from koheesio.spark import Column, ParseException
+from koheesio.spark import Column, ParseException, check_if_pyspark_connect_is_supported
 from koheesio.spark.transformations import ColumnsTransformationWithTarget
-from koheesio.spark.utils import check_if_pyspark_connect_is_supported, get_column_name
+from koheesio.spark.utils import get_column_name
 
 # create a literal constraining the operations to 'add' and 'subtract'
 Operations = Literal["add", "subtract"]
@@ -137,7 +137,7 @@ class DateTimeColumn(SparkColumn):
     operators.
     """
 
-    def __add__(self, value: str):
+    def __add__(self, value: str) -> Column:
         """Add an `interval` value to a date or time column
 
         A valid value is a string that can be parsed by the `interval` function in Spark SQL.
@@ -146,7 +146,7 @@ class DateTimeColumn(SparkColumn):
         print(f"__add__: {value = }")
         return adjust_time(self, operation="add", interval=value)
 
-    def __sub__(self, value: str):
+    def __sub__(self, value: str) -> Column:
         """Subtract an `interval` value to a date or time column
 
         A valid value is a string that can be parsed by the `interval` function in Spark SQL.
@@ -154,8 +154,9 @@ class DateTimeColumn(SparkColumn):
         """
         return adjust_time(self, operation="subtract", interval=value)
 
+    # noinspection PyProtectedMember
     @classmethod
-    def from_column(cls, column: Column):
+    def from_column(cls, column: Column) -> Union["DateTimeColumn", "DateTimeColumnConnect"]:
         """Create a DateTimeColumn from an existing Column"""
         if isinstance(column, SparkColumn):
             return DateTimeColumn(column._jc)
@@ -178,7 +179,7 @@ if check_if_pyspark_connect_is_supported():
         from_column = DateTimeColumn.from_column
 
 
-def validate_interval(interval: str):
+def validate_interval(interval: str) -> str:
     """Validate an interval string
 
     Parameters
@@ -299,7 +300,7 @@ def adjust_time(column: Column, operation: Operations, interval: str) -> Column:
         operation = {
             "add": "try_add",
             "subtract": "try_subtract",
-        }[operation]
+        }[operation]  # type: ignore
     except KeyError as e:
         raise ValueError(f"Operation '{operation}' is not valid. Must be either 'add' or 'subtract'.") from e
 
@@ -360,7 +361,7 @@ class DateTimeAddInterval(ColumnsTransformationWithTarget):
     # validators
     validate_interval = field_validator("interval")(validate_interval)
 
-    def func(self, column: Column):
+    def func(self, column: Column) -> Column:
         return adjust_time(column, operation=self.operation, interval=self.interval)
 
 

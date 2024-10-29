@@ -53,7 +53,7 @@ def log_clauses(clauses: JavaObject, source_alias: str, target_alias: str) -> Op
 
     if not clauses.isEmpty():
         clauses_type = clauses.last().nodeName().replace("DeltaMergeInto", "")
-        _processed_clauses = {}
+        _processed_clauses: dict = {}
 
         for i in range(0, clauses.length()):
             clause = clauses.apply(i)
@@ -68,6 +68,8 @@ def log_clauses(clauses: JavaObject, source_alias: str, target_alias: str) -> Op
                 )
             elif condition.toString() == "None":
                 condition_clause = "No conditions required"
+            else:
+                raise ValueError(f"Condition {condition} is not supported")
 
             clause_type: str = clause.clauseType().capitalize()
             columns = "ALL" if clause_type == "Delete" else clause.actions().toList().apply(0).toString()

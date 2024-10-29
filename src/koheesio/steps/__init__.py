@@ -20,12 +20,16 @@ import inspect
 import json
 import sys
 import warnings
+from typing import Any, Callable, Union
 from abc import abstractmethod
 from functools import partialmethod, wraps
 from typing import Any, Optional
 
 import yaml
 from pydantic import PrivateAttr
+
+from pydantic import BaseModel as PydanticBaseModel
+from pydantic import InstanceOf
 
 from koheesio.models import BaseModel, ConfigDict, ModelMetaclass
 
@@ -60,7 +64,7 @@ class StepOutput(BaseModel):
 
         Essentially, this method is a wrapper around the validate method of the BaseModel class
         """
-        validated_model = self.validate()
+        validated_model = self.validate()  # type: ignore[call-arg]
         return StepOutput.from_basemodel(validated_model)
 
 
@@ -74,8 +78,9 @@ class StepMetaClass(ModelMetaclass):
     # When partialmethod is forgetting that _execute_wrapper
     # is a method of wrapper, and it needs to pass that in as the first arg.
     # https://github.com/python/cpython/issues/99152
+    # noinspection PyPep8Naming,PyUnresolvedReferences
     class _partialmethod_with_self(partialmethod):
-        def __get__(self, obj, cls=None):
+        def __get__(self, obj: Any, cls=None):  # type: ignore[no-untyped-def]
             return self._make_unbound_method().__get__(obj, cls)
 
     # Unique object to mark a function as wrapped
@@ -117,11 +122,12 @@ class StepMetaClass(ModelMetaclass):
         The method wraps the `execute` method of the class with a partial method if it is not already wrapped.
         The wrapped method is then set as the new `execute` method of the class.
 
-        If the `execute` method is already wrapped, the method is not modified.
+        If the execute method is already wrapped, the class does not modify the method.
 
         The method also keeps track of the number of times the `execute` method has been wrapped.
 
         """
+        # noinspection PyTypeChecker
         cls = super().__new__(
             mcs,
             cls_name,
@@ -141,6 +147,7 @@ class StepMetaClass(ModelMetaclass):
 
         # Check if the sentinel is the same as the class's sentinel. If they are the same,
         # it means the function is already wrapped.
+        # noinspection PyUnresolvedReferences
         is_already_wrapped = sentinel is cls._step_execute_wrapper_sentinel
 
         # Get the wrap count of the function. If the function is not wrapped yet, the default value is 0.
@@ -151,6 +158,8 @@ class StepMetaClass(ModelMetaclass):
         if not is_already_wrapped:
             # Create a partial method with the execute_method as one of the arguments.
             # This is the new function that will be called instead of the original execute_method.
+
+            # noinspection PyProtectedMember,PyUnresolvedReferences
             wrapper = mcs._partialmethod_impl(cls=cls, execute_method=execute_method)
 
             # Updating the attributes of the wrapping function to those of the original function.
@@ -158,6 +167,7 @@ class StepMetaClass(ModelMetaclass):
 
             # Set the sentinel attribute to the wrapper. This is done so that we can check
             # if the function is already wrapped.
+            # noinspection PyUnresolvedReferences
             setattr(wrapper, "_step_execute_wrapper_sentinel", cls._step_execute_wrapper_sentinel)
 
             # Increase the wrap count of the function. This is done to keep track of
@@ -168,7 +178,7 @@ class StepMetaClass(ModelMetaclass):
         return cls
 
     @staticmethod
-    def _is_called_through_super(caller_self: Any, caller_name: str, *_args, **_kwargs) -> bool:
+    def _is_called_through_super(caller_self: Any, caller_name: str, *_args, **_kwargs) -> bool:  # type: ignore[no-untyped-def]
         """
         Check if the method is called through super() in the immediate parent class.
 
@@ -194,7 +204,7 @@ class StepMetaClass(ModelMetaclass):
         return caller_name in base_class.__dict__
 
     @classmethod
-    def _partialmethod_impl(mcs, cls: type, execute_method) -> partialmethod:
+    def _partialmethod_impl(mcs, cls: type, execute_method: Callable) -> partialmethod:
         """
         This method creates a partial method implementation for a given class and execute method.
         It handles a specific issue with python>=3.11 where partialmethod forgets that _execute_wrapper
@@ -213,13 +223,15 @@ class StepMetaClass(ModelMetaclass):
         # When partialmethod is forgetting that _execute_wrapper
         # is a method of wrapper, and it needs to pass that in as the first arg.
         # https://github.com/python/cpython/issues/99152
+        # noinspection PyPep8Naming
         class _partialmethod_with_self(partialmethod):
             """
             This class is a workaround for the issue with python>=3.11 where partialmethod forgets that
             _execute_wrapper is a method of wrapper, and it needs to pass that in as the first argument.
             """
 
-            def __get__(self, obj, cls=None):
+            # noinspection PyShadowingNames
+            def __get__(self, obj: Any, cls=None):  # type: ignore[no-untyped-def]
                 """
                 This method returns the unbound method for the given object and class.
 
@@ -230,15 +242,17 @@ class StepMetaClass(ModelMetaclass):
                 Returns:
                     The unbound method.
                 """
+                # noinspection PyUnresolvedReferences
                 return self._make_unbound_method().__get__(obj, cls)
 
         _partialmethod_impl = partialmethod if sys.version_info < (3, 11) else _partialmethod_with_self
+        # noinspection PyUnresolvedReferences
         wrapper = _partialmethod_impl(cls._execute_wrapper, execute_method=execute_method)
 
         return wrapper
 
     @classmethod
-    def _execute_wrapper(mcs, step: Step, execute_method, *args, **kwargs) -> StepOutput:
+    def _execute_wrapper(cls, step: Step, execute_method: Callable, *args, **kwargs) -> StepOutput:  # type: ignore[no-untyped-def]
         """
         Method that wraps some common functionalities on Steps
         Ensures proper logging and makes it so that a Steps execute method always returns the StepOutput
@@ -263,18 +277,18 @@ class StepMetaClass(ModelMetaclass):
 
         # check if the method is called through super() in the immediate parent class
         caller_name = inspect.currentframe().f_back.f_back.f_code.co_name
-        is_called_through_super_ = mcs._is_called_through_super(step, caller_name)
+        is_called_through_super_ = cls._is_called_through_super(step, caller_name)
 
-        mcs._log_start_message(step=step, skip_logging=is_called_through_super_)
-        return_value = mcs._run_execute(step=step, execute_method=execute_method, *args, **kwargs)
-        mcs._configure_step_output(step=step, return_value=return_value)
-        mcs._validate_output(step=step, skip_validating=is_called_through_super_)
-        mcs._log_end_message(step=step, skip_logging=is_called_through_super_)
+        cls._log_start_message(step=step, skip_logging=is_called_through_super_)
+        return_value = cls._run_execute(step=step, execute_method=execute_method, *args, **kwargs)  # type: ignore[misc]
+        cls._configure_step_output(step=step, return_value=return_value)
+        cls._validate_output(step=step, skip_validating=is_called_through_super_)
+        cls._log_end_message(step=step, skip_logging=is_called_through_super_)
 
         return step.output
 
     @classmethod
-    def _log_start_message(mcs, step: Step, *_args, skip_logging: bool = False, **_kwargs):
+    def _log_start_message(cls, step: Step, *_args, skip_logging: bool = False, **_kwargs) -> None:  # type: ignore[no-untyped-def]
         """
         Log the start message of the step execution
 
@@ -293,10 +307,10 @@ class StepMetaClass(ModelMetaclass):
 
         if not skip_logging:
             step.log.info("Start running step")
-            step.log.debug(f"Step Input: {step.__repr_str__(' ')}")
+            step.log.debug(f"Step Input: {step.__repr_str__(' ')}")  # type: ignore[misc]
 
     @classmethod
-    def _log_end_message(mcs, step: Step, *_args, skip_logging: bool = False, **_kwargs):
+    def _log_end_message(cls, step: Step, *_args, skip_logging: bool = False, **_kwargs) -> None:  # type: ignore[no-untyped-def]
         """
         Log the end message of the step execution
 
@@ -314,11 +328,11 @@ class StepMetaClass(ModelMetaclass):
         """
 
         if not skip_logging:
-            step.log.debug(f"Step Output: {step.output.__repr_str__(' ')}")
+            step.log.debug(f"Step Output: {step.output.__repr_str__(' ')}")  # type: ignore[misc]
             step.log.info("Finished running step")
 
     @classmethod
-    def _validate_output(mcs, step: Step, *_args, skip_validating: bool = False, **_kwargs):
+    def _validate_output(cls, step: Step, *_args, skip_validating: bool = False, **_kwargs) -> None:  # type: ignore[no-untyped-def]
         """
         Validate the output of the step
 
@@ -339,7 +353,7 @@ class StepMetaClass(ModelMetaclass):
             step.output.validate_output()
 
     @classmethod
-    def _configure_step_output(mcs, step, return_value: Any, *_args, **_kwargs):
+    def _configure_step_output(cls, step, return_value: Any, *_args, **_kwargs) -> None:  # type: ignore[no-untyped-def]
         """
         Configure the output of the step.
         If the execute method returns a value, and it is not the output, set the output to the return value
@@ -373,7 +387,7 @@ class StepMetaClass(ModelMetaclass):
         step.output = output
 
     @classmethod
-    def _run_execute(mcs, execute_method, step, *args, **kwargs) -> Any:
+    def _run_execute(cls, execute_method: Callable, step, *args, **kwargs) -> Any:  # type: ignore[no-untyped-def]
         """
         Run the execute method of the step, and catch any errors
 
@@ -535,12 +549,12 @@ class Step(BaseModel, metaclass=StepMetaClass):
         return self._output
 
     @output.setter
-    def output(self, value: Output):
+    def output(self, value: Output) -> None:
         """Set the output of the Step"""
         self._output = value
 
     @abstractmethod
-    def execute(self):
+    def execute(self) -> InstanceOf[StepOutput]:
         """Abstract method to implement for new steps.
 
         The Inputs of the step can be accessed, using `self.input_name`
@@ -550,7 +564,7 @@ class Step(BaseModel, metaclass=StepMetaClass):
         """
         raise NotImplementedError
 
-    def run(self):
+    def run(self) -> InstanceOf[StepOutput]:
         """Alias to .execute()"""
         return self.execute()
 
@@ -565,7 +579,7 @@ class Step(BaseModel, metaclass=StepMetaClass):
         """String representation of a step"""
         return self.__repr__()
 
-    def repr_json(self, simple=False) -> str:
+    def repr_json(self, simple: bool = False) -> str:
         """dump the step to json, meant for representation
 
         Note: use to_json if you want to dump the step to json for serialization
@@ -594,7 +608,7 @@ class Step(BaseModel, metaclass=StepMetaClass):
         _result = {}
 
         # extract input
-        _input = self.model_dump(**model_dump_options)
+        _input = self.model_dump(**model_dump_options)  # type: ignore[arg-type]
 
         # remove name and description from input and add to result if simple is not set
         name = _input.pop("name", None)
@@ -608,7 +622,7 @@ class Step(BaseModel, metaclass=StepMetaClass):
             model_dump_options["exclude"] = {"name", "description"}
 
         # extract output
-        _output = self.output.model_dump(**model_dump_options)
+        _output = self.output.model_dump(**model_dump_options)  # type: ignore[arg-type]
 
         # add output to result
         if _output:
@@ -631,7 +645,7 @@ class Step(BaseModel, metaclass=StepMetaClass):
 
         return json_str
 
-    def repr_yaml(self, simple=False) -> str:
+    def repr_yaml(self, simple: bool = False) -> str:
         """dump the step to yaml, meant for representation
 
         Note: use to_yaml if you want to dump the step to yaml for serialization
@@ -664,6 +678,6 @@ class Step(BaseModel, metaclass=StepMetaClass):
         return yaml.dump(_result)
 
     @classmethod
-    def from_step(cls, step: Step, **kwargs):
+    def from_step(cls, step: Step, **kwargs) -> InstanceOf[PydanticBaseModel]:  # type: ignore[no-untyped-def]
         """Returns a new Step instance based on the data of another Step or BaseModel instance"""
         return cls.from_basemodel(step, **kwargs)

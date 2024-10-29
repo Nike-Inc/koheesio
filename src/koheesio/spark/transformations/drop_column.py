@@ -45,6 +45,6 @@ class DropColumn(ColumnsTransformation):
     In this example, the `product` column is dropped from the DataFrame `df`.
     """
 
-    def execute(self):
+    def execute(self) -> None:
         self.log.info(f"{self.columns=}")
         self.output.df = self.df.drop(*self.columns)
