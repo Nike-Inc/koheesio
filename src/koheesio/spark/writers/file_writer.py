@@ -14,6 +14,7 @@ classes that just set the `format` field to the corresponding file format.
 """
 
 from __future__ import annotations
+
 from typing import Union
 from enum import Enum
 from pathlib import Path

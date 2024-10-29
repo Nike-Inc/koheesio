@@ -603,15 +603,18 @@ unfixable = []
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.mypy]
+python_version = "3.10"
+files = ["koheesio/**/*.py"]
+plugins = ["pydantic.mypy"]
+pretty = true
 check_untyped_defs = false
 disallow_untyped_calls = false
 disallow_untyped_defs = true
-files = ["koheesio/**/*.py"]
-plugins = ["pydantic.mypy"]
-
-[tool.mypy.overrides]
-# since our execute method's never explicitly return anything
-"src/koheesio/**/*.py" = { ignore_missing_return = true }
+warn_unused_configs = true
+warn_no_return = false
+implicit_optional = true
+allow_untyped_globals = true
+disable_error_code = ["attr-defined", "return-value"]
 
 [tool.pylint.main]
 fail-under = 9.5

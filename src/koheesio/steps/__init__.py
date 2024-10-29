@@ -20,11 +20,12 @@ import inspect
 import json
 import sys
 import warnings
+from typing import Any, Callable
 from abc import abstractmethod
 from functools import partialmethod, wraps
-from typing import Any, Callable
 
 import yaml
+
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import InstanceOf
 
@@ -362,9 +363,7 @@ class StepMetaClass(ModelMetaclass):
 
         if return_value:
             if not isinstance(return_value, StepOutput):
-                msg = (
-                    f"execute() did not produce output of type {output.name}, returns of the wrong type will be ignored"  # type: ignore[attr-defined]
-                )
+                msg = f"execute() did not produce output of type {output.name}, returns of the wrong type will be ignored"  # type: ignore[attr-defined]
                 warnings.warn(msg)
                 step.log.warning(msg)
 
@@ -541,7 +540,7 @@ class Step(BaseModel, metaclass=StepMetaClass):
         self.__output__ = value
 
     @abstractmethod
-    def execute(self) -> None:
+    def execute(self) -> InstanceOf[StepOutput]:
         """Abstract method to implement for new steps.
 
         The Inputs of the step can be accessed, using `self.input_name`

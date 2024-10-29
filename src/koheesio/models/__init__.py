@@ -9,15 +9,14 @@ A Model class can be exceptionally handy when you need similar Pydantic models i
 Transformation and Reader classes.
 """
 
+from typing import Annotated, Any, Dict, List, Optional, Union
 from abc import ABC
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Any, Dict, List, Optional, Union
-
-from pydantic import *  # noqa
 
 # to ensure that koheesio.models is a drop in replacement for pydantic
 from pydantic import BaseModel as PydanticBaseModel
+from pydantic import *  # noqa
 from pydantic._internal._generics import PydanticGenericMetadata
 from pydantic._internal._model_construction import ModelMetaclass
 

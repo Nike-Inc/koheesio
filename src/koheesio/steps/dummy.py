@@ -35,7 +35,7 @@ class DummyStep(Step):
         """Dummy output for testing purposes."""
 
         c: str
-        
+
     def execute(self) -> None:
         """Dummy execute for testing purposes."""
         self.output.a = self.a  # type: ignore[attr-defined]

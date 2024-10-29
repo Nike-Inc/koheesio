@@ -13,8 +13,8 @@ In the above example, the `response` variable will contain the JSON response fro
 """
 
 import json
-from enum import Enum
 from typing import Any, Dict, List, Optional, Union
+from enum import Enum
 
 import requests  # type: ignore[import-untyped]
 

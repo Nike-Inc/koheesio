@@ -5,9 +5,9 @@ Spark Utility functions
 import importlib
 import inspect
 import os
+from typing import Union
 from enum import Enum
 from types import ModuleType
-from typing import Union
 
 from pyspark import sql
 from pyspark.sql.types import (
@@ -127,7 +127,11 @@ else:
         from pyspark.sql.streaming.query import StreamingQuery
         from pyspark.sql.streaming.readwriter import DataStreamReader, DataStreamWriter
     except (ImportError, ModuleNotFoundError):
-        from pyspark.sql.streaming import DataStreamReader, DataStreamWriter, StreamingQuery  # type: ignore
+        from pyspark.sql.streaming import (  # type: ignore
+            DataStreamReader,
+            DataStreamWriter,
+            StreamingQuery,
+        )
     DataStreamReader = DataStreamReader
     DataStreamWriter = DataStreamWriter
     StreamingQuery = StreamingQuery

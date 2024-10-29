@@ -40,11 +40,13 @@ format : str, optional, default="snowflake"
     environments and make sure to install required JARs.
 """
 
+from __future__ import annotations
+
 import json
 from typing import Callable, Dict, List, Optional, Set, Union
 from abc import ABC
 from copy import deepcopy
-from textwrap import dedent, wrap
+from textwrap import dedent
 
 from pyspark.sql import Window
 from pyspark.sql import functions as f
@@ -718,7 +720,7 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeSparkStep):
         description="In case of debugging, set `persist_staging` to True to retain the staging table for inspection "
         "after synchronization.",
     )
-    enable_deletion: Optional[bool] = Field(
+    enable_deletion: bool = Field(
         default=False,
         description="In case of merge synchronisation_mode add deletion statement in merge query.",
     )
@@ -910,14 +912,16 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeSparkStep):
         windowSpec = Window.partitionBy(*key_columns).orderBy(f.col("_commit_version").desc())
         ranked_df = (
             dataframe.filter("_change_type != 'update_preimage'")
-            .withColumn("rank", f.rank().over(windowSpec))
+            .withColumn("rank", f.rank().over(windowSpec))  # type: ignore
             .filter("rank = 1")
             .select(*key_columns, *non_key_columns, "_change_type")  # discard unused columns
             .distinct()
         )
         return ranked_df
 
-    def _build_staging_table(self, dataframe, key_columns, non_key_columns, staging_table) -> None:
+    def _build_staging_table(
+        self, dataframe: DataFrame, key_columns: List[str], non_key_columns: List[str], staging_table: str
+    ) -> None:
         """Build snowflake staging table"""
         ranked_df = self._compute_latest_changes_per_pk(dataframe, key_columns, non_key_columns)
         batch_writer = SnowflakeWriter(
@@ -932,10 +936,10 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeSparkStep):
         merge_query = self._build_sf_merge_query(
             target_table=self.target_table,
             stage_table=self.staging_table,
-            pk_columns=self.key_columns,
+            pk_columns=[*(self.key_columns or [])],
             non_pk_columns=self.non_key_columns,
             enable_deletion=self.enable_deletion,
-        )
+        )  # type: ignore
 
         query_executor = RunQuery(
             **self.get_options(),
@@ -945,7 +949,11 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeSparkStep):
 
     @staticmethod
     def _build_sf_merge_query(
-        target_table: str, stage_table: str, pk_columns: List[str], non_pk_columns, enable_deletion: bool = False
+        target_table: str,
+        stage_table: str,
+        pk_columns: List[str],
+        non_pk_columns: List[str],
+        enable_deletion: bool = False,
     ) -> str:
         """Build a CDF merge query string
 
@@ -1003,16 +1011,16 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeSparkStep):
         self.output.source_df = df
         return df
 
-    def load(self, df) -> DataFrame:
+    def load(self, df: DataFrame) -> DataFrame:
         """Load source table into snowflake"""
         if self.synchronisation_mode == BatchOutputMode.MERGE:
-            self.log.info(f"Truncating staging table {self.staging_table}")
+            self.log.info(f"Truncating staging table {self.staging_table}")  # type: ignore
             self.truncate_table(self.staging_table)
         self.writer.write(df)
         self.output.target_df = df
         return df
 
-    def execute(self) -> None:
+    def execute(self) -> SynchronizeDeltaToSnowflakeTask.Output:
         # extract
         df = self.extract()
         self.output.source_df = df
@@ -1023,7 +1031,7 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeSparkStep):
         if not self.persist_staging:
             # If it's a streaming job, await for termination before dropping staging table
             if self.streaming:
-                self.writer.await_termination()
+                self.writer.await_termination()  # type: ignore
             self.drop_table(self.staging_table)
 
 
