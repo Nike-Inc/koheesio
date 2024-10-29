@@ -248,8 +248,8 @@ class ColumnsTransformation(Transformation, ABC):
         """
 
         # FIXME: Check if it can be just None
-        run_for_all_data_type: Optional[List[SparkDatatype]] = None
-        limit_data_type: Optional[List[SparkDatatype]] = None
+        run_for_all_data_type: Optional[List[SparkDatatype]] = Field(default_factory=list)
+        limit_data_type: Optional[List[SparkDatatype]] = Field(default_factory=list)
         data_type_strict_mode: bool = False
 
     @field_validator("columns", mode="before")
