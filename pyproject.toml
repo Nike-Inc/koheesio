@@ -577,7 +577,6 @@ section-order = [
   "future",
   "standard-library",
   "third-party",
-  "brickflow",
   "pydantic",
   "pyspark",
   "koheesio",
