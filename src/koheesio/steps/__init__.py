@@ -16,13 +16,13 @@ Classes:
 
 from __future__ import annotations
 
+from typing import Any, Callable, Optional
+from abc import abstractmethod
+from functools import partialmethod, wraps
 import inspect
 import json
 import sys
 import warnings
-from typing import Any, Callable, Optional
-from abc import abstractmethod
-from functools import partialmethod, wraps
 
 import yaml
 

@@ -15,10 +15,10 @@ to more arbitrary file systems (e.g., SFTP).
 
 from __future__ import annotations
 
-import gzip
 from typing import AnyStr, Literal, Optional
 from abc import ABC
 from functools import partial
+import gzip
 from os import linesep
 from tempfile import SpooledTemporaryFile
 

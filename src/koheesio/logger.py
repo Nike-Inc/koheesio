@@ -29,12 +29,12 @@ warn
 
 from __future__ import annotations
 
+from typing import Any, Dict, Generator, Generic, List, Optional, Tuple, TypeVar
 import inspect
 import logging
+from logging import Formatter, Logger, LogRecord, getLogger
 import os
 import sys
-from typing import Any, Dict, Generator, Generic, List, Optional, Tuple, TypeVar
-from logging import Formatter, Logger, LogRecord, getLogger
 from uuid import uuid4
 from warnings import warn
 

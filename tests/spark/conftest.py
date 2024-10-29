@@ -1,15 +1,15 @@
+from collections import namedtuple
 import datetime
+from decimal import Decimal
 import os
+from pathlib import Path
 import socket
 import sys
-from collections import namedtuple
-from decimal import Decimal
-from pathlib import Path
 from textwrap import dedent
 from unittest import mock
 
-import pytest
 from delta import configure_spark_with_delta_pip
+import pytest
 
 from pyspark.sql import SparkSession
 from pyspark.sql.types import (

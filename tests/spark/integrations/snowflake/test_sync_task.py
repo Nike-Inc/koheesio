@@ -3,8 +3,8 @@ from textwrap import dedent
 from unittest import mock
 
 import chispa
-import pytest
 from conftest import await_job_completion
+import pytest
 
 import pydantic
 

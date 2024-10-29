@@ -56,7 +56,9 @@ class Transformation(SparkStep, ABC):
 
     class AddOne(Transformation):
         def execute(self):
-            self.output.df = self.df.withColumn("new_column", f.col("old_column") + 1)
+            self.output.df = self.df.withColumn(
+                "new_column", f.col("old_column") + 1
+            )
     ```
 
     In the example above, the `execute` method is implemented to add 1 to the values of the `old_column` and store the

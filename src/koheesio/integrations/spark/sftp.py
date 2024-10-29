@@ -12,11 +12,11 @@ These modes determine how the SFTPWriter behaves when the file it is trying to w
 For more details on each mode, see the docstring of the SFTPWriteMode enum.
 """
 
-import hashlib
-import time
 from typing import Optional, Union
 from enum import Enum
+import hashlib
 from pathlib import Path
+import time
 
 from paramiko.sftp_client import SFTPClient
 from paramiko.transport import Transport

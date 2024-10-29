@@ -41,10 +41,10 @@ format : str, optional, default="snowflake"
     environments and make sure to install required JARs.
 """
 
-import json
 from typing import Any, Callable, Dict, List, Optional, Set, Union
 from abc import ABC
 from copy import deepcopy
+import json
 from textwrap import dedent
 
 from pyspark.sql import Window
@@ -1322,7 +1322,7 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeStep):
                 raise RuntimeError(
                     f"Source table {self.source_table.table_name} does not have CDF enabled. "
                     f"Set TBLPROPERTIES ('delta.enableChangeDataFeed' = true) to enable. "
-                    f"Current properties = {self.source_table_properties}"
+                    f"Current properties = {self.source_table.get_persisted_properties()}"
                 )
 
         df = self.reader.read()

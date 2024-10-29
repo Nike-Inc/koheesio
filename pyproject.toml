@@ -70,16 +70,7 @@ tableau = ["tableauhyperapi>=0.0.19484", "tableauserverclient>=0.25"]
 # Snowflake dependencies
 snowflake = ["snowflake-connector-python>=3.12.0"]
 # Development dependencies
-dev = [
-  "black",
-  "isort",
-  "ruff",
-  "mypy",
-  "pylint",
-  "colorama",
-  "types-PyYAML",
-  "types-requests",
-]
+dev = ["ruff", "mypy", "pylint", "colorama", "types-PyYAML", "types-requests"]
 test = [
   "chispa",
   "coverage[toml]",
@@ -152,23 +143,19 @@ Run `hatch run` to run scripts in the default environment.
 
 # Code Quality
 To check and format the codebase, we use:
- - `black` for code formatting
- - `isort` for import sorting (includes colorama for colored output)
- - `ruff` for linting.
+ - `ruff` for linting, formtting and sorting imports
  - `mypy` for static type checking.
  - `pylint` for code quality checks.
 ---
 There are several ways to run style checks and formatting:
 - `hatch run black-check` will check the codebase with black without applying fixes.
 - `hatch run black-fmt` will format the codebase using black.
-- `hatch run isort-check` will check the codebase with isort without applying fixes.
-- `hatch run isort-fmt` will format the codebase using isort.
 - `hatch run ruff-check` will check the codebase with ruff without applying fixes.
 - `hatch run ruff-fmt` will format the codebase using ruff.
 - `hatch run mypy-check` will check the codebase with mypy.
 - `hatch run pylint-check` will check the codebase with pylint.
 - `hatch run check` will run all the above checks (including pylint and mypy).
-- `hatch run fmt` or `hatch run fix` will format the codebase using black, isort, and ruff.
+- `hatch run fmt` or `hatch run fix` will format the codebase using ruff.
 - `hatch run lint` will run ruff, mypy, and pylint.
 
 # Testing and Coverage
@@ -206,22 +193,14 @@ features = [
 # TODO: add scripts section based on Makefile
 # TODO: add bandit
 # Code Quality commands
-black-check = "black --check --diff ."
-black-fmt = "black ."
-isort-check = "isort . --check --diff --color"
-isort-fmt = "isort ."
-ruff-check = "ruff check ."
-ruff-fmt = "ruff check . --fix"
+ruff-fmt = "ruff format --check --diff ."
+ruff-fmt-fix = "ruff format ."
+ruff-check = "ruff check . --diff"
+ruff-check-fix = "ruff check . --fix"
 mypy-check = "mypy src"
 pylint-check = "pylint --output-format=colorized -d W0511 src"
-check = [
-  "- black-check",
-  "- isort-check",
-  "- ruff-check",
-  "- mypy-check",
-  "- pylint-check",
-]
-fmt = ["black-fmt", "isort-fmt", "ruff-fmt"]
+check = ["- ruff-fmt", "- ruff-check", "- mypy-check", "- pylint-check"]
+fmt = ["ruff-fmt-fix", "ruff-check-fix"]
 fix = "fmt"
 lint = ["- ruff-fmt", "- mypy-check", "pylint-check"]
 log-versions = "python --version && {env:HATCH_UV} pip freeze | grep pyspark"
@@ -453,15 +432,6 @@ features = [
 #  Code Quality and Style  #
 ###  ~~~~~~~~~~~~~~~~~~  ###
 #
-[tool.black]
-line-length = 120
-target-version = ['py39', 'py310', 'py311', 'py312']
-include = '\.pyi?$'
-extend-exclude = '''
-/(
-  | tests/_data
-)/
-'''
 
 [tool.isort]
 profile = "black"
@@ -540,7 +510,7 @@ docstring-code-format = true
 
 [tool.ruff.lint]
 # Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default.
-select = ["E", "F"]
+select = ["E", "F", "I"]
 ignore = [
   "F405", # To avoid errors like '`ConfigDict` may be undefined, or defined from star imports: `pydantic`'
   "E501", # To avoid errors like 'line too long (120 > 79 characters)' -> let Black handle this instead
@@ -549,7 +519,6 @@ ignore = [
 ]
 # Unlike Flake8, default to a complexity level of 10.
 mccabe.max-complexity = 10
-
 # Allow autofix for all enabled rules (when `--fix` is provided).
 fixable = [
   "A",
@@ -601,6 +570,25 @@ unfixable = []
 
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.isort]
+force-to-top = ["__future__", "typing"]
+section-order = [
+  "future",
+  "standard-library",
+  "third-party",
+  "brickflow",
+  "pydantic",
+  "pyspark",
+  "koheesio",
+  "first-party",
+  "local-folder",
+]
+sections.pydantic = ["pydantic"]
+sections.pyspark = ["pyspark"]
+sections.koheesio = ["koheesio"]
+detect-same-package = true
+force-sort-within-sections = true
 
 [tool.mypy]
 python_version = "3.10"

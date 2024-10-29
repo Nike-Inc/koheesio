@@ -10,16 +10,16 @@ Prerequisites
 * Application is authorized for the enterprise (Developer Portal - MyApp - Authorization)
 """
 
-import re
 from typing import Any, Dict, Optional, Union
 from abc import ABC
 from io import BytesIO, StringIO
 from pathlib import PurePath
+import re
 
-import pandas as pd
 from boxsdk import Client, JWTAuth
 from boxsdk.object.file import File
 from boxsdk.object.folder import Folder
+import pandas as pd
 
 from pyspark.sql.functions import expr, lit
 from pyspark.sql.types import StructType
@@ -615,12 +615,16 @@ class BoxFileWriter(BoxFolderBase):
     from koheesio.steps.integrations.box import BoxFileWriter
 
     auth_params = {...}
-    f1 = BoxFileWriter(**auth_params, path="/foo/bar", file="path/to/my/file.ext").execute()
+    f1 = BoxFileWriter(
+        **auth_params, path="/foo/bar", file="path/to/my/file.ext"
+    ).execute()
     # or
     import io
 
     b = io.BytesIO(b"my-sample-data")
-    f2 = BoxFileWriter(**auth_params, path="/foo/bar", file=b, name="file.ext").execute()
+    f2 = BoxFileWriter(
+        **auth_params, path="/foo/bar", file=b, name="file.ext"
+    ).execute()
     ```
     """
 

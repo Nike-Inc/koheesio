@@ -15,8 +15,8 @@ See class docstrings for more information.
 
 from typing import Literal
 
-import pyspark.sql.functions as f
 from pyspark.sql import Column
+import pyspark.sql.functions as f
 
 from koheesio.models import Field, ListOfColumns
 from koheesio.spark.transformations import ColumnsTransformationWithTarget
@@ -57,7 +57,9 @@ class Trim(ColumnsTransformationWithTarget):
     ### Trim whitespace from the beginning of a string
 
     ```python
-    output_df = Trim(column="column", target_column="trimmed_column", direction="left").transform(input_df)
+    output_df = Trim(
+        column="column", target_column="trimmed_column", direction="left"
+    ).transform(input_df)
     ```
 
     __output_df:__
@@ -84,7 +86,9 @@ class Trim(ColumnsTransformationWithTarget):
     ### Trim whitespace from the end of a string
 
     ```python
-    output_df = Trim(column="column", target_column="trimmed_column", direction="right").transform(input_df)
+    output_df = Trim(
+        column="column", target_column="trimmed_column", direction="right"
+    ).transform(input_df)
     ```
 
     __output_df:__

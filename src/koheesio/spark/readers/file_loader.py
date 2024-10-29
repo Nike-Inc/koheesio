@@ -80,7 +80,9 @@ class FileLoader(Reader, ExtraParamsMixin):
 
     Example:
     ```python
-    reader = FileLoader(path="path/to/textfile.txt", format="text", header=True, lineSep="\n")
+    reader = FileLoader(
+        path="path/to/textfile.txt", format="text", header=True, lineSep="\n"
+    )
     ```
 
     For more information about the available options, see Spark's

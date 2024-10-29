@@ -1,9 +1,9 @@
 import os
 from unittest.mock import MagicMock, patch
 
-import pytest
 from conftest import await_job_completion
 from delta import DeltaTable
+import pytest
 
 from pydantic import ValidationError
 

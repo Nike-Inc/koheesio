@@ -1,9 +1,9 @@
-import datetime
 from typing import List, Optional
+import datetime
 
-import pytest
 from delta import DeltaTable
 from delta.tables import DeltaMergeBuilder
+import pytest
 
 from pydantic import Field
 

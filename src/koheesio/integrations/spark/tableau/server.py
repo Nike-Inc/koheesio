@@ -1,9 +1,8 @@
-import os
 from typing import Any, ContextManager, Optional, Union
 from enum import Enum
+import os
 from pathlib import PurePath
 
-import urllib3  # type: ignore
 from tableauserverclient import (
     DatasourceItem,
     PersonalAccessTokenAuth,
@@ -12,6 +11,7 @@ from tableauserverclient import (
 )
 from tableauserverclient.server.pager import Pager
 from tableauserverclient.server.server import Server
+import urllib3  # type: ignore
 
 from pydantic import Field, SecretStr
 

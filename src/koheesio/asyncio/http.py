@@ -4,14 +4,14 @@ This module contains async implementation of HTTP step.
 
 from __future__ import annotations
 
+from typing import Any, Dict, List, Optional, Tuple, Union
 import asyncio
 import warnings
-from typing import Any, Dict, List, Optional, Tuple, Union
 
-import nest_asyncio  # type: ignore[import-untyped]
-import yarl
 from aiohttp import BaseConnector, ClientSession, TCPConnector
 from aiohttp_retry import ExponentialRetry, RetryClient, RetryOptionsBase
+import nest_asyncio  # type: ignore[import-untyped]
+import yarl
 
 from pydantic import Field, SecretStr, field_validator, model_validator
 
@@ -63,7 +63,11 @@ class AsyncHttpStep(AsyncStep, ExtraParamsMixin):
         connector = TCPConnector(limit=10)
         headers = {"Content-Type": "application/json"}
         step = AsyncHttpStep(
-            client_session=session, url=urls, retry_options=retry_options, connector=connector, headers=headers
+            client_session=session,
+            url=urls,
+            retry_options=retry_options,
+            connector=connector,
+            headers=headers,
         )
 
         # Execute the step
