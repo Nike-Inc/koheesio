@@ -433,47 +433,6 @@ features = [
 ###  ~~~~~~~~~~~~~~~~~~  ###
 #
 
-[tool.isort]
-profile = "black"
-skip = [
-  # Skip a variety of commonly ignored directories.
-  ".bzr",
-  ".direnv",
-  ".eggs",
-  ".git",
-  ".hg",
-  ".mypy_cache",
-  ".pants.d",
-  ".pytype",
-  ".ruff_cache",
-  ".svn",
-  ".venv",
-  ".venvs",
-  "__pypackages__",
-  "__research__",
-  "__notebooks__",
-  "_build",
-  "buck-out",
-  "build",
-  "dist",
-  "node_modules",
-  "venv",
-]
-force_to_top = ["__future__", "typing"]
-sections = [
-  "FUTURE",
-  "STDLIB",
-  "THIRDPARTY",
-  "PYDANTIC",
-  "PYSPARK",
-  "KOHEESIO",
-  "FIRSTPARTY",
-  "LOCALFOLDER",
-]
-known_pydantic = ["pydantic"]
-known_pyspark = ["pyspark"]
-known_koheesio = ["koheesio"]
-
 [tool.ruff]
 # https://docs.astral.sh/ruff/configuration/#using-pyprojecttoml
 # https://docs.astral.sh/ruff/settings/
@@ -509,8 +468,24 @@ exclude = [
 docstring-code-format = true
 
 [tool.ruff.lint]
-# Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default.
-select = ["E", "F", "I"]
+select = [
+  ## pycodestyle
+  "E",
+  ## Pyflakes
+  "F",
+  ## flake8-bugbear
+  # "B",
+  ## flake8-annotations
+  # "ANN",
+  ## pyupgrade
+  # "UP",
+  ## flake8-simplify
+  # "SIM",
+  ## pep8-naming
+  # "N",
+  ## isort
+  "I",
+]
 ignore = [
   "F405", # To avoid errors like '`ConfigDict` may be undefined, or defined from star imports: `pydantic`'
   "E501", # To avoid errors like 'line too long (120 > 79 characters)' -> let Black handle this instead
@@ -579,13 +554,11 @@ section-order = [
   "third-party",
   "pydantic",
   "pyspark",
-  "koheesio",
   "first-party",
   "local-folder",
 ]
 sections.pydantic = ["pydantic"]
 sections.pyspark = ["pyspark"]
-sections.koheesio = ["koheesio"]
 detect-same-package = true
 force-sort-within-sections = true
 

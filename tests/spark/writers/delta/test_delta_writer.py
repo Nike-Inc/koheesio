@@ -2,7 +2,6 @@ import os
 from unittest.mock import MagicMock, patch
 
 from conftest import await_job_completion
-from delta import DeltaTable
 import pytest
 
 from pydantic import ValidationError
@@ -102,26 +101,27 @@ def test_delta_table_merge_all(spark):
 
 def test_deltatablewriter_with_invalid_conditions(spark, dummy_df):
     from koheesio.spark.utils.connect import is_remote_session
+    from koheesio.spark.writers.delta.utils import get_delta_table_for_name
 
     table_name = "delta_test_table"
-    merge_builder = (
-        DeltaTable.forName(sparkSession=spark, tableOrViewName=table_name)
-        .alias("target")
-        .merge(condition="invalid_condition", source=dummy_df.alias("source"))
-    )
-    writer = DeltaTableWriter(
-        table=table_name,
-        output_mode=BatchOutputMode.MERGE,
-        output_mode_params={"merge_builder": merge_builder},
-        df=dummy_df,
-    )
+
     if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
         with pytest.raises(SparkConnectDeltaTableException) as exc_info:
-            writer.execute()
+            builder = get_delta_table_for_name(spark_session=spark, table_name=table_name)
 
         assert str(exc_info.value).startswith("`DeltaTable.forName` is not supported due to delta calling _sc")
     else:
         with pytest.raises(AnalysisException):
+            builder = get_delta_table_for_name(spark_session=spark, table_name=table_name)
+            merge_builder = builder.alias("target").merge(
+                condition="invalid_condition", source=dummy_df.alias("source")
+            )
+            writer = DeltaTableWriter(
+                table=table_name,
+                output_mode=BatchOutputMode.MERGE,
+                output_mode_params={"merge_builder": merge_builder},
+                df=dummy_df,
+            )
             writer.execute()
 
 
