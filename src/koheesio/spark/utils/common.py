@@ -49,6 +49,9 @@ __all__ = [
     "DataStreamReader",
     "DataStreamWriter",
     "StreamingQuery",
+    "get_active_session",
+    "check_if_pyspark_connect_is_supported",
+    "get_column_name",
 ]
 
 try:
@@ -139,9 +142,9 @@ else:
 
 def get_active_session() -> SparkSession:  # type: ignore
     if check_if_pyspark_connect_is_supported():
-        from pyspark.sql.connect.session import SparkSession as ConnectSparkSession
+        from pyspark.sql.connect.session import SparkSession as _ConnectSparkSession
 
-        session = ConnectSparkSession.getActiveSession() or sql.SparkSession.getActiveSession()  # type: ignore
+        session = _ConnectSparkSession.getActiveSession() or sql.SparkSession.getActiveSession()  # type: ignore
     else:
         session = sql.SparkSession.getActiveSession()  # type: ignore
 
@@ -307,6 +310,7 @@ def import_pandas_based_on_pyspark_version() -> ModuleType:
         raise ImportError("Pandas module is not installed.") from e
 
 
+# noinspection PyProtectedMember
 def show_string(df: DataFrame, n: int = 20, truncate: Union[bool, int] = True, vertical: bool = False) -> str:  # type: ignore
     """Returns a string representation of the DataFrame
     The default implementation of DataFrame.show() hardcodes a print statement, which is not always desirable.
@@ -338,6 +342,7 @@ def show_string(df: DataFrame, n: int = 20, truncate: Union[bool, int] = True, v
     return df._show_string(n, truncate, vertical)
 
 
+# noinspection PyProtectedMember
 def get_column_name(col: Column) -> str:  # type: ignore
     """Get the column name from a Column object
 

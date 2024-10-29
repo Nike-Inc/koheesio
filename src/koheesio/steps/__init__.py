@@ -76,6 +76,7 @@ class StepMetaClass(ModelMetaclass):
     # When partialmethod is forgetting that _execute_wrapper
     # is a method of wrapper, and it needs to pass that in as the first arg.
     # https://github.com/python/cpython/issues/99152
+    # noinspection PyPep8Naming
     class _partialmethod_with_self(partialmethod):
         def __get__(self, obj: Any, cls=None):  # type: ignore[no-untyped-def]
             return self._make_unbound_method().__get__(obj, cls)  # type: ignore[attr-defined]
@@ -119,7 +120,7 @@ class StepMetaClass(ModelMetaclass):
         The method wraps the `execute` method of the class with a partial method if it is not already wrapped.
         The wrapped method is then set as the new `execute` method of the class.
 
-        If the `execute` method is already wrapped, the method is not modified.
+        If the execute method is already wrapped, the class does not modify the method.
 
         The method also keeps track of the number of times the `execute` method has been wrapped.
 
@@ -153,6 +154,8 @@ class StepMetaClass(ModelMetaclass):
         if not is_already_wrapped:
             # Create a partial method with the execute_method as one of the arguments.
             # This is the new function that will be called instead of the original execute_method.
+
+            # noinspection PyProtectedMember,PyUnresolvedReferences
             wrapper = mcs._partialmethod_impl(cls=cls, execute_method=execute_method)
 
             # Updating the attributes of the wrapping function to those of the original function.
@@ -215,12 +218,14 @@ class StepMetaClass(ModelMetaclass):
         # When partialmethod is forgetting that _execute_wrapper
         # is a method of wrapper, and it needs to pass that in as the first arg.
         # https://github.com/python/cpython/issues/99152
+        # noinspection PyPep8Naming
         class _partialmethod_with_self(partialmethod):
             """
             This class is a workaround for the issue with python>=3.11 where partialmethod forgets that
             _execute_wrapper is a method of wrapper, and it needs to pass that in as the first argument.
             """
 
+            # noinspection PyShadowingNames
             def __get__(self, obj: Any, cls=None):  # type: ignore[no-untyped-def]
                 """
                 This method returns the unbound method for the given object and class.

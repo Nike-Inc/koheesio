@@ -2,8 +2,6 @@
 Extracts a substring from a string column starting at the given position.
 """
 
-from typing import Optional
-
 from pyspark.sql import Column
 from pyspark.sql.functions import substring, when
 from pyspark.sql.types import StringType

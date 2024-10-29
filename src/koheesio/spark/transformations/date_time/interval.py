@@ -29,7 +29,7 @@ Additionally, this module provides two transformation classes that can be used a
 These classes are subclasses of `ColumnsTransformationWithTarget` and hence can be used to perform transformations on
 multiple columns at once.
 
-The above transformations both use the provided `asjust_time()` function to perform the actual transformation.
+The above transformations both use the provided `adjust_time()` function to perform the actual transformation.
 
 See also:
 ---------
@@ -158,6 +158,7 @@ class DateTimeColumn(SparkColumn):
         """
         return adjust_time(self, operation="subtract", interval=value)
 
+    # noinspection PyProtectedMember
     @classmethod
     def from_column(cls, column: Column) -> Union["DateTimeColumn", "DateTimeColumnConnect"]:
         """Create a DateTimeColumn from an existing Column"""

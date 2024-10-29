@@ -12,7 +12,7 @@ class Repartition(ColumnsTransformation):
 
     With repartition, the number of partitions can be given as an optional value. If this is not provided, a default
     value is used. The default number of partitions is defined by the spark config 'spark.sql.shuffle.partitions', for
-    which the default value is 200 and will never exceed the number or rows in the DataFrame (whichever is value is
+    which the default value is 200 and will never exceed the number of rows in the DataFrame (whichever is value is
     lower).
 
     If columns are omitted, the entire DataFrame is repartitioned without considering the particular values in the
@@ -20,9 +20,9 @@ class Repartition(ColumnsTransformation):
 
     Parameters
     ----------
-    column : Optional[Union[str, List[str]]], optional, default=None
+    columns : Optional[Union[str, List[str]]], optional, default=None
         Name of the source column(s). If omitted, the entire DataFrame is repartitioned without considering the
-        particular values in the columns. Alias: columns
+        particular values in the columns. Alias: column
     num_partitions : Optional[int], optional, default=None
         The number of partitions to repartition to. If omitted, the default number of partitions is used as defined by
         the spark config 'spark.sql.shuffle.partitions'.

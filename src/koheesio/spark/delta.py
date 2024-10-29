@@ -58,11 +58,6 @@ class DeltaTableStep(SparkStep):
     max_version_ts_of_last_execution(query_predicate: str = None) -> datetime.datetime
         Max version timestamp of last execution. If no timestamp is found, returns 1900-01-01 00:00:00.
         Note: will raise an error if column `VERSION_TIMESTAMP` does not exist.
-        <!---
-        FIXME: This is not working (local or on Databricks) - asked for reference implementation through
-            cop-data-engineering. Response from Sarath: New release of data common utils is coming soon in which this
-            function will be fixed. He is indicating to use read_cdc instead.
-        -->
 
     Properties
     ----------
@@ -273,7 +268,7 @@ class DeltaTableStep(SparkStep):
         return self.dataframe.columns if self.exists else None
 
     def get_column_type(self, column: str) -> Optional[DataType]:
-        """Get the type of a column in the table.
+        """Get the type of a specific column in the table.
 
         Parameters
         ----------

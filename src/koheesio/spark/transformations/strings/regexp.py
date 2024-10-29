@@ -13,8 +13,6 @@ RegexpReplace
 
 """
 
-from typing import Optional
-
 from pyspark.sql import Column
 from pyspark.sql.functions import regexp_extract, regexp_replace
 

@@ -4,7 +4,10 @@ Koheesio step for running data quality rules with Spark Expectations engine.
 
 from typing import Any, Dict, Optional, Union
 
+# noinspection PyUnresolvedReferences,PyPep8Naming
 from spark_expectations.config.user_config import Constants as user_config
+
+# noinspection PyUnresolvedReferences
 from spark_expectations.core.expectations import (
     SparkExpectations,
     WrappedDataFrameWriter,

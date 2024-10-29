@@ -48,7 +48,7 @@ class JdbcReader(Reader):
         url="jdbc:sqlserver://10.xxx.xxx.xxx:1433;databaseName=YOUR_DATABASE",
         user="YOUR_USERNAME",
         password="***",
-        dbtable="schemaname.tablename",
+        dbtable="schema_name.table_name",
         options={"fetchsize": 100},
     )
     df = jdbc_mssql.read()

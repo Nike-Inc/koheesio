@@ -13,6 +13,7 @@ from typing import List, Tuple, Union
 
 from pydantic import Field, InstanceOf
 
+# noinspection PyProtectedMember
 from pyspark.sql.types import AtomicType, StructType
 
 from koheesio.asyncio.http import AsyncHttpGetStep
@@ -20,7 +21,9 @@ from koheesio.spark.readers import Reader
 from koheesio.steps.http import HttpGetStep
 
 
+# noinspection HttpUrlsUsage
 class RestApiReader(Reader):
+    # noinspection HttpUrlsUsage
     """
     A reader class that executes an API call and stores the response in a DataFrame.
 
@@ -61,7 +64,7 @@ class RestApiReader(Reader):
     session.mount("https://", HTTPAdapter(max_retries=retry_logic))
     session.mount("http://", HTTPAdapter(max_retries=retry_logic))
 
-    transport = PaginatedHtppGetStep(
+    transport = PaginatedHttpGetStep(
         url="https://api.example.com/data?page={page}",
         paginate=True,
         pages=3,

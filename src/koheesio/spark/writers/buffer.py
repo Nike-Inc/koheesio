@@ -22,6 +22,7 @@ from functools import partial
 from os import linesep
 from tempfile import SpooledTemporaryFile
 
+# noinspection PyProtectedMember
 from pandas._typing import CompressionOptions as PandasCompressionOptions
 
 from pydantic import InstanceOf
@@ -356,8 +357,8 @@ class PandasJsonBufferWriter(BufferWriter, ExtraParamsMixin):
         all other `orient` values, the default is 'epoch'.
         However, in Koheesio, the default is set to 'iso' irrespective of the `orient` parameter.
 
-    - `date_unit`: This parameter specifies the time unit for encoding timestamps and datetime objects. It accepts four
-        options: 's' for seconds, 'ms' for milliseconds, 'us' for microseconds, and 'ns' for nanoseconds.
+    - `date_unit`: This parameter specifies the time unit for encoding timestamps and datetime objects. It accepts
+        four options: 's' for seconds, 'ms' for milliseconds, 'us' for microseconds, and 'ns' for nanoseconds.
         The default is 'ms'. Note that this parameter is ignored when `date_format='iso'`.
 
     ### Orient Parameter
@@ -408,13 +409,33 @@ class PandasJsonBufferWriter(BufferWriter, ExtraParamsMixin):
         - Preserves data types and indexes of the original DataFrame.
         - Example:
         ```json
-        {"schema":{"fields": [{"name": index, "type": dtype}], "primaryKey": [index]}, "pandas_version":"1.4.0"}, "data": [{"column1": value1, "column2": value2}]}
+        {
+          "schema": {
+            "fields": [
+              {
+                "name": "index",
+                "type": "dtype"
+              }
+            ],
+            "primaryKey": ["index"]
+          },
+          "pandas_version": "1.4.0",
+          "data": [
+            {
+              "column1": "value1",
+              "column2": "value2"
+            }
+          ]
+        }
         ```
 
-    Note: For 'records' orient, set `lines` to True to write each record as a separate line. The pandas output will
+    Note
+    ----
+    For 'records' orient, set `lines` to True to write each record as a separate line. The pandas output will
     then match the PySpark output (orient='records' and lines=True parameters).
 
-    References:
+    References
+    ----------
     - [Pandas DataFrame to_json documentation](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_json.html)
     - [Pandas IO tools (text, CSV, HDF5, …) documentation](https://pandas.pydata.org/pandas-docs/stable/user_guide/io.html)
     """

@@ -34,7 +34,7 @@ __all__ = [
     "HttpPostStep",
     "HttpPutStep",
     "HttpDeleteStep",
-    "PaginatedHtppGetStep",
+    "PaginatedHttpGetStep",
 ]
 
 
@@ -135,7 +135,7 @@ class HttpStep(Step, ExtraParamsMixin):
         status_code: Optional[int] = Field(default=None, description="The status return code of the request")
 
         @property
-        def json_payload(self) -> dict | list | None:
+        def json_payload(self) -> Union[Optional[dict], Optional[list]]:
             """Alias for response_json"""
             return self.response_json
 
@@ -253,6 +253,7 @@ class HttpStep(Step, ExtraParamsMixin):
 
         return response
 
+    # noinspection PyMethodOverriding
     def get(self) -> requests.Response:
         """Execute an HTTP GET call"""
         self.method = HttpMethod.GET
@@ -320,7 +321,7 @@ class HttpDeleteStep(HttpStep):
     method: HttpMethod = HttpMethod.DELETE
 
 
-class PaginatedHtppGetStep(HttpGetStep):
+class PaginatedHttpGetStep(HttpGetStep):
     """
     Represents a paginated HTTP GET step.
 

@@ -1,3 +1,4 @@
+# noinspection PyUnresolvedReferences
 """
 Snowflake steps and tasks for Koheesio
 
@@ -957,9 +958,8 @@ class TagSnowflakeQuery(Step, ExtraParamsMixin):
         pipeline_execution_time="2022-01-01T00:00:00",
         task_execution_time="2022-01-01T01:00:00",
         environment="dev",
-        trace_id="e0fdec43-a045-46e5-9705-acd4f3f96045",
-        span_id="cb89abea-1c12-471f-8b12-546d2d66f6cb",
-        ),
+        trace_id="acd4f3f96045",
+        span_id="546d2d66f6cb",
     ).execute().options
     ```
     """
@@ -1215,6 +1215,7 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeStep):
         """Build a batch write function for merge mode"""
 
         # pylint: disable=unused-argument
+        # noinspection PyUnusedLocal,PyPep8Naming
         def inner(dataframe: DataFrame, batchId: int) -> None:
             self._build_staging_table(dataframe, key_columns, non_key_columns, staging_table)
             self._merge_staging_table_into_target()
@@ -1227,10 +1228,10 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeStep):
         dataframe: DataFrame, key_columns: List[str], non_key_columns: List[str]
     ) -> DataFrame:
         """Compute the latest changes per primary key"""
-        windowSpec = Window.partitionBy(*key_columns).orderBy(f.col("_commit_version").desc())
+        window_spec = Window.partitionBy(*key_columns).orderBy(f.col("_commit_version").desc())
         ranked_df = (
             dataframe.filter("_change_type != 'update_preimage'")
-            .withColumn("rank", f.rank().over(windowSpec))  # type: ignore
+            .withColumn("rank", f.rank().over(window_spec))  # type: ignore
             .filter("rank = 1")
             .select(*key_columns, *non_key_columns, "_change_type")  # discard unused columns
             .distinct()

@@ -162,6 +162,7 @@ def test_max_retries(max_retries, endpoint, status_code, expected_count, error_t
     session = requests.Session()
     retry_logic = Retry(total=max_retries, status_forcelist=[status_code])
     session.mount("https://", HTTPAdapter(max_retries=retry_logic))
+    # noinspection HttpUrlsUsage
     session.mount("http://", HTTPAdapter(max_retries=retry_logic))
 
     step = HttpGetStep(url=endpoint, session=session)
@@ -187,6 +188,7 @@ def test_initial_delay_and_backoff(monkeypatch, backoff, expected):
     session = requests.Session()
     retry_logic = Retry(total=3, backoff_factor=backoff, status_forcelist=[503])
     session.mount("https://", HTTPAdapter(max_retries=retry_logic))
+    # noinspection HttpUrlsUsage
     session.mount("http://", HTTPAdapter(max_retries=retry_logic))
 
     step = HttpGetStep(

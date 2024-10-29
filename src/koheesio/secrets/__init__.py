@@ -64,6 +64,7 @@ class Secret(Step, ABC):
         context = Context(self.encode_secret_values(data={self.root: {self.parent: self._get_secrets()}}))
         self.output.context = self.context.merge(context=context)  # type: ignore[attr-defined, union-attr]
 
+    # noinspection PyMethodOverriding
     def get(self) -> Context:
         """
         Convenience method to return context with secrets.

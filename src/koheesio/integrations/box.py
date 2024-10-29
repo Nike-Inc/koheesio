@@ -10,10 +10,10 @@ Prerequisites
 * Application is authorized for the enterprise (Developer Portal - MyApp - Authorization)
 """
 
+import datetime
 import re
 from typing import Any, Dict, Optional, Union
 from abc import ABC
-from datetime import datetime
 from io import BytesIO, StringIO
 from pathlib import PurePath
 
@@ -245,6 +245,7 @@ class BoxFolderGet(BoxFolderBase):
             If the folder does not exist and 'create_sub_folders' is set to False.
         """
         for item in current_folder_object.get_items():
+            # noinspection PyUnresolvedReferences
             if item.type == "folder" and item.name == next_folder_name:
                 return item
 
@@ -417,6 +418,7 @@ class BoxCsvFileReader(BoxReaderBase):
             temp_df = self.spark.createDataFrame(temp_df_pandas, schema=self.schema_)
 
             # type: ignore
+            # noinspection PyUnresolvedReferences
             temp_df = (
                 temp_df
                 # fmt: off
@@ -555,14 +557,18 @@ class BoxToBoxFileCopy(BoxFileBase):
 
         Parameters
         ----------
-        file: File
+        file : File
             File object as specified in Box SDK
-        folder: Folder
+        folder : Folder
             Folder object as specified in Box SDK
         """
         self.log.info(f"Copying '{file.get()}' to '{folder.get()}'...")
         file.copy(parent_folder=folder).update_info(
-            data={"description": "\n".join([f"File processed on {datetime.utcnow()}", file.get()["description"]])}
+            data={
+                "description": "\n".join(
+                    [f"File processed on {datetime.datetime.now(datetime.UTC)}", file.get()["description"]]
+                )
+            }
         )
 
 
@@ -591,14 +597,18 @@ class BoxToBoxFileMove(BoxFileBase):
 
         Parameters
         ----------
-        file: File
+        file : File
             File object as specified in Box SDK
-        folder: Folder
+        folder : Folder
             Folder object as specified in Box SDK
         """
         self.log.info(f"Moving '{file.get()}' to '{folder.get()}'...")
         file.move(parent_folder=folder).update_info(
-            data={"description": "\n".join([f"File processed on {datetime.utcnow()}", file.get()["description"]])}
+            data={
+                "description": "\n".join(
+                    [f"File processed on {datetime.datetime.now(datetime.UTC)}", file.get()["description"]]
+                )
+            }
         )
 
 
@@ -660,6 +670,7 @@ class BoxFileWriter(BoxFolderBase):
         folder: Folder = BoxFolderGet.from_step(self, create_sub_folders=True).execute().folder
         folder.preflight_check(size=0, name=_name)
 
+        # noinspection PyUnresolvedReferences
         self.log.info(f"Uploading file '{_name}' to Box folder '{folder.get().name}'...")
         _box_file: File = folder.upload_stream(file_stream=_file, file_name=_name, file_description=self.description)
 

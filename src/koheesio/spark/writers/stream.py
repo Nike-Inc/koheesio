@@ -264,7 +264,7 @@ class StreamWriter(Writer, ABC):
         return self.trigger.value  # type: ignore[union-attr]
 
     @field_validator("output_mode")
-    def _validate_output_mode(cls, mode: str | StreamingOutputMode) -> str:
+    def _validate_output_mode(cls, mode: Union[str, StreamingOutputMode]) -> str:
         """Ensure that the given mode is a valid StreamingOutputMode"""
         if isinstance(mode, str):
             return mode

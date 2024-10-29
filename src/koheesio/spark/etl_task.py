@@ -4,7 +4,7 @@ ETL Task
 Extract -> Transform -> Load
 """
 
-from datetime import datetime
+import datetime
 
 from koheesio import Step
 from koheesio.models import Field, InstanceOf, conlist
@@ -85,7 +85,7 @@ class EtlTask(Step):
 
     # private attrs
     etl_date: datetime = Field(
-        default=datetime.utcnow(),
+        default=datetime.datetime.now(datetime.UTC),
         description="Date time when this object was created as iso format. Example: '2023-01-24T09:39:23.632374'",
     )
 

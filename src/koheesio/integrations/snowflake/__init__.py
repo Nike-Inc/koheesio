@@ -1,3 +1,4 @@
+# noinspection PyUnresolvedReferences
 """
 Snowflake steps and tasks for Koheesio
 
@@ -447,6 +448,7 @@ class GrantPrivilegesOnObject(SnowflakeRunQueryPython):
 
         return self
 
+    # noinspection PyMethodOverriding
     def get_query(self, role: str) -> str:  # type: ignore[override]
         """Build the GRANT query
 

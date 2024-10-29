@@ -2,9 +2,9 @@
 Classes to ease interaction with Slack
 """
 
+import datetime
 import json
 from typing import Any, Dict, Optional
-from datetime import datetime
 from textwrap import dedent
 
 from koheesio.models import ConfigDict, Field
@@ -92,7 +92,7 @@ class SlackNotificationWithSeverity(SlackNotification):
     environment: str = Field(default=..., description="Environment description, e.g. dev / qa /prod")
     application: str = Field(default=..., description="Pipeline or application name")
     timestamp: datetime = Field(
-        default=datetime.utcnow(),
+        default=datetime.datetime.now(datetime.UTC),
         alias="execution_timestamp",
         description="Pipeline or application execution timestamp",
     )

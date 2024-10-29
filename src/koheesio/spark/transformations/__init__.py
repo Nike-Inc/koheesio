@@ -232,7 +232,7 @@ class ColumnsTransformation(Transformation, ABC):
             allows to run the transformation for all columns of a given type.
             A user can trigger this behavior by either omitting the `columns` parameter or by passing a single `*` as a
             column name. In both cases, the `run_for_all_data_type` will be used to determine the data type.
-            Value should be be passed as a SparkDatatype enum.
+            Value should be passed as a SparkDatatype enum.
             (default: [None])
 
         limit_data_type : Optional[List[SparkDatatype]]
@@ -341,6 +341,7 @@ class ColumnsTransformation(Transformation, ABC):
         if not isinstance(col, Column):  # type:ignore[misc, arg-type]
             col = f.col(col)  # type:ignore[arg-type]
 
+        # noinspection PyProtectedMember
         col_name = (
             col._expr._unparsed_identifier  # type:ignore[union-attr]
             if col.__class__.__module__ == "pyspark.sql.connect.column"
@@ -384,7 +385,7 @@ class ColumnsTransformation(Transformation, ABC):
         ]
         return columns_of_given_type
 
-    def is_column_type_correct(self, column: Column | str) -> bool:
+    def is_column_type_correct(self, column: Union[Column, str]) -> bool:
         """Check if column type is correct and handle it if not, when limit_data_type is set"""
         if not self.limit_data_type_is_set:
             return True

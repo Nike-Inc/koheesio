@@ -1,4 +1,4 @@
-from pyspark.sql import functions as F
+from pyspark.sql import functions as f
 
 from koheesio.spark import Column, SparkSession
 
@@ -8,4 +8,4 @@ def current_timestamp_utc(spark: SparkSession) -> Column:
     tz_session = spark.conf.get("spark.sql.session.timeZone", "UTC")
     tz = tz_session if tz_session else "UTC"
 
-    return F.to_utc_timestamp(F.current_timestamp(), tz)
+    return f.to_utc_timestamp(f.current_timestamp(), tz)

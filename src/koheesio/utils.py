@@ -21,7 +21,7 @@ __all__ = [
 def get_args_for_func(func: Callable, params: Dict) -> Tuple[Callable, Dict[str, Any]]:
     """Helper function that matches keyword arguments (params) on a given function
 
-    This function uses inspect to extract the signature on the passed Callable, and then uses functools.partial to
+    This function uses inspect to extract the signature on the passed Callable, and then uses `functools.partial` to
      construct a new Callable (partial) function on which the input was mapped.
 
     Example
@@ -98,4 +98,6 @@ def convert_str_to_bool(value: str) -> Any:
     """Converts a string to a boolean if the string is either 'true' or 'false'"""
     if isinstance(value, str) and (v := value.lower()) in ["true", "false"]:
         converted_value = v == "true"
+    else:
+        raise ValueError(f"Value '{value}' is not a valid boolean value")
     return converted_value

@@ -15,15 +15,14 @@ and seamless integration with Delta tables in Spark.
 
 """
 
-from typing import List, Optional, Union
+from typing import List, Optional
 from logging import Logger
 
 from delta.tables import DeltaMergeBuilder, DeltaTable
 
 from pydantic import InstanceOf
 
-from pyspark import sql
-from pyspark.sql import functions as F
+from pyspark.sql import functions as f
 from pyspark.sql.types import DateType, TimestampType
 
 from koheesio.models import Field
@@ -167,7 +166,7 @@ class SCD2DeltaTableWriter(Writer):
             The generated SCD2 end time column.
 
         """
-        scd2_end_time = F.expr(
+        scd2_end_time = f.expr(
             "CASE WHEN __meta_scd2_system_merge_action='UC' AND cross.__meta_scd2_rn=2 THEN __meta_scd2_timestamp "
             f"     ELSE tgt.{meta_scd2_end_time_col} END"
         )
@@ -195,10 +194,10 @@ class SCD2DeltaTableWriter(Writer):
             The generated SCD2 effective time column.
 
         """
-        scd2_effective_time = F.when(
-            F.expr("__meta_scd2_system_merge_action='UC' and cross.__meta_scd2_rn=1"),
-            F.col("__meta_scd2_timestamp"),
-        ).otherwise(F.coalesce(meta_scd2_effective_time_col, "__meta_scd2_timestamp"))
+        scd2_effective_time = f.when(
+            f.expr("__meta_scd2_system_merge_action='UC' and cross.__meta_scd2_rn=1"),
+            f.col("__meta_scd2_timestamp"),
+        ).otherwise(f.coalesce(meta_scd2_effective_time_col, "__meta_scd2_timestamp"))
 
         return scd2_effective_time
 
@@ -216,7 +215,7 @@ class SCD2DeltaTableWriter(Writer):
             The generated SCD2 is_current column.
 
         """
-        scd2_is_current = F.expr(
+        scd2_is_current = f.expr(
             "CASE WHEN __meta_scd2_system_merge_action='UC' AND cross.__meta_scd2_rn=2 THEN False ELSE True END"
         )
 
@@ -273,7 +272,7 @@ class SCD2DeltaTableWriter(Writer):
             .alias(src_alias)
             .join(
                 other=delta_table.toDF()
-                .filter(F.col(meta_scd2_is_current_col).eqNullSafe(F.lit(True)))
+                .filter(f.col(meta_scd2_is_current_col).eqNullSafe(f.lit(True)))
                 .alias(dest_alias),
                 on=self.merge_key,
                 how="left",
@@ -284,7 +283,7 @@ class SCD2DeltaTableWriter(Writer):
             # Filter cross joined data so that we have one row for U
             # and another for I in case of closing SCD2
             # and keep just one for SCD1 or NEW row
-            .filter(F.expr("__meta_scd2_system_merge_action='UC' OR cross.__meta_scd2_rn=1"))
+            .filter(f.expr("__meta_scd2_system_merge_action='UC' OR cross.__meta_scd2_rn=1"))
         )
 
         return df
@@ -343,14 +342,14 @@ class SCD2DeltaTableWriter(Writer):
                 df = (
                     df.withColumn(
                         f"newly_{c}",
-                        F.when(
-                            F.col("__meta_scd2_system_merge_action").eqNullSafe(F.lit("UC"))
-                            & F.col(f"{cross_alias}.__meta_scd2_rn").eqNullSafe(F.lit(2)),
-                            F.col(f"{dest_alias}.{c}"),
-                        ).otherwise(F.col(f"{src_alias}.{c}")),
+                        f.when(
+                            f.col("__meta_scd2_system_merge_action").eqNullSafe(f.lit("UC"))
+                            & f.col(f"{cross_alias}.__meta_scd2_rn").eqNullSafe(f.lit(2)),
+                            f.col(f"{dest_alias}.{c}"),
+                        ).otherwise(f.col(f"{src_alias}.{c}")),
                     )
-                    .drop(F.col(f"{src_alias}.{c}"))
-                    .drop(F.col(f"{dest_alias}.{c}"))
+                    .drop(f.col(f"{src_alias}.{c}"))
+                    .drop(f.col(f"{dest_alias}.{c}"))
                     .withColumnRenamed(f"newly_{c}", c)
                 )
 
@@ -392,10 +391,10 @@ class SCD2DeltaTableWriter(Writer):
         """
         df = df.withColumn(
             meta_scd2_struct_col_name,
-            F.struct(
-                F.col("__meta_scd2_effective_time").alias(meta_scd2_effective_time_col_name),
-                F.col("__meta_scd2_end_time").alias(meta_scd2_end_time_col_name),
-                F.col("__meta_scd2_is_current").alias(meta_scd2_is_current_col_name),
+            f.struct(
+                f.col("__meta_scd2_effective_time").alias(meta_scd2_effective_time_col_name),
+                f.col("__meta_scd2_end_time").alias(meta_scd2_end_time_col_name),
+                f.col("__meta_scd2_is_current").alias(meta_scd2_is_current_col_name),
             ),
         ).drop(
             "__meta_scd2_end_time",
@@ -537,7 +536,7 @@ class SCD2DeltaTableWriter(Writer):
             .transform(
                 func=self._prepare_staging,
                 delta_table=delta_table,
-                merge_action_logic=F.expr(system_merge_action),
+                merge_action_logic=f.expr(system_merge_action),
                 meta_scd2_is_current_col=meta_scd2_is_current_col,
                 columns_to_process=columns_to_process,
                 src_alias=src_alias,

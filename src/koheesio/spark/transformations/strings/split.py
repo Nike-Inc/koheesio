@@ -73,7 +73,7 @@ class SplitAll(ColumnsTransformationWithTarget):
 
 class SplitAtFirstMatch(SplitAll):
     """
-    Like SplitAll, but only splits the string once. You can specify whether you want the first or second part..
+    Like SplitAll, but only splits the string once. You can specify whether you want the first or second part.
 
     Note
     ----

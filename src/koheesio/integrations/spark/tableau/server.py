@@ -101,6 +101,7 @@ class TableauServer(Step):
         ContextManager for TableauAuth or PersonalAccessTokenAuth authorization object
         """
         # Suppress 'InsecureRequestWarning'
+        # noinspection PyUnresolvedReferences
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
         tableau_auth: Union[TableauAuth, PersonalAccessTokenAuth]
