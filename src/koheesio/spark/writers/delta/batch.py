@@ -34,12 +34,11 @@ DeltaTableWriter(
 ```
 """
 
-from typing import List, Optional, Set, Type, Union
 from functools import partial
+from typing import List, Optional, Set, Type, Union
 
 from delta.tables import DeltaMergeBuilder, DeltaTable
 from py4j.protocol import Py4JError
-
 from pyspark.sql import DataFrameWriter
 
 from koheesio.models import ExtraParamsMixin, Field, field_validator
@@ -208,7 +207,9 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
 
     def __merge_all(self) -> Union[DeltaMergeBuilder, DataFrameWriter]:
         """Merge dataframes using DeltaMergeBuilder or DataFrameWriter"""
-        if merge_cond := self.params.get("merge_cond") is None:
+        merge_cond = self.params.get("merge_cond", None)
+
+        if merge_cond is None:
             raise ValueError(
                 "Provide `merge_cond` in DeltaTableWriter(output_mode_params={'merge_cond':'<str or Column>'})"
             )
@@ -363,9 +364,7 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
         map_mode_writer = {
             BatchOutputMode.MERGEALL.value: self.__merge_all,
             BatchOutputMode.MERGE.value: self.__merge,
-        }.get(
-            self.output_mode, self.__data_frame_writer
-        )  # type: ignore
+        }.get(self.output_mode, self.__data_frame_writer)  # type: ignore
 
         return map_mode_writer()  # type: ignore
 
