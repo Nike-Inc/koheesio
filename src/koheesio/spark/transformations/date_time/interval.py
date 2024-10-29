@@ -124,9 +124,9 @@ from pyspark.sql import Column as SparkColumn
 from pyspark.sql.functions import col, expr
 
 from koheesio.models import Field, field_validator
-from koheesio.spark import Column, ParseException, check_if_pyspark_connect_is_supported
+from koheesio.spark import Column, ParseException
 from koheesio.spark.transformations import ColumnsTransformationWithTarget
-from koheesio.spark.utils import get_column_name
+from koheesio.spark.utils import check_if_pyspark_connect_is_supported, get_column_name
 
 # create a literal constraining the operations to 'add' and 'subtract'
 Operations = Literal["add", "subtract"]

@@ -21,7 +21,6 @@ ColumnsTransformationWithTarget
     Extended ColumnsTransformation class with an additional `target_column` field
 """
 
-from typing import Iterator, List, Optional, Union
 from abc import ABC, abstractmethod
 from typing import Iterator, List, Optional, Union
 

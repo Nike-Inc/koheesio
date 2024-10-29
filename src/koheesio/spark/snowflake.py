@@ -42,11 +42,10 @@ format : str, optional, default="snowflake"
 """
 
 import json
-from typing import Any, Callable, Dict, List, Optional, Set, Union
 from abc import ABC
 from copy import deepcopy
 from textwrap import dedent
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Union
 
 from pyspark.sql import Window
 from pyspark.sql import functions as f
@@ -667,9 +666,7 @@ class GrantPrivilegesOnObject(SnowflakeStep):
         query : str
             The Query that performs the grant
         """
-        query = (
-            f"GRANT {','.join(self.privileges)} ON {self.type} {self.object} TO ROLE {role}".upper()
-        )  # nosec B608: hardcoded_sql_expressions
+        query = f"GRANT {','.join(self.privileges)} ON {self.type} {self.object} TO ROLE {role}".upper()  # nosec B608: hardcoded_sql_expressions
         return query
 
     def execute(self) -> SnowflakeStep.Output:
@@ -951,17 +948,21 @@ class TagSnowflakeQuery(Step, ExtraParamsMixin):
     Example
     -------
     ```python
-    query_tag = AddQueryTag(
-        options={"preactions": ...},
-        task_name="cleanse_task",
-        pipeline_name="ingestion-pipeline",
-        etl_date="2022-01-01",
-        pipeline_execution_time="2022-01-01T00:00:00",
-        task_execution_time="2022-01-01T01:00:00",
-        environment="dev",
-        trace_id="acd4f3f96045",
-        span_id="546d2d66f6cb",
-    ).execute().options
+    query_tag = (
+        AddQueryTag(
+            options={"preactions": ...},
+            task_name="cleanse_task",
+            pipeline_name="ingestion-pipeline",
+            etl_date="2022-01-01",
+            pipeline_execution_time="2022-01-01T00:00:00",
+            task_execution_time="2022-01-01T01:00:00",
+            environment="dev",
+            trace_id="acd4f3f96045",
+            span_id="546d2d66f6cb",
+        )
+        .execute()
+        .options
+    )
     ```
     """
 

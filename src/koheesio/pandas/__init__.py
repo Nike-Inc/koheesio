@@ -4,10 +4,9 @@ Extends the Step class with Pandas DataFrame support. The following:
 - Pandas steps are expected to return a Pandas DataFrame as output.
 """
 
-from types import ModuleType
-from typing import Optional
 from abc import ABC
 from types import ModuleType
+from typing import Optional
 
 from koheesio import Step, StepOutput
 from koheesio.models import Field

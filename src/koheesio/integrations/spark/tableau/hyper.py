@@ -197,15 +197,9 @@ class HyperFileListWriter(HyperFileWriter):
         table_definition=TableDefinition(
             table_name=TableName("Extract", "Extract"),
             columns=[
-                TableDefinition.Column(
-                    name="string", type=SqlType.text(), nullability=NOT_NULLABLE
-                ),
-                TableDefinition.Column(
-                    name="int", type=SqlType.int(), nullability=NULLABLE
-                ),
-                TableDefinition.Column(
-                    name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE
-                ),
+                TableDefinition.Column(name="string", type=SqlType.text(), nullability=NOT_NULLABLE),
+                TableDefinition.Column(name="int", type=SqlType.int(), nullability=NULLABLE),
+                TableDefinition.Column(name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE),
             ],
         ),
         data=[
@@ -259,15 +253,9 @@ class HyperFileParquetWriter(HyperFileWriter):
         table_definition=TableDefinition(
             table_name=TableName("Extract", "Extract"),
             columns=[
-                TableDefinition.Column(
-                    name="string", type=SqlType.text(), nullability=NOT_NULLABLE
-                ),
-                TableDefinition.Column(
-                    name="int", type=SqlType.int(), nullability=NULLABLE
-                ),
-                TableDefinition.Column(
-                    name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE
-                ),
+                TableDefinition.Column(name="string", type=SqlType.text(), nullability=NOT_NULLABLE),
+                TableDefinition.Column(name="int", type=SqlType.int(), nullability=NULLABLE),
+                TableDefinition.Column(name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE),
             ],
         ),
         files=[
@@ -433,7 +421,8 @@ class HyperFileDataFrameWriter(HyperFileWriter):
             if d_col.dataType.precision > 18:
                 # noinspection PyUnresolvedReferences
                 _df = _df.withColumn(
-                    d_col.name, col(d_col.name).cast(DecimalType(precision=18, scale=d_col.dataType.scale))  # type: ignore
+                    d_col.name,
+                    col(d_col.name).cast(DecimalType(precision=18, scale=d_col.dataType.scale)),  # type: ignore
                 )
         if len(decimal_col_names) > 0:
             _df = _df.na.fill(0.0, decimal_col_names)

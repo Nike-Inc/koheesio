@@ -52,7 +52,7 @@ def test_delta_table_merge_all(spark):
     from koheesio.spark.utils.connect import is_remote_session
 
     if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
-        pytest.skip(reason=skip_reason) #TODO: pytest.catch
+        pytest.skip(reason=skip_reason)  # TODO: pytest.catch
 
     table_name = "test_merge_all_table"
     target_df = spark.createDataFrame(

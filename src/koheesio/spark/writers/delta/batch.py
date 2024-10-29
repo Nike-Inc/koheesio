@@ -44,7 +44,6 @@ from pyspark.sql import DataFrameWriter
 from koheesio.models import ExtraParamsMixin, Field, field_validator
 from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.utils import on_databricks
-from koheesio.spark.utils.connect import is_remote_session
 from koheesio.spark.writers import BatchOutputMode, StreamingOutputMode, Writer
 from koheesio.spark.writers.delta.utils import get_delta_table_for_name, log_clauses
 

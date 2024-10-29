@@ -158,7 +158,6 @@ class TestSnowflakeRunQueryPython:
 
 
 class TestSnowflakeBaseModel:
-
     def test_get_options_using_alias(self):
         """Test that the options are correctly generated using alias"""
         k = SnowflakeBaseModel(

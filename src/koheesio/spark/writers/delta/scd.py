@@ -20,6 +20,7 @@ from typing import List, Optional
 
 from delta.tables import DeltaMergeBuilder, DeltaTable
 from pydantic import InstanceOf
+from pyspark.sql import functions as f
 from pyspark.sql.types import DateType, TimestampType
 
 from koheesio.models import Field

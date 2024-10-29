@@ -1042,17 +1042,21 @@ class TagSnowflakeQuery(Step, ExtraParamsMixin):
     -------
     #### Using `options` parameter
     ```python
-    query_tag = AddQueryTag(
-        options={"preactions": "ALTER SESSION"},
-        task_name="cleanse_task",
-        pipeline_name="ingestion-pipeline",
-        etl_date="2022-01-01",
-        pipeline_execution_time="2022-01-01T00:00:00",
-        task_execution_time="2022-01-01T01:00:00",
-        environment="dev",
-        trace_id="acd4f3f96045",
-        span_id="546d2d66f6cb",
-    ).execute().options
+    query_tag = (
+        AddQueryTag(
+            options={"preactions": "ALTER SESSION"},
+            task_name="cleanse_task",
+            pipeline_name="ingestion-pipeline",
+            etl_date="2022-01-01",
+            pipeline_execution_time="2022-01-01T00:00:00",
+            task_execution_time="2022-01-01T01:00:00",
+            environment="dev",
+            trace_id="acd4f3f96045",
+            span_id="546d2d66f6cb",
+        )
+        .execute()
+        .options
+    )
     ```
     In this example, the query tag pre-action will be added to the Snowflake options.
 

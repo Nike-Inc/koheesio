@@ -54,25 +54,23 @@ class AsyncHttpStep(AsyncStep, ExtraParamsMixin):
     from yarl import URL
     from typing import Dict, Any, Union, List, Tuple
 
+
     # Initialize the AsyncHttpStep
     async def main():
         session = ClientSession()
-        urls = [URL('https://example.com/api/1'), URL('https://example.com/api/2')]
+        urls = [URL("https://example.com/api/1"), URL("https://example.com/api/2")]
         retry_options = ExponentialRetry()
         connector = TCPConnector(limit=10)
-        headers = {'Content-Type': 'application/json'}
+        headers = {"Content-Type": "application/json"}
         step = AsyncHttpStep(
-            client_session=session,
-            url=urls,
-            retry_options=retry_options,
-            connector=connector,
-            headers=headers
+            client_session=session, url=urls, retry_options=retry_options, connector=connector, headers=headers
         )
 
         # Execute the step
-        responses_urls=  await step.get()
+        responses_urls = await step.get()
 
         return responses_urls
+
 
     # Run the main function
     responses_urls = asyncio.run(main())
