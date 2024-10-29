@@ -2,9 +2,9 @@
 This module provides classes for asynchronous steps in the koheesio package.
 """
 
+from typing import Dict, Optional, Union
 from abc import ABC
 from asyncio import iscoroutine
-from typing import Dict, Optional, Union
 
 from pydantic import PrivateAttr
 

@@ -14,12 +14,13 @@ For more details on each mode, see the docstring of the SFTPWriteMode enum.
 
 import hashlib
 import time
+from typing import Optional, Union
 from enum import Enum
 from pathlib import Path
-from typing import Optional, Union
 
 from paramiko.sftp_client import SFTPClient
 from paramiko.transport import Transport
+
 from pydantic import PrivateAttr
 
 from koheesio.models import (

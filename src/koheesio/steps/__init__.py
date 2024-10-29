@@ -20,11 +20,12 @@ import inspect
 import json
 import sys
 import warnings
+from typing import Any, Callable, Optional
 from abc import abstractmethod
 from functools import partialmethod, wraps
-from typing import Any, Callable, Optional
 
 import yaml
+
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import InstanceOf, PrivateAttr
 

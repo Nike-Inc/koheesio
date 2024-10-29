@@ -3,9 +3,10 @@ from textwrap import dedent
 from unittest import mock
 
 import chispa
-import pydantic
 import pytest
 from conftest import await_job_completion
+
+import pydantic
 
 from koheesio.integrations.snowflake import SnowflakeRunQueryPython
 from koheesio.integrations.spark.snowflake import (

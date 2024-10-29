@@ -8,9 +8,10 @@ from pathlib import Path
 from textwrap import dedent
 from unittest import mock
 
-from delta import configure_spark_with_delta_pip
-from pyspark.sql import SparkSession
 import pytest
+from delta import configure_spark_with_delta_pip
+
+from pyspark.sql import SparkSession
 from pyspark.sql.types import (
     ArrayType,
     BinaryType,

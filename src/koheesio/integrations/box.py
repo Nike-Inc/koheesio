@@ -11,15 +11,16 @@ Prerequisites
 """
 
 import re
+from typing import Any, Dict, Optional, Union
 from abc import ABC
 from io import BytesIO, StringIO
 from pathlib import PurePath
-from typing import Any, Dict, Optional, Union
 
 import pandas as pd
 from boxsdk import Client, JWTAuth
 from boxsdk.object.file import File
 from boxsdk.object.folder import Folder
+
 from pyspark.sql.functions import expr, lit
 from pyspark.sql.types import StructType
 

@@ -11,10 +11,10 @@ Transformation and Reader classes.
 
 from __future__ import annotations
 
+from typing import Annotated, Any, Dict, List, Optional, Union
 from abc import ABC
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Any, Dict, List, Optional, Union
 
 # to ensure that koheesio.models is a drop in replacement for pydantic
 from pydantic import BaseModel as PydanticBaseModel

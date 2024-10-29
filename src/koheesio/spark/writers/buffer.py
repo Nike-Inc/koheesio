@@ -16,15 +16,17 @@ to more arbitrary file systems (e.g., SFTP).
 from __future__ import annotations
 
 import gzip
+from typing import AnyStr, Literal, Optional
 from abc import ABC
 from functools import partial
 from os import linesep
 from tempfile import SpooledTemporaryFile
-from typing import AnyStr, Literal, Optional
 
 # noinspection PyProtectedMember
 from pandas._typing import CompressionOptions as PandasCompressionOptions
+
 from pydantic import InstanceOf
+
 from pyspark import pandas
 
 from koheesio.models import ExtraParamsMixin, Field, constr

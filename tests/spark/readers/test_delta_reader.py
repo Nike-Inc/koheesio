@@ -1,4 +1,5 @@
 import pytest
+
 from pyspark.sql import functions as F
 
 from koheesio.spark import AnalysisException, DataFrame

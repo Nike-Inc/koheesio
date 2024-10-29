@@ -9,8 +9,8 @@ JoinHint
 DataframeLookup
 """
 
-from enum import Enum
 from typing import List, Optional, Union
+from enum import Enum
 
 from pyspark.sql import Column
 from pyspark.sql import functions as f

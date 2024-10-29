@@ -5,9 +5,9 @@ Spark Utility functions
 import importlib
 import inspect
 import os
+from typing import Union
 from enum import Enum
 from types import ModuleType
-from typing import Union
 
 from pyspark import sql
 from pyspark.sql.types import (

@@ -1,10 +1,24 @@
 import os
+from typing import Any, List, Optional, Union
 from abc import ABC, abstractmethod
 from pathlib import PurePath
 from tempfile import TemporaryDirectory
-from typing import Any, List, Optional, Union
+
+from tableauhyperapi import (
+    NOT_NULLABLE,
+    NULLABLE,
+    Connection,
+    CreateMode,
+    HyperProcess,
+    Inserter,
+    SqlType,
+    TableDefinition,
+    TableName,
+    Telemetry,
+)
 
 from pydantic import Field, conlist
+
 from pyspark.sql.functions import col
 from pyspark.sql.types import (
     BooleanType,
@@ -19,18 +33,6 @@ from pyspark.sql.types import (
     StructField,
     StructType,
     TimestampType,
-)
-from tableauhyperapi import (
-    NOT_NULLABLE,
-    NULLABLE,
-    Connection,
-    CreateMode,
-    HyperProcess,
-    Inserter,
-    SqlType,
-    TableDefinition,
-    TableName,
-    Telemetry,
 )
 
 from koheesio.spark import DataFrame, SparkStep

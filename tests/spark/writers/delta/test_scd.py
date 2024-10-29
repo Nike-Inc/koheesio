@@ -4,7 +4,9 @@ from typing import List, Optional
 import pytest
 from delta import DeltaTable
 from delta.tables import DeltaMergeBuilder
+
 from pydantic import Field
+
 from pyspark.sql import Column
 from pyspark.sql import functions as F
 from pyspark.sql.types import Row
@@ -17,10 +19,6 @@ from koheesio.spark.writers.delta.scd import SCD2DeltaTableWriter
 from koheesio.spark.writers.delta.utils import SparkConnectDeltaTableException
 
 pytestmark = pytest.mark.spark
-
-skip_reason = "Tests are not working with PySpark 3.5 due to delta calling _sc. Test requires pyspark version >= 4.0"
-
-skip_reason = "Tests are not working with PySpark 3.5 due to delta calling _sc. Test requires pyspark version >= 4.0"
 
 
 def test_scd2_custom_logic(spark):

@@ -4,7 +4,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from conftest import await_job_completion
 from delta import DeltaTable
+
 from pydantic import ValidationError
+
 from pyspark.sql import functions as F
 
 from koheesio.spark import AnalysisException
@@ -12,12 +14,13 @@ from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.utils import SPARK_MINOR_VERSION
 from koheesio.spark.writers import BatchOutputMode, StreamingOutputMode
 from koheesio.spark.writers.delta import DeltaTableStreamWriter, DeltaTableWriter
-from koheesio.spark.writers.delta.utils import SparkConnectDeltaTableException, log_clauses
+from koheesio.spark.writers.delta.utils import (
+    SparkConnectDeltaTableException,
+    log_clauses,
+)
 from koheesio.spark.writers.stream import Trigger
 
 pytestmark = pytest.mark.spark
-
-skip_reason = "Tests are not working with PySpark 3.5 due to delta calling _sc. Test requires pyspark version >= 4.0"
 
 
 def test_delta_table_writer(dummy_df, spark):
@@ -50,9 +53,6 @@ def test_delta_partitioning(spark, sample_df_to_partition):
 
 def test_delta_table_merge_all(spark):
     from koheesio.spark.utils.connect import is_remote_session
-
-    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
-        pytest.skip(reason=skip_reason)  # TODO: pytest.catch
 
     table_name = "test_merge_all_table"
     target_df = spark.createDataFrame(
@@ -103,11 +103,6 @@ def test_delta_table_merge_all(spark):
 def test_deltatablewriter_with_invalid_conditions(spark, dummy_df):
     from koheesio.spark.utils.connect import is_remote_session
 
-    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
-        pytest.skip(
-            reason="Tests are not working with PySpark 3.5 due to delta calling _sc. Test requires pyspark version >= 4.0"
-        )
-
     table_name = "delta_test_table"
     merge_builder = (
         DeltaTable.forName(sparkSession=spark, tableOrViewName=table_name)
@@ -120,8 +115,14 @@ def test_deltatablewriter_with_invalid_conditions(spark, dummy_df):
         output_mode_params={"merge_builder": merge_builder},
         df=dummy_df,
     )
-    with pytest.raises(AnalysisException):
-        writer.execute()
+    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
+        with pytest.raises(SparkConnectDeltaTableException) as exc_info:
+            writer.execute()
+
+        assert str(exc_info.value).startswith("`DeltaTable.forName` is not supported due to delta calling _sc")
+    else:
+        with pytest.raises(AnalysisException):
+            writer.execute()
 
 
 @patch.dict(
