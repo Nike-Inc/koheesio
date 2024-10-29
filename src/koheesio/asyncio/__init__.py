@@ -2,9 +2,9 @@
 This module provides classes for asynchronous steps in the koheesio package.
 """
 
-from typing import Dict, Union
 from abc import ABC
 from asyncio import iscoroutine
+from typing import Dict, Union
 
 from koheesio.steps import Step, StepMetaClass, StepOutput
 
@@ -82,7 +82,7 @@ class AsyncStepOutput(Step.Output):
 
         if not iscoroutine(other):
             for k, v in other.items():
-                self.set(k, v)  # type: ignore[attr-defined]
+                self.set(k, v)
 
         return self
 

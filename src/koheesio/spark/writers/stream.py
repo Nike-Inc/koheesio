@@ -222,8 +222,8 @@ class Trigger(Step):
         """Returns the trigger value as a dictionary
         This method can be skipped, as the value can be accessed directly from the `value` property
         """
-        self.log.warning("Trigger.execute is deprecated. Use Trigger.value directly instead")  # type: ignore[union-attr]
-        self.output.value = self.value  # type: ignore[attr-defined]
+        self.log.warning("Trigger.execute is deprecated. Use Trigger.value directly instead")
+        self.output.value = self.value
 
 
 class StreamWriter(Writer, ABC):
@@ -261,7 +261,7 @@ class StreamWriter(Writer, ABC):
     @property
     def _trigger(self) -> dict:
         """Returns the trigger value as a dictionary"""
-        return self.trigger.value  # type: ignore[union-attr]
+        return self.trigger.value
 
     @field_validator("output_mode")
     def _validate_output_mode(cls, mode: Union[str, StreamingOutputMode]) -> str:
@@ -277,12 +277,12 @@ class StreamWriter(Writer, ABC):
 
     def await_termination(self, timeout: Optional[int] = None) -> None:
         """Await termination of the stream query"""
-        self.streaming_query.awaitTermination(timeout=timeout)  # type: ignore[union-attr]
+        self.streaming_query.awaitTermination(timeout=timeout)
 
     @property
     def stream_writer(self) -> DataStreamWriter:  # type: ignore
         """Returns the stream writer for the given DataFrame and settings"""
-        write_stream = self.df.writeStream.format(self.format).outputMode(self.output_mode)  # type: ignore[union-attr]
+        write_stream = self.df.writeStream.format(self.format).outputMode(self.output_mode)
 
         if self.checkpoint_location:
             write_stream = write_stream.option("checkpointLocation", self.checkpoint_location)
@@ -293,12 +293,12 @@ class StreamWriter(Writer, ABC):
         # set trigger
         write_stream = write_stream.trigger(**self._trigger)
 
-        return write_stream  # type: ignore[return-value]
+        return write_stream
 
     @property
     def writer(self) -> DataStreamWriter:  # type: ignore
         """Returns the stream writer since we don't have a batch mode for streams"""
-        return self.stream_writer  # type: ignore[return-value]
+        return self.stream_writer
 
     @abstractmethod
     def execute(self) -> None:
@@ -351,7 +351,7 @@ def writer_to_foreachbatch(writer: Writer) -> Callable:
         output (that is, the provided Dataset) to external systems. The output DataFrame is guaranteed to exactly
         same for the same batchId (assuming all operations are deterministic in the query).
         """
-        writer.log.debug(f"Running batch function for batch {batch_id}")  # type: ignore[union-attr]
+        writer.log.debug(f"Running batch function for batch {batch_id}")
         writer.write(df)
 
     return inner

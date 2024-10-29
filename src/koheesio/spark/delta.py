@@ -6,7 +6,6 @@ import warnings
 from typing import Dict, List, Optional, Union
 
 from py4j.protocol import Py4JJavaError  # type: ignore
-
 from pyspark.sql.types import DataType
 
 from koheesio.models import Field, field_validator, model_validator
@@ -140,14 +139,14 @@ class DeltaTableStep(SparkStep):
         database, catalog, table = self.database, self.catalog, self.table
 
         try:
-            self.log.debug(f"Value of `table` input parameter: {table}")  # type: ignore[union-attr]
+            self.log.debug(f"Value of `table` input parameter: {table}")
             catalog, database, table = table.split(".")
-            self.log.debug("Catalog, database and table were given")  # type: ignore[union-attr]
+            self.log.debug("Catalog, database and table were given")
         except ValueError as e:
             if str(e) == "not enough values to unpack (expected 3, got 1)":
-                self.log.debug("Only table name was given")  # type: ignore[union-attr]
+                self.log.debug("Only table name was given")
             elif str(e) == "not enough values to unpack (expected 3, got 2)":
-                self.log.debug("Only table name and database name were given")  # type: ignore[union-attr]
+                self.log.debug("Only table name and database name were given")
                 database, table = table.split(".")
             else:
                 raise ValueError(f"Unable to parse values for Table: {table}") from e
@@ -164,7 +163,7 @@ class DeltaTableStep(SparkStep):
             Persisted properties as a dictionary.
         """
         persisted_properties = {}
-        raw_options = self.spark.sql(f"SHOW TBLPROPERTIES {self.table_name}").collect()  # type: ignore[union-attr]
+        raw_options = self.spark.sql(f"SHOW TBLPROPERTIES {self.table_name}").collect()
 
         for ro in raw_options:
             key, value = ro.asDict().values()
@@ -206,23 +205,23 @@ class DeltaTableStep(SparkStep):
 
             try:
                 # noinspection SqlNoDataSourceInspection
-                self.spark.sql(f"ALTER TABLE {self.table_name} SET TBLPROPERTIES ({property_pair})")  # type: ignore[union-attr]
-                self.log.debug(f"Table `{self.table_name}` has been altered. Property `{property_pair}` added.")  # type: ignore[union-attr]
+                self.spark.sql(f"ALTER TABLE {self.table_name} SET TBLPROPERTIES ({property_pair})")
+                self.log.debug(f"Table `{self.table_name}` has been altered. Property `{property_pair}` added.")
             except Py4JJavaError as e:
                 msg = f"Property `{key}` can not be applied to table `{self.table_name}`. Exception: {e}"
-                self.log.warning(msg)  # type: ignore[union-attr]
+                self.log.warning(msg)
                 warnings.warn(msg)
 
         if self.exists:
             if key in persisted_properties and persisted_properties[key] != v_str:
                 if override:
-                    self.log.debug(  # type: ignore[union-attr]
+                    self.log.debug(
                         f"Property `{key}` presents in `{self.table_name}` and has value `{persisted_properties[key]}`."
                         f"Override is enabled.The value will be changed to `{v_str}`."
                     )
                     _alter_table()
                 else:
-                    self.log.debug(  # type: ignore[union-attr]
+                    self.log.debug(
                         f"Skipping adding property `{key}`, because it is already set "
                         f"for table `{self.table_name}` to `{v_str}`. To override it, provide override=True"
                     )
@@ -257,7 +256,7 @@ class DeltaTableStep(SparkStep):
     @property
     def dataframe(self) -> DataFrame:
         """Returns a DataFrame to be able to interact with this table"""
-        return self.spark.table(self.table_name)  # type: ignore[union-attr]
+        return self.spark.table(self.table_name)
 
     @property
     def columns(self) -> Optional[List[str]]:
@@ -301,7 +300,7 @@ class DeltaTableStep(SparkStep):
         try:
             from koheesio.spark.utils.connect import is_remote_session
 
-            _df = self.spark.table(self.table_name)  # type: ignore[union-attr]
+            _df = self.spark.table(self.table_name)
 
             if is_remote_session():
                 # In Spark remote session it is not enough to call just spark.table(self.table_name)
@@ -318,9 +317,9 @@ class DeltaTableStep(SparkStep):
 
             if err_msg.startswith("[table_or_view_not_found]") or err_msg.startswith("table or view not found"):
                 if self.create_if_not_exists:
-                    self.log.info(" ".join((common_message, "Therefore the table will be created.")))  # type: ignore[union-attr]
+                    self.log.info(" ".join((common_message, "Therefore the table will be created.")))
                 else:
-                    self.log.error(" ".join((common_message, "Therefore the table will not be created.")))  # type: ignore[union-attr]
+                    self.log.error(" ".join((common_message, "Therefore the table will not be created.")))
             else:
                 raise e
 

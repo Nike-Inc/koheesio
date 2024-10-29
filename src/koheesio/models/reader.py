@@ -2,8 +2,8 @@
 Module for the BaseReader class
 """
 
-from typing import Optional
 from abc import ABC, abstractmethod
+from typing import Optional
 
 from koheesio import Step
 from koheesio.spark import DataFrame
@@ -31,9 +31,9 @@ class BaseReader(Step, ABC):
         """Shorthand for accessing self.output.df
         If the output.df is None, .execute() will be run first
         """
-        if not self.output.df:  # type: ignore[attr-defined]
+        if not self.output.df:
             self.execute()
-        return self.output.df  # type: ignore[attr-defined]
+        return self.output.df
 
     @abstractmethod
     def execute(self) -> Step.Output:
@@ -45,4 +45,4 @@ class BaseReader(Step, ABC):
     def read(self) -> DataFrame:
         """Read from a Reader without having to call the execute() method directly"""
         self.execute()
-        return self.output.df  # type: ignore[attr-defined]
+        return self.output.df

@@ -364,7 +364,7 @@ class AsyncHttpStep(AsyncStep, ExtraParamsMixin):
         if self.method not in map_method_func:
             raise ValueError(f"Method {self.method} not implemented in AsyncHttpStep.")
 
-        self.output.responses_urls = asyncio.run(map_method_func[self.method]())  # type: ignore[index, attr-defined]
+        self.output.responses_urls = asyncio.run(map_method_func[self.method]())  # type: ignore[index]
 
 
 class AsyncHttpGetStep(AsyncHttpStep):

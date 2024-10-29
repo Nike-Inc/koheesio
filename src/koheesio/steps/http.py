@@ -188,17 +188,17 @@ class HttpStep(Step, ExtraParamsMixin):
         """
         Types of response output
         """
-        self.output.response_raw = response  # type: ignore[attr-defined]
-        self.output.raw_payload = response.text  # type: ignore[attr-defined]
-        self.output.status_code = response.status_code  # type: ignore[attr-defined]
+        self.output.response_raw = response
+        self.output.raw_payload = response.text
+        self.output.status_code = response.status_code
 
         # Only decode non empty payloads to avoid triggering decoding error unnecessarily.
-        if self.output.raw_payload:  # type: ignore[attr-defined]
+        if self.output.raw_payload:
             try:
-                self.output.response_json = response.json()  # type: ignore[attr-defined]
+                self.output.response_json = response.json()
 
             except json.decoder.JSONDecodeError as e:
-                self.log.info(f"An error occurred while processing the JSON payload. Error message:\n{e.msg}")  # type: ignore[union-attr]
+                self.log.info(f"An error occurred while processing the JSON payload. Error message:\n{e.msg}")
 
     def get_options(self) -> dict:
         """options to be passed to requests.request()"""
@@ -240,15 +240,15 @@ class HttpStep(Step, ExtraParamsMixin):
         requests.RequestException, requests.HTTPError
             The last exception that was caught if `requests.request()` fails after `self.max_retries` attempts.
         """
-        _method = (method or self.method).value.upper()  # type: ignore[attr-defined]
+        _method = (method or self.method).value.upper()
         options = self.get_options()
 
-        self.log.debug(f"Making {_method} request to {options['url']} with headers {options['headers']}")  # type: ignore[union-attr]
+        self.log.debug(f"Making {_method} request to {options['url']} with headers {options['headers']}")
 
         response = self.session.request(method=_method, **options)
         response.raise_for_status()
 
-        self.log.debug(f"Received response with status code {response.status_code} and body {response.text}")  # type: ignore[union-attr]
+        self.log.debug(f"Received response with status code {response.status_code} and body {response.text}")
         self.set_outputs(response)
 
         return response
@@ -430,18 +430,18 @@ class PaginatedHtppGetStep(HttpGetStep):
 
         for page in range(offset, pages):  # type: ignore[arg-type]
             if self.paginate:
-                self.log.info(f"Fetching page {page} of {pages - 1}")  # type: ignore[union-attr]
+                self.log.info(f"Fetching page {page} of {pages - 1}")
 
             self.url = self._url(basic_url=_basic_url, page=page)
             self.request()
 
-            if isinstance(self.output.response_json, list):  # type: ignore[attr-defined]
-                data += self.output.response_json  # type: ignore[attr-defined]
+            if isinstance(self.output.response_json, list):
+                data += self.output.response_json
             else:
-                data.append(self.output.response_json)  # type: ignore[attr-defined]
+                data.append(self.output.response_json)
 
         self.url = _basic_url
-        self.output.response_json = data  # type: ignore[attr-defined]
-        self.output.response_raw = None  # type: ignore[attr-defined]
-        self.output.raw_payload = None  # type: ignore[attr-defined]
-        self.output.status_code = None  # type: ignore[attr-defined]
+        self.output.response_json = data
+        self.output.response_raw = None
+        self.output.raw_payload = None
+        self.output.status_code = None

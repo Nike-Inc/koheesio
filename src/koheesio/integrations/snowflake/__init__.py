@@ -42,10 +42,10 @@ format : str, optional, default="snowflake"
 
 from __future__ import annotations
 
-from typing import Any, Dict, Generator, List, Optional, Set, Union
 from abc import ABC
 from contextlib import contextmanager
 from types import ModuleType
+from typing import Any, Dict, Generator, List, Optional, Set, Union
 
 from koheesio import Step
 from koheesio.logger import warn
@@ -203,7 +203,7 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
             "password",
         } - (include or set())
 
-        fields = self.model_dump(  # type: ignore[attr-defined]
+        fields = self.model_dump(
             by_alias=by_alias,
             exclude_none=True,
             exclude=exclude_set,
@@ -232,7 +232,7 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
 
         # handle params
         if "params" in include:
-            params = fields.pop("params", self.params)  # type: ignore[attr-defined]
+            params = fields.pop("params", self.params)
             fields.update(**params)
 
         return {key: value for key, value in fields.items() if value}
@@ -321,7 +321,7 @@ class SnowflakeRunQueryPython(SnowflakeStep):
 
         sf_options = self.get_options()
         _conn = self._snowflake_connector.connect(**sf_options)
-        self.log.info(f"Connected to Snowflake account: {sf_options['account']}")  # type: ignore[union-attr]
+        self.log.info(f"Connected to Snowflake account: {sf_options['account']}")
 
         try:
             yield _conn
@@ -338,8 +338,8 @@ class SnowflakeRunQueryPython(SnowflakeStep):
         with self.conn as conn:
             cursors = conn.execute_string(self.get_query())
             for cursor in cursors:
-                self.log.debug(f"Cursor executed: {cursor}")  # type: ignore[union-attr]
-                self.output.results.extend(cursor.fetchall())  # type: ignore[attr-defined]
+                self.log.debug(f"Cursor executed: {cursor}")
+                self.output.results.extend(cursor.fetchall())
 
 
 class GrantPrivilegesOnObject(SnowflakeRunQueryPython):
@@ -447,7 +447,7 @@ class GrantPrivilegesOnObject(SnowflakeRunQueryPython):
 
         return self
 
-    def get_query(self, role: str) -> str:  # type: ignore[override]
+    def get_query(self, role: str) -> str:
         """Build the GRANT query
 
         Parameters
@@ -469,18 +469,18 @@ class GrantPrivilegesOnObject(SnowflakeRunQueryPython):
         return query
 
     def execute(self) -> None:
-        self.output.query = []  # type: ignore[attr-defined]
+        self.output.query = []
         roles = self.roles
 
         for role in roles:
             query = self.get_query(role)
-            self.output.query.append(query)  # type: ignore[attr-defined]
+            self.output.query.append(query)
 
             # Create a new instance of SnowflakeRunQueryPython with the current query
             instance = SnowflakeRunQueryPython.from_step(self, query=query)
-            instance.execute()  # type: ignore[attr-defined]
-            print(f"{instance.output = }")  # type: ignore[attr-defined]
-            self.output.results.extend(instance.output.results)  # type: ignore[attr-defined]
+            instance.execute()
+            print(f"{instance.output = }")
+            self.output.results.extend(instance.output.results)
 
 
 class GrantPrivilegesOnFullyQualifiedObject(GrantPrivilegesOnObject):

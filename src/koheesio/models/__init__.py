@@ -9,14 +9,15 @@ A Model class can be exceptionally handy when you need similar Pydantic models i
 Transformation and Reader classes.
 """
 
-from typing import Annotated, Any, Dict, List, Optional, Union
 from abc import ABC
 from functools import cached_property
 from pathlib import Path
+from typing import Annotated, Any, Dict, List, Optional, Union
+
+from pydantic import *  # noqa
 
 # to ensure that koheesio.models is a drop in replacement for pydantic
 from pydantic import BaseModel as PydanticBaseModel
-from pydantic import *  # noqa
 from pydantic._internal._generics import PydanticGenericMetadata
 from pydantic._internal._model_construction import ModelMetaclass
 
@@ -371,9 +372,7 @@ class BaseModel(PydanticBaseModel, ABC):  # type: ignore[no-redef]
         ```python
         step_output_1 = StepOutput(foo="bar")
         step_output_2 = StepOutput(lorem="ipsum")
-        (
-            step_output_1 + step_output_2
-        )  # step_output_1 will now contain {'foo': 'bar', 'lorem': 'ipsum'}
+        (step_output_1 + step_output_2)  # step_output_1 will now contain {'foo': 'bar', 'lorem': 'ipsum'}
         ```
 
         Parameters
@@ -497,9 +496,7 @@ class BaseModel(PydanticBaseModel, ABC):  # type: ignore[no-redef]
         --------
         ```python
         step_output = StepOutput(foo="bar")
-        step_output.merge(
-            {"lorem": "ipsum"}
-        )  # step_output will now contain {'foo': 'bar', 'lorem': 'ipsum'}
+        step_output.merge({"lorem": "ipsum"})  # step_output will now contain {'foo': 'bar', 'lorem': 'ipsum'}
         ```
 
         Parameters
@@ -596,7 +593,7 @@ class BaseModel(PydanticBaseModel, ABC):  # type: ignore[no-redef]
         return _context.to_yaml(clean=clean)
 
     # noinspection PyMethodOverriding
-    def validate(self) -> BaseModel:  # type: ignore[override]
+    def validate(self) -> BaseModel:
         """Validate the BaseModel instance
 
         This method is used to validate the BaseModel instance. It is used in conjunction with the lazy method to
