@@ -480,11 +480,13 @@ class ArrayMedian(ArrayNullNanProcess):
 
         # Calculate the middle index. If the size is odd, PySpark discards the fractional part.
         # Use floor function to ensure the result is an integer
+        # noinspection PyTypeChecker
         middle: Column = f.floor((_size + 1) / 2).cast("int")
 
         # Define conditions
         is_size_zero: Column = _size == 0
         is_column_null: Column = column.isNull()
+        # noinspection PyTypeChecker
         is_size_even: Column = _size % 2 == 0
 
         # Define actions / responses

@@ -15,8 +15,8 @@ writer_to_foreachbatch
     function to be used as batch_function for StreamWriter (sub)classes
 """
 
-from abc import ABC, abstractmethod
 from typing import Callable, Dict, Optional, Union
+from abc import ABC, abstractmethod
 
 from koheesio import Step
 from koheesio.models import ConfigDict, Field, field_validator, model_validator

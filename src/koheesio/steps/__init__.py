@@ -20,11 +20,12 @@ import inspect
 import json
 import sys
 import warnings
+from typing import Any, Callable, Union
 from abc import abstractmethod
 from functools import partialmethod, wraps
-from typing import Any, Callable, Union
 
 import yaml
+
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import InstanceOf
 
@@ -75,7 +76,7 @@ class StepMetaClass(ModelMetaclass):
     # When partialmethod is forgetting that _execute_wrapper
     # is a method of wrapper, and it needs to pass that in as the first arg.
     # https://github.com/python/cpython/issues/99152
-    # noinspection PyPep8Naming
+    # noinspection PyPep8Naming,PyUnresolvedReferences
     class _partialmethod_with_self(partialmethod):
         def __get__(self, obj: Any, cls=None):  # type: ignore[no-untyped-def]
             return self._make_unbound_method().__get__(obj, cls)
@@ -124,6 +125,7 @@ class StepMetaClass(ModelMetaclass):
         The method also keeps track of the number of times the `execute` method has been wrapped.
 
         """
+        # noinspection PyTypeChecker
         cls = super().__new__(
             mcs,
             cls_name,
@@ -143,6 +145,7 @@ class StepMetaClass(ModelMetaclass):
 
         # Check if the sentinel is the same as the class's sentinel. If they are the same,
         # it means the function is already wrapped.
+        # noinspection PyUnresolvedReferences
         is_already_wrapped = sentinel is cls._step_execute_wrapper_sentinel
 
         # Get the wrap count of the function. If the function is not wrapped yet, the default value is 0.
@@ -162,6 +165,7 @@ class StepMetaClass(ModelMetaclass):
 
             # Set the sentinel attribute to the wrapper. This is done so that we can check
             # if the function is already wrapped.
+            # noinspection PyUnresolvedReferences
             setattr(wrapper, "_step_execute_wrapper_sentinel", cls._step_execute_wrapper_sentinel)
 
             # Increase the wrap count of the function. This is done to keep track of
@@ -236,9 +240,11 @@ class StepMetaClass(ModelMetaclass):
                 Returns:
                     The unbound method.
                 """
+                # noinspection PyUnresolvedReferences
                 return self._make_unbound_method().__get__(obj, cls)
 
         _partialmethod_impl = partialmethod if sys.version_info < (3, 11) else _partialmethod_with_self
+        # noinspection PyUnresolvedReferences
         wrapper = _partialmethod_impl(cls._execute_wrapper, execute_method=execute_method)
 
         return wrapper

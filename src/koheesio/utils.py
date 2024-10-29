@@ -4,10 +4,10 @@ Utility functions
 
 import inspect
 import uuid
+from typing import Any, Callable, Dict, Optional, Tuple
 from functools import partial
 from importlib import import_module
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Tuple
 
 __all__ = [
     "get_args_for_func",

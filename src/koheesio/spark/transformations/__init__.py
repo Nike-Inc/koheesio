@@ -21,8 +21,8 @@ ColumnsTransformationWithTarget
     Extended ColumnsTransformation class with an additional `target_column` field
 """
 
-from abc import ABC, abstractmethod
 from typing import Iterator, List, Optional, Union
+from abc import ABC, abstractmethod
 
 from pyspark.sql import functions as f
 from pyspark.sql.types import DataType
@@ -340,7 +340,7 @@ class ColumnsTransformation(Transformation, ABC):
         if not isinstance(col, Column):  # type:ignore[misc, arg-type]
             col = f.col(col)  # type:ignore[arg-type]
 
-        # noinspection PyProtectedMember
+        # noinspection PyProtectedMember,PyUnresolvedReferences
         col_name = (
             col._expr._unparsed_identifier
             if col.__class__.__module__ == "pyspark.sql.connect.column"

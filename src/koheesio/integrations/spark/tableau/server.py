@@ -1,10 +1,9 @@
 import os
+from typing import Any, ContextManager, Optional, Union
 from enum import Enum
 from pathlib import PurePath
-from typing import Any, ContextManager, Optional, Union
 
 import urllib3  # type: ignore
-from pydantic import Field, SecretStr
 from tableauserverclient import (
     DatasourceItem,
     PersonalAccessTokenAuth,
@@ -13,6 +12,8 @@ from tableauserverclient import (
 )
 from tableauserverclient.server.pager import Pager
 from tableauserverclient.server.server import Server
+
+from pydantic import Field, SecretStr
 
 from koheesio.models import model_validator
 from koheesio.steps import Step, StepOutput

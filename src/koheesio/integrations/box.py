@@ -247,6 +247,7 @@ class BoxFolderGet(BoxFolderBase):
         for item in current_folder_object.get_items():
             # noinspection PyUnresolvedReferences
             if item.type == "folder" and item.name == next_folder_name:
+                # noinspection PyTypeChecker
                 return item
 
         if self.create_sub_folders:
@@ -257,13 +258,13 @@ class BoxFolderGet(BoxFolderBase):
                 "to create required directory structure automatically."
             )
 
-    def action(self) -> Folder:
+    def action(self) -> Optional[Folder]:
         """
         Get folder action
 
         Returns
         -------
-        folder: Folder
+        folder: Optional[Folder]
             Box Folder object as specified in Box SDK
         """
         current_folder_object = None
