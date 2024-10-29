@@ -13,8 +13,8 @@ In the above example, the `response` variable will contain the JSON response fro
 """
 
 import json
-from enum import Enum
 from typing import Any, Dict, List, Optional, Union
+from enum import Enum
 
 import requests  # type: ignore[import-untyped]
 
@@ -34,7 +34,7 @@ __all__ = [
     "HttpPostStep",
     "HttpPutStep",
     "HttpDeleteStep",
-    "PaginatedHtppGetStep",
+    "PaginatedHttpGetStep",
 ]
 
 
@@ -253,6 +253,7 @@ class HttpStep(Step, ExtraParamsMixin):
 
         return response
 
+    # noinspection PyMethodOverriding
     def get(self) -> requests.Response:
         """Execute an HTTP GET call"""
         self.method = HttpMethod.GET
@@ -320,7 +321,7 @@ class HttpDeleteStep(HttpStep):
     method: HttpMethod = HttpMethod.DELETE
 
 
-class PaginatedHtppGetStep(HttpGetStep):
+class PaginatedHttpGetStep(HttpGetStep):
     """
     Represents a paginated HTTP GET step.
 

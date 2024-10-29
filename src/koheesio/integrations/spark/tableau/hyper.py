@@ -164,7 +164,7 @@ class HyperFileWriter(HyperFile):
         hyper_path: PurePath = Field(default=..., description="Path to created Hyper file")
 
     @property
-    def hyper_path(self) -> Connection:
+    def hyper_path(self) -> PurePath:
         """
         Return full path to the Hyper file.
         """

@@ -2,12 +2,14 @@
 Utility functions
 """
 
+import datetime
 import inspect
 import uuid
+from typing import Any, Callable, Dict, Optional, Tuple
 from functools import partial
 from importlib import import_module
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Tuple
+from sys import version_info as PYTHON_VERSION
 
 __all__ = [
     "get_args_for_func",
@@ -18,10 +20,14 @@ __all__ = [
 ]
 
 
+PYTHON_MINOR_VERSION = PYTHON_VERSION.major + PYTHON_VERSION.minor / 10
+"""float: Python minor version as a float (e.g. 3.7)"""
+
+
 def get_args_for_func(func: Callable, params: Dict) -> Tuple[Callable, Dict[str, Any]]:
     """Helper function that matches keyword arguments (params) on a given function
 
-    This function uses inspect to extract the signature on the passed Callable, and then uses functools.partial to
+    This function uses inspect to extract the signature on the passed Callable, and then uses `functools.partial` to
      construct a new Callable (partial) function on which the input was mapped.
 
     Example
@@ -94,8 +100,15 @@ def get_random_string(length: int = 64, prefix: Optional[str] = None) -> str:
     return f"{uuid.uuid4().hex}"[0:length]
 
 
-def convert_str_to_bool(value) -> Any:
+def convert_str_to_bool(value: str) -> Any:
     """Converts a string to a boolean if the string is either 'true' or 'false'"""
     if isinstance(value, str) and (v := value.lower()) in ["true", "false"]:
         value = v == "true"
     return value
+
+
+def utc_now() -> datetime.datetime:
+    """Get current time in UTC"""
+    if PYTHON_MINOR_VERSION < 3.11:
+        return datetime.datetime.utcnow()
+    return datetime.datetime.now(datetime.timezone.utc)

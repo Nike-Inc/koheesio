@@ -7,7 +7,6 @@ from typing import List, Optional
 from pyspark.sql.functions import col, concat, concat_ws
 
 from koheesio.models import Field, field_validator
-from koheesio.spark import DataFrame
 from koheesio.spark.transformations import ColumnsTransformation
 
 
@@ -122,7 +121,7 @@ class Concat(ColumnsTransformation):
 
         return target_column_value
 
-    def execute(self) -> DataFrame:
+    def execute(self) -> ColumnsTransformation.Output:
         columns = [col(s) for s in self.get_columns()]
         self.output.df = self.df.withColumn(  # type: ignore
             self.target_column, concat_ws(self.spacer, *columns) if self.spacer else concat(*columns)

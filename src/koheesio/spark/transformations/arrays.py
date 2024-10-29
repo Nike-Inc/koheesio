@@ -27,7 +27,7 @@ from typing import Any
 from abc import ABC
 from functools import reduce
 
-from pyspark.sql import functions as F
+from pyspark.sql import functions as f
 
 from koheesio.models import Field
 from koheesio.spark import Column
@@ -87,7 +87,7 @@ class ArrayDistinct(ArrayTransformation):
     )
 
     def func(self, column: Column) -> Column:
-        _fn = F.array_distinct(column)
+        _fn = f.array_distinct(column)
 
         # noinspection PyUnresolvedReferences
         element_type = self.column_type_of_col(column, None, False).elementType
@@ -105,15 +105,15 @@ class ArrayDistinct(ArrayTransformation):
                 # pylint: enable=E0611
             else:
                 # Otherwise, remove null from array using array_except
-                _fn = F.array_except(_fn, F.array(F.lit(None)))
+                _fn = f.array_except(_fn, f.array(f.lit(None)))
 
             # Remove nan or empty values from array (depends on the type of the elements in array)
             if is_numeric:
                 # Remove nan from array (float/int/numbers)
-                _fn = F.array_except(_fn, F.array(F.lit(float("nan")).cast(element_type)))
+                _fn = f.array_except(_fn, f.array(f.lit(float("nan")).cast(element_type)))
             else:
                 # Remove empty values from array (string/text)
-                _fn = F.array_except(_fn, F.array(F.lit(""), F.lit(" ")))
+                _fn = f.array_except(_fn, f.array(f.lit(""), f.lit(" ")))
 
         return _fn
 
@@ -139,7 +139,7 @@ class Explode(ArrayTransformation):
     def func(self, column: Column) -> Column:
         if self.distinct:
             column = ArrayDistinct.from_step(self).func(column)
-        return F.explode_outer(column) if self.preserve_nulls else F.explode(column)
+        return f.explode_outer(column) if self.preserve_nulls else f.explode(column)
 
 
 class ExplodeDistinct(Explode):
@@ -168,7 +168,7 @@ class ArrayReverse(ArrayTransformation):
     """
 
     def func(self, column: Column) -> Column:
-        return F.reverse(column)
+        return f.reverse(column)
 
 
 class ArraySort(ArrayTransformation):
@@ -190,7 +190,7 @@ class ArraySort(ArrayTransformation):
     )
 
     def func(self, column: Column) -> Column:
-        column = F.array_sort(column)
+        column = f.array_sort(column)
         if self.reverse:
             # Reverse the order of elements in the array
             column = ArrayReverse.from_step(self).func(column)
@@ -279,16 +279,17 @@ class ArrayNullNanProcess(ArrayTransformation):
 
         def apply_logic(x: Column) -> Column:
             if self.keep_nan is False and self.keep_null is False:
-                logic = x.isNotNull() & ~F.isnan(x)
+                logic = x.isNotNull() & ~f.isnan(x)
             elif self.keep_nan is False:
-                logic = ~F.isnan(x)
+                logic = ~f.isnan(x)
             elif self.keep_null is False:
                 logic = x.isNotNull()
-
+            else:
+                raise ValueError("unexpected condition")
             return logic
 
         if self.keep_nan is False or self.keep_null is False:
-            column = F.filter(column, apply_logic)
+            column = f.filter(column, apply_logic)
 
         return column
 
@@ -322,25 +323,25 @@ class ArrayRemove(ArrayNullNanProcess):
 
         def filter_logic(x: Column, _val: Any):
             if self.keep_null and self.keep_nan:
-                logic = (x != F.lit(_val)) | x.isNull() | F.isnan(x)
+                logic = (x != f.lit(_val)) | x.isNull() | f.isnan(x)
             elif self.keep_null:
-                logic = (x != F.lit(_val)) | x.isNull()
+                logic = (x != f.lit(_val)) | x.isNull()
             elif self.keep_nan:
-                logic = (x != F.lit(_val)) | F.isnan(x)
+                logic = (x != f.lit(_val)) | f.isnan(x)
             else:
-                logic = x != F.lit(_val)
+                logic = x != f.lit(_val)
 
             return logic
 
         # Check if the value is iterable (i.e., a list, tuple, or set)
         if isinstance(value, (list, tuple, set)):
-            result = reduce(lambda res, val: F.filter(res, lambda x: filter_logic(x, val)), value, column)
+            result = reduce(lambda res, val: f.filter(res, lambda x: filter_logic(x, val)), value, column)
         else:
             # If the value is not iterable, simply remove the value from the array
-            result = F.filter(column, lambda x: filter_logic(x, value))
+            result = f.filter(column, lambda x: filter_logic(x, value))
 
         if self.make_distinct:
-            result = F.array_distinct(result)
+            result = f.array_distinct(result)
 
         return result
 
@@ -357,7 +358,7 @@ class ArrayMin(ArrayTransformation):
     """
 
     def func(self, column: Column) -> Column:
-        return F.array_min(column)
+        return f.array_min(column)
 
 
 class ArrayMax(ArrayNullNanProcess):
@@ -375,7 +376,7 @@ class ArrayMax(ArrayNullNanProcess):
         # Call for processing of nan values
         column = super().func(column)
 
-        return F.array_max(column)
+        return f.array_max(column)
 
 
 class ArraySum(ArrayNullNanProcess):
@@ -400,6 +401,7 @@ class ArraySum(ArrayNullNanProcess):
     def func(self, column: Column) -> Column:
         """Using the `aggregate` function to sum the values in the array"""
         # raise an error if the array contains non-numeric elements
+        # noinspection PyUnresolvedReferences
         element_type = self.column_type_of_col(column, None, False).elementType
         if not spark_data_type_is_numeric(element_type):
             raise ValueError(
@@ -413,8 +415,8 @@ class ArraySum(ArrayNullNanProcess):
         # Using the `aggregate` function to sum the values in the array by providing the initial value as 0.0 and the
         # lambda function to add the elements together. Pyspark will automatically infer the type of the initial value
         # making 0.0 valid for both integer and float types.
-        initial_value = F.lit(0.0)
-        return F.aggregate(column, initial_value, lambda accumulator, x: accumulator + x)
+        initial_value = f.lit(0.0)
+        return f.aggregate(column, initial_value, lambda accumulator, x: accumulator + x)
 
 
 class ArrayMean(ArrayNullNanProcess):
@@ -433,6 +435,7 @@ class ArrayMean(ArrayNullNanProcess):
     def func(self, column: Column) -> Column:
         """Calculate the mean of the values in the array"""
         # raise an error if the array contains non-numeric elements
+        # noinspection PyUnresolvedReferences
         element_type = self.column_type_of_col(col=column, df=None, simple_return_mode=False).elementType
 
         if not spark_data_type_is_numeric(element_type):
@@ -444,9 +447,9 @@ class ArrayMean(ArrayNullNanProcess):
         _sum = ArraySum.from_step(self).func(column)
         # Call for processing of nan values
         column = super().func(column)
-        _size = F.size(column)
+        _size = f.size(column)
         # return 0 if the size of the array is 0 to avoid division by zero
-        return F.when(_size == 0, F.lit(0)).otherwise(_sum / _size)
+        return f.when(_size == 0, f.lit(0)).otherwise(_sum / _size)
 
 
 class ArrayMedian(ArrayNullNanProcess):
@@ -473,36 +476,38 @@ class ArrayMedian(ArrayNullNanProcess):
         column = super().func(column)
 
         sorted_array = ArraySort.from_step(self).func(column)
-        _size: Column = F.size(sorted_array)
+        _size: Column = f.size(sorted_array)
 
         # Calculate the middle index. If the size is odd, PySpark discards the fractional part.
         # Use floor function to ensure the result is an integer
-        middle: Column = F.floor((_size + 1) / 2).cast("int")
+        # noinspection PyTypeChecker
+        middle: Column = f.floor((_size + 1) / 2).cast("int")
 
         # Define conditions
         is_size_zero: Column = _size == 0
         is_column_null: Column = column.isNull()
+        # noinspection PyTypeChecker
         is_size_even: Column = _size % 2 == 0
 
         # Define actions / responses
         # For even-sized arrays, calculate the average of the two middle elements
-        average_of_middle_elements = (F.element_at(sorted_array, middle) + F.element_at(sorted_array, middle + 1)) / 2
+        average_of_middle_elements = (f.element_at(sorted_array, middle) + f.element_at(sorted_array, middle + 1)) / 2
         # For odd-sized arrays, select the middle element
-        middle_element = F.element_at(sorted_array, middle)
+        middle_element = f.element_at(sorted_array, middle)
         # In case the array is empty, return either None or 0
-        none_value = F.lit(None)
-        zero_value = F.lit(0)
+        none_value = f.lit(None)
+        zero_value = f.lit(0)
 
         median = (
             # Check if the size of the array is 0
-            F.when(
+            f.when(
                 is_size_zero,
                 # If the size of the array is 0 and the column is null, return None
                 # If the size of the array is 0 and the column is not null, return 0
-                F.when(is_column_null, none_value).otherwise(zero_value),
+                f.when(is_column_null, none_value).otherwise(zero_value),
             ).otherwise(
                 # If the size of the array is not 0, calculate the median
-                F.when(is_size_even, average_of_middle_elements).otherwise(middle_element)
+                f.when(is_size_even, average_of_middle_elements).otherwise(middle_element)
             )
         )
 

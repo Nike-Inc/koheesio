@@ -96,6 +96,7 @@ class InMemoryDataReader(Reader, ExtraParamsMixin):
             json_data = [self.data]
 
         # Use pyspark.pandas to read the JSON data from the string
+        # noinspection PyUnboundLocalVariable
         pandas_df = pd.read_json(StringIO(json.dumps(json_data)), **self.params)  # type: ignore
 
         # Convert pyspark.pandas DataFrame to Spark DataFrame

@@ -1,7 +1,8 @@
+# noinspection PyUnresolvedReferences
 """
 Transformations to cast a column or set of columns to a given datatype.
 
-Each one of these have been vetted to throw warnings when wrong datatypes are passed (to skip erroring any job or
+Each one of these have been vetted to throw warnings when wrong datatypes are passed (to prevent errors in any job or
 pipeline).
 
 Furthermore, detailed tests have been added to ensure that types are actually compatible as prescribed.

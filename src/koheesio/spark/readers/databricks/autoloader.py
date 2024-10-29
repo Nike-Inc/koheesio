@@ -7,6 +7,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from enum import Enum
 
 from pyspark.sql.streaming import DataStreamReader
+
+# noinspection PyProtectedMember
 from pyspark.sql.types import AtomicType, StructType
 
 from koheesio.models import Field, field_validator

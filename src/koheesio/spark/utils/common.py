@@ -46,9 +46,14 @@ __all__ = [
     "SparkSession",
     "ParseException",
     "DataType",
+    "DataFrameReader",
     "DataStreamReader",
+    "DataFrameWriter",
     "DataStreamWriter",
     "StreamingQuery",
+    "get_active_session",
+    "check_if_pyspark_connect_is_supported",
+    "get_column_name",
 ]
 
 try:
@@ -97,9 +102,13 @@ if check_if_pyspark_connect_is_supported():
     from pyspark.sql.connect.column import Column as ConnectColumn
     from pyspark.sql.connect.dataframe import DataFrame as ConnectDataFrame
     from pyspark.sql.connect.proto.types_pb2 import DataType as ConnectDataType
+    from pyspark.sql.connect.readwriter import DataFrameReader, DataFrameWriter
     from pyspark.sql.connect.session import SparkSession as ConnectSparkSession
+    from pyspark.sql.connect.streaming.readwriter import (
+        DataStreamReader,
+        DataStreamWriter,
+    )
     from pyspark.sql.streaming.query import StreamingQuery
-    from pyspark.sql.streaming.readwriter import DataStreamReader, DataStreamWriter
     from pyspark.sql.types import DataType as SqlDataType
 
     Column = Union[sql.Column, ConnectColumn]
@@ -107,8 +116,10 @@ if check_if_pyspark_connect_is_supported():
     SparkSession = Union[sql.SparkSession, ConnectSparkSession]
     ParseException = (CapturedParseException, ConnectParseException)
     DataType = Union[SqlDataType, ConnectDataType]
-    DataStreamReader = DataStreamReader
-    DataStreamWriter = DataStreamWriter
+    DataFrameReader = Union[sql.readwriter.DataFrameReader, DataFrameReader]
+    DataStreamReader = Union[sql.streaming.readwriter.DataStreamReader, DataStreamReader]
+    DataFrameWriter = Union[sql.readwriter.DataFrameWriter, DataFrameWriter]
+    DataStreamWriter = Union[sql.streaming.readwriter.DataStreamWriter, DataStreamWriter]
     StreamingQuery = StreamingQuery
 else:
     try:
@@ -120,6 +131,7 @@ else:
 
     from pyspark.sql.column import Column  # type: ignore
     from pyspark.sql.dataframe import DataFrame  # type: ignore
+    from pyspark.sql.readwriter import DataFrameReader, DataFrameWriter  # type: ignore
     from pyspark.sql.session import SparkSession  # type: ignore
     from pyspark.sql.types import DataType  # type: ignore
 
@@ -132,16 +144,18 @@ else:
             DataStreamWriter,
             StreamingQuery,
         )
+    DataFrameReader = DataFrameReader
     DataStreamReader = DataStreamReader
+    DataFrameWriter = DataFrameWriter
     DataStreamWriter = DataStreamWriter
     StreamingQuery = StreamingQuery
 
 
 def get_active_session() -> SparkSession:  # type: ignore
     if check_if_pyspark_connect_is_supported():
-        from pyspark.sql.connect.session import SparkSession as ConnectSparkSession
+        from pyspark.sql.connect.session import SparkSession as _ConnectSparkSession
 
-        session = ConnectSparkSession.getActiveSession() or sql.SparkSession.getActiveSession()  # type: ignore
+        session = _ConnectSparkSession.getActiveSession() or sql.SparkSession.getActiveSession()  # type: ignore
     else:
         session = sql.SparkSession.getActiveSession()  # type: ignore
 
@@ -307,6 +321,7 @@ def import_pandas_based_on_pyspark_version() -> ModuleType:
         raise ImportError("Pandas module is not installed.") from e
 
 
+# noinspection PyProtectedMember
 def show_string(df: DataFrame, n: int = 20, truncate: Union[bool, int] = True, vertical: bool = False) -> str:  # type: ignore
     """Returns a string representation of the DataFrame
     The default implementation of DataFrame.show() hardcodes a print statement, which is not always desirable.
@@ -338,6 +353,7 @@ def show_string(df: DataFrame, n: int = 20, truncate: Union[bool, int] = True, v
     return df._show_string(n, truncate, vertical)
 
 
+# noinspection PyProtectedMember
 def get_column_name(col: Column) -> str:  # type: ignore
     """Get the column name from a Column object
 

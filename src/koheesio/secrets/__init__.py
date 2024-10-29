@@ -3,8 +3,8 @@
 Contains abstract class for various secret integrations also known as SecretContext.
 """
 
-from abc import ABC, abstractmethod
 from typing import Optional
+from abc import ABC, abstractmethod
 
 from koheesio import Step, StepOutput
 from koheesio.context import Context
@@ -64,6 +64,7 @@ class Secret(Step, ABC):
         context = Context(self.encode_secret_values(data={self.root: {self.parent: self._get_secrets()}}))
         self.output.context = self.context.merge(context=context)
 
+    # noinspection PyMethodOverriding
     def get(self) -> Context:
         """
         Convenience method to return context with secrets.

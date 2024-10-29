@@ -9,16 +9,19 @@ A Model class can be exceptionally handy when you need similar Pydantic models i
 Transformation and Reader classes.
 """
 
+from typing import Annotated, Any, Dict, List, Optional, Union
 from abc import ABC
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Any, Dict, List, Optional, Union
-
-from pydantic import *  # noqa
 
 # to ensure that koheesio.models is a drop in replacement for pydantic
 from pydantic import BaseModel as PydanticBaseModel
+from pydantic import *  # noqa
+
+# noinspection PyProtectedMember
 from pydantic._internal._generics import PydanticGenericMetadata
+
+# noinspection PyProtectedMember
 from pydantic._internal._model_construction import ModelMetaclass
 
 from koheesio.context import Context
@@ -29,8 +32,20 @@ __all__ = [
     "ExtraParamsMixin",
     "Field",
     "ListOfColumns",
+    # Directly from pydantic
+    "ConfigDict",
+    "InstanceOf",
     "ModelMetaclass",
+    "PositiveInt",
+    "PrivateAttr",
     "PydanticGenericMetadata",
+    "SecretBytes",
+    "SecretStr",
+    "SkipValidation",
+    "conint",
+    "conlist",
+    "constr",
+    "field_serializer",
     "field_validator",
     "model_validator",
 ]
@@ -155,7 +170,7 @@ class BaseModel(PydanticBaseModel, ABC):  # type: ignore[no-redef]
 
     Koheesio specific configuration:
     -------------------------------
-    Koheesio models are configured differently from Pydantic defaults. The following configuration is used:
+    Koheesio models are configured differently from Pydantic defaults. The configuration looks like this:
 
     1. *extra="allow"*\n
         This setting allows for extra fields that are not specified in the model definition. If a field is present in
@@ -176,8 +191,8 @@ class BaseModel(PydanticBaseModel, ABC):  # type: ignore[no-redef]
         This setting determines whether the model should be revalidated when the data is changed. If set to `True`,
         every time a field is assigned a new value, the entire model is validated again.\n
         Pydantic default is (also) `False`, which means that the model is not revalidated when the data is changed.
-        The default behavior of Pydantic is to validate the data when the model is created. In case the user changes
-        the data after the model is created, the model is _not_ revalidated.
+        By default, Pydantic validates the data when creating the model. If the user changes the data after creating
+        the model, it does _not_ revalidate the model.
 
     5. *revalidate_instances="subclass-instances"*\n
         This setting determines whether to revalidate models during validation if the instance is a subclass of the

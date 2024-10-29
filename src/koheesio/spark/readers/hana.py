@@ -28,10 +28,10 @@ class HanaReader(JdbcReader):
     ```python
     from koheesio.spark.readers.hana import HanaReader
     jdbc_hana = HanaReader(
-        url="jdbc:sap://<domain_or_ip>:<port>/?<options>
+        url="jdbc:sap://<domain_or_ip>:<port>/?<options>",
         user="YOUR_USERNAME",
         password="***",
-        dbtable="schemaname.tablename"
+        dbtable="schema_name.table_name"
     )
     df = jdbc_hana.read()
     ```

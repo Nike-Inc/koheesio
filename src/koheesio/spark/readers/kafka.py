@@ -5,6 +5,7 @@ Module for KafkaReader and KafkaStreamReader.
 from typing import Dict, Optional
 
 from koheesio.models import ExtraParamsMixin, Field
+from koheesio.spark import DataFrameReader, DataStreamReader
 from koheesio.spark.readers import Reader
 
 
@@ -82,12 +83,12 @@ class KafkaReader(Reader, ExtraParamsMixin):
     )
 
     @property
-    def stream_reader(self) -> Reader:
+    def stream_reader(self) -> DataStreamReader:
         """Returns the Spark readStream object."""
         return self.spark.readStream
 
     @property
-    def batch_reader(self) -> Reader:
+    def batch_reader(self) -> DataFrameReader:
         """Returns the Spark read object for batch processing."""
         return self.spark.read
 

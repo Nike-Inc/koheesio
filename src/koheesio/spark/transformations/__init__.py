@@ -21,8 +21,8 @@ ColumnsTransformationWithTarget
     Extended ColumnsTransformation class with an additional `target_column` field
 """
 
-from abc import ABC, abstractmethod
 from typing import Iterator, List, Optional, Union
+from abc import ABC, abstractmethod
 
 from pyspark.sql import functions as f
 from pyspark.sql.types import DataType
@@ -232,7 +232,7 @@ class ColumnsTransformation(Transformation, ABC):
             allows to run the transformation for all columns of a given type.
             A user can trigger this behavior by either omitting the `columns` parameter or by passing a single `*` as a
             column name. In both cases, the `run_for_all_data_type` will be used to determine the data type.
-            Value should be be passed as a SparkDatatype enum.
+            Value should be passed as a SparkDatatype enum.
             (default: [None])
 
         limit_data_type : Optional[List[SparkDatatype]]
@@ -340,6 +340,7 @@ class ColumnsTransformation(Transformation, ABC):
         if not isinstance(col, Column):  # type:ignore[misc, arg-type]
             col = f.col(col)  # type:ignore[arg-type]
 
+        # noinspection PyProtectedMember,PyUnresolvedReferences
         col_name = (
             col._expr._unparsed_identifier
             if col.__class__.__module__ == "pyspark.sql.connect.column"

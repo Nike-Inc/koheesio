@@ -2,7 +2,7 @@
 String replacements without using regular expressions.
 """
 
-from typing import Any, Optional
+from typing import Optional
 
 from pyspark.sql import Column
 from pyspark.sql.functions import lit, when

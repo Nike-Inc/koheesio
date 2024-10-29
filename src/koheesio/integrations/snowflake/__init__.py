@@ -1,3 +1,4 @@
+# noinspection PyUnresolvedReferences
 """
 Snowflake steps and tasks for Koheesio
 
@@ -42,10 +43,10 @@ format : str, optional, default="snowflake"
 
 from __future__ import annotations
 
+from typing import Any, Dict, Generator, List, Optional, Set, Union
 from abc import ABC
 from contextlib import contextmanager
 from types import ModuleType
-from typing import Any, Dict, Generator, List, Optional, Set, Union
 
 from koheesio import Step
 from koheesio.logger import warn
@@ -447,6 +448,7 @@ class GrantPrivilegesOnObject(SnowflakeRunQueryPython):
 
         return self
 
+    # noinspection PyMethodOverriding
     def get_query(self, role: str) -> str:
         """Build the GRANT query
 

@@ -78,7 +78,7 @@ class DeltaTableReader(Reader):
         ignoreChanges: re-process updates if files had to be rewritten in the source table due to a data changing
         operation such as UPDATE, MERGE INTO, DELETE (within partitions), or OVERWRITE. Unchanged rows may still be
         emitted, therefore your downstream consumers should be able to handle duplicates. Deletes are not propagated
-        downstream. ignoreChanges subsumes ignoreDeletes. Therefore if you use ignoreChanges, your stream will not be
+        downstream. ignoreChanges subsumes ignoreDeletes. Therefore, if you use ignoreChanges, your stream will not be
         disrupted by either deletions or updates to the source table.
 
     """

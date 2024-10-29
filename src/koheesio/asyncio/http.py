@@ -12,6 +12,7 @@ import nest_asyncio  # type: ignore[import-untyped]
 import yarl
 from aiohttp import BaseConnector, ClientSession, TCPConnector
 from aiohttp_retry import ExponentialRetry, RetryClient, RetryOptionsBase
+
 from pydantic import Field, SecretStr, field_validator, model_validator
 
 from koheesio.asyncio import AsyncStep, AsyncStepOutput
@@ -19,6 +20,7 @@ from koheesio.models import ExtraParamsMixin
 from koheesio.steps.http import HttpMethod
 
 
+# noinspection PyUnresolvedReferences
 class AsyncHttpStep(AsyncStep, ExtraParamsMixin):
     """
     Asynchronous HTTP step for making HTTP requests using aiohttp.
@@ -44,36 +46,36 @@ class AsyncHttpStep(AsyncStep, ExtraParamsMixin):
     Examples
     --------
     ```python
-    >>> import asyncio
-    >>> from aiohttp import ClientSession
-    >>> from aiohttp.connector import TCPConnector
-    >>> from aiohttp_retry import ExponentialRetry
-    >>> from koheesio.steps.async.http import AsyncHttpStep
-    >>> from yarl import URL
-    >>> from typing import Dict, Any, Union, List, Tuple
-    >>>
-    >>> # Initialize the AsyncHttpStep
-    >>> async def main():
-    >>>     session = ClientSession()
-    >>>     urls = [URL('https://example.com/api/1'), URL('https://example.com/api/2')]
-    >>>     retry_options = ExponentialRetry()
-    >>>     connector = TCPConnector(limit=10)
-    >>>     headers = {'Content-Type': 'application/json'}
-    >>>     step = AsyncHttpStep(
-    >>>         client_session=session,
-    >>>         url=urls,
-    >>>         retry_options=retry_options,
-    >>>         connector=connector,
-    >>>         headers=headers
-    >>>     )
-    >>>
-    >>>     # Execute the step
-    >>>     responses_urls=  await step.get()
-    >>>
-    >>>     return responses_urls
-    >>>
-    >>> # Run the main function
-    >>> responses_urls = asyncio.run(main())
+    import asyncio
+    from aiohttp import ClientSession
+    from aiohttp.connector import TCPConnector
+    from aiohttp_retry import ExponentialRetry
+    from koheesio.asyncio.http import AsyncHttpStep
+    from yarl import URL
+    from typing import Dict, Any, Union, List, Tuple
+
+    # Initialize the AsyncHttpStep
+    async def main():
+        session = ClientSession()
+        urls = [URL('https://example.com/api/1'), URL('https://example.com/api/2')]
+        retry_options = ExponentialRetry()
+        connector = TCPConnector(limit=10)
+        headers = {'Content-Type': 'application/json'}
+        step = AsyncHttpStep(
+            client_session=session,
+            url=urls,
+            retry_options=retry_options,
+            connector=connector,
+            headers=headers
+        )
+
+        # Execute the step
+        responses_urls=  await step.get()
+
+        return responses_urls
+
+    # Run the main function
+    responses_urls = asyncio.run(main())
     ```
     """
 
@@ -226,6 +228,7 @@ class AsyncHttpStep(AsyncStep, ExtraParamsMixin):
 
         return _headers or self.headers
 
+    # noinspection PyUnusedLocal,PyMethodMayBeStatic
     def set_outputs(self, response) -> None:  # type: ignore[no-untyped-def]
         """
         Set the outputs of the step.
@@ -237,6 +240,7 @@ class AsyncHttpStep(AsyncStep, ExtraParamsMixin):
         """
         warnings.warn("set outputs is not implemented in AsyncHttpStep.")
 
+    # noinspection PyMethodMayBeStatic
     def get_options(self) -> None:
         """
         Get the options of the step.
@@ -271,10 +275,11 @@ class AsyncHttpStep(AsyncStep, ExtraParamsMixin):
         async with self.__retry_client.request(method=method, url=url, **kwargs) as response:
             res = await response.json()
 
-        return (res, response.request_info.url)
+        return res, response.request_info.url
 
     # Disable pylint warning: method was expected to be 'non-async'
     # pylint: disable=W0236
+    # noinspection PyMethodOverriding
     async def get(self) -> List[Tuple[Dict[str, Any], yarl.URL]]:
         """
         Make GET requests.

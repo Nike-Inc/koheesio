@@ -15,6 +15,8 @@ from koheesio.spark.utils.common import (
     AnalysisException,
     Column,
     DataFrame,
+    DataFrameReader,
+    DataFrameWriter,
     DataStreamReader,
     DataStreamWriter,
     DataType,
@@ -31,7 +33,9 @@ __all__ = [
     "SparkSession",
     "AnalysisException",
     "DataType",
+    "DataFrameReader",
     "DataStreamReader",
+    "DataFrameWriter",
     "DataStreamWriter",
     "StreamingQuery",
 ]

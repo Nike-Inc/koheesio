@@ -25,7 +25,7 @@ class RowNumberDedup(ColumnsTransformation):
     the top-row_number row for each group of duplicates.
     The row_number of each row can be stored in a specified target column or a default column named
     "meta_row_number_column". The class also provides an option to preserve meta columns
-    (like the row_numberk column) in the output DataFrame.
+    (like the `row_number` column) in the output DataFrame.
 
     Attributes
     ----------

@@ -2,9 +2,9 @@
 This module provides classes for asynchronous steps in the koheesio package.
 """
 
+from typing import Dict, Union
 from abc import ABC
 from asyncio import iscoroutine
-from typing import Dict, Union
 
 from koheesio.steps import Step, StepMetaClass, StepOutput
 
@@ -16,11 +16,9 @@ class AsyncStepMetaClass(StepMetaClass):
     It inherits from the StepMetaClass and provides additional functionality for
     executing asynchronous steps.
 
-    Attributes:
-        None
-
-    Methods:
-        _execute_wrapper: Wrapper method for executing asynchronous steps.
+    Methods
+    -------
+    _execute_wrapper: Wrapper method for executing asynchronous steps.
 
     """
 
@@ -87,6 +85,7 @@ class AsyncStepOutput(Step.Output):
         return self
 
 
+# noinspection PyUnresolvedReferences
 class AsyncStep(Step, ABC, metaclass=AsyncStepMetaClass):
     """
     Asynchronous step class that inherits from Step and uses the AsyncStepMetaClass metaclass.
