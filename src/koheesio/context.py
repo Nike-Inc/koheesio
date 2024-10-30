@@ -13,10 +13,10 @@ For a comprehensive guide on the usage, examples, and additional features of the
 
 from __future__ import annotations
 
-import re
+from typing import Any, Dict, Iterator, Union
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Dict, Iterator, Union
+import re
 
 import jsonpickle  # type: ignore[import-untyped]
 import tomli

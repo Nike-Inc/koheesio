@@ -3,13 +3,12 @@ from textwrap import dedent
 from unittest import mock
 
 import chispa
-import pytest
 from conftest import await_job_completion
+import pytest
 
 import pydantic
 
 from koheesio.integrations.snowflake import SnowflakeRunQueryPython
-from koheesio.integrations.snowflake.test_utils import mock_query
 from koheesio.integrations.spark.snowflake import (
     SnowflakeWriter,
     SynchronizeDeltaToSnowflakeTask,

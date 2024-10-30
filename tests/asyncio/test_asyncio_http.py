@@ -1,8 +1,8 @@
 import warnings
 
-import pytest
 from aiohttp import ClientResponseError, ClientSession, TCPConnector
 from aiohttp_retry import ExponentialRetry
+import pytest
 from yarl import URL
 
 from pydantic import ValidationError

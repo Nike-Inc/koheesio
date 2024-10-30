@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import io
-import warnings
 from copy import deepcopy
 from functools import wraps
+import io
 from unittest import mock
 from unittest.mock import call, patch
+import warnings
 
 import pytest
 

@@ -304,9 +304,7 @@ def adjust_time(column: Column, operation: Operations, interval: str) -> Column:
         operation = {
             "add": "try_add",
             "subtract": "try_subtract",
-        }[
-            operation
-        ]  # type: ignore
+        }[operation]  # type: ignore
     except KeyError as e:
         raise ValueError(f"Operation '{operation}' is not valid. Must be either 'add' or 'subtract'.") from e
 

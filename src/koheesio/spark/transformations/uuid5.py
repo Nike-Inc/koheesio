@@ -1,7 +1,7 @@
 """Ability to generate UUID5 using native pyspark (no udf)"""
 
-import uuid
 from typing import Optional, Union
+import uuid
 
 from pyspark.sql import functions as f
 

@@ -1,9 +1,9 @@
-import datetime
 from typing import List, Optional
+import datetime
 
-import pytest
 from delta import DeltaTable
 from delta.tables import DeltaMergeBuilder
+import pytest
 
 from pydantic import Field
 
@@ -16,17 +16,13 @@ from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.functions import current_timestamp_utc
 from koheesio.spark.utils import SPARK_MINOR_VERSION
 from koheesio.spark.writers.delta.scd import SCD2DeltaTableWriter
+from koheesio.spark.writers.delta.utils import SparkConnectDeltaTableException
 
 pytestmark = pytest.mark.spark
-
-skip_reason = "Tests are not working with PySpark 3.5 due to delta calling _sc. Test requires pyspark version >= 4.0"
 
 
 def test_scd2_custom_logic(spark):
     from koheesio.spark.utils.connect import is_remote_session
-
-    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
-        pytest.skip(reason=skip_reason)
 
     def _get_result(target_df: DataFrame, expr: str):
         res = (
@@ -145,123 +141,160 @@ def test_scd2_custom_logic(spark):
         meta_scd2_end_time_col_name="valid_to_timestamp",
         df=source_df,
     )
-    writer.execute()
 
-    expected = {
-        "id": 4,
-        "last_updated_at": datetime.datetime(2024, 4, 1, 0, 0),
-        "valid_from_timestamp": datetime.datetime(1970, 1, 1, 0, 0),
-        "valid_to_timestamp": datetime.datetime(2999, 12, 31, 0, 0),
-        "value": "value-4",
-    }
+    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
+        with pytest.raises(SparkConnectDeltaTableException) as exc_info:
+            writer.execute()
 
-    target_df = spark.read.table(target_table)
-    result = _get_result(target_df, "id = 4")
+        assert str(exc_info.value).startswith("`DeltaTable.forName` is not supported due to delta calling _sc")
+    else:
+        writer.execute()
 
-    assert spark.table(target_table).count() == 4
-    assert spark.table(target_table).where("meta.valid_to_timestamp = '2999-12-31'").count() == 4
-    assert result == expected
+        expected = {
+            "id": 4,
+            "last_updated_at": datetime.datetime(2024, 4, 1, 0, 0),
+            "valid_from_timestamp": datetime.datetime(1970, 1, 1, 0, 0),
+            "valid_to_timestamp": datetime.datetime(2999, 12, 31, 0, 0),
+            "value": "value-4",
+        }
+
+        target_df = spark.read.table(target_table)
+        result = _get_result(target_df, "id = 4")
+
+        assert spark.table(target_table).count() == 4
+        assert spark.table(target_table).where("meta.valid_to_timestamp = '2999-12-31'").count() == 4
+        assert result == expected
 
     source_df2 = source_df.withColumn(
         "value", F.expr("CASE WHEN id = 2 THEN 'value-2-change' ELSE value END")
     ).withColumn("last_updated_at", F.expr("CASE WHEN id = 2 THEN TIMESTAMP'2024-02-02' ELSE last_updated_at END"))
 
     writer.df = source_df2
-    writer.execute()
 
-    expected_insert = {
-        "id": 2,
-        "last_updated_at": datetime.datetime(2024, 2, 2, 0, 0),
-        "valid_from_timestamp": datetime.datetime(2024, 2, 2, 0, 0),
-        "valid_to_timestamp": datetime.datetime(2999, 12, 31, 0, 0),
-        "value": "value-2-change",
-    }
+    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
+        with pytest.raises(SparkConnectDeltaTableException) as exc_info:
+            writer.execute()
 
-    expected_update = {
-        "id": 2,
-        "last_updated_at": datetime.datetime(2024, 2, 1, 0, 0),
-        "valid_from_timestamp": datetime.datetime(1970, 1, 1, 0, 0),
-        "valid_to_timestamp": datetime.datetime(2024, 2, 2, 0, 0),
-        "value": "value-2",
-    }
+        assert str(exc_info.value).startswith("`DeltaTable.forName` is not supported due to delta calling _sc")
+    else:
+        writer.execute()
 
-    result_insert = _get_result(target_df, "id = 2 and meta.valid_to_timestamp = '2999-12-31'")
-    result_update = _get_result(target_df, "id = 2 and meta.valid_from_timestamp = '1970-01-01'")
+        expected_insert = {
+            "id": 2,
+            "last_updated_at": datetime.datetime(2024, 2, 2, 0, 0),
+            "valid_from_timestamp": datetime.datetime(2024, 2, 2, 0, 0),
+            "valid_to_timestamp": datetime.datetime(2999, 12, 31, 0, 0),
+            "value": "value-2-change",
+        }
 
-    assert spark.table(target_table).count() == 5
-    assert spark.table(target_table).where("meta.valid_to_timestamp = '2999-12-31'").count() == 4
-    assert result_insert == expected_insert
-    assert result_update == expected_update
+        expected_update = {
+            "id": 2,
+            "last_updated_at": datetime.datetime(2024, 2, 1, 0, 0),
+            "valid_from_timestamp": datetime.datetime(1970, 1, 1, 0, 0),
+            "valid_to_timestamp": datetime.datetime(2024, 2, 2, 0, 0),
+            "value": "value-2",
+        }
+
+        result_insert = _get_result(target_df, "id = 2 and meta.valid_to_timestamp = '2999-12-31'")
+        result_update = _get_result(target_df, "id = 2 and meta.valid_from_timestamp = '1970-01-01'")
+
+        assert spark.table(target_table).count() == 5
+        assert spark.table(target_table).where("meta.valid_to_timestamp = '2999-12-31'").count() == 4
+        assert result_insert == expected_insert
+        assert result_update == expected_update
 
     source_df3 = source_df2.withColumn(
         "value", F.expr("CASE WHEN id = 3 THEN 'value-3-change' ELSE value END")
     ).withColumn("last_updated_at", F.expr("CASE WHEN id = 3 THEN TIMESTAMP'2024-03-02' ELSE last_updated_at END"))
 
     writer.df = source_df3
-    writer.execute()
 
-    expected_insert = {
-        "id": 3,
-        "last_updated_at": datetime.datetime(2024, 3, 2, 0, 0),
-        "valid_from_timestamp": datetime.datetime(2024, 3, 2, 0, 0),
-        "valid_to_timestamp": datetime.datetime(2999, 12, 31, 0, 0),
-        "value": "value-3-change",
-    }
+    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
+        with pytest.raises(SparkConnectDeltaTableException) as exc_info:
+            writer.execute()
 
-    expected_update = {
-        "id": 3,
-        "last_updated_at": datetime.datetime(2024, 3, 1, 0, 0),
-        "valid_from_timestamp": datetime.datetime(1970, 1, 1, 0, 0),
-        "valid_to_timestamp": datetime.datetime(2024, 3, 2, 0, 0),
-        "value": None,
-    }
+        assert str(exc_info.value).startswith("`DeltaTable.forName` is not supported due to delta calling _sc")
+    else:
+        writer.execute()
 
-    result_insert = _get_result(target_df, "id = 3 and meta.valid_to_timestamp = '2999-12-31'")
-    result_update = _get_result(target_df, "id = 3 and meta.valid_from_timestamp = '1970-01-01'")
+        expected_insert = {
+            "id": 3,
+            "last_updated_at": datetime.datetime(2024, 3, 2, 0, 0),
+            "valid_from_timestamp": datetime.datetime(2024, 3, 2, 0, 0),
+            "valid_to_timestamp": datetime.datetime(2999, 12, 31, 0, 0),
+            "value": "value-3-change",
+        }
 
-    assert spark.table(target_table).count() == 6
-    assert spark.table(target_table).where("meta.valid_to_timestamp = '2999-12-31'").count() == 4
-    assert result_insert == expected_insert
-    assert result_update == expected_update
+        expected_update = {
+            "id": 3,
+            "last_updated_at": datetime.datetime(2024, 3, 1, 0, 0),
+            "valid_from_timestamp": datetime.datetime(1970, 1, 1, 0, 0),
+            "valid_to_timestamp": datetime.datetime(2024, 3, 2, 0, 0),
+            "value": None,
+        }
+
+        result_insert = _get_result(target_df, "id = 3 and meta.valid_to_timestamp = '2999-12-31'")
+        result_update = _get_result(target_df, "id = 3 and meta.valid_from_timestamp = '1970-01-01'")
+
+        assert spark.table(target_table).count() == 6
+        assert spark.table(target_table).where("meta.valid_to_timestamp = '2999-12-31'").count() == 4
+        assert result_insert == expected_insert
+        assert result_update == expected_update
 
     source_df4 = source_df3.where("id != 4")
 
     writer.df = source_df4
-    writer.execute()
+    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
+        with pytest.raises(SparkConnectDeltaTableException) as exc_info:
+            writer.execute()
 
-    assert spark.table(target_table).count() == 6
-    assert spark.table(target_table).where("id = 4 and meta.valid_to_timestamp = '2999-12-31'").count() == 1
+        assert str(exc_info.value).startswith("`DeltaTable.forName` is not supported due to delta calling _sc")
+    else:
+        writer.execute()
+
+        assert spark.table(target_table).count() == 6
+        assert spark.table(target_table).where("id = 4 and meta.valid_to_timestamp = '2999-12-31'").count() == 1
 
     writer.orphaned_records_close = True
-    writer.execute()
+    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
+        with pytest.raises(SparkConnectDeltaTableException) as exc_info:
+            writer.execute()
 
-    assert spark.table(target_table).count() == 6
-    assert spark.table(target_table).where("id = 4 and meta.valid_to_timestamp = '2999-12-31'").count() == 0
+        assert str(exc_info.value).startswith("`DeltaTable.forName` is not supported due to delta calling _sc")
+    else:
+        writer.execute()
+
+        assert spark.table(target_table).count() == 6
+        assert spark.table(target_table).where("id = 4 and meta.valid_to_timestamp = '2999-12-31'").count() == 0
 
     source_df5 = source_df4.where("id != 5")
     writer.orphaned_records_close_ts = F.col("snapshot_at")
     writer.df = source_df5
-    writer.execute()
 
-    expected = {
-        "id": 5,
-        "last_updated_at": datetime.datetime(2024, 5, 1, 0, 0),
-        "valid_from_timestamp": datetime.datetime(1970, 1, 1, 0, 0),
-        "valid_to_timestamp": datetime.datetime(2024, 12, 31, 0, 0),
-        "value": "value-5",
-    }
-    result = _get_result(target_df, "id = 5")
+    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
+        with pytest.raises(SparkConnectDeltaTableException) as exc_info:
+            writer.execute()
 
-    assert spark.table(target_table).count() == 6
-    assert spark.table(target_table).where("id = 5 and meta.valid_to_timestamp = '2999-12-31'").count() == 0
-    assert result == expected
+        assert str(exc_info.value).startswith("`DeltaTable.forName` is not supported due to delta calling _sc")
+    else:
+        writer.execute()
+
+        expected = {
+            "id": 5,
+            "last_updated_at": datetime.datetime(2024, 5, 1, 0, 0),
+            "valid_from_timestamp": datetime.datetime(1970, 1, 1, 0, 0),
+            "valid_to_timestamp": datetime.datetime(2024, 12, 31, 0, 0),
+            "value": "value-5",
+        }
+        result = _get_result(target_df, "id = 5")
+
+        assert spark.table(target_table).count() == 6
+        assert spark.table(target_table).where("id = 5 and meta.valid_to_timestamp = '2999-12-31'").count() == 0
+        assert result == expected
 
 
 def test_scd2_logic(spark):
     from koheesio.spark.utils.connect import is_remote_session
-
-    if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
-        pytest.skip(reason=skip_reason)
 
     changes_data = [
         [("key1", "value1", "scd1-value11", "2024-05-01"), ("key2", "value2", "scd1-value21", "2024-04-01")],
@@ -400,11 +433,17 @@ def test_scd2_logic(spark):
         changes_df = spark.createDataFrame(changes, ["merge_key", "value_scd2", "value_scd1", "run_date"])
         changes_df = changes_df.withColumn("run_date", F.to_timestamp("run_date"))
         writer.df = changes_df
-        writer.execute()
-        res = (
-            spark.sql("SELECT merge_key,value_scd2, value_scd1, _scd2.* FROM scd2_test_data_set")
-            .orderBy("merge_key", "effective_time")
-            .collect()
-        )
+        if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
+            with pytest.raises(SparkConnectDeltaTableException) as exc_info:
+                writer.execute()
 
-        assert res == expected
+            assert str(exc_info.value).startswith("`DeltaTable.forName` is not supported due to delta calling _sc")
+        else:
+            writer.execute()
+            res = (
+                spark.sql("SELECT merge_key,value_scd2, value_scd1, _scd2.* FROM scd2_test_data_set")
+                .orderBy("merge_key", "effective_time")
+                .collect()
+            )
+
+            assert res == expected

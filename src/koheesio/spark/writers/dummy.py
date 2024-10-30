@@ -3,6 +3,7 @@
 from typing import Any, Dict, Union
 
 from koheesio.models import Field, PositiveInt, field_validator
+from koheesio.spark import DataFrame
 from koheesio.spark.utils import show_string
 from koheesio.spark.writers import Writer
 

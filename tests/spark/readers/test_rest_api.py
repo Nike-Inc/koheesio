@@ -1,7 +1,7 @@
-import pytest
-import requests_mock
 from aiohttp import ClientSession, TCPConnector
 from aiohttp_retry import ExponentialRetry
+import pytest
+import requests_mock
 from yarl import URL
 
 from pyspark.sql.types import MapType, StringType, StructField, StructType

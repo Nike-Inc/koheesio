@@ -1,6 +1,6 @@
-import os
 from typing import Any, List, Optional, Union
 from abc import ABC, abstractmethod
+import os
 from pathlib import PurePath
 from tempfile import TemporaryDirectory
 
@@ -435,7 +435,8 @@ class HyperFileDataFrameWriter(HyperFileWriter):
             if d_col.dataType.precision > 18:
                 # noinspection PyUnresolvedReferences
                 _df = _df.withColumn(
-                    d_col.name, col(d_col.name).cast(DecimalType(precision=18, scale=d_col.dataType.scale))  # type: ignore
+                    d_col.name,
+                    col(d_col.name).cast(DecimalType(precision=18, scale=d_col.dataType.scale)),  # type: ignore
                 )
         if len(decimal_col_names) > 0:
             _df = _df.na.fill(0.0, decimal_col_names)

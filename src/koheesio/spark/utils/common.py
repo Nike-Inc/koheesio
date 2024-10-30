@@ -2,11 +2,11 @@
 Spark Utility functions
 """
 
+from typing import Union
+from enum import Enum
 import importlib
 import inspect
 import os
-from typing import Union
-from enum import Enum
 from types import ModuleType
 
 from pyspark import sql

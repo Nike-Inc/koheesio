@@ -16,18 +16,18 @@ Classes:
 
 from __future__ import annotations
 
+from typing import Any, Callable, Optional
+from abc import abstractmethod
+from functools import partialmethod, wraps
 import inspect
 import json
 import sys
 import warnings
-from typing import Any, Callable, Union
-from abc import abstractmethod
-from functools import partialmethod, wraps
 
 import yaml
 
 from pydantic import BaseModel as PydanticBaseModel
-from pydantic import InstanceOf
+from pydantic import InstanceOf, PrivateAttr
 
 from koheesio.models import BaseModel, ConfigDict, ModelMetaclass
 
@@ -535,21 +535,21 @@ class Step(BaseModel, metaclass=StepMetaClass):
     class Output(StepOutput):
         """Output class for Step"""
 
-    __output__: Output
+    _output: Optional[Output] = PrivateAttr(default=None)
 
     @property
     def output(self) -> Output:
         """Interact with the output of the Step"""
-        if not self.__output__:
-            self.__output__ = self.Output.lazy()
-            self.__output__.name = self.name + ".Output"  # type: ignore[operator]
-            self.__output__.description = "Output for " + self.name  # type: ignore[operator]
-        return self.__output__
+        if not self._output:
+            self._output = self.Output.lazy()
+            self._output.name = self.name + ".Output"  # type: ignore
+            self._output.description = "Output for " + self.name  # type: ignore
+        return self._output
 
     @output.setter
     def output(self, value: Output) -> None:
         """Set the output of the Step"""
-        self.__output__ = value
+        self._output = value
 
     @abstractmethod
     def execute(self) -> InstanceOf[StepOutput]:
@@ -674,23 +674,6 @@ class Step(BaseModel, metaclass=StepMetaClass):
         _result = json.loads(json_str)
 
         return yaml.dump(_result)
-
-    def __getattr__(self, key: str) -> Union[Any, None]:
-        """__getattr__ dunder
-
-        Allows input to be accessed through `self.input_name`
-
-        Parameters
-        ----------
-        key: str
-            Name of the attribute to return the value of
-
-        Returns
-        -------
-        Any
-            The value of the attribute
-        """
-        return self.model_dump().get(key)
 
     @classmethod
     def from_step(cls, step: Step, **kwargs) -> InstanceOf[PydanticBaseModel]:  # type: ignore[no-untyped-def]

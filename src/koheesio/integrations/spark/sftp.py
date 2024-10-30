@@ -12,14 +12,16 @@ These modes determine how the SFTPWriter behaves when the file it is trying to w
 For more details on each mode, see the docstring of the SFTPWriteMode enum.
 """
 
-import hashlib
-import time
 from typing import Optional, Union
 from enum import Enum
+import hashlib
 from pathlib import Path
+import time
 
 from paramiko.sftp_client import SFTPClient
 from paramiko.transport import Transport
+
+from pydantic import PrivateAttr
 
 from koheesio.models import (
     Field,
@@ -152,8 +154,8 @@ class SFTPWriter(Writer):
     )
 
     # private attrs
-    __client__: SFTPClient
-    __transport__: Transport
+    _client: Optional[SFTPClient] = PrivateAttr(default=None)
+    _transport: Optional[Transport] = PrivateAttr(default=None)
 
     @model_validator(mode="before")
     def validate_path_and_file_name(cls, data: dict) -> dict:
@@ -203,26 +205,26 @@ class SFTPWriter(Writer):
 
         If the username and password are provided, use them to connect to the SFTP server.
         """
-        if not self.__transport__:
-            self.__transport__ = Transport((self.host, self.port))
+        if not self._transport:
+            self._transport = Transport((self.host, self.port))
             if self.username and self.password:
-                self.__transport__.connect(
+                self._transport.connect(
                     username=self.username.get_secret_value(), password=self.password.get_secret_value()
                 )
             else:
-                self.__transport__.connect()
-        return self.__transport__
+                self._transport.connect()
+        return self._transport
 
     @property
     def client(self) -> SFTPClient:
         """Return the SFTP client. If it doesn't exist, create it."""
-        if not self.__client__:
+        if not self._client:
             try:
-                self.__client__ = SFTPClient.from_transport(self.transport)
+                self._client = SFTPClient.from_transport(self.transport)
             except EOFError as e:
                 self.log.error(f"Failed to create SFTP client. Transport active: {self.transport.is_active()}")
                 raise e
-        return self.__client__
+        return self._client
 
     def _close_client(self) -> None:
         """Close the SFTP client and transport."""

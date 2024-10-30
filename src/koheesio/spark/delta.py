@@ -2,8 +2,8 @@
 Module for creating and managing Delta tables.
 """
 
-import warnings
 from typing import Dict, List, Optional, Union
+import warnings
 
 from py4j.protocol import Py4JJavaError  # type: ignore
 

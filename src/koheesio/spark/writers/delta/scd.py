@@ -30,6 +30,7 @@ from koheesio.spark import Column, DataFrame, SparkSession
 from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.functions import current_timestamp_utc
 from koheesio.spark.writers import Writer
+from koheesio.spark.writers.delta.utils import get_delta_table_for_name
 
 
 class SCD2DeltaTableWriter(Writer):
@@ -476,7 +477,7 @@ class SCD2DeltaTableWriter(Writer):
         """
         self.df: DataFrame
         self.spark: SparkSession
-        delta_table = DeltaTable.forName(sparkSession=self.spark, tableOrViewName=self.table.table_name)
+        delta_table = get_delta_table_for_name(spark_session=self.spark, table_name=self.table.table_name)
         src_alias, cross_alias, dest_alias = "src", "cross", "tgt"
 
         # Prepare required merge columns

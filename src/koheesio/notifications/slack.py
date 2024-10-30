@@ -2,9 +2,9 @@
 Classes to ease interaction with Slack
 """
 
+from typing import Any, Dict, Optional
 import datetime
 import json
-from typing import Any, Dict, Optional
 from textwrap import dedent
 
 from koheesio.models import ConfigDict, Field

@@ -15,10 +15,10 @@ to more arbitrary file systems (e.g., SFTP).
 
 from __future__ import annotations
 
-import gzip
 from typing import AnyStr, Literal, Optional
 from abc import ABC
 from functools import partial
+import gzip
 from os import linesep
 from tempfile import SpooledTemporaryFile
 
@@ -251,6 +251,15 @@ class PandasCsvBufferWriter(BufferWriter, ExtraParamsMixin):
         "Note: Pandas sets this default to 'infer', Koheesio sets this default to 'None' leaving the data uncompressed "
         "by default. Can be set to one of 'infer', 'gzip', 'bz2', 'zip', 'xz', 'zstd', or 'tar'. "
         "See Pandas documentation for more details.",
+    )
+    emptyValue: Optional[str] = Field(
+        default="",
+        description="The string to use for missing values. Koheesio sets this default to an empty string.",
+    )
+
+    nullValue: Optional[str] = Field(
+        default="",
+        description="The string to use for missing values. Koheesio sets this default to an empty string.",
     )
 
     # -- Pandas specific properties --

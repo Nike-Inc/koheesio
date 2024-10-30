@@ -12,9 +12,9 @@ response = HttpGetStep(url="https://google.com").execute().json_payload
 In the above example, the `response` variable will contain the JSON response from the HTTP request.
 """
 
-import json
 from typing import Any, Dict, List, Optional, Union
 from enum import Enum
+import json
 
 import requests  # type: ignore[import-untyped]
 

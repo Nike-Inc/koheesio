@@ -15,8 +15,8 @@ See class docstrings for more information.
 
 from typing import Literal
 
-import pyspark.sql.functions as f
 from pyspark.sql import Column
+import pyspark.sql.functions as f
 
 from koheesio.models import Field, ListOfColumns
 from koheesio.spark.transformations import ColumnsTransformationWithTarget

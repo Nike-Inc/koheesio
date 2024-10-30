@@ -1,8 +1,8 @@
 # flake8: noqa: F811
 from unittest import mock
 
-import pytest
 from pydantic_core._pydantic_core import ValidationError
+import pytest
 
 from koheesio.integrations.snowflake import (
     GrantPrivilegesOnObject,
@@ -158,7 +158,6 @@ class TestSnowflakeRunQueryPython:
 
 
 class TestSnowflakeBaseModel:
-
     def test_get_options_using_alias(self):
         """Test that the options are correctly generated using alias"""
         k = SnowflakeBaseModel(
