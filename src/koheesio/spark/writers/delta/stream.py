@@ -32,7 +32,5 @@ class DeltaTableStreamWriter(StreamWriter, DeltaTableWriter):
     def execute(self) -> DeltaTableWriter.Output:
         if self.batch_function:
             self.streaming_query = self.writer.start()
-        # elif self.streaming and self.is_remote_spark_session:
-        #     self.streaming_query = self.writer.start()
         else:
             self.streaming_query = self.writer.toTable(tableName=self.table.table_name)
