@@ -100,11 +100,11 @@ docs = [
   "black",
 ]
 se = [
-    "spark-expectations",
+    "spark-expectations@git+https://github.com/Nike-Inc/spark-expectations@bug/114-connect-dataframe-not-available-error#egg=spark-expectations",
 ]
 
-[tool.uv.sources]
-spark-expectations = { git = "https://github.com/Nike-Inc/spark-expectations", branch = "bug/114-connect-dataframe-not-available-error" }
+[tool.hatch.metadata]
+allow-direct-references = true
 
 
 ###  ~~~~~~~~~~~~~~~  ###
