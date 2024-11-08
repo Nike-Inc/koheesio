@@ -29,12 +29,12 @@ warn
 
 from __future__ import annotations
 
+from typing import Any, Dict, Generator, Generic, List, Optional, Tuple, TypeVar
 import inspect
 import logging
+from logging import Formatter, Logger, LogRecord, getLogger
 import os
 import sys
-from typing import Any, Dict, Generator, Generic, List, Optional, Tuple, TypeVar
-from logging import Formatter, Logger, getLogger
 from uuid import uuid4
 from warnings import warn
 
@@ -108,7 +108,7 @@ class Masked(Generic[T]):
         yield cls.validate
 
     @classmethod
-    def validate(cls, v: Any, _values):
+    def validate(cls, v: Any, _values: Any) -> Masked:
         """
         Validate the input value and return an instance of the class.
 
@@ -165,7 +165,7 @@ class LoggerIDFilter(logging.Filter):
 
     LOGGER_ID: str = str(uuid4())
 
-    def filter(self, record):
+    def filter(self, record: LogRecord) -> bool:
         record.logger_id = LoggerIDFilter.LOGGER_ID
 
         return True
@@ -240,11 +240,13 @@ class LoggingFactory:
             handler_class: logging.Handler = import_class(handler_module_class)
             handler_level = handler_conf.pop("level") if "level" in handler_conf else "WARNING"
             # noinspection PyCallingNonCallable
-            handler = handler_class(**handler_conf)
+            handler = handler_class(**handler_conf)  # type: ignore[operator]
             handler.setLevel(handler_level)
             handler.addFilter(LoggingFactory.LOGGER_FILTER)
             handler.setFormatter(LoggingFactory.LOGGER_FORMATTER)
-            LoggingFactory.LOGGER.addHandler(handler)
+
+            if LoggingFactory.LOGGER:
+                LoggingFactory.LOGGER.addHandler(handler)
 
     @staticmethod
     def get_logger(name: str, inherit_from_koheesio: bool = False) -> Logger:

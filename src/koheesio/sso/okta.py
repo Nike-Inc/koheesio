@@ -5,7 +5,7 @@ This module contains Okta integration steps.
 from __future__ import annotations
 
 from typing import Dict, Optional, Union
-from logging import Filter
+from logging import Filter, LogRecord
 
 from requests import HTTPError
 
@@ -26,7 +26,7 @@ class Okta(HttpPostStep):
     )
 
     @model_validator(mode="before")
-    def _set_auth_param(cls, v):
+    def _set_auth_param(cls, v: dict) -> dict:
         """
         Assign auth parameter with Okta client and secret to the params dictionary.
         If auth parameter already exists, it will be overwritten.
@@ -43,7 +43,7 @@ class LoggerOktaTokenFilter(Filter):
         self.__okta_object = okta_object
         super().__init__(name=name)
 
-    def filter(self, record):
+    def filter(self, record: LogRecord) -> bool:
         # noinspection PyUnresolvedReferences
         if token := self.__okta_object.output.token:
             token_value = token.get_secret_value()
@@ -79,13 +79,13 @@ class OktaAccessToken(Okta):
 
         token: Optional[SecretStr] = Field(default=None, description="Okta authentication token")
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs):  # type: ignore[no-untyped-def]
         _logger = LoggingFactory.get_logger(name=self.__class__.__name__, inherit_from_koheesio=True)
         logger_filter = LoggerOktaTokenFilter(okta_object=self)
         _logger.addFilter(logger_filter)
         super().__init__(**kwargs)
 
-    def execute(self):
+    def execute(self) -> None:
         """
         Execute an HTTP Post call to Okta service and retrieve the access token.
         """
@@ -97,7 +97,11 @@ class OktaAccessToken(Okta):
         raw_payload = self.output.raw_payload
 
         if status_code != 200:
-            raise HTTPError(f"Request failed with '{status_code}' code. Payload: {raw_payload}")
+            raise HTTPError(
+                f"Request failed with '{status_code}' code. Payload: {raw_payload}",
+                response=self.output.response_raw,
+                request=None,
+            )
 
         # noinspection PyUnresolvedReferences
         json_payload = self.output.json_payload

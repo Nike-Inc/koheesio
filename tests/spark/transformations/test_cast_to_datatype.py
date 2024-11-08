@@ -9,10 +9,10 @@ import pytest
 
 from pydantic import ValidationError
 
-from pyspark.sql import DataFrame
 from pyspark.sql import functions as f
 
 from koheesio.logger import LoggingFactory
+from koheesio.spark import DataFrame
 from koheesio.spark.transformations.cast_to_datatype import (
     CastToBinary,
     CastToBoolean,
@@ -27,7 +27,7 @@ from koheesio.spark.transformations.cast_to_datatype import (
     CastToString,
     CastToTimestamp,
 )
-from koheesio.spark.utils import SparkDatatype
+from koheesio.spark.utils import SparkDatatype, show_string
 
 pytestmark = pytest.mark.spark
 
@@ -165,7 +165,7 @@ def test_happy_flow(input_values, expected, df_with_all_types: DataFrame):
     target_column = cast_to_datatype.target_column
 
     # log equivalent of doing df.show()
-    log.error(f"show output_df: \n{output_df.select(col, target_column)._jdf.showString(20, 20, False)}")
+    log.info(f"show output_df: \n{show_string(output_df.select(col, target_column), 20, 20, False)}")
 
     actual = [row[target_column] for row in output_df.select(target_column).collect()][0]
     assert actual == expected
@@ -385,7 +385,7 @@ def test_cast_to_specific_type(klass, expected, df_with_all_types):
     actual = output_df.head().asDict()
 
     # log equivalent of doing df.show()
-    log.error(f"show actual: \n{output_df._jdf.showString(20, 20, False)}")
+    log.info(f"show output_df: \n{show_string(output_df, 20, 20, False)}")
 
     assert target_columns == list(expected.keys())
     assert actual == expected
@@ -430,13 +430,11 @@ def test_decimal_precision_and_scale(precision, scale, alternative_value, expect
         .select("c1", "c2")
     )
 
-    # log equivalent of doing df.show() and df.printSchema()
-    log.error(f"show input_df: \n{input_df._jdf.showString(20, 20, False)}")
-    log.error(f"printSchema input_df: \n{input_df._jdf.schema().treeString()}")
+    # log equivalent of doing df.show()
+    log.info(f"show output_df: \n{show_string(input_df, 20, 20, False)}")
 
     output_df = CastToDecimal(columns=["c1", "c2"], scale=scale, precision=precision).transform(input_df)
-    log.error(f"show output_df: \n{output_df._jdf.showString(20, 20, False)}")
-    log.error(f"printSchema output_df: \n{output_df._jdf.schema().treeString()}")
+    log.info(f"show output_df: \n{show_string(output_df, 20, 20, False)}")
 
     actual = [row.asDict() for row in output_df.collect()]
     assert actual == expected

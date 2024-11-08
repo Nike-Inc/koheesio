@@ -6,9 +6,11 @@ import pytest
 from pyspark.sql.types import StringType, StructField, StructType
 
 from koheesio.spark.utils import (
+    get_column_name,
     import_pandas_based_on_pyspark_version,
     on_databricks,
     schema_struct_to_schema_str,
+    show_string,
 )
 
 
@@ -43,7 +45,7 @@ def test_on_databricks(env_var_value, expected_result):
 )
 def test_import_pandas_based_on_pyspark_version(spark_version, pandas_version, expected_error):
     with (
-        patch("koheesio.spark.utils.get_spark_minor_version", return_value=spark_version),
+        patch("koheesio.spark.utils.common.get_spark_minor_version", return_value=spark_version),
         patch("pandas.__version__", new=pandas_version),
     ):
         if expected_error:
@@ -51,3 +53,16 @@ def test_import_pandas_based_on_pyspark_version(spark_version, pandas_version, e
                 import_pandas_based_on_pyspark_version()
         else:
             import_pandas_based_on_pyspark_version()  # This should not raise an error
+
+
+def test_show_string(dummy_df):
+    actual = show_string(dummy_df, n=1, truncate=1, vertical=False)
+    assert actual == "+---+\n| id|\n+---+\n|  0|\n+---+\n"
+
+
+def test_column_name():
+    from pyspark.sql.functions import col
+
+    name = "my_column"
+    column = col(name)
+    assert get_column_name(column) == name

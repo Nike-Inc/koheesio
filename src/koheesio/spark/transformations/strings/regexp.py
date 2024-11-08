@@ -13,8 +13,6 @@ RegexpReplace
 
 """
 
-from typing import Optional
-
 from pyspark.sql import Column
 from pyspark.sql.functions import regexp_extract, regexp_replace
 
@@ -95,13 +93,13 @@ class RegexpExtract(ColumnsTransformationWithTarget):
     """
 
     regexp: str = Field(default=..., description="The Java regular expression to extract")
-    index: Optional[int] = Field(
+    index: int = Field(
         default=0,
         description="When there are more groups in the match, you can indicate which one you want. "
         "0 means the whole match. 1 and above are groups within that match.",
     )
 
-    def func(self, column: Column):
+    def func(self, column: Column) -> Column:
         return regexp_extract(column, self.regexp, self.index)
 
 
@@ -154,5 +152,5 @@ class RegexpReplace(ColumnsTransformationWithTarget):
         description="String to replace matched pattern with.",
     )
 
-    def func(self, column: Column):
+    def func(self, column: Column) -> Column:
         return regexp_replace(column, self.regexp, self.replacement)

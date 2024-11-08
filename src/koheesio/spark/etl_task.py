@@ -4,15 +4,15 @@ ETL Task
 Extract -> Transform -> Load
 """
 
-from datetime import datetime
-
-from pyspark.sql import DataFrame
+import datetime
 
 from koheesio import Step
 from koheesio.models import Field, InstanceOf, conlist
+from koheesio.spark import DataFrame
 from koheesio.spark.readers import Reader
 from koheesio.spark.transformations import Transformation
 from koheesio.spark.writers import Writer
+from koheesio.utils import utc_now
 
 
 class EtlTask(Step):
@@ -86,7 +86,7 @@ class EtlTask(Step):
 
     # private attrs
     etl_date: datetime = Field(
-        default=datetime.utcnow(),
+        default_factory=utc_now,
         description="Date time when this object was created as iso format. Example: '2023-01-24T09:39:23.632374'",
     )
 
@@ -123,7 +123,7 @@ class EtlTask(Step):
         writer.write(df)
         return df
 
-    def execute(self):
+    def execute(self) -> Step.Output:
         """Run the ETL process"""
         self.log.info(f"Task started at {self.etl_date}")
 
@@ -135,7 +135,3 @@ class EtlTask(Step):
 
         # load to target
         self.output.target_df = self.load(self.output.transform_df)
-
-    def run(self):
-        """alias of execute"""
-        return self.execute()

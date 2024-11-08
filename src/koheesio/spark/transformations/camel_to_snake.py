@@ -2,8 +2,8 @@
 Class for converting DataFrame column names from camel case to snake case.
 """
 
-import re
 from typing import Optional
+import re
 
 from koheesio.models import Field, ListOfColumns
 from koheesio.spark.transformations import ColumnsTransformation
@@ -11,7 +11,7 @@ from koheesio.spark.transformations import ColumnsTransformation
 camel_to_snake_re = re.compile("([a-z0-9])([A-Z])")
 
 
-def convert_camel_to_snake(name: str):
+def convert_camel_to_snake(name: str) -> str:
     """
     Converts a string from camelCase to snake_case.
 
@@ -65,14 +65,14 @@ class CamelToSnakeTransformation(ColumnsTransformation):
 
     """
 
-    columns: Optional[ListOfColumns] = Field(
+    columns: Optional[ListOfColumns] = Field(  # type: ignore
         default="",
         alias="column",
         description="The column or columns to convert. If no columns are specified, all columns will be converted. "
         "A list of columns or a single column can be specified. For example: `['column1', 'column2']` or `'column1'` ",
     )
 
-    def execute(self):
+    def execute(self) -> ColumnsTransformation.Output:
         _df = self.df
 
         # Prepare columns input:

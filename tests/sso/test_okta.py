@@ -1,5 +1,5 @@
-import logging
 from io import StringIO
+import logging
 
 import pytest
 from requests_mock.mocker import Mocker
