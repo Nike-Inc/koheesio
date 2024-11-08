@@ -354,6 +354,11 @@ class BoxReaderBase(Box, Reader, ABC):
         description="[Optional] Set of extra parameters that should be passed to the Spark reader.",
     )
 
+    file_encoding: Optional[str] = Field(
+        default="utf-8",
+        description="[Optional] Set file encoding format. By default is utf-8."
+    )
+
     class Output(StepOutput):
         """Make default reader output optional to gracefully handle 'no-files / folder' cases."""
 
@@ -412,7 +417,7 @@ class BoxCsvFileReader(BoxReaderBase):
         for f in self.file:
             self.log.debug(f"Reading contents of file with the ID '{f}' into Spark DataFrame")
             file = self.client.file(file_id=f)
-            data = file.content().decode("utf-8").splitlines()
+            data = file.content().decode(self.file_encoding).splitlines()
             rdd = self.spark.sparkContext.parallelize(data)
             temp_df = self.spark.read.csv(rdd, header=True, schema=self.schema_, **self.params)
             temp_df = (
