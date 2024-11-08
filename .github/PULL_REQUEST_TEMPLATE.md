@@ -33,4 +33,6 @@
 - [ ] I have updated the documentation accordingly.
 - [ ] I have read the **CONTRIBUTING** document.
 - [ ] I have added tests to cover my changes.
+- [ ] I have run `make check` and resolved any linting issues.
+- [ ] I have run `make test` and all tests are passing.
 - [ ] All new and existing tests passed.
