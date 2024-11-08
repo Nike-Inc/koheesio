@@ -362,11 +362,11 @@ class BoxReaderBase(Box, Reader, ABC):
         default_factory=dict,
         description="[Optional] Set of extra parameters that should be passed to the Spark reader.",
     )
-    
+
     file_encoding: Optional[str] = Field(
-        default="utf-8",
-        description="[Optional] Set file encoding format. By default is utf-8."
+        default="utf-8", description="[Optional] Set file encoding format. By default is utf-8."
     )
+
 
 class BoxCsvFileReader(BoxReaderBase):
     """
