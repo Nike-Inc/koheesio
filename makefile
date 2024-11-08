@@ -43,7 +43,7 @@ init: hatch-install
 .PHONY: sync  ## hatch - Update dependencies if you changed project dependencies in pyproject.toml
 .PHONY: update  ## hatch - alias for sync (if you are used to poetry, thi is similar to running `poetry update`)
 sync:
-	@hatch run dev:uv sync --all-extras --dev
+	@hatch run dev:uv sync --all-extras
 update: sync
 
 #  Code Quality
