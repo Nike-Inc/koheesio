@@ -395,6 +395,7 @@ class BoxCsvFileReader(BoxReaderBase):
     ```
     """
 
+    encoding: str = Field(default="utf-8", description="Encoding of the CSV file(s)")
     file: Union[str, list[str]] = Field(default=..., description="ID or list of IDs for the files to read.")
 
     def execute(self):
@@ -412,7 +413,7 @@ class BoxCsvFileReader(BoxReaderBase):
         for f in self.file:
             self.log.debug(f"Reading contents of file with the ID '{f}' into Spark DataFrame")
             file = self.client.file(file_id=f)
-            data = file.content().decode("utf-8").splitlines()
+            data = file.content().decode(self.encoding).splitlines()
             rdd = self.spark.sparkContext.parallelize(data)
             temp_df = self.spark.read.csv(rdd, header=True, schema=self.schema_, **self.params)
             temp_df = (
@@ -456,6 +457,7 @@ class BoxCsvPathReader(BoxReaderBase):
     """
 
     path: str = Field(default=..., description="Box path")
+    encoding: str = Field(default="utf-8", description="Encoding of the CSV file(s)")
     filter: Optional[str] = Field(default=r".csv|.txt$", description="[Optional] Regexp to filter folder contents")
 
     def execute(self):
@@ -476,7 +478,7 @@ class BoxCsvPathReader(BoxReaderBase):
             raise BoxPathIsEmptyError(f"Path '{self.path}' is empty or none of files match the mask '{self.filter}'")
 
         file = [file_id.object_id for file_id in files]
-        self.output.df = BoxCsvFileReader.from_step(self, file=file).read()
+        self.output.df = BoxCsvFileReader.from_step(self, file=file, encoding=self.encoding).read()
         self.output.file = file  # e.g. if files should be archived after pipeline is successful
 
 
