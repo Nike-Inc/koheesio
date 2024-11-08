@@ -362,7 +362,11 @@ class BoxReaderBase(Box, Reader, ABC):
         default_factory=dict,
         description="[Optional] Set of extra parameters that should be passed to the Spark reader.",
     )
-
+    
+    file_encoding: Optional[str] = Field(
+        default="utf-8",
+        description="[Optional] Set file encoding format. By default is utf-8."
+    )
 
 class BoxCsvFileReader(BoxReaderBase):
     """
@@ -412,7 +416,7 @@ class BoxCsvFileReader(BoxReaderBase):
         for f in self.file:
             self.log.debug(f"Reading contents of file with the ID '{f}' into Spark DataFrame")
             file = self.client.file(file_id=f)
-            data = file.content().decode("utf-8")
+            data = file.content().decode(self.file_encoding)
 
             data_buffer = StringIO(data)
             temp_df_pandas = pd.read_csv(data_buffer, header=0, dtype=str if not self.schema_ else None, **self.params)  # type: ignore
