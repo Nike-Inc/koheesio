@@ -11,9 +11,6 @@ PROJECT_ROOT = get_project_root()
 
 pytestmark = pytest.mark.spark
 
-if pyspark.__version__.startswith("3.5"):
-    pytestmark = pytest.mark.skip("Spark Expectations is not supported for Spark 3.5")
-
 
 class TestSparkExpectationsTransform:
     """
