@@ -99,9 +99,7 @@ docs = [
   "pymdown-extensions>=10.7.0",
   "black",
 ]
-se = [
-    "spark-expectations@git+https://github.com/Nike-Inc/spark-expectations@bug/114-connect-dataframe-not-available-error#egg=spark-expectations",
-]
+se = ["spark-expectations>=2.2.1,<2.3.0"]
 
 [tool.hatch.metadata]
 allow-direct-references = true
