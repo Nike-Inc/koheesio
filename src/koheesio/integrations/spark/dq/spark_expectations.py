@@ -15,14 +15,9 @@ from spark_expectations.core.expectations import (
 
 from pydantic import Field
 
-import pyspark
-
 from koheesio.spark import DataFrame
 from koheesio.spark.transformations import Transformation
 from koheesio.spark.writers import BatchOutputMode
-
-if pyspark.__version__.startswith("3.5"):
-    raise ImportError("Spark Expectations is not supported for Spark 3.5")
 
 
 class SparkExpectationsTransformation(Transformation):

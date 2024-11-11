@@ -60,16 +60,11 @@ box = ["boxsdk[jwt]==3.8.1"]
 pandas = ["pandas>=1.3", "setuptools", "numpy<2.0.0", "pandas-stubs"]
 pyspark = ["pyspark>=3.2.0", "pyarrow>13"]
 pyspark_connect = ["pyspark[connect]>=3.5"]
-se = ["spark-expectations>=2.1.0"]
-# SFTP dependencies in to_csv line_iterator
 sftp = ["paramiko>=2.6.0"]
 delta = ["delta-spark>=2.2"]
 excel = ["openpyxl>=3.0.0"]
-# Tableau dependencies
 tableau = ["tableauhyperapi>=0.0.19484", "tableauserverclient>=0.25"]
-# Snowflake dependencies
 snowflake = ["snowflake-connector-python>=3.12.0"]
-# Development dependencies
 dev = ["ruff", "mypy", "pylint", "colorama", "types-PyYAML", "types-requests"]
 test = [
   "chispa",
@@ -104,6 +99,10 @@ docs = [
   "pymdown-extensions>=10.7.0",
   "black",
 ]
+se = ["spark-expectations>=2.2.1,<2.3.0"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 
 ###  ~~~~~~~~~~~~~~~  ###
@@ -237,14 +236,15 @@ features = [
   "async",
   "async_http",
   "box",
+  "delta",
+  "dev",
+  "excel",
   "pandas",
   "pyspark",
+  "se",
   "sftp",
-  "delta",
-  "excel",
   "snowflake",
   "tableau",
-  "dev",
   "test",
 ]
 
@@ -416,7 +416,7 @@ features = [
   "box",
   "pandas",
   "pyspark",
-  #   "se",
+  "se",
   "sftp",
   "snowflake",
   "delta",
