@@ -232,7 +232,7 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
 
         return self.__merge(merge_builder=builder)
 
-    def _get_merge_builder(self, provided_merge_builder: DeltaMergeBuilder = None) -> DeltaMergeBuilder:
+    def _get_merge_builder(self, provided_merge_builder: DeltaMergeBuilder = None) -> "DeltaMergeBuilder":
         """Resolves the merge builder. If provided, it will be used, otherwise it will be created from the args"""
 
         # A merge builder has been already created - case for merge_all
@@ -250,6 +250,11 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
         if merge_builder:
             if isinstance(merge_builder, DeltaMergeBuilder):
                 return merge_builder
+
+            if type(merge_builder).__name__ == "DeltaMergeBuilder":
+                # This check is to account for the case when the merge_builder is not a DeltaMergeBuilder instance, but
+                # still a compatible object
+                return merge_builder  # type: ignore
 
             if isinstance(merge_builder, list) and "merge_cond" in self.params:  # type: ignore
                 return self._merge_builder_from_args()
