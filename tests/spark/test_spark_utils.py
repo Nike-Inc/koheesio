@@ -31,9 +31,7 @@ class TestGetActiveSession:
             # make sure that spark session is not found
             patch("pyspark.sql.SparkSession.getActiveSession", return_value=None),
         ):
-            session = MagicMock(
-                SparkSession=MagicMock(getActiveSession=MagicMock(return_value=None))
-            )
+            session = MagicMock(SparkSession=MagicMock(getActiveSession=MagicMock(return_value=None)))
             with patch.dict("sys.modules", {"pyspark.sql.connect": session}):
                 with pytest.raises(
                     RuntimeError,
@@ -92,9 +90,7 @@ def test_get_spark_minor_version():
 
 
 def test_schema_struct_to_schema_str():
-    struct_schema = StructType(
-        [StructField("a", StringType()), StructField("b", StringType())]
-    )
+    struct_schema = StructType([StructField("a", StringType()), StructField("b", StringType())])
     val = schema_struct_to_schema_str(struct_schema)
     assert val == "a STRING,\nb STRING"
     assert schema_struct_to_schema_str(None) == ""
@@ -126,9 +122,7 @@ def test_on_databricks(env_var_value, expected_result):
         ),  # PySpark not 3.3, pandas < 2, should raise an error
     ],
 )
-def test_import_pandas_based_on_pyspark_version(
-    spark_version, pandas_version, expected_error
-):
+def test_import_pandas_based_on_pyspark_version(spark_version, pandas_version, expected_error):
     with (
         patch(
             "koheesio.spark.utils.common.get_spark_minor_version",

@@ -147,7 +147,6 @@ class DateTimeColumn(SparkColumn):
         A valid value is a string that can be parsed by the `interval` function in Spark SQL.
         See https://spark.apache.org/docs/latest/sql-ref-datetime-pattern.html#interval-literal
         """
-        print(f"__add__: {value = }")
         return adjust_time(self, operation="add", interval=value)
 
     def __sub__(self, value: str) -> Column:

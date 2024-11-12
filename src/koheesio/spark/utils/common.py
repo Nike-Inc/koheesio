@@ -119,13 +119,9 @@ if check_if_pyspark_connect_is_supported():
     ParseException = (CapturedParseException, ConnectParseException)
     DataType = Union[SqlDataType, ConnectDataType]
     DataFrameReader = Union[sql.readwriter.DataFrameReader, DataFrameReader]
-    DataStreamReader = Union[
-        sql.streaming.readwriter.DataStreamReader, DataStreamReader
-    ]
+    DataStreamReader = Union[sql.streaming.readwriter.DataStreamReader, DataStreamReader]
     DataFrameWriter = Union[sql.readwriter.DataFrameWriter, DataFrameWriter]
-    DataStreamWriter = Union[
-        sql.streaming.readwriter.DataStreamWriter, DataStreamWriter
-    ]
+    DataStreamWriter = Union[sql.streaming.readwriter.DataStreamWriter, DataStreamWriter]
     StreamingQuery = StreamingQuery
 else:
     """Import the regular PySpark modules if the current version of PySpark does not support the connect module"""
@@ -160,9 +156,8 @@ else:
 
 def get_active_session() -> SparkSession:  # type: ignore
     """Get the active Spark session"""
-    print("Entering get_active_session")
     if check_if_pyspark_connect_is_supported():
-        from pyspark.sql.connect import SparkSession as _ConnectSparkSession
+        from pyspark.sql.connect.session import SparkSession as _ConnectSparkSession
 
         session = _ConnectSparkSession.getActiveSession() or sql.SparkSession.getActiveSession()  # type: ignore
     else:
@@ -297,18 +292,14 @@ def spark_data_type_is_array(data_type: DataType) -> bool:  # type: ignore
 
 def spark_data_type_is_numeric(data_type: DataType) -> bool:  # type: ignore
     """Check if the column's dataType is of type ArrayType"""
-    return isinstance(
-        data_type, (IntegerType, LongType, FloatType, DoubleType, DecimalType)
-    )
+    return isinstance(data_type, (IntegerType, LongType, FloatType, DoubleType, DecimalType))
 
 
 def schema_struct_to_schema_str(schema: StructType) -> str:
     """Converts a StructType to a schema str"""
     if not schema:
         return ""
-    return ",\n".join(
-        [f"{field.name} {field.dataType.typeName().upper()}" for field in schema.fields]
-    )
+    return ",\n".join([f"{field.name} {field.dataType.typeName().upper()}" for field in schema.fields])
 
 
 def import_pandas_based_on_pyspark_version() -> ModuleType:
@@ -323,9 +314,7 @@ def import_pandas_based_on_pyspark_version() -> ModuleType:
         pyspark_version = get_spark_minor_version()
         pandas_version = pd.__version__
 
-        if (pyspark_version < 3.4 and pandas_version >= "2") or (
-            pyspark_version >= 3.4 and pandas_version < "2"
-        ):
+        if (pyspark_version < 3.4 and pandas_version >= "2") or (pyspark_version >= 3.4 and pandas_version < "2"):
             raise ImportError(
                 f"For PySpark {pyspark_version}, "
                 f"please install Pandas version {'< 2' if pyspark_version < 3.4 else '>= 2'}"
@@ -390,10 +379,7 @@ def get_column_name(col: Column) -> str:  # type: ignore
         # In case of a 'regular' Column object, we can directly access the name attribute through the _jc attribute
         # noinspection PyProtectedMember
         name = col._jc.toString()  # type: ignore[operator]
-    elif any(
-        cls.__module__ == "pyspark.sql.connect.column"
-        for cls in inspect.getmro(col.__class__)
-    ):
+    elif any(cls.__module__ == "pyspark.sql.connect.column" for cls in inspect.getmro(col.__class__)):
         # noinspection PyProtectedMember
         name = col._expr.name()
     else:
