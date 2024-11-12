@@ -32,7 +32,7 @@ class TestGetActiveSession:
             patch("pyspark.sql.SparkSession.getActiveSession", return_value=None),
         ):
             session = MagicMock(SparkSession=MagicMock(getActiveSession=MagicMock(return_value=None)))
-            with patch.dict("sys.modules", {"pyspark.sql.connect": session}):
+            with patch.dict("sys.modules", {"pyspark.sql.connect.session": session}):
                 with pytest.raises(
                     RuntimeError,
                     match="No active Spark session found. Please create a Spark session before using module "
