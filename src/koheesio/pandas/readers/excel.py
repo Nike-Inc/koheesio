@@ -45,7 +45,7 @@ class ExcelReader(Reader, ExtraParamsMixin):
     sheet_name: str = Field(default="Sheet1", description="The name of the sheet to read")
     header: Optional[Union[int, List[int]]] = Field(default=0, description="Row(s) to use as the column names")
 
-    def execute(self):
+    def execute(self) -> Reader.Output:
         extra_params = self.params or {}
         extra_params.pop("spark", None)
         self.output.df = pd.read_excel(self.path, sheet_name=self.sheet_name, header=self.header, **extra_params)

@@ -8,14 +8,16 @@ DeltaTableStreamReader
     Reads data from a Delta table and returns a DataStream
 """
 
+from __future__ import annotations
+
 from typing import Any, Dict, Optional, Union
 
-import pyspark.sql.functions as f
-from pyspark.sql import Column, DataFrameReader
-from pyspark.sql.streaming import DataStreamReader
+from pyspark.sql import DataFrameReader
+from pyspark.sql import functions as f
 
 from koheesio.logger import LoggingFactory
 from koheesio.models import Field, ListOfColumns, field_validator, model_validator
+from koheesio.spark import Column, DataStreamReader
 from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.readers import Reader
 from koheesio.utils import get_random_string
@@ -76,7 +78,7 @@ class DeltaTableReader(Reader):
         ignoreChanges: re-process updates if files had to be rewritten in the source table due to a data changing
         operation such as UPDATE, MERGE INTO, DELETE (within partitions), or OVERWRITE. Unchanged rows may still be
         emitted, therefore your downstream consumers should be able to handle duplicates. Deletes are not propagated
-        downstream. ignoreChanges subsumes ignoreDeletes. Therefore if you use ignoreChanges, your stream will not be
+        downstream. ignoreChanges subsumes ignoreDeletes. Therefore, if you use ignoreChanges, your stream will not be
         disrupted by either deletions or updates to the source table.
 
     """
@@ -160,15 +162,15 @@ class DeltaTableReader(Reader):
     )
 
     # private attrs
-    __temp_view_name__ = None
+    __temp_view_name__: Optional[str] = None
 
     @property
-    def temp_view_name(self):
+    def temp_view_name(self) -> str:
         """Get the temporary view name for the dataframe for SQL queries"""
         return self.__temp_view_name__
 
     @field_validator("table")
-    def _validate_table_name(cls, tbl: Union[DeltaTableStep, str]):
+    def _validate_table_name(cls, tbl: Union[DeltaTableStep, str]) -> DeltaTableStep:
         """Validate the table name provided as a string or a DeltaTableStep instance."""
         if isinstance(tbl, str):
             return DeltaTableStep(table=tbl)
@@ -177,7 +179,7 @@ class DeltaTableReader(Reader):
         raise AttributeError(f"Table name provided cannot be processed as a Table : {tbl}")
 
     @model_validator(mode="after")
-    def _validate_starting_version_and_timestamp(self):
+    def _validate_starting_version_and_timestamp(self) -> "DeltaTableReader":
         """Validate 'starting_version' and 'starting_timestamp' - Only one of each should be provided"""
         starting_version = self.starting_version
         starting_timestamp = self.starting_timestamp
@@ -199,7 +201,7 @@ class DeltaTableReader(Reader):
         return self
 
     @model_validator(mode="after")
-    def _validate_ignore_deletes_and_changes_and_skip_commits(self):
+    def _validate_ignore_deletes_and_changes_and_skip_commits(self) -> "DeltaTableReader":
         """Validate 'ignore_deletes' and 'ignore_changes' - Only one of each should be provided"""
         ignore_deletes = self.ignore_deletes
         ignore_changes = self.ignore_changes
@@ -214,7 +216,7 @@ class DeltaTableReader(Reader):
         return self
 
     @model_validator(mode="before")
-    def _warn_on_streaming_options_without_streaming(cls, options: Dict):
+    def _warn_on_streaming_options_without_streaming(cls, options: Dict) -> Dict:
         """throws a warning if streaming options were provided, but streaming was not set to true"""
         streaming_options = [val for opt, val in options.items() if opt in STREAMING_ONLY_OPTIONS]
         streaming_toggled_on = options.get("streaming")
@@ -229,7 +231,7 @@ class DeltaTableReader(Reader):
         return options
 
     @model_validator(mode="after")
-    def set_temp_view_name(self):
+    def set_temp_view_name(self) -> "DeltaTableReader":
         """Set a temporary view name for the dataframe for SQL queries"""
         table_name = self.table.table
         vw_name = get_random_string(prefix=f"tmp_{table_name}")
@@ -237,9 +239,10 @@ class DeltaTableReader(Reader):
         return self
 
     @property
-    def view(self):
+    def view(self) -> str:
         """Create a temporary view of the dataframe for SQL queries"""
         temp_view_name = self.temp_view_name
+
         if (output_df := self.output.df) is None:
             self.log.warning(
                 "Attempting to createTempView without any data being present. Please run .execute() or .read() first. "
@@ -247,6 +250,7 @@ class DeltaTableReader(Reader):
             )
         else:
             output_df.createOrReplaceTempView(temp_view_name)
+
         return temp_view_name
 
     def get_options(self) -> Dict[str, Any]:
@@ -273,7 +277,7 @@ class DeltaTableReader(Reader):
         else:
             pass  # there are none... for now :)
 
-        def normalize(v: Union[str, bool]):
+        def normalize(v: Union[str, bool]) -> str:
             """normalize values"""
             # True becomes "true", False becomes "false"
             v = str(v).lower() if isinstance(v, bool) else v
@@ -300,10 +304,10 @@ class DeltaTableReader(Reader):
             reader = reader.option(key, value)
         return reader
 
-    def execute(self):
+    def execute(self) -> Reader.Output:
         df = self.reader.table(self.table.table_name)
         if self.filter_cond is not None:
-            df = df.filter(f.expr(self.filter_cond) if isinstance(self.filter_cond, str) else self.filter_cond)
+            df = df.filter(f.expr(self.filter_cond) if isinstance(self.filter_cond, str) else self.filter_cond)  # type: ignore
         if self.columns is not None:
             df = df.select(*self.columns)
         self.output.df = df

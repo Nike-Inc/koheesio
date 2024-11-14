@@ -1,5 +1,5 @@
-import pytest
 from chispa import assert_df_equality
+import pytest
 
 from pyspark.sql.types import *
 

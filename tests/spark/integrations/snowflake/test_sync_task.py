@@ -1,21 +1,21 @@
 from datetime import datetime
+from textwrap import dedent
 from unittest import mock
 
 import chispa
-import pytest
 from conftest import await_job_completion
+import pytest
 
 import pydantic
 
-from pyspark.sql import DataFrame
-
-from koheesio.spark.delta import DeltaTableStep
-from koheesio.spark.readers.delta import DeltaTableReader
-from koheesio.spark.snowflake import (
-    RunQuery,
+from koheesio.integrations.snowflake import SnowflakeRunQueryPython
+from koheesio.integrations.spark.snowflake import (
     SnowflakeWriter,
     SynchronizeDeltaToSnowflakeTask,
 )
+from koheesio.spark import DataFrame
+from koheesio.spark.delta import DeltaTableStep
+from koheesio.spark.readers.delta import DeltaTableReader
 from koheesio.spark.writers import BatchOutputMode, StreamingOutputMode
 from koheesio.spark.writers.delta import DeltaTableWriter
 from koheesio.spark.writers.stream import ForEachBatchStreamWriter
@@ -23,7 +23,6 @@ from koheesio.spark.writers.stream import ForEachBatchStreamWriter
 pytestmark = pytest.mark.spark
 
 COMMON_OPTIONS = {
-    "source_table": DeltaTableStep(table=""),
     "target_table": "foo.bar",
     "key_columns": [
         "Country",
@@ -126,7 +125,7 @@ class TestSnowflakeSyncTask:
         task.execute()
         chispa.assert_df_equality(task.output.target_df, df)
 
-    @mock.patch.object(RunQuery, "execute")
+    @mock.patch.object(SnowflakeRunQueryPython, "execute")
     def test_merge(
         self,
         mocked_sf_query_execute,
@@ -134,42 +133,46 @@ class TestSnowflakeSyncTask:
         foreach_batch_stream_local,
         snowflake_staging_file,
     ):
-        # Prepare Delta requirements
-        source_table = DeltaTableStep(datbase="klettern", table="test_merge")
+        # Arrange - Prepare Delta requirements
+        source_table = DeltaTableStep(database="klettern", table="test_merge")
         spark.sql(
-            f"""
-        CREATE OR REPLACE TABLE {source_table.table_name}
-        (Country STRING, NumVaccinated LONG, AvailableDoses LONG)
-        USING DELTA
-        TBLPROPERTIES ('delta.enableChangeDataFeed' = true);
-        """
+            dedent(
+                f"""
+                CREATE OR REPLACE TABLE {source_table.table_name}
+                (Country STRING, NumVaccinated LONG, AvailableDoses LONG)
+                USING DELTA
+                TBLPROPERTIES ('delta.enableChangeDataFeed' = true);
+                """
+            )
         )
 
-        # Prepare local representation of snowflake
+        # Arrange - Prepare local representation of snowflake
         task = SynchronizeDeltaToSnowflakeTask(
             streaming=True,
             synchronisation_mode=BatchOutputMode.MERGE,
-            **{**COMMON_OPTIONS, "source_table": source_table},
+            **{**COMMON_OPTIONS, "source_table": source_table, "account": "sf_account"},
         )
 
-        # Perform actions
+        # Arrange - Add data to previously empty Delta table
         spark.sql(
-            f"""INSERT INTO {source_table.table_name} VALUES
-            ("Australia", 100, 3000),
-            ("USA", 10000, 20000),
-            ("UK", 7000, 10000);
-        """
+            dedent(
+                f"""
+                INSERT INTO {source_table.table_name} VALUES
+                ("Australia", 100, 3000),
+                ("USA", 10000, 20000),
+                ("UK", 7000, 10000);
+                """
+            )
         )
 
-        # Run code
-
+        # Act - Run code
+        # Note: We are using the foreach_batch_stream_local fixture to simulate writing to a live environment
         with mock.patch.object(SynchronizeDeltaToSnowflakeTask, "writer", new=foreach_batch_stream_local):
             task.execute()
             task.writer.await_termination()
 
-        # Validate result
+        # Assert - Validate result
         df = spark.read.parquet(snowflake_staging_file).select("Country", "NumVaccinated", "AvailableDoses")
-
         chispa.assert_df_equality(
             df,
             spark.sql(f"SELECT * FROM {source_table.table_name}"),
@@ -187,7 +190,7 @@ class TestSnowflakeSyncTask:
             # Test that this call doesn't raise exception after all queries were completed
             task.writer.await_termination()
             task.execute()
-            await_job_completion()
+            await_job_completion(spark)
 
         # Validate result
         df = spark.read.parquet(snowflake_staging_file).select("Country", "NumVaccinated", "AvailableDoses")
@@ -368,6 +371,13 @@ class TestMerge:
 
 
 class TestValidations:
+    options = {**COMMON_OPTIONS}
+
+    @pytest.fixture(autouse=True, scope="class")
+    def set_spark(self, spark):
+        self.options["source_table"] = DeltaTableStep(table="<foo>")
+        yield spark
+
     @pytest.mark.parametrize(
         "sync_mode,streaming",
         [
@@ -381,7 +391,7 @@ class TestValidations:
         task = SynchronizeDeltaToSnowflakeTask(
             streaming=streaming,
             synchronisation_mode=sync_mode,
-            **COMMON_OPTIONS,
+            **self.options,
         )
 
         assert task.reader.streaming == streaming
@@ -430,21 +440,21 @@ class TestValidations:
             task = SynchronizeDeltaToSnowflakeTask(
                 streaming=streaming,
                 synchronisation_mode=sync_mode,
-                **COMMON_OPTIONS,
+                **self.options,
             )
-            print(f"{task.writer = }")
-            print(f"{type(task.writer) = }")
             assert isinstance(task.writer, expected_writer_type)
 
     def test_merge_cdf_enabled(self, spark):
         table = DeltaTableStep(database="klettern", table="sync_test_table")
         spark.sql(
-            f"""
-        CREATE OR REPLACE TABLE {table.table_name}
-        (Country STRING, NumVaccinated INT, AvailableDoses INT)
-        USING DELTA
-        TBLPROPERTIES ('delta.enableChangeDataFeed' = false);
-        """
+            dedent(
+                f"""
+                CREATE OR REPLACE TABLE {table.table_name}
+                (Country STRING, NumVaccinated INT, AvailableDoses INT)
+                USING DELTA
+                TBLPROPERTIES ('delta.enableChangeDataFeed' = false);
+                """
+            )
         )
         task = SynchronizeDeltaToSnowflakeTask(
             streaming=True,
@@ -466,12 +476,16 @@ class TestMergeQuery:
             pk_columns=["Country"],
             non_pk_columns=["NumVaccinated", "AvailableDoses"],
         )
-        expected_query = """
-        MERGE INTO target_table target
-        USING tmp_table temp ON target.Country = temp.Country
-        WHEN MATCHED AND temp._change_type = 'update_postimage' THEN UPDATE SET NumVaccinated = temp.NumVaccinated, AvailableDoses = temp.AvailableDoses
-        WHEN NOT MATCHED AND temp._change_type != 'delete' THEN INSERT (Country, NumVaccinated, AvailableDoses) VALUES (temp.Country, temp.NumVaccinated, temp.AvailableDoses)
-        """
+        expected_query = dedent(
+            """
+            MERGE INTO target_table target
+            USING tmp_table temp ON target.Country = temp.Country
+            WHEN MATCHED AND temp._change_type = 'update_postimage'
+                THEN UPDATE SET NumVaccinated = temp.NumVaccinated, AvailableDoses = temp.AvailableDoses
+            WHEN NOT MATCHED AND temp._change_type != 'delete'
+                THEN INSERT (Country, NumVaccinated, AvailableDoses)
+                VALUES (temp.Country, temp.NumVaccinated, temp.AvailableDoses)"""
+        ).strip()
 
         assert query == expected_query
 
@@ -483,12 +497,17 @@ class TestMergeQuery:
             non_pk_columns=["NumVaccinated", "AvailableDoses"],
             enable_deletion=True,
         )
-        expected_query = """
-        MERGE INTO target_table target
-        USING tmp_table temp ON target.Country = temp.Country
-        WHEN MATCHED AND temp._change_type = 'update_postimage' THEN UPDATE SET NumVaccinated = temp.NumVaccinated, AvailableDoses = temp.AvailableDoses
-        WHEN NOT MATCHED AND temp._change_type != 'delete' THEN INSERT (Country, NumVaccinated, AvailableDoses) VALUES (temp.Country, temp.NumVaccinated, temp.AvailableDoses)
-        WHEN MATCHED AND temp._change_type = 'delete' THEN DELETE"""
+        expected_query = dedent(
+            """
+            MERGE INTO target_table target
+            USING tmp_table temp ON target.Country = temp.Country
+            WHEN MATCHED AND temp._change_type = 'update_postimage'
+                THEN UPDATE SET NumVaccinated = temp.NumVaccinated, AvailableDoses = temp.AvailableDoses
+            WHEN NOT MATCHED AND temp._change_type != 'delete'
+                THEN INSERT (Country, NumVaccinated, AvailableDoses)
+                VALUES (temp.Country, temp.NumVaccinated, temp.AvailableDoses)
+            WHEN MATCHED AND temp._change_type = 'delete' THEN DELETE"""
+        ).strip()
 
         assert query == expected_query
 

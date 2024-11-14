@@ -1,5 +1,5 @@
-import json
 from typing import Optional
+import json
 from textwrap import dedent
 
 import pytest

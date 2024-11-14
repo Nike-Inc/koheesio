@@ -12,7 +12,7 @@ enhancing productivity and code maintainability.
 
 LICENSE_INFO = "Licensed as Apache 2.0"
 SOURCE = "https://github.com/Nike-Inc/koheesio"
-__version__ = "0.8.1"
+__version__ = "0.9.0rc2"
 __logo__ = (
     75,
     (
@@ -32,7 +32,7 @@ Source: {SOURCE}
 
 
 # fmt: off
-def _about():  # pragma: no cover
+def _about() -> str:  # pragma: no cover
     """Return the Koheesio logo and version/about information as a string
     Note: this code is not meant to be readable, instead it is written to be as compact as possible
     """

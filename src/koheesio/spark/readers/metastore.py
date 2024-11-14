@@ -17,5 +17,5 @@ class MetastoreReader(Reader):
 
     table: str = Field(default=..., description="Table name in spark metastore")
 
-    def execute(self):
+    def execute(self) -> Reader.Output:
         self.output.df = self.spark.table(self.table)

@@ -1,29 +1,20 @@
 from __future__ import annotations
 
-import io
-import warnings
 from copy import deepcopy
 from functools import wraps
+import io
 from unittest import mock
 from unittest.mock import call, patch
+import warnings
 
 import pytest
 
 from pydantic import ValidationError
 
-from pyspark.sql import DataFrame
-from pyspark.sql.functions import lit
-
 from koheesio.models import Field
-from koheesio.spark.transformations.transform import Transform
 from koheesio.steps import Step, StepMetaClass, StepOutput
 from koheesio.steps.dummy import DummyOutput, DummyStep
 from koheesio.utils import get_project_root
-
-
-def dummy_function(df: DataFrame):
-    return df.withColumn("hello", lit("world"))
-
 
 output_dict_1 = dict(a="foo", b=42)
 test_output_1 = DummyOutput(**output_dict_1)
@@ -35,7 +26,6 @@ lazy_output = DummyOutput.lazy()
 
 # we put the newline in the description to test that the newline is removed
 test_step = DummyStep(a="foo", b=2, description="Dummy step for testing purposes.\nwith a newline")
-test_transformation = Transform(dummy_function)
 
 PROJECT_ROOT = get_project_root()
 

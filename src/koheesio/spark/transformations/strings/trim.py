@@ -15,8 +15,8 @@ See class docstrings for more information.
 
 from typing import Literal
 
-import pyspark.sql.functions as f
 from pyspark.sql import Column
+import pyspark.sql.functions as f
 
 from koheesio.models import Field, ListOfColumns
 from koheesio.spark.transformations import ColumnsTransformationWithTarget
@@ -114,7 +114,7 @@ class Trim(ColumnsTransformationWithTarget):
         default="left-right", description="On which side to remove the spaces. Either 'left', 'right' or 'left-right'"
     )
 
-    def func(self, column: Column):
+    def func(self, column: Column) -> Column:
         if self.direction == "left":
             return f.ltrim(column)
 
