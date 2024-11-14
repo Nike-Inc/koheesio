@@ -618,7 +618,7 @@ class BoxFileWriter(BoxFolderBase):
 
     b = io.BytesIO(b"my-sample-data")
     f2 = BoxFileWriter(
-        **auth_params, path="/foo/bar", file=b, name="file.ext"
+        **auth_params, path="/foo/bar", overwrite=True, file=b, name="file.ext"
     ).execute()
     ```
     """
@@ -629,6 +629,7 @@ class BoxFileWriter(BoxFolderBase):
         description="When file path or name is provided to 'file' parameter, this will override the original name."
         "When binary stream is provided, the 'name' should be used to set the desired name for the Box file.",
     )
+    overwrite: bool = Field(default=False, description="Overwrite the file if it exists on box")
     description: Optional[str] = Field(None, description="Optional description to add to the file in Box")
 
     class Output(StepOutput):
@@ -656,13 +657,45 @@ class BoxFileWriter(BoxFolderBase):
                 _file = BytesIO(f.read())
 
         folder: Folder = BoxFolderGet.from_step(self, create_sub_folders=True).execute().folder
-        folder.preflight_check(size=0, name=_name)
 
         self.log.info(f"Uploading file '{_name}' to Box folder '{folder.get().name}'...")
-        _box_file: File = folder.upload_stream(file_stream=_file, file_name=_name, file_description=self.description)
+        _box_file: File = self.write_or_overwrite_file_with_stream(folder=folder, file_stream=_file, file_name=_name)
 
         self.output.file = _box_file
         self.output.shared_link = _box_file.get_shared_link()
 
     def execute(self) -> Output:
         self.action()
+
+    def get_file(self, folder: Folder, file_name: str) -> Union[File, None]:
+        """
+        Get the file object, with ID, if the file exisst
+        else return none
+        """
+        self.log.info(f"We are looking for {file_name}")
+
+        items = folder.get_items()
+        for item in items:
+            print(f'{item.type.capitalize()} {item.id} is named "{item.name}"')
+            if item.type == "file" and item.name == file_name:
+                self.log.info("File with the same name is found")
+                return item
+        return None
+
+    def write_or_overwrite_file_with_stream(self, folder: Folder, file_stream: IO[bytes], file_name: str) -> File:
+        """
+        Overwrite the file if it exists, else write a new file
+        Returns the new file object
+        """
+        curr_file = self.get_file(folder=folder, file_name=file_name)
+        if curr_file and self.overwrite:
+            self.log.info("Overwriting to box ...")
+            new_file = curr_file.update_contents_with_stream(file_stream=file_stream)
+        else:
+            self.log.info("Writing to box ...")
+            folder.preflight_check(size=0, name=file_name)
+            new_file = folder.upload_stream(
+                file_stream=file_stream, file_name=file_name, file_description=self.description
+            )
+
+        return new_file
