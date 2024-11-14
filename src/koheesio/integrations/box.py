@@ -676,7 +676,6 @@ class BoxFileWriter(BoxFolderBase):
 
         items = folder.get_items()
         for item in items:
-            print(f'{item.type.capitalize()} {item.id} is named "{item.name}"')
             if item.type == "file" and item.name == file_name:
                 self.log.info("File with the same name is found")
                 return item
