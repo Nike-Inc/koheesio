@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from functools import wraps
+import inspect
 import io
 from unittest import mock
 from unittest.mock import call, patch
@@ -11,6 +12,7 @@ import pytest
 
 from pydantic import ValidationError
 
+from koheesio import LoggingFactory
 from koheesio.models import Field
 from koheesio.steps import Step, StepMetaClass, StepOutput
 from koheesio.steps.dummy import DummyOutput, DummyStep
@@ -31,7 +33,10 @@ PROJECT_ROOT = get_project_root()
 
 
 class TestStepOutput:
-    @pytest.mark.parametrize("output_dict, expected", [(output_dict_1, output_dict_1), (output_dict_2, output_dict_2)])
+    @pytest.mark.parametrize(
+        "output_dict, expected",
+        [(output_dict_1, output_dict_1), (output_dict_2, output_dict_2)],
+    )
     def test_stepoutput_validate_output(self, output_dict, expected):
         """Tests that validate_output returns the expected output dict"""
         test_output = DummyOutput(**output_dict)
@@ -59,7 +64,12 @@ class TestStepOutput:
             (
                 "foo",
                 42,
-                {"a": "foo", "b": 42, "name": "DummyOutput", "description": "Dummy output for testing purposes."},
+                {
+                    "a": "foo",
+                    "b": 42,
+                    "name": "DummyOutput",
+                    "description": "Dummy output for testing purposes.",
+                },
             ),
             # test wrong type assigned
             ("foo", "invalid type", ValidationError),
@@ -159,7 +169,9 @@ class TestStep:
 
         assert step.model_dump() == dict(a="foo", description="SimpleStep", name="SimpleStep")
         assert step.execute().model_dump() == dict(
-            b="foo-some-suffix", name="SimpleStep.Output", description="Output for SimpleStep"
+            b="foo-some-suffix",
+            name="SimpleStep.Output",
+            description="Output for SimpleStep",
         )
 
         # as long as the following doesn't raise an error, we're good
@@ -180,9 +192,7 @@ class TestStep:
             b=2,
             c="foofoo",
         )
-        print(f"{actual_execute=}")
-        print(f"{actual_run=}")
-        print(f"{expected=}")
+
         assert actual_execute == actual_run == expected
 
         # 3 ways to retrieve output
@@ -283,7 +293,11 @@ class TestStep:
 
         # Check that do_execute was not called multiple times
         assert (
-            getattr(getattr(obj.execute, "_partialmethod", None), "_step_execute_wrapper_sentinel", None)
+            getattr(
+                getattr(obj.execute, "_partialmethod", None),
+                "_step_execute_wrapper_sentinel",
+                None,
+            )
             is StepMetaClass._step_execute_wrapper_sentinel
         )
         assert getattr(getattr(obj.execute, "_partialmethod", None), "_wrap_count", 0) == 1
@@ -345,6 +359,51 @@ class TestStep:
 
             assert "It's me from custom meta class" in print_output
 
+    def test_log_and_wrapper_duplication(self):
+        """
+        Test that when a step is inherited multiple times, the log and wrapper are only called once when subclasses do
+        not have explicit execute methods set.
+        """
+
+        class MyCustomParentStep(Step):
+            foo: str = Field(default=..., description="Foo")
+            bar: str = Field(default=..., description="Bar")
+
+            class Output(Step.Output):
+                baz: str = Field(default=..., description="Baz")
+
+            def execute(self) -> Output:
+                self.log.error("This should not be logged")
+                self.output.baz = self.foo + self.bar
+
+        class MyCustomChildStep(MyCustomParentStep): ...
+
+        class MyCustomGrandChildStep(MyCustomChildStep):
+            def execute(self) -> MyCustomChildStep.Output:
+                self.output.baz = self.foo + self.bar
+
+        class MyCustomGreatGrandChildStep(MyCustomGrandChildStep): ...
+
+        with (
+            patch.object(MyCustomGreatGrandChildStep, "log", autospec=True) as mock_log,
+        ):
+            obj = MyCustomGreatGrandChildStep(foo="foo", bar="bar", qux="qux")
+            obj.execute()
+
+            name = MyCustomGreatGrandChildStep.__name__
+
+            # Check that logs were called once (and only once) with the correct messages, and in the correct order
+            calls = [
+                call.info("Start running step"),
+                call.debug(f"Step Input: name='{name}' description='{name}' foo='foo' bar='bar' qux='qux'"),
+                call.debug(f"Step Output: name='{name}.Output' description='Output for {name}' baz='foobar'"),
+                call.info("Finished running step"),
+            ]
+            mock_log.assert_has_calls(calls, any_order=False)
+
+            # Check that the execute method is only wrapped once
+            assert getattr(getattr(obj.execute, "_partialmethod", None), "_wrap_count", 0) == 1
+
     @pytest.mark.parametrize("test_class", [YourClassWithCustomMeta2])
     def test_custom_metaclass_output(self, test_class):
         with patch.object(test_class, "log", autospec=True) as mock_log:
@@ -381,6 +440,7 @@ class TestStep:
                 call.debug(f"Step Output: name='{name}.Output' description='Output for {name}'"),
                 call.info("Finished running step"),
             ]
+            print(f"{mock_log.mock_calls = }")
             mock_log.assert_has_calls(calls, any_order=False)
 
     def test_output_validation(self):
