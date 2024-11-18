@@ -72,12 +72,13 @@ class StepMetaClass(ModelMetaclass):
     allowing for the execute method to be auto-decorated with do_execute
     """
 
-    # Solution to overcome issue with python>=3.11,
-    # When partialmethod is forgetting that _execute_wrapper
-    # is a method of wrapper, and it needs to pass that in as the first arg.
-    # https://github.com/python/cpython/issues/99152
     # noinspection PyPep8Naming,PyUnresolvedReferences
     class _partialmethod_with_self(partialmethod):
+        """Solution to overcome issue with python>=3.11, when partialmethod is forgetting that _execute_wrapper is a
+        method of wrapper, and it needs to pass that in as the first arg.
+        See: https://github.com/python/cpython/issues/99152
+        """
+
         def __get__(self, obj: Any, cls=None):  # type: ignore[no-untyped-def]
             return self._make_unbound_method().__get__(obj, cls)
 
