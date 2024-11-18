@@ -141,9 +141,7 @@ class AvroFileWriter(FileWriter):
     Examples
     --------
     ```python
-    writer = AvroFileWriter(
-        df=df, path="path/to/file.avro", output_mode=BatchOutputMode.APPEND
-    )
+    writer = AvroFileWriter(df=df, path="path/to/file.avro", output_mode=BatchOutputMode.APPEND)
     ```
     """
 
@@ -160,9 +158,7 @@ class JsonFileWriter(FileWriter):
     Examples
     --------
     ```python
-    writer = JsonFileWriter(
-        df=df, path="path/to/file.json", output_mode=BatchOutputMode.APPEND
-    )
+    writer = JsonFileWriter(df=df, path="path/to/file.json", output_mode=BatchOutputMode.APPEND)
     ```
     """
 
@@ -179,9 +175,7 @@ class OrcFileWriter(FileWriter):
     Examples
     --------
     ```python
-    writer = OrcFileWriter(
-        df=df, path="path/to/file.orc", output_mode=BatchOutputMode.APPEND
-    )
+    writer = OrcFileWriter(df=df, path="path/to/file.orc", output_mode=BatchOutputMode.APPEND)
     ```
     """
 
@@ -198,9 +192,7 @@ class TextFileWriter(FileWriter):
     Examples
     --------
     ```python
-    writer = TextFileWriter(
-        df=df, path="path/to/file.txt", output_mode=BatchOutputMode.APPEND
-    )
+    writer = TextFileWriter(df=df, path="path/to/file.txt", output_mode=BatchOutputMode.APPEND)
     ```
     """
 

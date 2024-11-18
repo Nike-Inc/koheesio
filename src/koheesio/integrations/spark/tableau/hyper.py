@@ -199,15 +199,9 @@ class HyperFileListWriter(HyperFileWriter):
         table_definition=TableDefinition(
             table_name=TableName("Extract", "Extract"),
             columns=[
-                TableDefinition.Column(
-                    name="string", type=SqlType.text(), nullability=NOT_NULLABLE
-                ),
-                TableDefinition.Column(
-                    name="int", type=SqlType.int(), nullability=NULLABLE
-                ),
-                TableDefinition.Column(
-                    name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE
-                ),
+                TableDefinition.Column(name="string", type=SqlType.text(), nullability=NOT_NULLABLE),
+                TableDefinition.Column(name="int", type=SqlType.int(), nullability=NULLABLE),
+                TableDefinition.Column(name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE),
             ],
         ),
         data=[
@@ -261,15 +255,9 @@ class HyperFileParquetWriter(HyperFileWriter):
         table_definition=TableDefinition(
             table_name=TableName("Extract", "Extract"),
             columns=[
-                TableDefinition.Column(
-                    name="string", type=SqlType.text(), nullability=NOT_NULLABLE
-                ),
-                TableDefinition.Column(
-                    name="int", type=SqlType.int(), nullability=NULLABLE
-                ),
-                TableDefinition.Column(
-                    name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE
-                ),
+                TableDefinition.Column(name="string", type=SqlType.text(), nullability=NOT_NULLABLE),
+                TableDefinition.Column(name="int", type=SqlType.int(), nullability=NULLABLE),
+                TableDefinition.Column(name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE),
             ],
         ),
         files=[
