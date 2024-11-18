@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from copy import deepcopy
 from functools import wraps
-import inspect
 import io
 from unittest import mock
 from unittest.mock import call, patch
@@ -12,7 +11,6 @@ import pytest
 
 from pydantic import ValidationError
 
-from koheesio import LoggingFactory
 from koheesio.models import Field
 from koheesio.steps import Step, StepMetaClass, StepOutput
 from koheesio.steps.dummy import DummyOutput, DummyStep
