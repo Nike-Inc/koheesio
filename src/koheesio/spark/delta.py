@@ -2,16 +2,15 @@
 Module for creating and managing Delta tables.
 """
 
-import warnings
 from typing import Dict, List, Optional, Union
+import warnings
 
 from py4j.protocol import Py4JJavaError  # type: ignore
 
-from pyspark.sql import DataFrame
 from pyspark.sql.types import DataType
 
 from koheesio.models import Field, field_validator, model_validator
-from koheesio.spark import AnalysisException, SparkStep
+from koheesio.spark import AnalysisException, DataFrame, SparkStep
 from koheesio.spark.utils import on_databricks
 
 
@@ -59,11 +58,6 @@ class DeltaTableStep(SparkStep):
     max_version_ts_of_last_execution(query_predicate: str = None) -> datetime.datetime
         Max version timestamp of last execution. If no timestamp is found, returns 1900-01-01 00:00:00.
         Note: will raise an error if column `VERSION_TIMESTAMP` does not exist.
-        <!---
-        FIXME: This is not working (local or on Databricks) - asked for reference implementation through
-            cop-data-engineering. Response from Sarath: New release of data common utils is coming soon in which this
-            function will be fixed. He is indicating to use read_cdc instead.
-        -->
 
     Properties
     ----------
@@ -124,7 +118,7 @@ class DeltaTableStep(SparkStep):
     )
 
     @field_validator("default_create_properties")
-    def _adjust_default_properties(cls, default_create_properties):
+    def _adjust_default_properties(cls, default_create_properties: dict) -> dict:
         """Adjust default properties based on environment."""
         if on_databricks():
             default_create_properties["delta.autoOptimize.autoCompact"] = True
@@ -136,7 +130,7 @@ class DeltaTableStep(SparkStep):
         return default_create_properties
 
     @model_validator(mode="after")
-    def _validate_catalog_database_table(self):
+    def _validate_catalog_database_table(self) -> "DeltaTableStep":
         """Validate that catalog, database/schema, and table are correctly set"""
         database, catalog, table = self.database, self.catalog, self.table
 
@@ -186,7 +180,7 @@ class DeltaTableStep(SparkStep):
         props = self.get_persisted_properties()
         return props.get("delta.enableChangeDataFeed", "false") == "true"
 
-    def add_property(self, key: str, value: Union[str, int, bool], override: bool = False):
+    def add_property(self, key: str, value: Union[str, int, bool], override: bool = False) -> None:
         """Alter table and set table property.
 
         Parameters
@@ -232,7 +226,7 @@ class DeltaTableStep(SparkStep):
         else:
             self.default_create_properties[key] = v_str
 
-    def add_properties(self, properties: Dict[str, Union[str, bool, int]], override: bool = False):
+    def add_properties(self, properties: Dict[str, Union[str, bool, int]], override: bool = False) -> None:
         """Alter table and add properties.
 
         Parameters
@@ -247,7 +241,7 @@ class DeltaTableStep(SparkStep):
             v_str = str(v) if not isinstance(v, bool) else str(v).lower()
             self.add_property(key=k, value=v_str, override=override)
 
-    def execute(self):
+    def execute(self) -> None:
         """Nothing to execute on a Table"""
 
     @property
@@ -274,7 +268,7 @@ class DeltaTableStep(SparkStep):
         return self.dataframe.columns if self.exists else None
 
     def get_column_type(self, column: str) -> Optional[DataType]:
-        """Get the type of a column in the table.
+        """Get the type of a specific column in the table.
 
         Parameters
         ----------
@@ -291,7 +285,7 @@ class DeltaTableStep(SparkStep):
     @property
     def has_change_type(self) -> bool:
         """Checks if a column named `_change_type` is present in the table"""
-        return "_change_type" in self.columns
+        return "_change_type" in self.columns  # type: ignore
 
     @property
     def exists(self) -> bool:
@@ -300,7 +294,15 @@ class DeltaTableStep(SparkStep):
         result = False
 
         try:
-            self.spark.table(self.table_name)
+            from koheesio.spark.utils.connect import is_remote_session
+
+            _df = self.spark.table(self.table_name)
+
+            if is_remote_session():
+                # In Spark remote session it is not enough to call just spark.table(self.table_name)
+                # as it will not raise an exception, we have to make action call on table to check if it exists
+                _df.take(1)
+
             result = True
         except AnalysisException as e:
             err_msg = str(e).lower()

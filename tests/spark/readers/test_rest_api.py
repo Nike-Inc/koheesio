@@ -1,14 +1,14 @@
-import pytest
-import requests_mock
 from aiohttp import ClientSession, TCPConnector
 from aiohttp_retry import ExponentialRetry
+import pytest
+import requests_mock
 from yarl import URL
 
 from pyspark.sql.types import MapType, StringType, StructField, StructType
 
 from koheesio.asyncio.http import AsyncHttpStep
 from koheesio.spark.readers.rest_api import AsyncHttpGetStep, RestApiReader
-from koheesio.steps.http import PaginatedHtppGetStep
+from koheesio.steps.http import PaginatedHttpGetStep
 
 ASYNC_BASE_URL = "http://httpbin.org"
 ASYNC_GET_ENDPOINT = URL(f"{ASYNC_BASE_URL}/get")
@@ -27,10 +27,10 @@ def mock_paginated_api():
 
 def test_paginated_api(mock_paginated_api):
     # Test that the paginated API returns all the data
-    transport = PaginatedHtppGetStep(url="https://api.example.com/data?page={page}", paginate=True, pages=3)
+    transport = PaginatedHttpGetStep(url="https://api.example.com/data?page={page}", paginate=True, pages=3)
     task = RestApiReader(transport=transport, spark_schema="id: int, page:int, value: string")
 
-    assert isinstance(task.transport, PaginatedHtppGetStep)
+    assert isinstance(task.transport, PaginatedHttpGetStep)
 
     task.execute()
 

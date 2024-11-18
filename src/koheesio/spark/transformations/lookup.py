@@ -12,10 +12,11 @@ DataframeLookup
 from typing import List, Optional, Union
 from enum import Enum
 
-import pyspark.sql.functions as f
-from pyspark.sql import Column, DataFrame
+from pyspark.sql import Column
+from pyspark.sql import functions as f
 
 from koheesio.models import BaseModel, Field, field_validator
+from koheesio.spark import DataFrame
 from koheesio.spark.transformations import Transformation
 
 
@@ -102,9 +103,7 @@ class DataframeLookup(Transformation):
         df=left_df,
         other=right_df,
         on=JoinMapping(source_column="id", joined_column="id"),
-        targets=TargetColumn(
-            target_column="value", target_column_alias="right_value"
-        ),
+        targets=TargetColumn(target_column="value", target_column_alias="right_value"),
         how=JoinType.LEFT,
     )
 
@@ -122,8 +121,8 @@ class DataframeLookup(Transformation):
     column from the `right_df` is aliased as `right_value` in the output dataframe.
     """
 
-    df: DataFrame = Field(default=None, description="The left Spark DataFrame")
-    other: DataFrame = Field(default=None, description="The right Spark DataFrame")
+    df: Optional[DataFrame] = Field(default=None, description="The left Spark DataFrame")
+    other: Optional[DataFrame] = Field(default=None, description="The right Spark DataFrame")
     on: Union[List[JoinMapping], JoinMapping] = Field(
         default=...,
         alias="join_mapping",
@@ -135,14 +134,14 @@ class DataframeLookup(Transformation):
         description="List of target columns. If only one target is passed, it can be passed as a single object.",
     )
     how: Optional[JoinType] = Field(
-        default=JoinType.LEFT, description="What type of join to perform. Defaults to left. " + JoinType.__doc__
+        default=JoinType.LEFT, description="What type of join to perform. Defaults to left. " + str(JoinType.__doc__)
     )
     hint: Optional[JoinHint] = Field(
-        default=None, description="What type of join hint to use. Defaults to None. " + JoinHint.__doc__
+        default=None, description="What type of join hint to use. Defaults to None. " + str(JoinHint.__doc__)
     )
 
     @field_validator("on", "targets")
-    def set_list(cls, value):
+    def set_list(cls, value: Union[List[JoinMapping], JoinMapping, List[TargetColumn], TargetColumn]) -> List:
         """Ensure that we can pass either a single object, or a list of objects"""
         return [value] if not isinstance(value, list) else value
 
@@ -160,8 +159,8 @@ class DataframeLookup(Transformation):
         """Execute the lookup transformation"""
         # prepare the right dataframe
         prepared_right_df = self.get_right_df().select(
-            *[join_mapping.column for join_mapping in self.on],
-            *[target.column for target in self.targets],
+            *[join_mapping.column for join_mapping in self.on],  # type: ignore
+            *[target.column for target in self.targets],  # type: ignore
         )
         if self.hint:
             prepared_right_df = prepared_right_df.hint(self.hint)
@@ -170,7 +169,7 @@ class DataframeLookup(Transformation):
         self.output.left_df = self.df
         self.output.right_df = prepared_right_df
         self.output.df = self.df.join(
-            prepared_right_df,
+            prepared_right_df,  # type: ignore
             on=[join_mapping.source_column for join_mapping in self.on],
             how=self.how,
         )
