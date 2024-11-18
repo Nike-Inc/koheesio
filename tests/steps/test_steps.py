@@ -92,7 +92,6 @@ class TestStepOutput:
                     lazy_output.validate_output()
             else:
                 actual = lazy_output.validate_output().model_dump()
-                print(f"{actual=}")
                 assert actual == expected
 
     @pytest.mark.parametrize("attribute, expected", [("a", True), ("d", False)])
@@ -440,7 +439,6 @@ class TestStep:
                 call.debug(f"Step Output: name='{name}.Output' description='Output for {name}'"),
                 call.info("Finished running step"),
             ]
-            print(f"{mock_log.mock_calls = }")
             mock_log.assert_has_calls(calls, any_order=False)
 
     def test_output_validation(self):
