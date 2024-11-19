@@ -194,22 +194,26 @@ the `pyproject.toml` entry mentioned above or installing through pip.
 ### Integrations
 
 - __Spark Expectations:__   
-    Available through the `koheesio.steps.integration.spark.dq.spark_expectations` module; installable through the `se` extra.
+    Available through the `koheesio.integrations.spark.dq.spark_expectations` module; installable through the `se` extra.
     - SE Provides Data Quality checks for Spark DataFrames.
     - For more information, refer to the [Spark Expectations docs](https://engineering.nike.com/spark-expectations).
 
-[//]: # (- **Brickflow:** Available through the `koheesio.steps.integration.workflow` module; installable through the `bf` extra.)
+[//]: # (- **Brickflow:** Available through the `koheesio.integrations.workflow` module; installable through the `bf` extra.)
 [//]: # (    - Brickflow is a workflow orchestration tool that allows you to define and execute workflows in a declarative way.)
 [//]: # (    - For more information, refer to the [Brickflow docs]&#40;https://engineering.nike.com/brickflow&#41;)
 
 - __Box__:  
-    Available through the `koheesio.integration.box` module; installable through the `box` extra.
+    Available through the `koheesio.integrations.box` module; installable through the `box` extra.
     - [Box](https://www.box.com) is a cloud content management and file sharing service for businesses.
 
 - __SFTP__:  
-    Available through the `koheesio.integration.spark.sftp` module; installable through the `sftp` extra.
+    Available through the `koheesio.integrations.spark.sftp` module; installable through the `sftp` extra.
     - SFTP is a network protocol used for secure file transfer over a secure shell.
     - The SFTP integration of Koheesio relies on [paramiko](https://www.paramiko.org/)
+
+- __Snowflake__:
+    Available through the `koheesio.integrations.snowflake` module; installable through the `snowflake` extra.
+    - [Snowflake](https://www.snowflake.com) is a cloud-based data warehousing platform.
 
 [//]: # (TODO: add implementations)
 [//]: # (## Implementations)
