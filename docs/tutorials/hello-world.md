@@ -1,6 +1,6 @@
 # Simple Examples
 
-## Ensure you set up a SparkSession before using Koheesio
+## Bring your own SparkSession
 
 The Koheesio Spark module does not set up a SparkSession for you. You need to create a SparkSession before using 
 Koheesio spark classes. This is the entry point for any Spark functionality, allowing the step to interact with the 
