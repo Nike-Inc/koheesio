@@ -20,6 +20,7 @@ class DeltaTableStep(SparkStep):
 
     DeltaTable aims to provide a simple interface to create and manage Delta tables.
     It is a wrapper around the Spark SQL API for Delta tables.
+    
 
     <!--- TODO: handle errors like this one:
     #     AnalysisException: You are trying to read a Delta table ... that does not have any columns.
