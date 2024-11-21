@@ -165,7 +165,7 @@ class DeltaTableReader(Reader):
 
     # private attrs
     __temp_view_name__: Optional[str] = None
-    __reader: Optional[DataStreamReader] = PrivateAttr(default=None)
+    __reader: Optional[Union[DataStreamReader, DataFrameReader]] = PrivateAttr(default=None)
 
     @property
     def temp_view_name(self) -> str:
