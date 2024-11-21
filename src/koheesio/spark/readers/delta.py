@@ -12,6 +12,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional, Union
 
+from pydantic import PrivateAttr
+
 from pyspark.sql import DataFrameReader
 from pyspark.sql import functions as f
 
@@ -163,6 +165,8 @@ class DeltaTableReader(Reader):
 
     # private attrs
     __temp_view_name__: Optional[str] = None
+    __stream_reader: Optional[DataStreamReader] = PrivateAttr(default=None)
+    __batch_reader: Optional[DataFrameReader] = PrivateAttr(default=None)
 
     @property
     def temp_view_name(self) -> str:
@@ -289,12 +293,27 @@ class DeltaTableReader(Reader):
     @property
     def _stream_reader(self) -> DataStreamReader:
         """Returns a basic DataStreamReader (streaming mode)"""
-        return self.spark.readStream.format("delta")
+        if not self.__stream_reader:
+            self.__stream_reader = self.spark.readStream.format("delta")
+
+        return self.__stream_reader
+
+    @_stream_reader.setter
+    def _stream_reader(self, value: DataStreamReader):
+        """Set the stream reader"""
+        self.__stream_reader = value
 
     @property
     def _batch_reader(self) -> DataFrameReader:
         """Returns a basic DataFrameReader (batch mode)"""
-        return self.spark.read.format("delta")
+        if not self.__batch_reader:
+            self.__batch_reader = self.spark.read.format("delta")
+        return self.__batch_reader
+
+    @_batch_reader.setter
+    def _batch_reader(self, value: DataFrameReader):
+        """Set the batch reader"""
+        self.__batch_reader = value
 
     @property
     def reader(self) -> Union[DataStreamReader, DataFrameReader]:
