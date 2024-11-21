@@ -19,6 +19,14 @@ from koheesio.models import BaseModel, Field, field_validator
 from koheesio.spark import DataFrame
 from koheesio.spark.transformations import Transformation
 
+__all__ = [
+    "JoinMapping",
+    "TargetColumn",
+    "JoinType",
+    "JoinHint",
+    "DataframeLookup",
+]
+
 
 class JoinMapping(BaseModel):
     """Mapping for joining two dataframes together"""
