@@ -19,6 +19,14 @@ from koheesio.models import BaseModel, Field, field_validator
 from koheesio.spark import DataFrame
 from koheesio.spark.transformations import Transformation
 
+__all__ = [
+    "JoinMapping",
+    "TargetColumn",
+    "JoinType",
+    "JoinHint",
+    "DataframeLookup",
+]
+
 
 class JoinMapping(BaseModel):
     """Mapping for joining two dataframes together"""
@@ -103,9 +111,7 @@ class DataframeLookup(Transformation):
         df=left_df,
         other=right_df,
         on=JoinMapping(source_column="id", joined_column="id"),
-        targets=TargetColumn(
-            target_column="value", target_column_alias="right_value"
-        ),
+        targets=TargetColumn(target_column="value", target_column_alias="right_value"),
         how=JoinType.LEFT,
     )
 
