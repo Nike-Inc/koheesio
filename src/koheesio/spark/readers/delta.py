@@ -12,6 +12,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional, Union
 
+from pydantic import PrivateAttr
+
 from pyspark.sql import DataFrameReader
 from pyspark.sql import functions as f
 
@@ -163,6 +165,7 @@ class DeltaTableReader(Reader):
 
     # private attrs
     __temp_view_name__: Optional[str] = None
+    __reader: Optional[Union[DataStreamReader, DataFrameReader]] = PrivateAttr(default=None)
 
     @property
     def temp_view_name(self) -> str:
@@ -286,23 +289,26 @@ class DeltaTableReader(Reader):
         # Any options with `value == None` are filtered out
         return {k: normalize(v) for k, v in options.items() if v is not None}
 
-    @property
-    def _stream_reader(self) -> DataStreamReader:
+    def __get_stream_reader(self) -> DataStreamReader:
         """Returns a basic DataStreamReader (streaming mode)"""
         return self.spark.readStream.format("delta")
 
-    @property
-    def _batch_reader(self) -> DataFrameReader:
+    def __get_batch_reader(self) -> DataFrameReader:
         """Returns a basic DataFrameReader (batch mode)"""
         return self.spark.read.format("delta")
 
     @property
     def reader(self) -> Union[DataStreamReader, DataFrameReader]:
         """Return the reader for the DeltaTableReader based on the `streaming` attribute"""
-        reader = self._stream_reader if self.streaming else self._batch_reader
-        for key, value in self.get_options().items():
-            reader = reader.option(key, value)
-        return reader
+        if not self.__reader:
+            self.__reader = self.__get_stream_reader() if self.streaming else self.__get_batch_reader()
+            self.__reader = self.__reader.options(**self.get_options())
+
+        return self.__reader
+
+    @reader.setter
+    def reader(self, value: Union[DataStreamReader, DataFrameReader]):
+        self.__reader = value
 
     def execute(self) -> Reader.Output:
         df = self.reader.table(self.table.table_name)
