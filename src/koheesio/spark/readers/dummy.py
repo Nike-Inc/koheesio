@@ -40,5 +40,5 @@ class DummyReader(Reader):
 
     range: int = Field(default=100, description="How large to make the Dataframe")
 
-    def execute(self):
+    def execute(self) -> Reader.Output:
         self.output.df = self.spark.range(self.range)

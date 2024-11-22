@@ -17,6 +17,7 @@ authors = [
   { name = "Danny Meijer", email = "danny.meijer@nike.com" },
   { name = "Mikita Sakalouski", email = "mikita.sakalouski@nike.com" },
   { name = "Maxim Mityutko", email = "maxim.mityutko@nike.com" },
+  { name = "Tone Vanden Bergh", email = "tone.vandenbergh@nike.com"},
 ]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
@@ -57,19 +58,15 @@ async_http = [
   "nest-asyncio>=1.6.0",
 ]
 box = ["boxsdk[jwt]==3.8.1"]
-pandas = ["pandas>=1.3", "setuptools", "numpy<2.0.0"]
+pandas = ["pandas>=1.3", "setuptools", "numpy<2.0.0", "pandas-stubs"]
 pyspark = ["pyspark>=3.2.0", "pyarrow>13"]
-se = ["spark-expectations>=2.1.0"]
-# SFTP dependencies in to_csv line_iterator
+pyspark_connect = ["pyspark[connect]>=3.5"]
 sftp = ["paramiko>=2.6.0"]
 delta = ["delta-spark>=2.2"]
 excel = ["openpyxl>=3.0.0"]
-# Tableau dependencies
-tableau = [
-  "tableauhyperapi>=0.0.19484",
-  "tableauserverclient>=0.25",
-]
-dev = ["black", "isort", "ruff", "mypy", "pylint", "colorama", "types-PyYAML"]
+tableau = ["tableauhyperapi>=0.0.19484", "tableauserverclient>=0.25"]
+snowflake = ["snowflake-connector-python>=3.12.0"]
+dev = ["ruff", "mypy", "pylint", "colorama", "types-PyYAML", "types-requests"]
 test = [
   "chispa",
   "coverage[toml]",
@@ -103,6 +100,10 @@ docs = [
   "pymdown-extensions>=10.7.0",
   "black",
 ]
+se = ["spark-expectations>=2.2.1,<2.3.0"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 
 ###  ~~~~~~~~~~~~~~~  ###
@@ -142,23 +143,19 @@ Run `hatch run` to run scripts in the default environment.
 
 # Code Quality
 To check and format the codebase, we use:
- - `black` for code formatting
- - `isort` for import sorting (includes colorama for colored output)
- - `ruff` for linting.
+ - `ruff` for linting, formtting and sorting imports
  - `mypy` for static type checking.
  - `pylint` for code quality checks.
 ---
 There are several ways to run style checks and formatting:
 - `hatch run black-check` will check the codebase with black without applying fixes.
 - `hatch run black-fmt` will format the codebase using black.
-- `hatch run isort-check` will check the codebase with isort without applying fixes.
-- `hatch run isort-fmt` will format the codebase using isort.
 - `hatch run ruff-check` will check the codebase with ruff without applying fixes.
 - `hatch run ruff-fmt` will format the codebase using ruff.
 - `hatch run mypy-check` will check the codebase with mypy.
 - `hatch run pylint-check` will check the codebase with pylint.
 - `hatch run check` will run all the above checks (including pylint and mypy).
-- `hatch run fmt` or `hatch run fix` will format the codebase using black, isort, and ruff.
+- `hatch run fmt` or `hatch run fix` will format the codebase using ruff.
 - `hatch run lint` will run ruff, mypy, and pylint.
 
 # Testing and Coverage
@@ -186,6 +183,7 @@ features = [
   "excel",
   "se",
   "box",
+  "snowflake",
   "tableau",
   "dev",
 ]
@@ -195,27 +193,20 @@ features = [
 # TODO: add scripts section based on Makefile
 # TODO: add bandit
 # Code Quality commands
-black-check = "black --check --diff ."
-black-fmt = "black ."
-isort-check = "isort . --check --diff --color"
-isort-fmt = "isort ."
-ruff-check = "ruff check ."
-ruff-fmt = "ruff check . --fix"
+ruff-fmt = "ruff format --check --diff ."
+ruff-fmt-fix = "ruff format ."
+ruff-check = "ruff check . --diff"
+ruff-check-fix = "ruff check . --fix"
 mypy-check = "mypy src"
 pylint-check = "pylint --output-format=colorized -d W0511 src"
-check = [
-  "- black-check",
-  "- isort-check",
-  "- ruff-check",
-  "- mypy-check",
-  "- pylint-check",
-]
-fmt = ["black-fmt", "isort-fmt", "ruff-fmt"]
+check = ["- ruff-fmt", "- ruff-check", "- mypy-check", "- pylint-check"]
+fmt = ["ruff-fmt-fix", "ruff-check-fix"]
 fix = "fmt"
 lint = ["- ruff-fmt", "- mypy-check", "pylint-check"]
 log-versions = "python --version && {env:HATCH_UV} pip freeze | grep pyspark"
 test = "- pytest{env:HATCH_TEST_ARGS:} {args} -n 2"
 spark-tests = "test -m spark"
+spark-remote-tests = "test -m spark -m \"not skip_on_remote_session\""
 non-spark-tests = "test -m \"not spark\""
 
 # scripts.run = "echo bla {env:HATCH_TEST_ARGS:} {args}"
@@ -246,22 +237,24 @@ features = [
   "async",
   "async_http",
   "box",
+  "delta",
+  "dev",
+  "excel",
   "pandas",
   "pyspark",
+  "se",
   "sftp",
-  "delta",
-  "excel",
+  "snowflake",
   "tableau",
-  "dev",
   "test",
 ]
 
 parallel = true
 retries = 2
-retry-delay = 1
+retry-delay = 3
 
 [tool.hatch.envs.hatch-test.scripts]
-run = "pytest{env:HATCH_TEST_ARGS:} {args} -n auto"
+run = "pytest{env:HATCH_TEST_ARGS:} {args}"
 run-cov = "coverage run -m pytest{env:HATCH_TEST_ARGS:} {args}"
 cov-combine = "coverage combine"
 cov-report = "coverage report"
@@ -273,11 +266,11 @@ version = ["pyspark33", "pyspark34"]
 
 [[tool.hatch.envs.hatch-test.matrix]]
 python = ["3.10"]
-version = ["pyspark33", "pyspark34", "pyspark35"]
+version = ["pyspark33", "pyspark34", "pyspark35", "pyspark35r"]
 
 [[tool.hatch.envs.hatch-test.matrix]]
 python = ["3.11", "3.12"]
-version = ["pyspark35"]
+version = ["pyspark35", "pyspark35r"]
 
 [tool.hatch.envs.hatch-test.overrides]
 matrix.version.extra-dependencies = [
@@ -299,6 +292,9 @@ matrix.version.extra-dependencies = [
   { value = "pyspark>=3.5,<3.6", if = [
     "pyspark35",
   ] },
+  { value = "pyspark[connect]>=3.5,<3.6", if = [
+    "pyspark35r",
+  ] },
 ]
 
 name.".*".env-vars = [
@@ -308,10 +304,19 @@ name.".*".env-vars = [
   { key = "KOHEESIO__PRINT_LOGO", value = "False" },
 ]
 
+name.".*(pyspark35r).*".env-vars = [
+  # enable soark connect, setting to local as it will trigger 
+  # spark to start local spark server and enbale remote session
+  { key = "SPARK_REMOTE", value = "local" },
+  { key = "SPARK_TESTING", value = "True" },
+]
+
+
 [tool.pytest.ini_options]
 addopts = "-q --color=yes --order-scope=module"
 log_level = "CRITICAL"
 testpaths = ["tests"]
+asyncio_default_fixture_loop_scope = "scope"
 markers = [
   "default: added to all tests by default if no other marker expect of standard pytest markers is present",
   "spark: mark a test as a Spark test",
@@ -325,10 +330,19 @@ filterwarnings = [
   # pyspark.pandas warnings
   "ignore:distutils.*:DeprecationWarning:pyspark.pandas.*",
   "ignore:'PYARROW_IGNORE_TIMEZONE'.*:UserWarning:pyspark.pandas.*",
+  # pydantic warnings
+  "ignore:A custom validator is returning a value other than `self`.*.*:UserWarning:pydantic.main.*",
+  "ignore:<module 'datetime' from .*.*:UserWarning:pydantic._internal.*",
+  # pyspark.sql.connect warnings
+  "ignore:is_datetime64tz_dtype.*:DeprecationWarning:pyspark.sql.connect.*",
+  "ignore:distutils.*:DeprecationWarning:pyspark.sql.connect.*",
+  # pyspark.sql.pandas warnings
   "ignore:distutils.*:DeprecationWarning:pyspark.sql.pandas.*",
   "ignore:is_datetime64tz_dtype.*:DeprecationWarning:pyspark.sql.pandas.*",
+  "ignore:is_categorical_dtype.*:DeprecationWarning:pyspark.sql.pandas.*",
+  "ignore:iteritems.*:FutureWarning:pyspark.sql.pandas.*",
   # Koheesio warnings
-  "ignore:DayTimeIntervalType .*:UserWarning:koheesio.spark.snowflake.*",
+  "ignore:DayTimeIntervalType.*:UserWarning:koheesio.spark.snowflake.*",
 ]
 
 [tool.coverage.run]
@@ -405,6 +419,7 @@ features = [
   "pyspark",
   "se",
   "sftp",
+  "snowflake",
   "delta",
   "excel",
   "tableau",
@@ -412,63 +427,12 @@ features = [
   "test",
   "docs",
 ]
-extra-dependencies = ["pyspark==3.4.*"]
 
 
 ###  ~~~~~~~~~~~~~~~~~~  ###
 #  Code Quality and Style  #
 ###  ~~~~~~~~~~~~~~~~~~  ###
 #
-[tool.black]
-line-length = 120
-target-version = ['py39', 'py310', 'py311', 'py312']
-include = '\.pyi?$'
-extend-exclude = '''
-/(
-  | tests/_data
-)/
-'''
-
-[tool.isort]
-profile = "black"
-skip = [
-  # Skip a variety of commonly ignored directories.
-  ".bzr",
-  ".direnv",
-  ".eggs",
-  ".git",
-  ".hg",
-  ".mypy_cache",
-  ".pants.d",
-  ".pytype",
-  ".ruff_cache",
-  ".svn",
-  ".venv",
-  ".venvs",
-  "__pypackages__",
-  "__research__",
-  "__notebooks__",
-  "_build",
-  "buck-out",
-  "build",
-  "dist",
-  "node_modules",
-  "venv",
-]
-force_to_top = ["__future__", "typing"]
-sections = [
-  "FUTURE",
-  "STDLIB",
-  "THIRDPARTY",
-  "PYDANTIC",
-  "PYSPARK",
-  "KOHEESIO",
-  "FIRSTPARTY",
-  "LOCALFOLDER",
-]
-known_pydantic = ["pydantic"]
-known_pyspark = ["pyspark"]
-known_koheesio = ["koheesio"]
 
 [tool.ruff]
 # https://docs.astral.sh/ruff/configuration/#using-pyprojecttoml
@@ -505,8 +469,24 @@ exclude = [
 docstring-code-format = true
 
 [tool.ruff.lint]
-# Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default.
-select = ["E", "F"]
+select = [
+  ## pycodestyle
+  "E",
+  ## Pyflakes
+  "F",
+  ## flake8-bugbear
+  # "B",
+  ## flake8-annotations
+  # "ANN",
+  ## pyupgrade
+  # "UP",
+  ## flake8-simplify
+  # "SIM",
+  ## pep8-naming
+  # "N",
+  ## isort
+  "I",
+]
 ignore = [
   "F405", # To avoid errors like '`ConfigDict` may be undefined, or defined from star imports: `pydantic`'
   "E501", # To avoid errors like 'line too long (120 > 79 characters)' -> let Black handle this instead
@@ -515,7 +495,6 @@ ignore = [
 ]
 # Unlike Flake8, default to a complexity level of 10.
 mccabe.max-complexity = 10
-
 # Allow autofix for all enabled rules (when `--fix` is provided).
 fixable = [
   "A",
@@ -568,11 +547,35 @@ unfixable = []
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
+[tool.ruff.lint.isort]
+force-to-top = ["__future__", "typing"]
+section-order = [
+  "future",
+  "standard-library",
+  "third-party",
+  "pydantic",
+  "pyspark",
+  "first-party",
+  "local-folder",
+]
+sections.pydantic = ["pydantic"]
+sections.pyspark = ["pyspark"]
+detect-same-package = true
+force-sort-within-sections = true
+
 [tool.mypy]
+python_version = "3.10"
+files = ["koheesio/**/*.py"]
+plugins = ["pydantic.mypy"]
+pretty = true
+warn_unused_configs = true
 check_untyped_defs = false
 disallow_untyped_calls = false
 disallow_untyped_defs = true
-files = ["koheesio/**/*.py"]
+warn_no_return = false
+implicit_optional = true
+allow_untyped_globals = true
+disable_error_code = ["attr-defined", "return-value", "union-attr", "override"]
 
 [tool.pylint.main]
 fail-under = 9.5

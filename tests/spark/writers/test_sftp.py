@@ -1,8 +1,8 @@
 from unittest import mock
 
 import paramiko
-import pytest
 from paramiko import SSHException
+import pytest
 
 from koheesio.integrations.spark.sftp import (
     SendCsvToSftp,

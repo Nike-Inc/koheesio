@@ -4,14 +4,14 @@ This module contains async implementation of HTTP step.
 
 from __future__ import annotations
 
+from typing import Any, Dict, List, Optional, Tuple, Union
 import asyncio
 import warnings
-from typing import Any, Dict, List, Optional, Tuple, Union
 
-import nest_asyncio
-import yarl
 from aiohttp import BaseConnector, ClientSession, TCPConnector
 from aiohttp_retry import ExponentialRetry, RetryClient, RetryOptionsBase
+import nest_asyncio  # type: ignore[import-untyped]
+import yarl
 
 from pydantic import Field, SecretStr, field_validator, model_validator
 
@@ -20,6 +20,7 @@ from koheesio.models import ExtraParamsMixin
 from koheesio.steps.http import HttpMethod
 
 
+# noinspection PyUnresolvedReferences
 class AsyncHttpStep(AsyncStep, ExtraParamsMixin):
     """
     Asynchronous HTTP step for making HTTP requests using aiohttp.
@@ -45,42 +46,44 @@ class AsyncHttpStep(AsyncStep, ExtraParamsMixin):
     Examples
     --------
     ```python
-    >>> import asyncio
-    >>> from aiohttp import ClientSession
-    >>> from aiohttp.connector import TCPConnector
-    >>> from aiohttp_retry import ExponentialRetry
-    >>> from koheesio.steps.async.http import AsyncHttpStep
-    >>> from yarl import URL
-    >>> from typing import Dict, Any, Union, List, Tuple
-    >>>
-    >>> # Initialize the AsyncHttpStep
-    >>> async def main():
-    >>>     session = ClientSession()
-    >>>     urls = [URL('https://example.com/api/1'), URL('https://example.com/api/2')]
-    >>>     retry_options = ExponentialRetry()
-    >>>     connector = TCPConnector(limit=10)
-    >>>     headers = {'Content-Type': 'application/json'}
-    >>>     step = AsyncHttpStep(
-    >>>         client_session=session,
-    >>>         url=urls,
-    >>>         retry_options=retry_options,
-    >>>         connector=connector,
-    >>>         headers=headers
-    >>>     )
-    >>>
-    >>>     # Execute the step
-    >>>     responses_urls=  await step.get()
-    >>>
-    >>>     return responses_urls
-    >>>
-    >>> # Run the main function
-    >>> responses_urls = asyncio.run(main())
+    import asyncio
+    from aiohttp import ClientSession
+    from aiohttp.connector import TCPConnector
+    from aiohttp_retry import ExponentialRetry
+    from koheesio.asyncio.http import AsyncHttpStep
+    from yarl import URL
+    from typing import Dict, Any, Union, List, Tuple
+
+
+    # Initialize the AsyncHttpStep
+    async def main():
+        session = ClientSession()
+        urls = [URL("https://example.com/api/1"), URL("https://example.com/api/2")]
+        retry_options = ExponentialRetry()
+        connector = TCPConnector(limit=10)
+        headers = {"Content-Type": "application/json"}
+        step = AsyncHttpStep(
+            client_session=session,
+            url=urls,
+            retry_options=retry_options,
+            connector=connector,
+            headers=headers,
+        )
+
+        # Execute the step
+        responses_urls = await step.get()
+
+        return responses_urls
+
+
+    # Run the main function
+    responses_urls = asyncio.run(main())
     ```
     """
 
     client_session: Optional[ClientSession] = Field(default=None, description="Aiohttp ClientSession", exclude=True)
     url: List[yarl.URL] = Field(
-        default=None,
+        default_factory=list,
         alias="urls",
         description="""Expecting list, as there is no value in executing async request for one value.
         yarl.URL is preferable, because params/data can be injected into URL instance""",
@@ -113,7 +116,7 @@ class AsyncHttpStep(AsyncStep, ExtraParamsMixin):
             default=None, description="List of responses from the API and request URL", repr=False
         )
 
-    def __tasks_generator(self, method) -> List[asyncio.Task]:
+    def __tasks_generator(self, method: HttpMethod) -> List[asyncio.Task]:
         """
         Generate a list of tasks for making HTTP requests.
 
@@ -141,7 +144,7 @@ class AsyncHttpStep(AsyncStep, ExtraParamsMixin):
         return tasks
 
     @model_validator(mode="after")
-    def _move_extra_params_to_params(self):
+    def _move_extra_params_to_params(self) -> AsyncHttpStep:
         """
         Move extra_params to params dict.
 
@@ -170,12 +173,13 @@ class AsyncHttpStep(AsyncStep, ExtraParamsMixin):
         try:
             responses_urls = await asyncio.gather(*tasks)
         finally:
-            await self.client_session.close()
+            if self.client_session:
+                await self.client_session.close()
             await self.__retry_client.close()
 
         return responses_urls
 
-    def _init_session(self):
+    def _init_session(self) -> None:
         """
         Initialize the aiohttp session and retry client.
         """
@@ -189,13 +193,13 @@ class AsyncHttpStep(AsyncStep, ExtraParamsMixin):
         )
 
     @field_validator("timeout")
-    def validate_timeout(cls, timeout):
+    def validate_timeout(cls, timeout: Any) -> None:
         """
-        Validate the 'data' field.
+        Validate the 'timeout' field.
 
         Parameters
         ----------
-        data : Any
+        timeout : Any
             The value of the 'timeout' field.
 
         Raises
@@ -206,7 +210,7 @@ class AsyncHttpStep(AsyncStep, ExtraParamsMixin):
         if timeout:
             raise ValueError("timeout is not allowed in AsyncHttpStep. Provide timeout through retry_options.")
 
-    def get_headers(self):
+    def get_headers(self) -> Union[None, dict]:
         """
         Get the request headers.
 
@@ -226,7 +230,8 @@ class AsyncHttpStep(AsyncStep, ExtraParamsMixin):
 
         return _headers or self.headers
 
-    def set_outputs(self, response):
+    # noinspection PyUnusedLocal,PyMethodMayBeStatic
+    def set_outputs(self, response) -> None:  # type: ignore[no-untyped-def]
         """
         Set the outputs of the step.
 
@@ -237,7 +242,8 @@ class AsyncHttpStep(AsyncStep, ExtraParamsMixin):
         """
         warnings.warn("set outputs is not implemented in AsyncHttpStep.")
 
-    def get_options(self):
+    # noinspection PyMethodMayBeStatic
+    def get_options(self) -> None:
         """
         Get the options of the step.
         """
@@ -245,7 +251,7 @@ class AsyncHttpStep(AsyncStep, ExtraParamsMixin):
 
     # Disable pylint warning: method was expected to be 'non-async'
     # pylint: disable=W0236
-    async def request(
+    async def request(  # type: ignore[no-untyped-def]
         self,
         method: HttpMethod,
         url: yarl.URL,
@@ -271,10 +277,11 @@ class AsyncHttpStep(AsyncStep, ExtraParamsMixin):
         async with self.__retry_client.request(method=method, url=url, **kwargs) as response:
             res = await response.json()
 
-        return (res, response.request_info.url)
+        return res, response.request_info.url
 
     # Disable pylint warning: method was expected to be 'non-async'
     # pylint: disable=W0236
+    # noinspection PyMethodOverriding
     async def get(self) -> List[Tuple[Dict[str, Any], yarl.URL]]:
         """
         Make GET requests.
@@ -337,7 +344,7 @@ class AsyncHttpStep(AsyncStep, ExtraParamsMixin):
 
         return responses_urls
 
-    def execute(self) -> AsyncHttpStep.Output:
+    def execute(self) -> None:
         """
         Execute the step.
 
@@ -364,9 +371,7 @@ class AsyncHttpStep(AsyncStep, ExtraParamsMixin):
         if self.method not in map_method_func:
             raise ValueError(f"Method {self.method} not implemented in AsyncHttpStep.")
 
-        self.output.responses_urls = asyncio.run(map_method_func[self.method]())
-
-        return self.output
+        self.output.responses_urls = asyncio.run(map_method_func[self.method]())  # type: ignore[index]
 
 
 class AsyncHttpGetStep(AsyncHttpStep):

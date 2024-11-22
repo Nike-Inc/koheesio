@@ -1,6 +1,6 @@
-import os
 from typing import Any, List, Optional, Union
 from abc import ABC, abstractmethod
+import os
 from pathlib import PurePath
 from tempfile import TemporaryDirectory
 
@@ -19,7 +19,6 @@ from tableauhyperapi import (
 
 from pydantic import Field, conlist
 
-from pyspark.sql import DataFrame
 from pyspark.sql.functions import col
 from pyspark.sql.types import (
     BooleanType,
@@ -36,9 +35,9 @@ from pyspark.sql.types import (
     TimestampType,
 )
 
-from koheesio.spark.readers import SparkStep
+from koheesio.spark import DataFrame, SparkStep
 from koheesio.spark.transformations.cast_to_datatype import CastToDatatype
-from koheesio.spark.utils import spark_minor_version
+from koheesio.spark.utils import SPARK_MINOR_VERSION
 from koheesio.steps import Step, StepOutput
 
 
@@ -79,7 +78,7 @@ class HyperFileReader(HyperFile, SparkStep):
         default=..., description="Path to the Hyper file", examples=["PurePath(~/data/my-file.hyper)"]
     )
 
-    def execute(self):
+    def execute(self) -> SparkStep.Output:
         type_mapping = {
             "date": StringType,
             "text": StringType,
@@ -175,7 +174,7 @@ class HyperFileWriter(HyperFile):
         hyper_path: PurePath = Field(default=..., description="Path to created Hyper file")
 
     @property
-    def hyper_path(self) -> Connection:
+    def hyper_path(self) -> PurePath:
         """
         Return full path to the Hyper file.
         """
@@ -186,11 +185,11 @@ class HyperFileWriter(HyperFile):
         self.log.info(f"Destination file: {hyper_path}")
         return hyper_path
 
-    def write(self):
+    def write(self) -> Output:
         self.execute()
 
     @abstractmethod
-    def execute(self):
+    def execute(self) -> Output:
         pass
 
 
@@ -210,15 +209,9 @@ class HyperFileListWriter(HyperFileWriter):
         table_definition=TableDefinition(
             table_name=TableName("Extract", "Extract"),
             columns=[
-                TableDefinition.Column(
-                    name="string", type=SqlType.text(), nullability=NOT_NULLABLE
-                ),
-                TableDefinition.Column(
-                    name="int", type=SqlType.int(), nullability=NULLABLE
-                ),
-                TableDefinition.Column(
-                    name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE
-                ),
+                TableDefinition.Column(name="string", type=SqlType.text(), nullability=NOT_NULLABLE),
+                TableDefinition.Column(name="int", type=SqlType.int(), nullability=NULLABLE),
+                TableDefinition.Column(name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE),
             ],
         ),
         data=[
@@ -274,15 +267,9 @@ class HyperFileParquetWriter(HyperFileWriter):
         table_definition=TableDefinition(
             table_name=TableName("Extract", "Extract"),
             columns=[
-                TableDefinition.Column(
-                    name="string", type=SqlType.text(), nullability=NOT_NULLABLE
-                ),
-                TableDefinition.Column(
-                    name="int", type=SqlType.int(), nullability=NULLABLE
-                ),
-                TableDefinition.Column(
-                    name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE
-                ),
+                TableDefinition.Column(name="string", type=SqlType.text(), nullability=NOT_NULLABLE),
+                TableDefinition.Column(name="int", type=SqlType.int(), nullability=NULLABLE),
+                TableDefinition.Column(name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE),
             ],
         ),
         files=[
@@ -300,7 +287,7 @@ class HyperFileParquetWriter(HyperFileWriter):
         default=..., alias="files", description="One or multiple parquet files to write to the Hyper file"
     )
 
-    def execute(self):
+    def execute(self) -> HyperFileWriter.Output:
         _file = [str(f) for f in self.file]
         array_files = "'" + "','".join(_file) + "'"
 
@@ -366,7 +353,7 @@ class HyperFileDataFrameWriter(HyperFileWriter):
 
         # Handling the TimestampNTZType for Spark 3.4+
         # Mapping both TimestampType and TimestampNTZType to NTZ type of Hyper
-        if spark_minor_version >= 3.4:
+        if SPARK_MINOR_VERSION >= 3.4:
             from pyspark.sql.types import TimestampNTZType
 
             type_mapping[TimestampNTZType()] = SqlType.timestamp
@@ -376,7 +363,7 @@ class HyperFileDataFrameWriter(HyperFileWriter):
             type_mapping[TimestampType()] = SqlType.timestamp_tz
 
         if column.dataType in type_mapping:
-            sql_type = type_mapping[column.dataType]()
+            sql_type = type_mapping[column.dataType]()  # type: ignore
         elif str(column.dataType).startswith("DecimalType"):
             # Tableau Hyper API limits the precision to 18 decimal places
             # noinspection PyUnresolvedReferences
@@ -421,11 +408,11 @@ class HyperFileDataFrameWriter(HyperFileWriter):
 
         # Handling the TimestampNTZType for Spark 3.4+
         # Any TimestampType column will be cast to TimestampNTZType for compatibility with Tableau Hyper API
-        if spark_minor_version >= 3.4:
+        if SPARK_MINOR_VERSION >= 3.4:
             from pyspark.sql.types import TimestampNTZType
 
             for t_col in timestamp_cols:
-                _df = _df.withColumn(t_col, col(t_col).cast(TimestampNTZType()))
+                _df = _df.withColumn(t_col, col(t_col).cast(TimestampNTZType()))  # type: ignore
 
         # Replace null and NaN values with 0
         if len(integer_cols) > 0:
@@ -450,14 +437,15 @@ class HyperFileDataFrameWriter(HyperFileWriter):
             if d_col.dataType.precision > 18:
                 # noinspection PyUnresolvedReferences
                 _df = _df.withColumn(
-                    d_col.name, col(d_col.name).cast(DecimalType(precision=18, scale=d_col.dataType.scale))
+                    d_col.name,
+                    col(d_col.name).cast(DecimalType(precision=18, scale=d_col.dataType.scale)),  # type: ignore
                 )
         if len(decimal_col_names) > 0:
             _df = _df.na.fill(0.0, decimal_col_names)
 
         return _df
 
-    def write_parquet(self):
+    def write_parquet(self) -> List[PurePath]:
         _path = self.path.joinpath("parquet")
         (
             self.clean_dataframe()
@@ -479,7 +467,7 @@ class HyperFileDataFrameWriter(HyperFileWriter):
                     self.log.info("Parquet file created: %s", fp)
                     return [fp]
 
-    def execute(self):
+    def execute(self) -> HyperFileWriter.Output:
         w = HyperFileParquetWriter(
             path=self.path, name=self.name, table_definition=self._table_definition, files=self.write_parquet()
         )

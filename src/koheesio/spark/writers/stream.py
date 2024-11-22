@@ -18,10 +18,9 @@ writer_to_foreachbatch
 from typing import Callable, Dict, Optional, Union
 from abc import ABC, abstractmethod
 
-from pyspark.sql.streaming import DataStreamWriter, StreamingQuery
-
 from koheesio import Step
 from koheesio.models import ConfigDict, Field, field_validator, model_validator
+from koheesio.spark import DataFrame, DataStreamWriter, StreamingQuery
 from koheesio.spark.writers import StreamingOutputMode, Writer
 from koheesio.utils import convert_str_to_bool
 
@@ -71,7 +70,7 @@ class Trigger(Step):
     model_config = ConfigDict(validate_default=False, extra="forbid")
 
     @classmethod
-    def _all_triggers_with_alias(cls):
+    def _all_triggers_with_alias(cls) -> list:
         """Internal method to return all trigger types with their alias. Used for logging purposes"""
         fields = cls.model_fields
         triggers = [
@@ -82,12 +81,12 @@ class Trigger(Step):
         return triggers
 
     @property
-    def triggers(self):
+    def triggers(self) -> Dict:
         """Returns a list of tuples with the value for each trigger"""
         return self.model_dump(exclude={"name", "description"}, by_alias=True)
 
     @model_validator(mode="before")
-    def validate_triggers(cls, triggers: Dict):
+    def validate_triggers(cls, triggers: Dict) -> Dict:
         """Validate the trigger value"""
         params = [*triggers.values()]
 
@@ -100,7 +99,7 @@ class Trigger(Step):
         return triggers
 
     @field_validator("processing_time", mode="before")
-    def validate_processing_time(cls, processing_time):
+    def validate_processing_time(cls, processing_time: str) -> str:
         """Validate the processing time trigger value"""
         # adapted from `pyspark.sql.streaming.readwriter.DataStreamWriter.trigger`
         if not isinstance(processing_time, str):
@@ -111,7 +110,7 @@ class Trigger(Step):
         return processing_time
 
     @field_validator("continuous", mode="before")
-    def validate_continuous(cls, continuous):
+    def validate_continuous(cls, continuous: str) -> str:
         """Validate the continuous trigger value"""
         # adapted from `pyspark.sql.streaming.readwriter.DataStreamWriter.trigger` except that the if statement is not
         # split in two parts
@@ -123,7 +122,7 @@ class Trigger(Step):
         return continuous
 
     @field_validator("once", mode="before")
-    def validate_once(cls, once):
+    def validate_once(cls, once: str) -> bool:
         """Validate the once trigger value"""
         # making value a boolean when given
         once = convert_str_to_bool(once)
@@ -134,7 +133,7 @@ class Trigger(Step):
         return once
 
     @field_validator("available_now", mode="before")
-    def validate_available_now(cls, available_now):
+    def validate_available_now(cls, available_now: str) -> bool:
         """Validate the available_now trigger value"""
         # making value a boolean when given
         available_now = convert_str_to_bool(available_now)
@@ -151,12 +150,12 @@ class Trigger(Step):
         return trigger
 
     @classmethod
-    def from_dict(cls, _dict):
+    def from_dict(cls, _dict: dict) -> "Trigger":
         """Creates a Trigger class based on a dictionary"""
         return cls(**_dict)
 
     @classmethod
-    def from_string(cls, trigger: str):
+    def from_string(cls, trigger: str) -> "Trigger":
         """Creates a Trigger class based on a string
 
         Example
@@ -202,7 +201,7 @@ class Trigger(Step):
         return cls.from_dict({trigger_type: value})
 
     @classmethod
-    def from_any(cls, value):
+    def from_any(cls, value: Union["Trigger", str, dict]) -> "Trigger":
         """Dynamically creates a Trigger class based on either another Trigger class, a passed string value, or a
         dictionary
 
@@ -219,7 +218,7 @@ class Trigger(Step):
 
         raise RuntimeError(f"Unable to create Trigger based on the given value: {value}")
 
-    def execute(self):
+    def execute(self) -> None:
         """Returns the trigger value as a dictionary
         This method can be skipped, as the value can be accessed directly from the `value` property
         """
@@ -251,7 +250,7 @@ class StreamWriter(Writer, ABC):
     )
 
     trigger: Optional[Union[Trigger, str, Dict]] = Field(
-        default=Trigger(available_now=True),
+        default=Trigger(available_now=True),  # type: ignore[call-arg]
         description="Set the trigger for the stream query. If this is not set it process data as batch",
     )
 
@@ -260,28 +259,28 @@ class StreamWriter(Writer, ABC):
     )
 
     @property
-    def _trigger(self):
+    def _trigger(self) -> dict:
         """Returns the trigger value as a dictionary"""
         return self.trigger.value
 
     @field_validator("output_mode")
-    def _validate_output_mode(cls, mode):
+    def _validate_output_mode(cls, mode: Union[str, StreamingOutputMode]) -> str:
         """Ensure that the given mode is a valid StreamingOutputMode"""
         if isinstance(mode, str):
             return mode
         return str(mode.value)
 
     @field_validator("trigger")
-    def _validate_trigger(cls, trigger):
+    def _validate_trigger(cls, trigger: Union[Trigger, str, Dict]) -> Trigger:
         """Ensure that the given trigger is a valid Trigger class"""
         return Trigger.from_any(trigger)
 
-    def await_termination(self, timeout: Optional[int] = None):
+    def await_termination(self, timeout: Optional[int] = None) -> None:
         """Await termination of the stream query"""
         self.streaming_query.awaitTermination(timeout=timeout)
 
     @property
-    def stream_writer(self) -> DataStreamWriter:
+    def stream_writer(self) -> DataStreamWriter:  # type: ignore
         """Returns the stream writer for the given DataFrame and settings"""
         write_stream = self.df.writeStream.format(self.format).outputMode(self.output_mode)
 
@@ -297,12 +296,12 @@ class StreamWriter(Writer, ABC):
         return write_stream
 
     @property
-    def writer(self):
+    def writer(self) -> DataStreamWriter:  # type: ignore
         """Returns the stream writer since we don't have a batch mode for streams"""
         return self.stream_writer
 
     @abstractmethod
-    def execute(self):
+    def execute(self) -> None:
         raise NotImplementedError
 
 
@@ -310,17 +309,17 @@ class ForEachBatchStreamWriter(StreamWriter):
     """Runnable ForEachBatchWriter"""
 
     @field_validator("batch_function")
-    def _validate_batch_function_exists(cls, batch_function):
+    def _validate_batch_function_exists(cls, batch_function: Callable) -> Callable:
         """Ensure that a batch_function is defined"""
-        if not batch_function or not isinstance(batch_function, Callable):
+        if not batch_function or not isinstance(batch_function, Callable):  # type: ignore[truthy-function, arg-type]
             raise ValueError(f"{cls.__name__} requires a defined for `batch_function`")
         return batch_function
 
-    def execute(self):
+    def execute(self) -> None:
         self.streaming_query = self.writer.start()
 
 
-def writer_to_foreachbatch(writer: Writer):
+def writer_to_foreachbatch(writer: Writer) -> Callable:
     """Call `writer.execute` on each batch
 
     To be passed as batch_function for StreamWriter (sub)classes.
@@ -343,7 +342,7 @@ def writer_to_foreachbatch(writer: Writer):
     ```
     """
 
-    def inner(df, batch_id: int):
+    def inner(df: DataFrame, batch_id: int) -> None:
         """Inner method
 
         As per the Spark documentation:

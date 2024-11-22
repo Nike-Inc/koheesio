@@ -80,9 +80,7 @@ class FileLoader(Reader, ExtraParamsMixin):
 
     Example:
     ```python
-    reader = FileLoader(
-        path="path/to/textfile.txt", format="text", header=True, lineSep="\n"
-    )
+    reader = FileLoader(path="path/to/textfile.txt", format="text", header=True, lineSep="\n")
     ```
 
     For more information about the available options, see Spark's
@@ -100,13 +98,13 @@ class FileLoader(Reader, ExtraParamsMixin):
     streaming: Optional[bool] = Field(default=False, description="Whether to read the files as a Stream or not")
 
     @field_validator("path")
-    def ensure_path_is_str(cls, v):
+    def ensure_path_is_str(cls, path: Union[Path, str]) -> Union[Path, str]:
         """Ensure that the path is a string as required by Spark."""
-        if isinstance(v, Path):
-            return str(v.absolute().as_posix())
-        return v
+        if isinstance(path, Path):
+            return str(path.absolute().as_posix())
+        return path
 
-    def execute(self):
+    def execute(self) -> Reader.Output:
         """Reads the file, in batch or as a stream, using the specified format and schema, while applying any extra parameters."""
         reader = self.spark.readStream if self.streaming else self.spark.read
         reader = reader.format(self.format)
@@ -117,7 +115,7 @@ class FileLoader(Reader, ExtraParamsMixin):
         if self.extra_params:
             reader = reader.options(**self.extra_params)
 
-        self.output.df = reader.load(self.path)
+        self.output.df = reader.load(self.path)  # type: ignore
 
 
 class CsvReader(FileLoader):
