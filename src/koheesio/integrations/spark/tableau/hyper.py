@@ -142,6 +142,10 @@ class HyperFileReader(HyperFile, SparkStep):
 class HyperFileWriter(HyperFile):
     """
     Base class for all HyperFileWriter classes
+
+    Reference
+    ---------
+        HyperProcess parameters: https://tableau.github.io/hyper-db/docs/hyper-api/hyper_process/#process-settings
     """
 
     path: PurePath = Field(
@@ -155,6 +159,12 @@ class HyperFileWriter(HyperFile):
         default=None,
         description="Table definition to write to the Hyper file as described in "
         "https://tableau.github.io/hyper-db/lang_docs/py/tableauhyperapi.html#tableauhyperapi.TableDefinition",
+    )
+    hyper_process_parameters: dict = Field(
+        # Disable logging by default, if logging is required remove the "log_config" key and refer to the Hyper API docs
+        default={"log_config": ""},
+        description="Set HyperProcess parameters, see Tableau Hyper API documentation for more details: "
+        "https://tableau.github.io/hyper-db/docs/hyper-api/hyper_process/#process-settings",
     )
 
     class Output(StepOutput):
@@ -226,7 +236,9 @@ class HyperFileListWriter(HyperFileWriter):
     data: conlist(List[Any], min_length=1) = Field(default=..., description="List of rows to write to the Hyper file")
 
     def execute(self):
-        with HyperProcess(telemetry=Telemetry.DO_NOT_SEND_USAGE_DATA_TO_TABLEAU) as hp:
+        with HyperProcess(
+            telemetry=Telemetry.DO_NOT_SEND_USAGE_DATA_TO_TABLEAU, parameters=self.hyper_process_parameters
+        ) as hp:
             with Connection(
                 endpoint=hp.endpoint, database=self.hyper_path, create_mode=CreateMode.CREATE_AND_REPLACE
             ) as connection:
@@ -292,7 +304,9 @@ class HyperFileParquetWriter(HyperFileWriter):
         _file = [str(f) for f in self.file]
         array_files = "'" + "','".join(_file) + "'"
 
-        with HyperProcess(telemetry=Telemetry.DO_NOT_SEND_USAGE_DATA_TO_TABLEAU) as hp:
+        with HyperProcess(
+            telemetry=Telemetry.DO_NOT_SEND_USAGE_DATA_TO_TABLEAU, parameters=self.hyper_process_parameters
+        ) as hp:
             with Connection(
                 endpoint=hp.endpoint, database=self.hyper_path, create_mode=CreateMode.CREATE_AND_REPLACE
             ) as connection:
