@@ -1,7 +1,7 @@
 # flake8: noqa: F811
+from copy import deepcopy
 from unittest import mock
 
-from pydantic_core._pydantic_core import ValidationError
 import pytest
 
 from koheesio.integrations.snowflake import (
@@ -15,8 +15,10 @@ from koheesio.integrations.snowflake import (
 )
 from koheesio.integrations.snowflake.test_utils import mock_query
 
+mock_query = mock_query
+
 COMMON_OPTIONS = {
-    "url": "url",
+    "url": "hostname.com",
     "user": "user",
     "password": "password",
     "database": "db",
@@ -94,15 +96,6 @@ class TestGrantPrivilegesOnView:
 
 
 class TestSnowflakeRunQueryPython:
-    def test_mandatory_fields(self):
-        """Test that query and account fields are mandatory"""
-        with pytest.raises(ValidationError):
-            _1 = SnowflakeRunQueryPython(**COMMON_OPTIONS)
-
-        # sql/query and account should work without raising an error
-        _2 = SnowflakeRunQueryPython(**COMMON_OPTIONS, sql="SELECT foo", account="42")
-        _3 = SnowflakeRunQueryPython(**COMMON_OPTIONS, query="SELECT foo", account="42")
-
     def test_get_options(self):
         """Test that the options are correctly generated"""
         # Arrange
@@ -120,12 +113,22 @@ class TestSnowflakeRunQueryPython:
             "password": "password",
             "role": "role",
             "schema": "schema",
-            "url": "url",
+            "url": "hostname.com",
             "user": "user",
             "warehouse": "warehouse",
         }
         assert actual_options == expected_options
         assert query_in_options["query"] == expected_query, "query should be returned regardless of the input"
+
+    def test_account_populated_from_url(self):
+        kls = SnowflakeRunQueryPython(**COMMON_OPTIONS, sql="SELECT * FROM table")
+        assert kls.account == "hostname"
+
+    def test_account_populated_from_url2(self):
+        common_options = deepcopy(COMMON_OPTIONS)
+        common_options["url"] = "https://host2.host1.snowflakecomputing.com"
+        kls = SnowflakeRunQueryPython(**common_options, sql="SELECT * FROM table")
+        assert kls.account == "host2"
 
     def test_execute(self, mock_query):
         # Arrange
@@ -161,7 +164,7 @@ class TestSnowflakeBaseModel:
     def test_get_options_using_alias(self):
         """Test that the options are correctly generated using alias"""
         k = SnowflakeBaseModel(
-            sfURL="url",
+            sfURL="hostname.com",
             sfUser="user",
             sfPassword="password",
             sfDatabase="database",
@@ -170,7 +173,7 @@ class TestSnowflakeBaseModel:
             schema="schema",
         )
         options = k.get_options()  # alias should be used by default
-        assert options["sfURL"] == "url"
+        assert options["sfURL"] == "hostname.com"
         assert options["sfUser"] == "user"
         assert options["sfDatabase"] == "database"
         assert options["sfRole"] == "role"
@@ -180,7 +183,7 @@ class TestSnowflakeBaseModel:
     def test_get_options(self):
         """Test that the options are correctly generated not using alias"""
         k = SnowflakeBaseModel(
-            url="url",
+            url="hostname.com",
             user="user",
             password="password",
             database="database",
@@ -189,7 +192,7 @@ class TestSnowflakeBaseModel:
             schema="schema",
         )
         options = k.get_options(by_alias=False)
-        assert options["url"] == "url"
+        assert options["url"] == "hostname.com"
         assert options["user"] == "user"
         assert options["database"] == "database"
         assert options["role"] == "role"
@@ -203,7 +206,7 @@ class TestSnowflakeBaseModel:
     def test_get_options_include(self):
         """Test that the options are correctly generated using include"""
         k = SnowflakeBaseModel(
-            url="url",
+            url="hostname.com",
             user="user",
             password="password",
             database="database",
@@ -215,7 +218,7 @@ class TestSnowflakeBaseModel:
         options = k.get_options(include={"url", "user", "description", "options"}, by_alias=False)
 
         # should be present
-        assert options["url"] == "url"
+        assert options["url"] == "hostname.com"
         assert options["user"] == "user"
         assert "description" in options
 

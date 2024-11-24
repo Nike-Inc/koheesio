@@ -47,6 +47,7 @@ from typing import Any, Dict, Generator, List, Optional, Set, Union
 from abc import ABC
 from contextlib import contextmanager
 from types import ModuleType
+from urllib.parse import urlparse
 
 from koheesio import Step
 from koheesio.logger import warn
@@ -281,7 +282,7 @@ class SnowflakeRunQueryPython(SnowflakeStep):
     """
 
     query: str = Field(default=..., description="The query to run", alias="sql", serialization_alias="query")
-    account: str = Field(default=..., description="Snowflake Account Name", alias="account")
+    account: Optional[str] = Field(default=None, description="Snowflake Account Name", alias="account")
 
     # for internal use
     _snowflake_connector: Optional[ModuleType] = PrivateAttr(default_factory=safe_import_snowflake_connector)
@@ -290,6 +291,16 @@ class SnowflakeRunQueryPython(SnowflakeStep):
         """Output class for RunQueryPython"""
 
         results: List = Field(default_factory=list, description="The results of the query")
+
+    @model_validator(mode="before")
+    def _validate_account(cls, values: Dict) -> Dict:
+        """Populate account from URL if not provided"""
+        if not values.get("account"):
+            parsed_url = urlparse(values["url"])
+            base_url = parsed_url.hostname or parsed_url.path
+            values["account"] = base_url.split(".")[0]
+
+        return values
 
     @field_validator("query")
     def validate_query(cls, query: str) -> str:
