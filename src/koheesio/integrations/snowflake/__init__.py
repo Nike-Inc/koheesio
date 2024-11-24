@@ -296,7 +296,7 @@ class SnowflakeRunQueryPython(SnowflakeStep):
     def _validate_account(cls, values: Dict) -> Dict:
         """Populate account from URL if not provided"""
         if not values.get("account"):
-            parsed_url = urlparse(values["url"])
+            parsed_url = urlparse(values.get("url") or values.get("sfURL"))
             base_url = parsed_url.hostname or parsed_url.path
             values["account"] = base_url.split(".")[0]
 
