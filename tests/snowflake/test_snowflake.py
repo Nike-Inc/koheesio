@@ -98,6 +98,15 @@ class TestGrantPrivilegesOnView:
 
 
 class TestSnowflakeRunQueryPython:
+    def test_mandatory_fields(self):
+        """Test that query and account fields are mandatory"""
+        with pytest.raises(ValidationError):
+            _1 = SnowflakeRunQueryPython(**COMMON_OPTIONS)
+
+        # sql/query and account should work without raising an error
+        _2 = SnowflakeRunQueryPython(**COMMON_OPTIONS, sql="SELECT foo", account="42")
+        _3 = SnowflakeRunQueryPython(**COMMON_OPTIONS, query="SELECT foo", account="42")
+
     def test_get_options(self):
         """Test that the options are correctly generated"""
         # Arrange
@@ -121,15 +130,6 @@ class TestSnowflakeRunQueryPython:
         }
         assert actual_options == expected_options
         assert query_in_options["query"] == expected_query, "query should be returned regardless of the input"
-
-    def test_mandatory_fields(self):
-        """Test that query and account fields are mandatory"""
-        with pytest.raises(ValidationError):
-            _1 = SnowflakeRunQueryPython(**COMMON_OPTIONS)
-
-        # sql/query and account should work without raising an error
-        _2 = SnowflakeRunQueryPython(**COMMON_OPTIONS, sql="SELECT foo", account="42")
-        _3 = SnowflakeRunQueryPython(**COMMON_OPTIONS, query="SELECT foo", account="42")
 
     def test_account_populated_from_url(self):
         kls = SnowflakeRunQueryPython(**COMMON_OPTIONS, sql="SELECT * FROM table")
