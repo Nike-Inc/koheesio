@@ -2,7 +2,7 @@ from typing import List
 from pydantic import BaseModel
 
 class ExpTransformConfig(BaseModel):
-    base: float  # Base of the exponential function
+    base: float  
 
 def exp_transform(data: List[float], config: ExpTransformConfig) -> List[float]:
     import math

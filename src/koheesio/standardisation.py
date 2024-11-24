@@ -3,8 +3,8 @@ from pydantic import BaseModel
 import statistics
 
 class StandardizeConfig(BaseModel):
-    mean: float = None  # Optional precomputed mean
-    std_dev: float = None  # Optional precomputed standard deviation
+    mean: float = None  
+    std_dev: float = None  
 
 def standardize(data: List[float], config: StandardizeConfig) -> List[float]:
     mean = config.mean if config.mean is not None else statistics.mean(data)

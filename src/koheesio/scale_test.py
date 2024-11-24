@@ -4,7 +4,6 @@ from scale import scale_data
 class TestScaleData(unittest.TestCase):
 
     def test_scale_positive_numbers(self):
-        """Test scaling a list of positive numbers."""
         data = [1, 2, 3, 4, 5]
         multiplier = 2
         result = scale_data(data, multiplier)
@@ -12,7 +11,6 @@ class TestScaleData(unittest.TestCase):
         self.assertEqual(result, expected)
 
     def test_scale_negative_numbers(self):
-        """Test scaling a list of negative numbers."""
         data = [-1, -2, -3, -4, -5]
         multiplier = 3
         result = scale_data(data, multiplier)
@@ -28,7 +26,6 @@ class TestScaleData(unittest.TestCase):
         self.assertEqual(result, expected)
 
     def test_scale_with_zero_multiplier(self):
-        """Test scaling numbers with a multiplier of zero."""
         data = [10, -10, 100]
         multiplier = 0
         result = scale_data(data, multiplier)
@@ -36,7 +33,6 @@ class TestScaleData(unittest.TestCase):
         self.assertEqual(result, expected)
 
     def test_scale_with_one_multiplier(self):
-        """Test scaling numbers with a multiplier of one (should return the same list)."""
         data = [1.5, 2.5, 3.5]
         multiplier = 1
         result = scale_data(data, multiplier)
@@ -44,7 +40,6 @@ class TestScaleData(unittest.TestCase):
         self.assertEqual(result, expected)
 
     def test_scale_empty_list(self):
-        """Test scaling an empty list."""
         data = []
         multiplier = 2
         result = scale_data(data, multiplier)

@@ -13,25 +13,21 @@ class TestExpTransform(unittest.TestCase):
         data = [1, 2, 3]
         config = ExpTransformConfig(base=2.71828)
         result = exp_transform(data, config)
-        # Just check it works; e-based calculations vary
         self.assertTrue(all(isinstance(x, float) for x in result))
 
     def test_exp_transform_large_values(self):
-        """Test exponential transformation with large values."""
         data = [10, 20]
         config = ExpTransformConfig(base=10)
         result = exp_transform(data, config)
         self.assertTrue(all(isinstance(x, float) for x in result))
 
     def test_exp_transform_with_invalid_base(self):
-        """Test exponential transformation with invalid base."""
         data = [1, 2, 3]
         config = ExpTransformConfig(base=-1)
         with self.assertRaises(ValueError):
             exp_transform(data, config)
 
     def test_exp_transform_empty_data(self):
-        """Test exponential transformation with an empty data list."""
         data = []
         config = ExpTransformConfig(base=2)
         result = exp_transform(data, config)

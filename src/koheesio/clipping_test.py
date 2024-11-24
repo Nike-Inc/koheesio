@@ -17,7 +17,6 @@ class TestClipData(unittest.TestCase):
         self.assertEqual(result, expected)
 
     def test_clip_data_all_below_min(self):
-        """Test clipping where all values are below the minimum."""
         data = [-10, -5, -1]
         config = ClipConfig(min_value=0, max_value=20)
         result = clip_data(data, config)
@@ -25,7 +24,6 @@ class TestClipData(unittest.TestCase):
         self.assertEqual(result, expected)
 
     def test_clip_data_all_above_max(self):
-        """Test clipping where all values are above the maximum."""
         data = [25, 30, 35]
         config = ClipConfig(min_value=10, max_value=20)
         result = clip_data(data, config)
@@ -33,7 +31,6 @@ class TestClipData(unittest.TestCase):
         self.assertEqual(result, expected)
 
     def test_clip_data_empty_list(self):
-        """Test clipping with an empty data list."""
         data = []
         config = ClipConfig(min_value=10, max_value=20)
         result = clip_data(data, config)
