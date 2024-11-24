@@ -141,6 +141,12 @@ class TestSnowflakeRunQueryPython:
         kls = SnowflakeRunQueryPython(**common_options, sql="SELECT * FROM table")
         assert kls.account == "host2"
 
+    def test_account_populated_from_sf_url(self):
+        common_options = deepcopy(COMMON_OPTIONS)
+        common_options["sfURL"] = common_options.pop("url")
+        kls = SnowflakeRunQueryPython(**common_options, sql="SELECT * FROM table")
+        assert kls.account == "hostname"
+
     def test_execute(self, mock_query):
         # Arrange
         query = "SELECT * FROM two_row_table"
