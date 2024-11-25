@@ -52,8 +52,13 @@ class FileWriter(Writer, ExtraParamsMixin):
     Examples
     --------
     ```python
-    writer = FileWriter(df=df, path="path/to/file.csv", output_mode=BatchOutputMode.APPEND, format=FileFormat.parquet,
-                        compression="snappy")
+    writer = FileWriter(
+        df=df,
+        path="path/to/file.csv",
+        output_mode=BatchOutputMode.APPEND,
+        format=FileFormat.parquet,
+        compression="snappy",
+    )
     ```
     """
 
@@ -90,7 +95,12 @@ class CsvFileWriter(FileWriter):
     Examples
     --------
     ```python
-    writer = CsvFileWriter(df=df, path="path/to/file.csv", output_mode=BatchOutputMode.APPEND, header=True)
+    writer = CsvFileWriter(
+        df=df,
+        path="path/to/file.csv",
+        output_mode=BatchOutputMode.APPEND,
+        header=True,
+    )
     ```
     """
 
@@ -107,8 +117,12 @@ class ParquetFileWriter(FileWriter):
     Examples
     --------
     ```python
-    writer = ParquetFileWriter(df=df, path="path/to/file.parquet", output_mode=BatchOutputMode.APPEND,
-                               compression="snappy")
+    writer = ParquetFileWriter(
+        df=df,
+        path="path/to/file.parquet",
+        output_mode=BatchOutputMode.APPEND,
+        compression="snappy",
+    )
     ```
     """
 
@@ -125,7 +139,9 @@ class AvroFileWriter(FileWriter):
     Examples
     --------
     ```python
-    writer = AvroFileWriter(df=df, path="path/to/file.avro", output_mode=BatchOutputMode.APPEND)
+    writer = AvroFileWriter(
+        df=df, path="path/to/file.avro", output_mode=BatchOutputMode.APPEND
+    )
     ```
     """
 
@@ -142,7 +158,9 @@ class JsonFileWriter(FileWriter):
     Examples
     --------
     ```python
-    writer = JsonFileWriter(df=df, path="path/to/file.json", output_mode=BatchOutputMode.APPEND)
+    writer = JsonFileWriter(
+        df=df, path="path/to/file.json", output_mode=BatchOutputMode.APPEND
+    )
     ```
     """
 
@@ -159,7 +177,9 @@ class OrcFileWriter(FileWriter):
     Examples
     --------
     ```python
-    writer = OrcFileWriter(df=df, path="path/to/file.orc", output_mode=BatchOutputMode.APPEND)
+    writer = OrcFileWriter(
+        df=df, path="path/to/file.orc", output_mode=BatchOutputMode.APPEND
+    )
     ```
     """
 
@@ -176,7 +196,9 @@ class TextFileWriter(FileWriter):
     Examples
     --------
     ```python
-    writer = TextFileWriter(df=df, path="path/to/file.txt", output_mode=BatchOutputMode.APPEND)
+    writer = TextFileWriter(
+        df=df, path="path/to/file.txt", output_mode=BatchOutputMode.APPEND
+    )
     ```
     """
 

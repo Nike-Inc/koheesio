@@ -65,9 +65,13 @@ class HyperFileReader(HyperFile, SparkStep):
     Examples
     --------
     ```python
-    df = HyperFileReader(
-        path=PurePath(hw.hyper_path),
-    ).execute().df
+    df = (
+        HyperFileReader(
+            path=PurePath(hw.hyper_path),
+        )
+        .execute()
+        .df
+    )
     ```
     """
 
@@ -141,7 +145,10 @@ class HyperFileWriter(HyperFile):
     """
 
     path: PurePath = Field(
-        default=TemporaryDirectory().name, description="Path to the Hyper file", examples=["PurePath(/tmp/hyper/)"]
+        default=TemporaryDirectory().name,
+        description="Path to the Hyper file, if executing in Databricks "
+        "set the path manually and ensure to specify the scheme `dbfs:/`.",
+        examples=["PurePath(/tmp/hyper/)", "PurePath(dbfs:/tmp/hyper/)"],
     )
     name: str = Field(default="extract", description="Name of the Hyper file")
     table_definition: TableDefinition = Field(
@@ -193,10 +200,16 @@ class HyperFileListWriter(HyperFileWriter):
         table_definition=TableDefinition(
             table_name=TableName("Extract", "Extract"),
             columns=[
-                TableDefinition.Column(name="string", type=SqlType.text(), nullability=NOT_NULLABLE),
-                TableDefinition.Column(name="int", type=SqlType.int(), nullability=NULLABLE),
-                TableDefinition.Column(name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE),
-            ]
+                TableDefinition.Column(
+                    name="string", type=SqlType.text(), nullability=NOT_NULLABLE
+                ),
+                TableDefinition.Column(
+                    name="int", type=SqlType.int(), nullability=NULLABLE
+                ),
+                TableDefinition.Column(
+                    name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE
+                ),
+            ],
         ),
         data=[
             ["text_1", 1, datetime(2024, 1, 1, 0, 0, 0, 0)],
@@ -249,12 +262,21 @@ class HyperFileParquetWriter(HyperFileWriter):
         table_definition=TableDefinition(
             table_name=TableName("Extract", "Extract"),
             columns=[
-                TableDefinition.Column(name="string", type=SqlType.text(), nullability=NOT_NULLABLE),
-                TableDefinition.Column(name="int", type=SqlType.int(), nullability=NULLABLE),
-                TableDefinition.Column(name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE),
-            ]
+                TableDefinition.Column(
+                    name="string", type=SqlType.text(), nullability=NOT_NULLABLE
+                ),
+                TableDefinition.Column(
+                    name="int", type=SqlType.int(), nullability=NULLABLE
+                ),
+                TableDefinition.Column(
+                    name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE
+                ),
+            ],
         ),
-        files=["/my-path/parquet-1.snappy.parquet","/my-path/parquet-2.snappy.parquet"]
+        files=[
+            "/my-path/parquet-1.snappy.parquet",
+            "/my-path/parquet-2.snappy.parquet",
+        ],
     ).execute()
 
     # do somthing with returned file path
@@ -295,6 +317,13 @@ class HyperFileDataFrameWriter(HyperFileWriter):
     hw = HyperFileDataFrameWriter(
         df=spark.createDataFrame([(1, "foo"), (2, "bar")], ["id", "name"]),
         name="test",
+    ).execute()
+
+    # or in Databricks
+    hw = HyperFileDataFrameWriter(
+        df=spark.createDataFrame([(1, "foo"), (2, "bar")], ["id", "name"]),
+        name="test",
+        path="dbfs:/tmp/hyper/",
     ).execute()
 
     # do somthing with returned file path
@@ -370,17 +399,11 @@ class HyperFileDataFrameWriter(HyperFileWriter):
 
         integer_cols = [field.name for field in _schema if field.dataType == IntegerType()]
         long_cols = [field.name for field in _schema if field.dataType == LongType()]
+        short_cols = [field.name for field in _schema if field.dataType == ShortType()]
         double_cols = [field.name for field in _schema if field.dataType == DoubleType()]
         float_cols = [field.name for field in _schema if field.dataType == FloatType()]
         string_cols = [field.name for field in _schema if field.dataType == StringType()]
-        decimal_cols = [field for field in _schema if str(field.dataType).startswith("DecimalType")]
         timestamp_cols = [field.name for field in _schema if field.dataType == TimestampType()]
-
-        # Cast decimal fields to DecimalType(18,3)
-        for d_col in decimal_cols:
-            # noinspection PyUnresolvedReferences
-            if d_col.dataType.precision > 18:
-                _df = self.df.withColumn(d_col.name, col(d_col.name).cast(DecimalType(precision=18, scale=5)))
 
         # Handling the TimestampNTZType for Spark 3.4+
         # Any TimestampType column will be cast to TimestampNTZType for compatibility with Tableau Hyper API
@@ -393,16 +416,30 @@ class HyperFileDataFrameWriter(HyperFileWriter):
         # Replace null and NaN values with 0
         if len(integer_cols) > 0:
             _df = _df.na.fill(0, integer_cols)
-        elif len(long_cols) > 0:
+        if len(long_cols) > 0:
             _df = _df.na.fill(0, long_cols)
-        elif len(double_cols) > 0:
+        if len(short_cols) > 0:
+            _df = _df.na.fill(0, short_cols)
+        if len(double_cols) > 0:
             _df = _df.na.fill(0.0, double_cols)
-        elif len(float_cols) > 0:
+        if len(float_cols) > 0:
             _df = _df.na.fill(0.0, float_cols)
-        elif len(decimal_cols) > 0:
-            _df = _df.na.fill(0.0, decimal_cols)
-        elif len(string_cols) > 0:
+        if len(string_cols) > 0:
             _df = _df.na.fill("", string_cols)
+
+        # Cleanup decimal columns: enforce precision to 18, fill nulls with 0.0
+        decimal_cols = [field for field in _schema if str(field.dataType).startswith("DecimalType")]
+        decimal_col_names = []
+        for d_col in decimal_cols:
+            decimal_col_names.append(d_col.name)
+            # noinspection PyUnresolvedReferences
+            if d_col.dataType.precision > 18:
+                # noinspection PyUnresolvedReferences
+                _df = _df.withColumn(
+                    d_col.name, col(d_col.name).cast(DecimalType(precision=18, scale=d_col.dataType.scale))
+                )
+        if len(decimal_col_names) > 0:
+            _df = _df.na.fill(0.0, decimal_col_names)
 
         return _df
 
@@ -416,6 +453,10 @@ class HyperFileDataFrameWriter(HyperFileWriter):
             .mode("overwrite")
             .parquet(_path.as_posix())
         )
+
+        if _path.as_posix().startswith("dbfs:"):
+            _path = PurePath(_path.as_posix().replace("dbfs:", "/dbfs"))
+            self.log.debug("Parquet location on DBFS: %s}", _path)
 
         for _, _, files in os.walk(_path):
             for file in files:
