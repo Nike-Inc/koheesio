@@ -46,6 +46,8 @@ from __future__ import annotations
 from typing import Any, Dict, Generator, List, Optional, Set, Union
 from abc import ABC
 from contextlib import contextmanager
+import os
+import tempfile
 from types import ModuleType
 from urllib.parse import urlparse
 
@@ -61,6 +63,7 @@ from koheesio.models import (
     field_validator,
     model_validator,
 )
+from koheesio.spark.utils.common import on_databricks
 
 __all__ = [
     "GrantPrivilegesOnFullyQualifiedObject",
@@ -79,6 +82,38 @@ __all__ = [
 # Turning off too-many-lines because we are defining a lot of classes in this file
 
 
+def __check_access_snowflake_config_dir() -> bool:
+    """Check if the Snowflake configuration directory is accessible
+
+    Returns
+    -------
+    bool
+        True if the Snowflake configuration directory is accessible, otherwise False
+
+    Raises
+    ------
+    RuntimeError
+        If `snowflake-connector-python` is not installed
+    """
+    check_result = False
+
+    try:
+        from snowflake.connector.sf_dirs import _resolve_platform_dirs  # noqa: F401
+
+        _resolve_platform_dirs().user_config_path
+        check_result = True
+    except PermissionError as e:
+        warn(f"Snowflake configuration directory is not accessible. Please check the permissions.Catched error: {e}")
+    except (ImportError, ModuleNotFoundError) as e:
+        raise RuntimeError(
+            "You need to have the `snowflake-connector-python` package installed to use the Snowflake steps that are"
+            "based around SnowflakeRunQueryPython. You can install this in Koheesio by adding `koheesio[snowflake]` to "
+            "your package dependencies.",
+        ) from e
+
+    return check_result
+
+
 def safe_import_snowflake_connector() -> Optional[ModuleType]:
     """Validate that the Snowflake connector is installed
 
@@ -87,7 +122,17 @@ def safe_import_snowflake_connector() -> Optional[ModuleType]:
     Optional[ModuleType]
         The Snowflake connector module if it is installed, otherwise None
     """
+    is_accessable_sf_conf_dir = __check_access_snowflake_config_dir()
+
+    if not is_accessable_sf_conf_dir and on_databricks():
+        snowflake_home: str = tempfile.mkdtemp(prefix="snowflake_tmp_", dir="/tmp")  # nosec B108:ignore bandit check for CWE-377
+        os.environ["SNOWFLAKE_HOME"] = snowflake_home
+        warn(f"Getting error for snowflake config directory. Going to use temp directory `{snowflake_home}` instead.")
+    elif not is_accessable_sf_conf_dir:
+        raise PermissionError("Snowflake configuration directory is not accessible. Please check the permissions.")
+
     try:
+        # Keep the import here as it is perfroming resolution of snowflake configuration directory
         from snowflake import connector as snowflake_connector
 
         return snowflake_connector
@@ -336,8 +381,18 @@ class SnowflakeRunQueryPython(SnowflakeStep):
         self.log.info(f"Connected to Snowflake account: {sf_options['account']}")
 
         try:
+            from snowflake.connector.connection import logger as snowflake_logger
+
+            _preserve_snowflake_logger = snowflake_logger
+            snowflake_logger = self.log
+            snowflake_logger.debug("Replace snowflake logger with Koheesio logger")
             yield _conn
         finally:
+            if _preserve_snowflake_logger:
+                if snowflake_logger:
+                    snowflake_logger.debug("Restore snowflake logger")
+                snowflake_logger = _preserve_snowflake_logger
+
             if _conn:
                 _conn.close()
 
@@ -348,7 +403,9 @@ class SnowflakeRunQueryPython(SnowflakeStep):
     def execute(self) -> None:
         """Execute the query"""
         with self.conn as conn:
-            cursors = conn.execute_string(self.get_query())
+            cursors = conn.execute_string(
+                self.get_query(),
+            )
             for cursor in cursors:
                 self.log.debug(f"Cursor executed: {cursor}")
                 self.output.results.extend(cursor.fetchall())

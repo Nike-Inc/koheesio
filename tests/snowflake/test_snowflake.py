@@ -1,5 +1,6 @@
 # flake8: noqa: F811
 from copy import deepcopy
+import os
 from unittest import mock
 
 import pytest
@@ -14,6 +15,7 @@ from koheesio.integrations.snowflake import (
     SnowflakeRunQueryPython,
     SnowflakeStep,
     SnowflakeTableStep,
+    safe_import_snowflake_connector,
 )
 from koheesio.integrations.snowflake.test_utils import mock_query
 
@@ -272,3 +274,17 @@ class TestSnowflakeTableStep:
         """Test that the table is correctly set"""
         kls = SnowflakeTableStep(**COMMON_OPTIONS, table="table")
         assert kls.table == "table"
+
+
+class TestSnowflakeConfigDir:
+    @mock.patch("koheesio.integrations.snowflake.__check_access_snowflake_config_dir", return_value=False)
+    @mock.patch("koheesio.integrations.snowflake.on_databricks", return_value=True)
+    def test_initialization_on_databricks(self, mock_on_databricks, mock_check_access):
+        """Test that the config dir is correctly set"""
+        safe_import_snowflake_connector()
+        assert os.environ["SNOWFLAKE_HOME"].startswith("/tmp/snowflake_tmp_")
+
+    def test_initialization(self):
+        origin_snowflake_home = os.environ.get("SNOWFLAKE_HOME")
+        safe_import_snowflake_connector()
+        assert os.environ.get("SNOWFLAKE_HOME") == origin_snowflake_home
