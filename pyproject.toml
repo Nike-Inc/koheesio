@@ -503,6 +503,7 @@ exclude = [
 [tool.ruff.format]
 # https://docs.astral.sh/ruff/formatter/#docstring-formatting
 docstring-code-format = true
+docstring-code-line-length = 70
 
 [tool.ruff.lint]
 # Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default.
