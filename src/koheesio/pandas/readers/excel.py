@@ -47,4 +47,5 @@ class ExcelReader(Reader, ExtraParamsMixin):
 
     def execute(self):
         extra_params = self.params or {}
+        extra_params.pop("spark", None)
         self.output.df = pd.read_excel(self.path, sheet_name=self.sheet_name, header=self.header, **extra_params)
