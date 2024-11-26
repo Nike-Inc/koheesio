@@ -101,7 +101,7 @@ class Transformation(SparkStep, ABC):
     output_df = AddOne(df).execute().output.df
     ```
 
-    Note: that the transform method was not implemented explicitly in the AddOne class. This is because the `transform`
+    > Note: that the transform method was not implemented explicitly in the AddOne class. This is because the `transform`
     method is already implemented in the `Transformation` class. This means that all classes that inherit from the
     Transformation class will have the `transform` method available. Only the execute method needs to be implemented.
 
