@@ -72,12 +72,13 @@ class StepMetaClass(ModelMetaclass):
     allowing for the execute method to be auto-decorated with do_execute
     """
 
-    # Solution to overcome issue with python>=3.11,
-    # When partialmethod is forgetting that _execute_wrapper
-    # is a method of wrapper, and it needs to pass that in as the first arg.
-    # https://github.com/python/cpython/issues/99152
     # noinspection PyPep8Naming,PyUnresolvedReferences
     class _partialmethod_with_self(partialmethod):
+        """Solution to overcome issue with python>=3.11, when partialmethod is forgetting that _execute_wrapper is a
+        method of wrapper, and it needs to pass that in as the first arg.
+        See: https://github.com/python/cpython/issues/99152
+        """
+
         def __get__(self, obj: Any, cls=None):  # type: ignore[no-untyped-def]
             return self._make_unbound_method().__get__(obj, cls)
 
@@ -134,44 +135,43 @@ class StepMetaClass(ModelMetaclass):
             **kwargs,
         )
 
-        # Extract execute method present in the class
-        execute_method = getattr(cls, "execute")
+        # Traverse the MRO to find the first occurrence of the execute method
+        execute_method = None
+        for base in cls.__mro__:
+            if "execute" in base.__dict__:
+                execute_method = base.__dict__["execute"]
+                break
 
-        # check if function is already wrapped with do_execute
-        # Here we are trying to get the attribute "_partialmethod__step_execute_wrapper_sentinel"
-        # from the execute_method function.
-        # If the function is already wrapped, this attribute should exist.
-        sentinel = getattr(execute_method, "_partialmethod__step_execute_wrapper_sentinel", None)
+        if execute_method:
+            # Check if the execute method is already wrapped
+            is_already_wrapped = (
+                getattr(execute_method, "_step_execute_wrapper_sentinel", None) is cls._step_execute_wrapper_sentinel
+            )
 
-        # Check if the sentinel is the same as the class's sentinel. If they are the same,
-        # it means the function is already wrapped.
-        # noinspection PyUnresolvedReferences
-        is_already_wrapped = sentinel is cls._step_execute_wrapper_sentinel
+            # Get the wrap count of the function. If the function is not wrapped yet, the default value is 0.
+            wrap_count = getattr(execute_method, "_wrap_count", 0)
 
-        # Get the wrap count of the function. If the function is not wrapped yet, the default value is 0.
-        wrap_count = getattr(execute_method, "_partialmethod_wrap_count", 0)
+            # prevent multiple wrapping
+            # If the function is not already wrapped, we proceed to wrap it.
+            if not is_already_wrapped:
+                # Create a partial method with the execute_method as one of the arguments.
+                # This is the new function that will be called instead of the original execute_method.
 
-        # prevent multiple wrapping
-        # If the function is not already wrapped, we proceed to wrap it.
-        if not is_already_wrapped:
-            # Create a partial method with the execute_method as one of the arguments.
-            # This is the new function that will be called instead of the original execute_method.
+                # noinspection PyProtectedMember,PyUnresolvedReferences
+                wrapper = mcs._partialmethod_impl(cls=cls, execute_method=execute_method)
 
-            # noinspection PyProtectedMember,PyUnresolvedReferences
-            wrapper = mcs._partialmethod_impl(cls=cls, execute_method=execute_method)
+                # Updating the attributes of the wrapping function to those of the original function.
+                wraps(execute_method)(wrapper)  # type: ignore
 
-            # Updating the attributes of the wrapping function to those of the original function.
-            wraps(execute_method)(wrapper)  # type: ignore
+                # Set the sentinel attribute to the wrapper. This is done so that we can check
+                # if the function is already wrapped.
+                # noinspection PyUnresolvedReferences
+                setattr(wrapper, "_step_execute_wrapper_sentinel", cls._step_execute_wrapper_sentinel)
 
-            # Set the sentinel attribute to the wrapper. This is done so that we can check
-            # if the function is already wrapped.
-            # noinspection PyUnresolvedReferences
-            setattr(wrapper, "_step_execute_wrapper_sentinel", cls._step_execute_wrapper_sentinel)
-
-            # Increase the wrap count of the function. This is done to keep track of
-            # how many times the function has been wrapped.
-            setattr(wrapper, "_wrap_count", wrap_count + 1)
-            setattr(cls, "execute", wrapper)
+                # Increase the wrap count of the function. This is done to keep track of
+                # how many times the function has been wrapped.
+                setattr(wrapper, "_wrap_count", wrap_count + 1)
+                setattr(cls, "execute", wrapper)
 
         return cls
 

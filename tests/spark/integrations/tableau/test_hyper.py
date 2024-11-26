@@ -115,3 +115,26 @@ class TestHyper:
             ("timestamp", "timestamp"),
             ("date", "date"),
         ]
+
+    @pytest.fixture()
+    def hyper_file_writer(self):
+        return HyperFileListWriter(
+            name="test",
+            table_definition=TableDefinition(
+                table_name=TableName("Extract", "Extract"),
+                columns=[
+                    TableDefinition.Column(name="string", type=SqlType.text(), nullability=NOT_NULLABLE),
+                ],
+            ),
+            data=[["text_1"]],
+        )
+
+    def test_hyper_file_process_custom_log_dir(self, hyper_file_writer):
+        import os
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            hyper_file_writer.hyper_process_parameters = {"log_dir": temp_dir}
+            hyper_file_writer.execute()
+
+            assert os.path.exists(f"{temp_dir}/hyperd.log")

@@ -40,6 +40,12 @@ hatch-install:
 	fi
 init: hatch-install
 
+.PHONY: sync  ## hatch - Update dependencies if you changed project dependencies in pyproject.toml
+.PHONY: update  ## hatch - alias for sync (if you are used to poetry, thi is similar to running `poetry update`)
+sync:
+	@hatch run dev:uv sync --all-extras
+update: sync
+
 #  Code Quality
 .PHONY: black black-fmt ## code quality - Use black to (re)format the codebase
 black-fmt:

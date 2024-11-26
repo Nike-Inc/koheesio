@@ -79,18 +79,16 @@ SPARK_MINOR_VERSION: float = get_spark_minor_version()
 
 def check_if_pyspark_connect_is_supported() -> bool:
     """Check if the current version of PySpark supports the connect module"""
-    result = False
-    module_name: str = "pyspark"
     if SPARK_MINOR_VERSION >= 3.5:
         try:
-            importlib.import_module(f"{module_name}.sql.connect")
+            importlib.import_module("pyspark.sql.connect")
             from pyspark.sql.connect.column import Column
 
-            _col: Column
-            result = True
+            _col: Column  # type: ignore
+            return True
         except (ModuleNotFoundError, ImportError):
-            result = False
-    return result
+            return False
+    return False
 
 
 if check_if_pyspark_connect_is_supported():

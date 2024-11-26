@@ -926,7 +926,7 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeSparkStep):
             enable_deletion=self.enable_deletion,
         )  # type: ignore
 
-        query_executor = RunQuery(
+        query_executor = SnowflakeRunQueryPython(
             **self.get_options(),
             query=merge_query,
         )
