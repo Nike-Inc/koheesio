@@ -323,7 +323,10 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
                     clause = merge_conf.get("clause")
                     if clause not in valid_clauses:
                         raise ValueError(f"Invalid merge clause '{clause}' provided")
-            elif not isinstance(merge_builder, DeltaMergeBuilder):
+            elif (
+                not isinstance(merge_builder, DeltaMergeBuilder)
+                or not type(merge_builder).__name__ == "DeltaMergeBuilder"
+            ):
                 raise ValueError("merge_builder must be a list or merge clauses or a DeltaMergeBuilder instance")
 
         return params
@@ -378,7 +381,7 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
         if self.table.create_if_not_exists and not self.table.exists:
             _writer = _writer.options(**self.table.default_create_properties)
 
-        if isinstance(_writer, DeltaMergeBuilder):
+        if isinstance(_writer, DeltaMergeBuilder) or type(_writer).__name__ == "DeltaMergeBuilder":
             _writer.execute()
         else:
             if options := self.params:
