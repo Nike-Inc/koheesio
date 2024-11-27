@@ -1,7 +1,8 @@
 from unittest.mock import patch
 
+from conftest import ScopeSecrets
+
 from koheesio.spark.secrets.databricks import DataBricksSecret
-from tests.spark.conftest import ScopeSecrets
 
 
 class TestDatabricksSecret:
