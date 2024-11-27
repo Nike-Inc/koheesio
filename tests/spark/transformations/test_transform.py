@@ -2,10 +2,10 @@ from typing import Any, Dict
 
 import pytest
 
-from pyspark.sql import DataFrame
 from pyspark.sql import functions as f
 
 from koheesio.logger import LoggingFactory
+from koheesio.spark import DataFrame
 from koheesio.spark.transformations.strings.substring import Substring
 from koheesio.spark.transformations.transform import Transform
 from koheesio.spark.transformations.hash import Sha2Hash

@@ -51,9 +51,7 @@ class SplitAll(ColumnsTransformationWithTarget):
     |              Beans|  1600|    USA|
 
     ```python
-    output_df = SplitColumn(
-        column="product", target_column="split", split_pattern=" "
-    ).transform(input_df)
+    output_df = SplitColumn(column="product", target_column="split", split_pattern=" ").transform(input_df)
     ```
 
     __output_df:__
@@ -67,13 +65,13 @@ class SplitAll(ColumnsTransformationWithTarget):
 
     split_pattern: str = Field(default=..., description="The pattern to split the column contents.")
 
-    def func(self, column: Column):
+    def func(self, column: Column) -> Column:
         return split(column, pattern=self.split_pattern)
 
 
 class SplitAtFirstMatch(SplitAll):
     """
-    Like SplitAll, but only splits the string once. You can specify whether you want the first or second part..
+    Like SplitAll, but only splits the string once. You can specify whether you want the first or second part.
 
     Note
     ----
@@ -109,9 +107,7 @@ class SplitAtFirstMatch(SplitAll):
     |              Beans|  1600|    USA|
 
     ```python
-    output_df = SplitColumn(
-        column="product", target_column="split_first", split_pattern="an"
-    ).transform(input_df)
+    output_df = SplitColumn(column="product", target_column="split_first", split_pattern="an").transform(input_df)
     ```
 
     __output_df:__
@@ -128,7 +124,7 @@ class SplitAtFirstMatch(SplitAll):
         description="Takes the first part of the split when true, the second part when False. Other parts are ignored.",
     )
 
-    def func(self, column: Column):
+    def func(self, column: Column) -> Column:
         split_func = split(column, pattern=self.split_pattern)
 
         # first part
