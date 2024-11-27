@@ -20,23 +20,6 @@
 </details>
 
 <details>
-    <summary>poetry</summary>
-    
-    If you're using Poetry, add the following entry to the `pyproject.toml` file:
-    
-    ```toml title="pyproject.toml"
-    [[tool.poetry.source]]
-    name = "nike"
-    url = "https://artifactory.nike.com/artifactory/api/pypi/python-virtual/simple"
-    secondary = true
-    ```
-    
-    ```bash
-    poetry add koheesio
-    ```
-</details>
-
-<details>
     <summary>pip</summary>
     
     If you're using pip, run the following command to install Koheesio:

@@ -1,3 +1,4 @@
+from typing import Any
 from collections import namedtuple
 import datetime
 from decimal import Decimal
@@ -347,3 +348,20 @@ def df_with_all_types(spark):
         data=[[v[0] for v in data.values()]],
         schema=StructType([StructField(name=v[1], dataType=v[2]) for v in data.values()]),
     )
+
+
+class ScopeSecrets:
+    class SecretMeta:
+        def __init__(self, key: str):
+            self.key = key
+
+    def __init__(self, secrets: dict):
+        self.secrets = secrets
+
+    def get(self, scope: str, key: str) -> Any:
+        return self.secrets.get(key)
+
+    def list(self, scope: str):
+        keys = [ScopeSecrets.SecretMeta(key=key) for key in self.secrets.keys()]
+
+        return keys

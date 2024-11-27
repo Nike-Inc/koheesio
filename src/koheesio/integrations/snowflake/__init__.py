@@ -449,7 +449,7 @@ class GrantPrivilegesOnObject(SnowflakeRunQueryPython):
         object="MY_TABLE",
         type="TABLE",
         warehouse="MY_WH",
-        user="gid.account@nike.com",
+        user="gid.account@abc.com",
         password=Secret("super-secret-password"),
         role="APPLICATION.SNOWFLAKE.ADMIN",
         permissions=["SELECT", "INSERT"],

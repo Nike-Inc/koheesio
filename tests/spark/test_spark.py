@@ -26,7 +26,7 @@ class TestSparkImportFailures:
         with mock.patch.dict("sys.modules", {"pyspark": None}):
             from koheesio.sso.okta import OktaAccessToken
 
-            OktaAccessToken(url="https://nike.okta.com", client_id="client_id", client_secret=secret)
+            OktaAccessToken(url="https://abc.okta.com", client_id="client_id", client_secret=secret)
 
     def test_import_error_with_error(self):
         with mock.patch.dict("sys.modules", {"pyspark.sql": None, "koheesio.steps.spark": None}):
