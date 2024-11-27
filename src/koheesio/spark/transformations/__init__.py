@@ -49,19 +49,25 @@ class Transformation(SparkStep, ABC):
 
     Example
     -------
+    ### Implementing a transformation using the Transformation class:
     ```python
     from koheesio.steps.transformations import Transformation
     from pyspark.sql import functions as f
 
 
     class AddOne(Transformation):
+        target_column: str = "new_column"
+
         def execute(self):
-            self.output.df = self.df.withColumn("new_column", f.col("old_column") + 1)
+            self.output.df = self.df.withColumn(
+                self.target_column, f.col("old_column") + 1
+            )
     ```
 
     In the example above, the `execute` method is implemented to add 1 to the values of the `old_column` and store the
     result in a new column called `new_column`.
 
+    ### Using the transformation:
     In order to use this transformation, we can call the `transform` method:
 
     ```python
@@ -85,6 +91,7 @@ class Transformation(SparkStep, ABC):
     | 2|         3|
     ...
 
+    ### Alternative ways to use the transformation:
     Alternatively, we can pass the DataFrame to the constructor and call the `execute` or `transform` method without
     any arguments:
 
@@ -94,9 +101,24 @@ class Transformation(SparkStep, ABC):
     output_df = AddOne(df).execute().output.df
     ```
 
-    Note: that the transform method was not implemented explicitly in the AddOne class. This is because the `transform`
+    > Note: that the transform method was not implemented explicitly in the AddOne class. This is because the `transform`
     method is already implemented in the `Transformation` class. This means that all classes that inherit from the
     Transformation class will have the `transform` method available. Only the execute method needs to be implemented.
+
+    ### Using the transformation as a function:
+    The transformation can also be used as a function as part of a DataFrame's `transform` method:
+
+    ```python
+    input_df = spark.range(3)
+
+    output_df = input_df.transform(AddOne(target_column="foo")).transform(
+        AddOne(target_column="bar")
+    )
+    ```
+
+    In the above example, the `AddOne` transformation is applied to the `input_df` DataFrame using the `transform`
+    method. The `output_df` will now contain the original DataFrame with an additional columns called `foo` and
+    `bar', each with the values of `id` + 1.
     """
 
     df: Optional[DataFrame] = Field(default=None, description="The Spark DataFrame")
@@ -111,7 +133,9 @@ class Transformation(SparkStep, ABC):
         For example:
         ```python
         def execute(self):
-            self.output.df = self.df.withColumn("new_column", f.col("old_column") + 1)
+            self.output.df = self.df.withColumn(
+                "new_column", f.col("old_column") + 1
+            )
         ```
 
         The transform method will call this method and return the output DataFrame.
@@ -146,6 +170,26 @@ class Transformation(SparkStep, ABC):
             raise RuntimeError("No valid Dataframe was passed")
         self.execute()
         return self.output.df
+
+    def __call__(self, *args, **kwargs):
+        """Allow the class to be called as a function.
+        This is especially useful when using a DataFrame's transform method.
+
+        Example
+        -------
+        ```python
+        input_df = spark.range(3)
+
+        output_df = input_df.transform(AddOne(target_column="foo")).transform(
+            AddOne(target_column="bar")
+        )
+        ```
+
+        In the above example, the `AddOne` transformation is applied to the `input_df` DataFrame using the `transform`
+        method. The `output_df` will now contain the original DataFrame with an additional columns called `foo` and
+        `bar', each with the values of `id` + 1.
+        """
+        return self.transform(*args, **kwargs)
 
 
 class ColumnsTransformation(Transformation, ABC):
@@ -204,7 +248,9 @@ class ColumnsTransformation(Transformation, ABC):
     class AddOne(ColumnsTransformation):
         def execute(self):
             for column in self.get_columns():
-                self.output.df = self.df.withColumn(column, f.col(column) + 1)
+                self.output.df = self.df.withColumn(
+                    column, f.col(column) + 1
+                )
     ```
 
     In the above example, the `execute` method is implemented to add 1 to the values of a given column.
@@ -460,7 +506,9 @@ class ColumnsTransformationWithTarget(ColumnsTransformation, ABC):
 
     ```python
     from pyspark.sql import Column
-    from koheesio.steps.transformations import ColumnsTransformationWithTarget
+    from koheesio.steps.transformations import (
+        ColumnsTransformationWithTarget,
+    )
 
 
     class AddOneWithTarget(ColumnsTransformationWithTarget):
@@ -477,7 +525,9 @@ class ColumnsTransformationWithTarget(ColumnsTransformation, ABC):
     # create a DataFrame with 3 rows
     df = SparkSession.builder.getOrCreate().range(3)
 
-    output_df = AddOneWithTarget(column="id", target_column="new_id").transform(df)
+    output_df = AddOneWithTarget(
+        column="id", target_column="new_id"
+    ).transform(df)
     ```
 
     The `output_df` will now contain the original DataFrame with an additional column called `new_id` with the values of
