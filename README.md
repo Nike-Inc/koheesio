@@ -198,6 +198,14 @@ the `pyproject.toml` entry mentioned above or installing through pip.
     - SE Provides Data Quality checks for Spark DataFrames.
     - For more information, refer to the [Spark Expectations docs](https://engineering.nike.com/spark-expectations).
 
+- __Spark Connect and Delta:__
+    Koheesio is ready to be used with Spark Connect. In case you are using Delta package in combination with a remote/connect session, you are getting full support in Databricks and partial support for Delta package in Apache Spark. Full support for Delta in Apache Spark is coming with the release of PySpark 4.0.
+    - The spark extra can be installed by adding `koheesio[spark]` to the `pyproject.toml` entry mentioned above.
+    - The spark module is available through the `koheesio.spark` module.
+    - The delta module is available through the `koheesio.spark.writers.delta` module.
+    - For more information, refer to the [Databricks documentation](https://docs.databricks.com/).
+    - For more information on Apache Spark, refer to the [Apache Spark documentation](https://spark.apache.org/docs/latest/).
+
 [//]: # (- **Brickflow:** Available through the `koheesio.integrations.workflow` module; installable through the `bf` extra.)
 [//]: # (    - Brickflow is a workflow orchestration tool that allows you to define and execute workflows in a declarative way.)
 [//]: # (    - For more information, refer to the [Brickflow docs]&#40;https://engineering.nike.com/brickflow&#41;)
