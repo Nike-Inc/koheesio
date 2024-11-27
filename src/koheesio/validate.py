@@ -5,38 +5,23 @@ from pydantic import BaseModel, ValidationError
 logging.basicConfig(level=logging.INFO)
 
 class DataSchema(BaseModel):
-    """
-    Represents the schema for validating input data.
-
-    Attributes:
-        id (int): A unique identifier for the individual.
-        name (str): The name of the individual.
-        age (int): The age of the individual.
-        is_active (bool): Whether the individual is active.
-    """
     id: int
     name: str
     age: int
     is_active: bool
-
 
 def validate_data(data):
     """
     Validates the input data against the defined schema.
 
     Args:
-        data (dict): A dictionary containing the input data. 
-            Expected keys:
-                - id (int): A unique identifier.
-                - name (str): The name of the individual.
-                - age (int): The age of the individual.
-                - is_active (bool): Active status.
+        data (dict): Input data to validate. Expected keys: id (int), name (str), age (int), is_active (bool).
 
     Returns:
-        DataSchema: An object representing the validated data.
+        DataSchema: Validated data as a DataSchema object.
 
     Raises:
-        ValidationError: If the input data fails validation.
+        ValidationError: If the input data does not match the schema.
 
     Example:
         Input:
@@ -58,3 +43,4 @@ def validate_data(data):
         logging.error("Validation Failed:")
         logging.error(e.json())
         raise
+
