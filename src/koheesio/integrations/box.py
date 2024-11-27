@@ -10,7 +10,7 @@ Prerequisites
 * Application is authorized for the enterprise (Developer Portal - MyApp - Authorization)
 """
 
-from typing import Any, Dict, Optional, Union, IO
+from typing import IO, Any, Dict, Optional, Union
 from abc import ABC
 from io import BytesIO, StringIO
 from pathlib import PurePath
