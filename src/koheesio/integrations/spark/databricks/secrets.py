@@ -8,9 +8,11 @@ See DataBricksSecret for more information.
 from typing import Dict, Optional
 import re
 
+from pyspark.sql import SparkSession
+
+from koheesio.integrations.spark.databricks.utils import get_dbutils
 from koheesio.models import Field, model_validator
 from koheesio.secrets import Secret
-from koheesio.spark.utils import on_databricks
 
 
 class DataBricksSecret(Secret):
@@ -20,7 +22,9 @@ class DataBricksSecret(Secret):
     secure scope by replacing "/" and "-", or manually provided by the user.
     Secrets are wrapped into the pydantic.SecretStr.
 
-    Example:
+    Examples
+    ---------
+
     ```python
     context = {"secrets": {"parent": {"webhook": SecretStr("**********"), "description": SecretStr("**********")}}}
     ```
@@ -60,15 +64,8 @@ class DataBricksSecret(Secret):
         """
         Instantiated Databricks client.
         """
-        if not on_databricks():
-            raise RuntimeError("dbutils not available")
 
-        from pyspark.dbutils import DBUtils  # pylint: disable=E0611,E0401 # type: ignore
-        from pyspark.sql import SparkSession
-
-        dbutils = DBUtils(SparkSession.getActiveSession())
-
-        return dbutils
+        return get_dbutils(SparkSession.getActiveSession())  # type: ignore
 
     def _get_secrets(self):
         """Dictionary of secrets."""
