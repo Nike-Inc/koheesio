@@ -79,7 +79,7 @@ class TableauServer(Step):
         if self.project and self.project_id:
             raise ValueError("Both 'project' and 'project_id' parameters cannot be provided at the same time.")
 
-        if not self.project_id and not self.project_id:
+        if not self.project and not self.project_id:
             raise ValueError("Either 'project' or 'project_id' parameters should be provided, none is set")
 
         return self
