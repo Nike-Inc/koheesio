@@ -12,14 +12,21 @@ def categorical_encoding(data, columns, config: EncodingConfig):
     """
     Encodes categorical columns using one-hot encoding.
 
-    Args:
-        data (pd.DataFrame): Input dataset.
-        columns (list): List of categorical columns to encode.
-        config (EncodingConfig): Configuration for encoding.
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Input dataset.
+    columns : list
+        List of categorical columns to encode.
+    drop_first : bool, optional
+        Whether to drop the first dummy column to avoid multicollinearity, by default True.
 
-    Returns:
-        pd.DataFrame: Dataset with one-hot encoded columns.
+    Returns
+    -------
+    pd.DataFrame
+        Dataset with one-hot encoded columns.
     """
+
     encoder = OneHotEncoder(sparse_output=False, drop='first' if config.drop_first else None)
     encoded_array = encoder.fit_transform(data[columns])
     encoded_df = pd.DataFrame(
