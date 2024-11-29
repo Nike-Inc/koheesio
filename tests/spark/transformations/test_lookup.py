@@ -1,7 +1,5 @@
 import pytest
 
-from pyspark.sql import SparkSession
-
 from koheesio.spark.transformations.lookup import (
     DataframeLookup,
     JoinHint,
@@ -37,7 +35,7 @@ def test_join_hint_values() -> None:
 
 
 @pytest.mark.parametrize("join_hint", [None, JoinHint.BROADCAST])
-def test_dataframe_lookup(spark: SparkSession, join_hint: JoinHint) -> None:
+def test_dataframe_lookup(spark, join_hint: JoinHint) -> None:
     df = spark.createDataFrame(
         [("1", "a", "a"), ("2", "b", "b")],
         schema="key string, second_key string, field string",
