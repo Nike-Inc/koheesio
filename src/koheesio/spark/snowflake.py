@@ -1,7 +1,7 @@
 """
 Snowflake steps and tasks for Koheesio
 
-Every class in this module is a subclass of `Step` or `Task` and is used to perform operations on Snowflake.
+Every class in this module is a subclass of `Step` and is used to perform operations on Snowflake.
 
 Notes
 -----
