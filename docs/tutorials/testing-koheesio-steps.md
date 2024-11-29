@@ -9,12 +9,14 @@ Unit testing involves testing individual components of the software in isolation
 Here's an example of how to unit test a Koheesio task:
 
 ```python
-from koheesio.tasks.etl_task import EtlTask
-from koheesio.steps.readers import DummyReader
-from koheesio.steps.writers.dummy import DummyWriter
-from koheesio.steps.transformations import Transform
-from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
+
+from koheesio.spark import DataFrame
+from koheesio.spark.etl_task import EtlTask
+from koheesio.spark.readers.dummy import DummyReader
+from koheesio.spark.writers.dummy import DummyWriter
+from koheesio.spark.transformations.transform import Transform
 
 
 def filter_age(df: DataFrame) -> DataFrame:
@@ -62,12 +64,12 @@ Here's an example of how to write an integration test for this task:
 
 ```python
 # my_module.py
-from koheesio.tasks.etl_task import EtlTask
-from koheesio.spark.readers.delta import DeltaReader
-from koheesio.steps.writers.delta import DeltaWriter
-from koheesio.steps.transformations import Transform
-from koheesio.context import Context
 from pyspark.sql.functions import col
+from koheesio.spark.etl_task import EtlTask
+from koheesio.spark.readers.delta import DeltaTableReader
+from koheesio.spark.writers.delta import DeltaTableWriter
+from koheesio.spark.transformations.transform import Transform
+from koheesio.context import Context
 
 
 def filter_age(df):
@@ -84,8 +86,8 @@ context = Context({
 })
 
 task = EtlTask(
-    source=DeltaReader(**context.reader_options),
-    target=DeltaWriter(**context.writer_options),
+    source=DeltaTableReader(**context.reader_options),
+    target=DeltaTableWriter(**context.writer_options),
     transformations=[
         Transform(filter_age)
     ]
@@ -97,11 +99,11 @@ Now, let's create a test for this task. We'll use pytest and unittest.mock to mo
 ```python
 # test_my_module.py
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 from pyspark.sql import SparkSession
 from koheesio.context import Context
-from koheesio.steps.readers import Reader
-from koheesio.steps.writers import Writer
+from koheesio.spark.readers import Reader
+from koheesio.spark.writers import Writer
 
 from my_module import task
 

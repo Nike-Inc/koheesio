@@ -2,7 +2,6 @@ from datetime import datetime
 
 import pytest
 
-from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 
 from koheesio.spark.transformations.row_number_dedup import RowNumberDedup
@@ -10,8 +9,8 @@ from koheesio.spark.transformations.row_number_dedup import RowNumberDedup
 pytestmark = pytest.mark.spark
 
 
-@pytest.mark.parametrize("target_column", ["col_row_nuber"])
-def test_row_number_dedup(spark: SparkSession, target_column: str) -> None:
+@pytest.mark.parametrize("target_column", ["col_row_number"])
+def test_row_number_dedup(spark, target_column: str) -> None:
     df = spark.createDataFrame(
         [
             (
@@ -48,8 +47,8 @@ def test_row_number_dedup(spark: SparkSession, target_column: str) -> None:
     }
 
 
-@pytest.mark.parametrize("target_column", ["col_row_nuber"])
-def test_row_number_dedup_not_list_column(spark: SparkSession, target_column: str) -> None:
+@pytest.mark.parametrize("target_column", ["col_row_number"])
+def test_row_number_dedup_not_list_column(spark, target_column: str) -> None:
     df = spark.createDataFrame(
         [
             (
@@ -88,8 +87,8 @@ def test_row_number_dedup_not_list_column(spark: SparkSession, target_column: st
     }
 
 
-@pytest.mark.parametrize("target_column", ["col_row_nuber"])
-def test_row_number_dedup_with_columns(spark: SparkSession, target_column: str) -> None:
+@pytest.mark.parametrize("target_column", ["col_row_number"])
+def test_row_number_dedup_with_columns(spark, target_column: str) -> None:
     df = spark.createDataFrame(
         [
             (
@@ -128,8 +127,8 @@ def test_row_number_dedup_with_columns(spark: SparkSession, target_column: str) 
     }
 
 
-@pytest.mark.parametrize("target_column", ["col_row_nuber"])
-def test_row_number_dedup_with_duplicated_columns(spark: SparkSession, target_column: str) -> None:
+@pytest.mark.parametrize("target_column", ["col_row_number"])
+def test_row_number_dedup_with_duplicated_columns(spark, target_column: str) -> None:
     df = spark.createDataFrame(
         [
             (

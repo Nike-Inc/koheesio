@@ -21,16 +21,14 @@ ColumnsTransformationWithTarget
     Extended ColumnsTransformation class with an additional `target_column` field
 """
 
-from typing import List, Optional, Union
+from typing import Iterator, List, Optional, Union
 from abc import ABC, abstractmethod
 
-from pyspark.sql import Column
 from pyspark.sql import functions as f
-from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.types import DataType
 
 from koheesio.models import Field, ListOfColumns, field_validator
-from koheesio.spark import SparkStep
+from koheesio.spark import Column, DataFrame, SparkStep
 from koheesio.spark.utils import SparkDatatype
 
 
@@ -51,21 +49,25 @@ class Transformation(SparkStep, ABC):
 
     Example
     -------
+    ### Implementing a transformation using the Transformation class:
     ```python
     from koheesio.steps.transformations import Transformation
     from pyspark.sql import functions as f
 
 
     class AddOne(Transformation):
+        target_column: str = "new_column"
+
         def execute(self):
             self.output.df = self.df.withColumn(
-                "new_column", f.col("old_column") + 1
+                self.target_column, f.col("old_column") + 1
             )
     ```
 
     In the example above, the `execute` method is implemented to add 1 to the values of the `old_column` and store the
     result in a new column called `new_column`.
 
+    ### Using the transformation:
     In order to use this transformation, we can call the `transform` method:
 
     ```python
@@ -89,6 +91,7 @@ class Transformation(SparkStep, ABC):
     | 2|         3|
     ...
 
+    ### Alternative ways to use the transformation:
     Alternatively, we can pass the DataFrame to the constructor and call the `execute` or `transform` method without
     any arguments:
 
@@ -98,9 +101,24 @@ class Transformation(SparkStep, ABC):
     output_df = AddOne(df).execute().output.df
     ```
 
-    Note: that the transform method was not implemented explicitly in the AddOne class. This is because the `transform`
+    > Note: that the transform method was not implemented explicitly in the AddOne class. This is because the `transform`
     method is already implemented in the `Transformation` class. This means that all classes that inherit from the
     Transformation class will have the `transform` method available. Only the execute method needs to be implemented.
+
+    ### Using the transformation as a function:
+    The transformation can also be used as a function as part of a DataFrame's `transform` method:
+
+    ```python
+    input_df = spark.range(3)
+
+    output_df = input_df.transform(AddOne(target_column="foo")).transform(
+        AddOne(target_column="bar")
+    )
+    ```
+
+    In the above example, the `AddOne` transformation is applied to the `input_df` DataFrame using the `transform`
+    method. The `output_df` will now contain the original DataFrame with an additional columns called `foo` and
+    `bar', each with the values of `id` + 1.
     """
 
     df: Optional[DataFrame] = Field(default=None, description="The Spark DataFrame")
@@ -115,7 +133,9 @@ class Transformation(SparkStep, ABC):
         For example:
         ```python
         def execute(self):
-            self.output.df = self.df.withColumn("new_column", f.col("old_column") + 1)
+            self.output.df = self.df.withColumn(
+                "new_column", f.col("old_column") + 1
+            )
         ```
 
         The transform method will call this method and return the output DataFrame.
@@ -150,6 +170,26 @@ class Transformation(SparkStep, ABC):
             raise RuntimeError("No valid Dataframe was passed")
         self.execute()
         return self.output.df
+
+    def __call__(self, *args, **kwargs):
+        """Allow the class to be called as a function.
+        This is especially useful when using a DataFrame's transform method.
+
+        Example
+        -------
+        ```python
+        input_df = spark.range(3)
+
+        output_df = input_df.transform(AddOne(target_column="foo")).transform(
+            AddOne(target_column="bar")
+        )
+        ```
+
+        In the above example, the `AddOne` transformation is applied to the `input_df` DataFrame using the `transform`
+        method. The `output_df` will now contain the original DataFrame with an additional columns called `foo` and
+        `bar', each with the values of `id` + 1.
+        """
+        return self.transform(*args, **kwargs)
 
 
 class ColumnsTransformation(Transformation, ABC):
@@ -208,7 +248,9 @@ class ColumnsTransformation(Transformation, ABC):
     class AddOne(ColumnsTransformation):
         def execute(self):
             for column in self.get_columns():
-                self.output.df = self.df.withColumn(column, f.col(column) + 1)
+                self.output.df = self.df.withColumn(
+                    column, f.col(column) + 1
+                )
     ```
 
     In the above example, the `execute` method is implemented to add 1 to the values of a given column.
@@ -236,7 +278,7 @@ class ColumnsTransformation(Transformation, ABC):
             allows to run the transformation for all columns of a given type.
             A user can trigger this behavior by either omitting the `columns` parameter or by passing a single `*` as a
             column name. In both cases, the `run_for_all_data_type` will be used to determine the data type.
-            Value should be be passed as a SparkDatatype enum.
+            Value should be passed as a SparkDatatype enum.
             (default: [None])
 
         limit_data_type : Optional[List[SparkDatatype]]
@@ -251,12 +293,12 @@ class ColumnsTransformation(Transformation, ABC):
             (default: False)
         """
 
-        run_for_all_data_type: Optional[List[SparkDatatype]] = [None]
+        run_for_all_data_type: Optional[List[SparkDatatype]] = [None]  # type: ignore
         limit_data_type: Optional[List[SparkDatatype]] = [None]
         data_type_strict_mode: bool = False
 
     @field_validator("columns", mode="before")
-    def set_columns(cls, columns_value):
+    def set_columns(cls, columns_value: ListOfColumns) -> ListOfColumns:
         """Validate columns through the columns configuration provided"""
         columns = columns_value
         run_for_all_data_type = cls.ColumnConfig.run_for_all_data_type
@@ -280,7 +322,7 @@ class ColumnsTransformation(Transformation, ABC):
     @property
     def limit_data_type_is_set(self) -> bool:
         """Returns True if limit_data_type is set"""
-        return self.ColumnConfig.limit_data_type[0] is not None
+        return self.ColumnConfig.limit_data_type[0] is not None  # type: ignore[index]
 
     @property
     def data_type_strict_mode_is_set(self) -> bool:
@@ -288,7 +330,10 @@ class ColumnsTransformation(Transformation, ABC):
         return self.ColumnConfig.data_type_strict_mode
 
     def column_type_of_col(
-        self, col: Union[str, Column], df: Optional[DataFrame] = None, simple_return_mode: bool = True
+        self,
+        col: Union[Column, str],
+        df: Optional[DataFrame] = None,
+        simple_return_mode: bool = True,
     ) -> Union[DataType, str]:
         """
         Returns the dataType of a Column object as a string.
@@ -338,12 +383,15 @@ class ColumnsTransformation(Transformation, ABC):
         if not df:
             raise RuntimeError("No valid Dataframe was passed")
 
-        if not isinstance(col, Column):
-            col = f.col(col)
+        if not isinstance(col, Column):  # type:ignore[misc, arg-type]
+            col = f.col(col)  # type:ignore[arg-type]
 
-        # ask the JVM for the name of the column
-        # noinspection PyProtectedMember
-        col_name = col._jc.toString()
+        # noinspection PyProtectedMember,PyUnresolvedReferences
+        col_name = (
+            col._expr._unparsed_identifier
+            if col.__class__.__module__ == "pyspark.sql.connect.column"
+            else col._jc.toString()  # type: ignore  # noqa: E721
+        )
 
         # In order to check the datatype of the column, we have to ask the DataFrame its schema
         df_col = [c for c in df.schema if c.name == col_name][0]
@@ -382,7 +430,7 @@ class ColumnsTransformation(Transformation, ABC):
         ]
         return columns_of_given_type
 
-    def is_column_type_correct(self, column):
+    def is_column_type_correct(self, column: Union[Column, str]) -> bool:
         """Check if column type is correct and handle it if not, when limit_data_type is set"""
         if not self.limit_data_type_is_set:
             return True
@@ -401,19 +449,19 @@ class ColumnsTransformation(Transformation, ABC):
         self.log.warning(f"Column `{column}` is not of type `{limit_data_types}` and will be skipped.")
         return False
 
-    def get_limit_data_types(self):
+    def get_limit_data_types(self) -> list:
         """Get the limit_data_type as a list of strings"""
-        return [dt.value for dt in self.ColumnConfig.limit_data_type]
+        return [dt.value for dt in self.ColumnConfig.limit_data_type]  # type: ignore
 
-    def get_columns(self) -> iter:
+    def get_columns(self) -> Iterator[str]:
         """Return an iterator of the columns"""
         # If `run_for_all_is_set` is True, we want to run the transformation for all columns of a given type
         if self.run_for_all_is_set:
             columns = []
-            for data_type in self.ColumnConfig.run_for_all_data_type:
+            for data_type in self.ColumnConfig.run_for_all_data_type:  # type: ignore
                 columns += self.get_all_columns_of_specific_type(data_type)
         else:
-            columns = self.columns
+            columns = self.columns  # type:ignore[assignment]
 
         for column in columns:
             if self.is_column_type_correct(column):
@@ -458,7 +506,9 @@ class ColumnsTransformationWithTarget(ColumnsTransformation, ABC):
 
     ```python
     from pyspark.sql import Column
-    from koheesio.steps.transformations import ColumnsTransformationWithTarget
+    from koheesio.steps.transformations import (
+        ColumnsTransformationWithTarget,
+    )
 
 
     class AddOneWithTarget(ColumnsTransformationWithTarget):
@@ -475,7 +525,9 @@ class ColumnsTransformationWithTarget(ColumnsTransformation, ABC):
     # create a DataFrame with 3 rows
     df = SparkSession.builder.getOrCreate().range(3)
 
-    output_df = AddOneWithTarget(column="id", target_column="new_id").transform(df)
+    output_df = AddOneWithTarget(
+        column="id", target_column="new_id"
+    ).transform(df)
     ```
 
     The `output_df` will now contain the original DataFrame with an additional column called `new_id` with the values of
@@ -521,7 +573,7 @@ class ColumnsTransformationWithTarget(ColumnsTransformation, ABC):
         """
         raise NotImplementedError
 
-    def get_columns_with_target(self) -> iter:
+    def get_columns_with_target(self) -> Iterator[tuple[str, str]]:
         """Return an iterator of the columns
 
         Works just like in get_columns from the  ColumnsTransformation class except that it handles the `target_column`
@@ -550,7 +602,7 @@ class ColumnsTransformationWithTarget(ColumnsTransformation, ABC):
 
             yield target_column, column
 
-    def execute(self):
+    def execute(self) -> None:
         """Execute on a ColumnsTransformationWithTarget handles self.df (input) and set self.output.df (output)
         This can be left unchanged, and hence should not be implemented in the child class.
         """
@@ -560,7 +612,7 @@ class ColumnsTransformationWithTarget(ColumnsTransformation, ABC):
             func = self.func  # select the applicable function
             df = df.withColumn(
                 target_column,
-                func(f.col(column)),
+                func(f.col(column)),  # type:ignore[arg-type]
             )
 
         self.output.df = df

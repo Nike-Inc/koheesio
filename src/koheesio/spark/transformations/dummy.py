@@ -34,5 +34,5 @@ class DummyTransformation(Transformation):
 
     """
 
-    def execute(self):
+    def execute(self) -> Transformation.Output:
         self.output.df = self.df.withColumn("hello", lit("world"))

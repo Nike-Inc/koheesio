@@ -13,6 +13,8 @@ classes that just set the `format` field to the corresponding file format.
 
 """
 
+from __future__ import annotations
+
 from typing import Union
 from enum import Enum
 from pathlib import Path
@@ -63,24 +65,24 @@ class FileWriter(Writer, ExtraParamsMixin):
     """
 
     output_mode: BatchOutputMode = Field(default=BatchOutputMode.APPEND, description="The output mode to use")
-    format: FileFormat = Field(None, description="The file format to use when writing the data.")
-    path: Union[Path, str] = Field(default=None, description="The path to write the file to")
+    format: FileFormat = Field(..., description="The file format to use when writing the data.")
+    path: Union[Path, str] = Field(default=..., description="The path to write the file to")
 
     @field_validator("path")
-    def ensure_path_is_str(cls, v):
+    def ensure_path_is_str(cls, v: Union[Path, str]) -> str:
         """Ensure that the path is a string as required by Spark."""
         if isinstance(v, Path):
             return str(v.absolute().as_posix())
         return v
 
-    def execute(self):
+    def execute(self) -> FileWriter.Output:
         writer = self.df.write
 
         if self.extra_params:
             self.log.info(f"Setting extra parameters for the writer: {self.extra_params}")
             writer = writer.options(**self.extra_params)
 
-        writer.save(path=self.path, format=self.format, mode=self.output_mode)
+        writer.save(path=self.path, format=self.format, mode=self.output_mode)  # type: ignore
 
         self.output.df = self.df
 
@@ -139,9 +141,7 @@ class AvroFileWriter(FileWriter):
     Examples
     --------
     ```python
-    writer = AvroFileWriter(
-        df=df, path="path/to/file.avro", output_mode=BatchOutputMode.APPEND
-    )
+    writer = AvroFileWriter(df=df, path="path/to/file.avro", output_mode=BatchOutputMode.APPEND)
     ```
     """
 
@@ -158,9 +158,7 @@ class JsonFileWriter(FileWriter):
     Examples
     --------
     ```python
-    writer = JsonFileWriter(
-        df=df, path="path/to/file.json", output_mode=BatchOutputMode.APPEND
-    )
+    writer = JsonFileWriter(df=df, path="path/to/file.json", output_mode=BatchOutputMode.APPEND)
     ```
     """
 
@@ -177,9 +175,7 @@ class OrcFileWriter(FileWriter):
     Examples
     --------
     ```python
-    writer = OrcFileWriter(
-        df=df, path="path/to/file.orc", output_mode=BatchOutputMode.APPEND
-    )
+    writer = OrcFileWriter(df=df, path="path/to/file.orc", output_mode=BatchOutputMode.APPEND)
     ```
     """
 
@@ -196,9 +192,7 @@ class TextFileWriter(FileWriter):
     Examples
     --------
     ```python
-    writer = TextFileWriter(
-        df=df, path="path/to/file.txt", output_mode=BatchOutputMode.APPEND
-    )
+    writer = TextFileWriter(df=df, path="path/to/file.txt", output_mode=BatchOutputMode.APPEND)
     ```
     """
 

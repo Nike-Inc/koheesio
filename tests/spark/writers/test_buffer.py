@@ -1,5 +1,5 @@
-import gzip
 from datetime import datetime, timezone
+import gzip
 from importlib.util import find_spec
 
 import pytest

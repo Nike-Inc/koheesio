@@ -40,6 +40,12 @@ hatch-install:
 	fi
 init: hatch-install
 
+.PHONY: sync  ## hatch - Update dependencies if you changed project dependencies in pyproject.toml
+.PHONY: update  ## hatch - alias for sync (if you are used to poetry, thi is similar to running `poetry update`)
+sync:
+	@hatch run dev:uv sync --all-extras
+update: sync
+
 #  Code Quality
 .PHONY: black black-fmt ## code quality - Use black to (re)format the codebase
 black-fmt:
@@ -105,16 +111,16 @@ coverage: cov
 all-tests:
 	@echo "\033[1mRunning all tests:\033[0m\n\033[35m This will run the full test suite\033[0m"
 	@echo "\033[1;31mWARNING:\033[0;33m This may take upward of 20-30 minutes to complete!\033[0m"
-	@hatch test --no-header --no-summary
+	@hatch test --no-header
 .PHONY: spark-tests  ## testing - Run SPARK tests in ALL environments
 spark-tests:
 	@echo "\033[1mRunning Spark tests:\033[0m\n\033[35m This will run the Spark test suite against all specified environments\033[0m"
 	@echo "\033[1;31mWARNING:\033[0;33m This may take upward of 20-30 minutes to complete!\033[0m"
-	@hatch test -m spark --no-header --no-summary
+	@hatch test -m spark --no-header
 .PHONY: non-spark-tests  ## testing - Run non-spark tests in ALL environments
 non-spark-tests:
 	@echo "\033[1mRunning non-Spark tests:\033[0m\n\033[35m This will run the non-Spark test suite against all specified environments\033[0m"
-	@hatch test -m "not spark" --no-header --no-summary
+	@hatch test -m "not spark" --no-header
 
 .PHONY: dev-test ## testing - Run pytest, with all tests in the dev environment
 dev-test:

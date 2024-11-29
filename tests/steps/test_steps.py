@@ -1,29 +1,20 @@
 from __future__ import annotations
 
-import io
-import warnings
 from copy import deepcopy
 from functools import wraps
+import io
 from unittest import mock
 from unittest.mock import call, patch
+import warnings
 
 import pytest
 
 from pydantic import ValidationError
 
-from pyspark.sql import DataFrame
-from pyspark.sql.functions import lit
-
 from koheesio.models import Field
-from koheesio.spark.transformations.transform import Transform
 from koheesio.steps import Step, StepMetaClass, StepOutput
 from koheesio.steps.dummy import DummyOutput, DummyStep
 from koheesio.utils import get_project_root
-
-
-def dummy_function(df: DataFrame):
-    return df.withColumn("hello", lit("world"))
-
 
 output_dict_1 = dict(a="foo", b=42)
 test_output_1 = DummyOutput(**output_dict_1)
@@ -35,13 +26,15 @@ lazy_output = DummyOutput.lazy()
 
 # we put the newline in the description to test that the newline is removed
 test_step = DummyStep(a="foo", b=2, description="Dummy step for testing purposes.\nwith a newline")
-test_transformation = Transform(dummy_function)
 
 PROJECT_ROOT = get_project_root()
 
 
 class TestStepOutput:
-    @pytest.mark.parametrize("output_dict, expected", [(output_dict_1, output_dict_1), (output_dict_2, output_dict_2)])
+    @pytest.mark.parametrize(
+        "output_dict, expected",
+        [(output_dict_1, output_dict_1), (output_dict_2, output_dict_2)],
+    )
     def test_stepoutput_validate_output(self, output_dict, expected):
         """Tests that validate_output returns the expected output dict"""
         test_output = DummyOutput(**output_dict)
@@ -69,7 +62,12 @@ class TestStepOutput:
             (
                 "foo",
                 42,
-                {"a": "foo", "b": 42, "name": "DummyOutput", "description": "Dummy output for testing purposes."},
+                {
+                    "a": "foo",
+                    "b": 42,
+                    "name": "DummyOutput",
+                    "description": "Dummy output for testing purposes.",
+                },
             ),
             # test wrong type assigned
             ("foo", "invalid type", ValidationError),
@@ -92,7 +90,6 @@ class TestStepOutput:
                     lazy_output.validate_output()
             else:
                 actual = lazy_output.validate_output().model_dump()
-                print(f"{actual=}")
                 assert actual == expected
 
     @pytest.mark.parametrize("attribute, expected", [("a", True), ("d", False)])
@@ -169,7 +166,9 @@ class TestStep:
 
         assert step.model_dump() == dict(a="foo", description="SimpleStep", name="SimpleStep")
         assert step.execute().model_dump() == dict(
-            b="foo-some-suffix", name="SimpleStep.Output", description="Output for SimpleStep"
+            b="foo-some-suffix",
+            name="SimpleStep.Output",
+            description="Output for SimpleStep",
         )
 
         # as long as the following doesn't raise an error, we're good
@@ -190,9 +189,7 @@ class TestStep:
             b=2,
             c="foofoo",
         )
-        print(f"{actual_execute=}")
-        print(f"{actual_run=}")
-        print(f"{expected=}")
+
         assert actual_execute == actual_run == expected
 
         # 3 ways to retrieve output
@@ -293,7 +290,11 @@ class TestStep:
 
         # Check that do_execute was not called multiple times
         assert (
-            getattr(getattr(obj.execute, "_partialmethod", None), "_step_execute_wrapper_sentinel", None)
+            getattr(
+                getattr(obj.execute, "_partialmethod", None),
+                "_step_execute_wrapper_sentinel",
+                None,
+            )
             is StepMetaClass._step_execute_wrapper_sentinel
         )
         assert getattr(getattr(obj.execute, "_partialmethod", None), "_wrap_count", 0) == 1
@@ -354,6 +355,51 @@ class TestStep:
             mock_log.assert_has_calls(calls, any_order=False)
 
             assert "It's me from custom meta class" in print_output
+
+    def test_log_and_wrapper_duplication(self):
+        """
+        Test that when a step is inherited multiple times, the log and wrapper are only called once when subclasses do
+        not have explicit execute methods set.
+        """
+
+        class MyCustomParentStep(Step):
+            foo: str = Field(default=..., description="Foo")
+            bar: str = Field(default=..., description="Bar")
+
+            class Output(Step.Output):
+                baz: str = Field(default=..., description="Baz")
+
+            def execute(self) -> Output:
+                self.log.error("This should not be logged")
+                self.output.baz = self.foo + self.bar
+
+        class MyCustomChildStep(MyCustomParentStep): ...
+
+        class MyCustomGrandChildStep(MyCustomChildStep):
+            def execute(self) -> MyCustomChildStep.Output:
+                self.output.baz = self.foo + self.bar
+
+        class MyCustomGreatGrandChildStep(MyCustomGrandChildStep): ...
+
+        with (
+            patch.object(MyCustomGreatGrandChildStep, "log", autospec=True) as mock_log,
+        ):
+            obj = MyCustomGreatGrandChildStep(foo="foo", bar="bar", qux="qux")
+            obj.execute()
+
+            name = MyCustomGreatGrandChildStep.__name__
+
+            # Check that logs were called once (and only once) with the correct messages, and in the correct order
+            calls = [
+                call.info("Start running step"),
+                call.debug(f"Step Input: name='{name}' description='{name}' foo='foo' bar='bar' qux='qux'"),
+                call.debug(f"Step Output: name='{name}.Output' description='Output for {name}' baz='foobar'"),
+                call.info("Finished running step"),
+            ]
+            mock_log.assert_has_calls(calls, any_order=False)
+
+            # Check that the execute method is only wrapped once
+            assert getattr(getattr(obj.execute, "_partialmethod", None), "_wrap_count", 0) == 1
 
     @pytest.mark.parametrize("test_class", [YourClassWithCustomMeta2])
     def test_custom_metaclass_output(self, test_class):

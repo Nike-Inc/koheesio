@@ -1,5 +1,5 @@
-import pytest
 from chispa import assert_df_equality
+import pytest
 
 from pyspark.sql.types import StructType
 
@@ -14,10 +14,10 @@ class TestInMemoryDataReader:
         "data,format,params,expect_filter",
         [
             pytest.param(
-                "id,string\n1,hello,\n2,world", DataFormat.CSV, {"header": True}, "id < 3"
+                "id,string\n1,hello\n2,world", DataFormat.CSV, {"header":True}, "id < 3"
             ),
             pytest.param(
-                b"id,string\n1,hello,\n2,world", DataFormat.CSV, {"header": True}, "id < 3"
+                b"id,string\n1,hello\n2,world", DataFormat.CSV, {"header":0}, "id < 3"
             ),
             pytest.param(
                 '{"id": 1, "string": "hello"}', DataFormat.JSON, {}, "id < 2"

@@ -14,7 +14,8 @@ import pytest
 from pyspark.sql import SparkSession
 
 from koheesio.models import SecretStr
-from koheesio.spark import SparkStep
+from koheesio.spark import DataFrame, SparkStep
+from koheesio.spark.transformations.transform import Transform
 
 pytestmark = pytest.mark.spark
 
@@ -25,7 +26,7 @@ class TestSparkImportFailures:
         with mock.patch.dict("sys.modules", {"pyspark": None}):
             from koheesio.sso.okta import OktaAccessToken
 
-            OktaAccessToken(url="https://nike.okta.com", client_id="client_id", client_secret=secret)
+            OktaAccessToken(url="https://abc.okta.com", client_id="client_id", client_secret=secret)
 
     def test_import_error_with_error(self):
         with mock.patch.dict("sys.modules", {"pyspark.sql": None, "koheesio.steps.spark": None}):
@@ -49,3 +50,13 @@ class TestSparkStep:
         spark = SparkSession.builder.appName("pytest-pyspark-local-testing-implicit").master("local[*]").getOrCreate()
         step = SparkStep()
         assert step.spark is spark
+
+    def test_transformation(self):
+        from pyspark.sql import functions as F
+
+        def dummy_function(df: DataFrame):
+            return df.withColumn("hello", F.lit("world"))
+
+        test_transformation = Transform(dummy_function)
+
+        assert test_transformation

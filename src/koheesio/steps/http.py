@@ -12,11 +12,11 @@ response = HttpGetStep(url="https://google.com").execute().json_payload
 In the above example, the `response` variable will contain the JSON response from the HTTP request.
 """
 
-import json
 from typing import Any, Dict, List, Optional, Union
 from enum import Enum
+import json
 
-import requests
+import requests  # type: ignore[import-untyped]
 
 from koheesio import Step
 from koheesio.models import (
@@ -34,7 +34,7 @@ __all__ = [
     "HttpPostStep",
     "HttpPutStep",
     "HttpDeleteStep",
-    "PaginatedHtppGetStep",
+    "PaginatedHttpGetStep",
 ]
 
 
@@ -49,7 +49,7 @@ class HttpMethod(str, Enum):
     DELETE = "delete"
 
     @classmethod
-    def from_string(cls, value: str):
+    def from_string(cls, value: str) -> str:
         """Allows for getting the right Method Enum by simply passing a string value
         This method is not case-sensitive
         """
@@ -102,7 +102,7 @@ class HttpStep(Step, ExtraParamsMixin):
     data: Optional[Union[Dict[str, str], str]] = Field(
         default_factory=dict, description="[Optional] Data to be sent along with the request", alias="body"
     )
-    params: Optional[Dict[str, Any]] = Field(
+    params: Optional[Dict[str, Any]] = Field(  # type: ignore[assignment]
         default_factory=dict,
         description="[Optional] Set of extra parameters that should be passed to HTTP request",
     )
@@ -135,12 +135,12 @@ class HttpStep(Step, ExtraParamsMixin):
         status_code: Optional[int] = Field(default=None, description="The status return code of the request")
 
         @property
-        def json_payload(self):
+        def json_payload(self) -> Union[dict, list, None]:
             """Alias for response_json"""
             return self.response_json
 
     @field_validator("method")
-    def get_proper_http_method_from_str_value(cls, method_value):
+    def get_proper_http_method_from_str_value(cls, method_value: str) -> str:
         """Converts string value to HttpMethod enum value"""
         if isinstance(method_value, str):
             try:
@@ -154,7 +154,7 @@ class HttpStep(Step, ExtraParamsMixin):
         return method_value
 
     @field_validator("headers", mode="before")
-    def encode_sensitive_headers(cls, headers):
+    def encode_sensitive_headers(cls, headers: dict) -> dict:
         """
         Encode potentially sensitive data into pydantic.SecretStr class to prevent them
         being displayed as plain text in logs.
@@ -164,7 +164,7 @@ class HttpStep(Step, ExtraParamsMixin):
         return headers
 
     @field_serializer("headers", when_used="json")
-    def decode_sensitive_headers(self, headers):
+    def decode_sensitive_headers(self, headers: dict) -> dict:
         """
         Authorization headers are being converted into SecretStr under the hood to avoid dumping any
         sensitive content into logs by the `encode_sensitive_headers` method.
@@ -178,13 +178,13 @@ class HttpStep(Step, ExtraParamsMixin):
             headers[k] = v.get_secret_value() if isinstance(v, SecretStr) else v
         return headers
 
-    def get_headers(self):
+    def get_headers(self) -> dict:
         """
         Dump headers into JSON without SecretStr masking.
         """
         return json.loads(self.model_dump_json()).get("headers")
 
-    def set_outputs(self, response):
+    def set_outputs(self, response: requests.Response) -> None:
         """
         Types of response output
         """
@@ -200,7 +200,7 @@ class HttpStep(Step, ExtraParamsMixin):
             except json.decoder.JSONDecodeError as e:
                 self.log.info(f"An error occurred while processing the JSON payload. Error message:\n{e.msg}")
 
-    def get_options(self):
+    def get_options(self) -> dict:
         """options to be passed to requests.request()"""
         return {
             "url": self.url,
@@ -253,6 +253,7 @@ class HttpStep(Step, ExtraParamsMixin):
 
         return response
 
+    # noinspection PyMethodOverriding
     def get(self) -> requests.Response:
         """Execute an HTTP GET call"""
         self.method = HttpMethod.GET
@@ -273,7 +274,7 @@ class HttpStep(Step, ExtraParamsMixin):
         self.method = HttpMethod.DELETE
         return self.request()
 
-    def execute(self) -> Output:
+    def execute(self) -> None:
         """
         Executes the HTTP request.
 
@@ -320,7 +321,7 @@ class HttpDeleteStep(HttpStep):
     method: HttpMethod = HttpMethod.DELETE
 
 
-class PaginatedHtppGetStep(HttpGetStep):
+class PaginatedHttpGetStep(HttpGetStep):
     """
     Represents a paginated HTTP GET step.
 
@@ -366,7 +367,7 @@ class PaginatedHtppGetStep(HttpGetStep):
         """
         return {k: v for k, v in self.params.items() if k not in ["paginate"]}  # type: ignore
 
-    def get_options(self):
+    def get_options(self) -> dict:
         """
         Returns the options to be passed to the requests.request() function.
 
@@ -414,7 +415,7 @@ class PaginatedHtppGetStep(HttpGetStep):
 
         return basic_url.format(**url_params)
 
-    def execute(self) -> HttpGetStep.Output:
+    def execute(self) -> None:
         """
         Executes the HTTP GET request and handles pagination.
 
@@ -428,7 +429,7 @@ class PaginatedHtppGetStep(HttpGetStep):
         data = []
         _basic_url = self.url
 
-        for page in range(offset, pages):
+        for page in range(offset, pages):  # type: ignore[arg-type]
             if self.paginate:
                 self.log.info(f"Fetching page {page} of {pages - 1}")
 

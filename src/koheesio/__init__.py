@@ -25,7 +25,7 @@ __all__ = [
 ]
 
 
-def print_logo():
+def print_logo() -> None:
     global _logo_printed
     global _koheesio_print_logo
 
