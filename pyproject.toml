@@ -58,14 +58,17 @@ async_http = [
   "nest-asyncio>=1.6.0",
 ]
 box = ["boxsdk[jwt]==3.8.1"]
+delta = ["delta-spark>=2.2"]
+excel = ["openpyxl>=3.0.0"]
+ml = ["numpy>=1.21.5", "scikit-learn>=1.1.1", "scipy>=1.9.1", "pandas"]
 pandas = ["pandas>=1.3", "setuptools", "numpy<2.0.0", "pandas-stubs"]
 pyspark = ["pyspark>=3.2.0", "pyarrow>13"]
 pyspark_connect = ["pyspark[connect]>=3.5"]
+se = ["spark-expectations>=2.2.1,<2.3.0"]
 sftp = ["paramiko>=2.6.0"]
-delta = ["delta-spark>=2.2"]
-excel = ["openpyxl>=3.0.0"]
-tableau = ["tableauhyperapi>=0.0.19484", "tableauserverclient>=0.25"]
 snowflake = ["snowflake-connector-python>=3.12.0"]
+tableau = ["tableauhyperapi>=0.0.19484", "tableauserverclient>=0.25"]
+# development dependencies
 dev = ["ruff", "mypy", "pylint", "colorama", "types-PyYAML", "types-requests"]
 test = [
   "chispa",
@@ -100,7 +103,6 @@ docs = [
   "pymdown-extensions>=10.7.0",
   "black",
 ]
-se = ["spark-expectations>=2.2.1,<2.3.0"]
 
 [tool.hatch.metadata]
 allow-direct-references = true
@@ -176,16 +178,17 @@ installer = "uv"
 features = [
   "async",
   "async_http",
+  "box",
+  "delta",
+  "dev",
+  "excel",
+  "ml",
   "pandas",
   "pyspark",
-  "sftp",
-  "delta",
-  "excel",
   "se",
-  "box",
+  "sftp",
   "snowflake",
   "tableau",
-  "dev",
 ]
 
 
@@ -240,6 +243,7 @@ features = [
   "delta",
   "dev",
   "excel",
+  "ml",
   "pandas",
   "pyspark",
   "se",
@@ -415,13 +419,14 @@ features = [
   "async",
   "async_http",
   "box",
+  "delta",
+  "excel",
+  "ml",
   "pandas",
   "pyspark",
   "se",
   "sftp",
   "snowflake",
-  "delta",
-  "excel",
   "tableau",
   "dev",
   "test",
