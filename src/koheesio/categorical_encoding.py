@@ -1,30 +1,57 @@
-# Import necessary libraries
 from sklearn.preprocessing import OneHotEncoder
 import pandas as pd
 from pydantic import BaseModel
+from typing import List, Optional
+from koheesio.steps import Step
 
-# Define the EncodingConfig class
-class EncodingConfig(BaseModel):
-    drop_first: bool = True  # Whether to drop the first dummy column
+from typing import List, Dict
+import pandas as pd
+from pydantic import BaseModel
 
-# Define the categorical_encoding function
-def categorical_encoding(data, columns, config: EncodingConfig):
+class PandasCategoricalEncoding(BaseModel):
     """
-    Encodes categorical columns using one-hot encoding.
+    Encodes categorical columns using one-hot encoding or ordinal encoding.
 
-    Args:
-        data (pd.DataFrame): Input dataset.
-        columns (list): List of categorical columns to encode.
-        config (EncodingConfig): Configuration for encoding.
-
-    Returns:
-        pd.DataFrame: Dataset with one-hot encoded columns.
+    Attributes
+    ----------
+    columns : List[str]
+        List of categorical columns to encode.
+    encoding_type : str, optional
+        Type of encoding, either "one-hot" or "ordinal" (default is "one-hot").
+    drop_first : bool, optional
+        Whether to drop the first dummy column for one-hot encoding (default is True).
+    ordinal_mapping : dict, optional
+        A dictionary mapping categorical values to integers for ordinal encoding.
     """
-    encoder = OneHotEncoder(sparse_output=False, drop='first' if config.drop_first else None)
-    encoded_array = encoder.fit_transform(data[columns])
-    encoded_df = pd.DataFrame(
-        encoded_array,
-        columns=encoder.get_feature_names_out(columns),
-        index=data.index,
-    )
-    return pd.concat([data.drop(columns, axis=1), encoded_df], axis=1)
+
+    columns: List[str]
+    encoding_type: str = "one-hot"
+    drop_first: bool = True
+    ordinal_mapping: Dict[str, Dict] = None
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if self.encoding_type not in ['one-hot', 'ordinal']:
+            raise ValueError(f"Invalid encoding type: {self.encoding_type}. Expected 'one-hot' or 'ordinal'.")
+
+    def execute(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Executes the categorical encoding transformation on the provided dataset.
+
+        Parameters
+        ----------
+        data : pd.DataFrame
+            The input dataset to encode.
+
+        Returns
+        -------
+        pd.DataFrame
+            The dataset with the specified categorical columns encoded.
+        """
+        if self.encoding_type == 'one-hot':
+            data = pd.get_dummies(data, columns=self.columns, drop_first=self.drop_first)
+        elif self.encoding_type == 'ordinal':
+            for column in self.columns:
+                if column in data.columns and self.ordinal_mapping and column in self.ordinal_mapping:
+                    data[column] = data[column].map(self.ordinal_mapping[column]).fillna(-1).astype(int)
+        return data
