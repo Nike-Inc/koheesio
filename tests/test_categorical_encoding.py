@@ -1,6 +1,6 @@
 import unittest
 import pandas as pd
-from src.koheesio.categorical_encoding  import PandasCategoricalEncoding
+from src.koheesio.pandas.categorical_encoding  import PandasCategoricalEncoding
 import unittest
 import pandas as pd
 
