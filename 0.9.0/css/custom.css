@@ -1,0 +1,45 @@
+:root {
+  --md-code-font: "Roboto Mono";
+  /* --md-primary-fg-color: #84A0C6; */
+  /*--md-primary-fg-color: linear-gradient(142deg, rgba(229,119,39,1) 3%, rgba(172,56,56,1) 31%, rgba(133,59,96,1) 51%, rgba(31,67,103,1) 79%, rgba(31,99,120,1) 94%, rgba(32,135,139,1) 100%);*/
+  /*--md-primary-fg-color: rgba(229,119,39,1);*/
+  /* --md-primary-fg-color: #E4AF68; */
+  /*--md-primary-fg-color--light: linear-gradient(142deg, rgba(229,119,39,1) 3%, rgba(172,56,56,1) 31%, rgba(133,59,96,1) 51%, rgba(31,67,103,1) 79%, rgba(31,99,120,1) 94%, rgba(32,135,139,1) 100%);*/
+  /*--md-primary-fg-color--dark: linear-gradient(142deg, rgba(229,119,39,1) 3%, rgba(172,56,56,1) 31%, rgba(133,59,96,1) 51%, rgba(31,67,103,1) 79%, rgba(31,99,120,1) 94%, rgba(32,135,139,1) 100%);*/
+  --md-default-fg-color: #111;
+  --md-default-fg-color--light: #000000d0;
+  --md-default-fg-color--lighter: #00000052;
+  --md-default-fg-color--lightest: #00000012;
+  /* --md-accent-fg-color: #428eff;
+  --md-accent-fg-color--hover: #84A0C6;
+  --md-accent-fg-color--transparent: #526cfe1a; */
+  --md-accent-fg-color: #38195A;
+  --md-accent-fg-color--hover: #E4AF68;
+  --md-accent-fg-color--transparent: #38195a1a;
+
+  --md-default-bg-color: #fff;
+  --md-default-bg-color--light: #ffffffb3;
+  --md-default-bg-color--lighter: #ffffff4d;
+  --md-default-bg-color--lightest: #ffffff1f;
+  --md-accent-bg-color: #fff;
+  --md-accent-bg-color--light: #ffffffb3;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-hue: 210;
+}
+
+/* Indentation for API Reference. */
+.md-content div.doc-contents:not(.first) {
+  padding-left: 25px;
+  border-left: .05rem solid var(--md-typeset-table-color);
+}
+
+/* Gradient banner */
+.md-header {
+  background: linear-gradient(142deg, rgba(229,119,39,1) 3%, rgba(172,56,56,1) 31%, rgba(133,59,96,1) 51%, rgba(31,67,103,1) 79%, rgba(31,99,120,1) 94%, rgba(32,135,139,1) 100%);
+}
+
+.md-tabs {
+  background: none;
+}
