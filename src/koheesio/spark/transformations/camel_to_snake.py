@@ -70,15 +70,21 @@ class CamelToSnakeTransformation(ColumnsTransformation):
         _df = self.df
 
         # Prepare columns input:
-        columns = self.get_columns()
+        columns = list(self.get_columns())
 
         if SPARK_MINOR_VERSION < 3.4:
-            # Rename columns using withColumnRenamed for Spark versions < 3.4
             for column in columns:
                 _df = _df.withColumnRenamed(column, convert_camel_to_snake(column))
-            self.output.df = _df
 
         else:
             # Rename columns using toDF for Spark versions >= 3.4
-            new_column_names = [convert_camel_to_snake(column) for column in columns]
-            self.output.df = _df.toDF(*new_column_names)
+            # Note: toDF requires all column names to be specified
+            new_column_names = []
+            for column in _df.columns:
+                if column in columns:
+                    new_column_names.append(convert_camel_to_snake(column))
+                    continue
+                new_column_names.append(column)
+            _df = _df.toDF(*new_column_names)
+
+        self.output.df = _df

@@ -461,14 +461,16 @@ class ColumnsTransformation(Transformation, ABC):
 
     def get_columns(self) -> Iterator[str]:
         """Return an iterator of the columns"""
+        columns = self.columns or self.df.columns
+
         # If `run_for_all_is_set` to True, we want to run the transformation for all columns of a given type,
         # unless the user has specified specific columns
-        columns = self.columns or []  # type:ignore[assignment]
-
-        if self.run_for_all_is_set and columns[0] == "*":
-            columns = []
-            for data_type in self.ColumnConfig.run_for_all_data_type:  # type: ignore
-                columns += self.get_all_columns_of_specific_type(data_type)
+        if self.run_for_all_is_set and (not columns or columns[0] == "*"):
+            columns = [
+                col
+                for data_type in self.ColumnConfig.run_for_all_data_type  # type: ignore
+                for col in self.get_all_columns_of_specific_type(data_type)
+            ]
 
         for column in columns:
             if self.is_column_type_correct(column):
