@@ -36,8 +36,8 @@ Partitioning is a technique that divides your data into smaller, more manageable
 allows you to specify the partitioning scheme for your data when writing it to a target.
 
 ```python
-from koheesio.steps.writers.delta import DeltaTableWriter
-from koheesio.tasks.etl_task import EtlTask
+from koheesio.spark.writers.delta import DeltaTableWriter
+from koheesio.spark.etl_task import EtlTask
 
 class MyTask(EtlTask):
     target = DeltaTableWriter(table="my_table", partitionBy=["column1", "column2"])
@@ -52,7 +52,7 @@ class MyTask(EtlTask):
 [//]: # ()
 [//]: # (```python)
 
-[//]: # (from koheesio.steps.transformations.cache import CacheTransformation)
+[//]: # (from koheesio.spark.transformations.cache import CacheTransformation)
 
 [//]: # ()
 [//]: # (class MyTask&#40;EtlTask&#41;:)

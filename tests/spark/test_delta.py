@@ -3,8 +3,8 @@ import os
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
 from conftest import setup_test_data
+import pytest
 
 from pydantic import ValidationError
 

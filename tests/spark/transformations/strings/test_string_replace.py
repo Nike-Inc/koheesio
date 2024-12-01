@@ -6,6 +6,7 @@ import pytest
 
 from koheesio.logger import LoggingFactory
 from koheesio.spark.transformations.strings.replace import Replace
+from koheesio.spark.utils import show_string
 
 pytestmark = pytest.mark.spark
 
@@ -49,7 +50,8 @@ def test_happy_flow(input_values, expected, spark):
     output_df = replace.transform(input_df)
 
     # log equivalent of doing df.show()
-    log.info(f"show output_df: \n{output_df._jdf.showString(20, 20, False)}")
+    log.info(f"show output_df: \n{show_string(output_df, 20, 20, False)}")
+
     actual = [row.asDict()[target_column] for row in output_df.collect()]
     assert actual == expected
 

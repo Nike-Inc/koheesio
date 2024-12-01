@@ -51,9 +51,7 @@ class LowerCase(ColumnsTransformationWithTarget):
     |              Beans|  1600|    USA|
 
     ```python
-    output_df = LowerCase(
-        column="product", target_column="product_lower"
-    ).transform(df)
+    output_df = LowerCase(column="product", target_column="product_lower").transform(df)
     ```
 
     __output_df:__
@@ -74,7 +72,7 @@ class LowerCase(ColumnsTransformationWithTarget):
         run_for_all_data_type = [SparkDatatype.STRING]
         limit_data_type = [SparkDatatype.STRING]
 
-    def func(self, column: Column):
+    def func(self, column: Column) -> Column:
         return lower(column)
 
 
@@ -109,9 +107,7 @@ class UpperCase(LowerCase):
     |              Beans|  1600|    USA|
 
     ```python
-    output_df = UpperCase(
-        column="product", target_column="product_upper"
-    ).transform(df)
+    output_df = UpperCase(column="product", target_column="product_upper").transform(df)
     ```
 
     __output_df:__
@@ -126,7 +122,7 @@ class UpperCase(LowerCase):
     to upper case.
     """
 
-    def func(self, column: Column):
+    def func(self, column: Column) -> Column:
         return upper(column)
 
 
@@ -162,9 +158,7 @@ class TitleCase(LowerCase):
     |              Beans|  1600|    USA|
 
     ```python
-    output_df = TitleCase(
-        column="product", target_column="product_title"
-    ).transform(df)
+    output_df = TitleCase(column="product", target_column="product_title").transform(df)
     ```
 
     __output_df:__
@@ -179,7 +173,7 @@ class TitleCase(LowerCase):
     to title case (each word now starts with an upper case).
     """
 
-    def func(self, column: Column):
+    def func(self, column: Column) -> Column:
         return initcap(column)
 
 

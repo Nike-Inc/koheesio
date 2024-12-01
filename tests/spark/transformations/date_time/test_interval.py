@@ -12,6 +12,7 @@ from koheesio.spark.transformations.date_time.interval import (
     adjust_time,
     col,
     dt_column,
+    validate_interval,
 )
 
 pytestmark = pytest.mark.spark
@@ -107,13 +108,12 @@ def test_interval(input_data, column_name, operation, interval, expected, spark)
         df = spark.createDataFrame([(input_data,)], [column_name])
 
     column = col(column_name)
-
-    print(f"{df.dtypes = }")
+    column = DateTimeColumn.from_column(column)
 
     if operation == "-":
-        df_adjusted = df.withColumn("adjusted", DateTimeColumn.from_column(column) - interval)
+        df_adjusted = df.withColumn("adjusted", column - interval)
     elif operation == "+":
-        df_adjusted = df.withColumn("adjusted", DateTimeColumn.from_column(column) + interval)
+        df_adjusted = df.withColumn("adjusted", column + interval)
     else:
         raise RuntimeError(f"Invalid operation: {operation}")
 
@@ -122,6 +122,8 @@ def test_interval(input_data, column_name, operation, interval, expected, spark)
 
 
 def test_interval_unhappy(spark):
+    with pytest.raises(ValueError):
+        validate_interval("some random sym*bol*s")
     # invalid operation
     with pytest.raises(ValueError):
         _ = adjust_time(col("some_col"), "invalid operation", "1 day")

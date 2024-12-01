@@ -2,11 +2,13 @@ from typing import Any, Dict
 
 import pytest
 
-from pyspark.sql import DataFrame
 from pyspark.sql import functions as f
 
 from koheesio.logger import LoggingFactory
+from koheesio.spark import DataFrame
+from koheesio.spark.transformations.strings.substring import Substring
 from koheesio.spark.transformations.transform import Transform
+from koheesio.spark.transformations.hash import Sha2Hash
 
 pytestmark = pytest.mark.spark
 
@@ -83,3 +85,29 @@ def test_from_func(dummy_df):
     AddFooColumn = Transform.from_func(dummy_transform_func, target_column="foo")
     df = AddFooColumn(value="bar").transform(dummy_df)
     assert transform_output_test(df, {"id": 0, "foo": "bar"})
+
+
+def test_df_transform_compatibility(dummy_df: DataFrame):
+
+    expected_data = {
+        "id": 0,
+        "foo": "bar",
+        "bar": "baz",
+        "foo_hash": "fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9",
+        "foo_sub": "fcde2b",
+    }
+
+    # set up a reusable Transform from a function
+    add_column = Transform.from_func(dummy_transform_func, value="bar")
+
+    output_df = (
+        dummy_df
+        # test the Transform class with multiple chained transforms
+        .transform(add_column(target_column="foo"))
+        .transform(add_column(target_column="bar", value="baz"))
+        # test that Transformation classes can be called directly by DataFrame.transform
+        .transform(Sha2Hash(columns="foo", target_column="foo_hash"))
+        .transform(Substring(column="foo_hash", start=1, length=6, target_column="foo_sub"))
+    )
+
+    assert output_df.head().asDict() == expected_data

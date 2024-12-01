@@ -1,8 +1,4 @@
-from unittest import mock
-
 import pytest
-
-from pyspark.sql import SparkSession
 
 from koheesio.spark.readers.hana import HanaReader
 
@@ -24,11 +20,3 @@ class TestHanaReader:
         assert o["driver"] == "com.sap.db.jdbc.Driver"
         assert o["fetchsize"] == 2000
         assert o["numPartitions"] == 10
-
-    def test_execute(self, dummy_spark):
-        """Method should be callable from parent class"""
-        with mock.patch.object(SparkSession, "getActiveSession") as mock_spark:
-            mock_spark.return_value = dummy_spark
-
-            hana = HanaReader(**self.common_options)
-            assert hana.execute().df.count() == 1

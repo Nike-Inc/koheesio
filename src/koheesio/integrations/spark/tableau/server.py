@@ -1,17 +1,17 @@
-import os
-from typing import ContextManager, Optional, Union
+from typing import Any, ContextManager, Optional, Union
 from enum import Enum
+import os
 from pathlib import PurePath
 
-import urllib3
 from tableauserverclient import (
     DatasourceItem,
-    Pager,
     PersonalAccessTokenAuth,
     ProjectItem,
-    Server,
     TableauAuth,
 )
+from tableauserverclient.server.pager import Pager
+from tableauserverclient.server.server import Server
+import urllib3  # type: ignore
 
 from pydantic import Field, SecretStr
 
@@ -68,21 +68,21 @@ class TableauServer(Step):
         description="ID of the project on the Tableau server",
     )
 
-    def __init__(self, **data):
+    def __init__(self, **data: Any) -> None:
         super().__init__(**data)
-        self.server = None
+        self.server: Optional[Server] = None
 
     @model_validator(mode="after")
-    def validate_project(cls, data: dict) -> dict:
+    def validate_project(self) -> "TableauServer":
         """Validate when project and project_id are provided at the same time."""
-        project = data.get("project")
-        project_id = data.get("project_id")
 
-        if project and project_id:
+        if self.project and self.project_id:
             raise ValueError("Both 'project' and 'project_id' parameters cannot be provided at the same time.")
 
-        if not project and not project_id:
+        if not self.project and not self.project_id:
             raise ValueError("Either 'project' or 'project_id' parameters should be provided, none is set")
+
+        return self
 
     @property
     def auth(self) -> ContextManager:
@@ -101,8 +101,10 @@ class TableauServer(Step):
         ContextManager for TableauAuth or PersonalAccessTokenAuth authorization object
         """
         # Suppress 'InsecureRequestWarning'
+        # noinspection PyUnresolvedReferences
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+        tableau_auth: Union[TableauAuth, PersonalAccessTokenAuth]
         tableau_auth = TableauAuth(username=self.user, password=self.password.get_secret_value(), site_id=self.site_id)
 
         if self.token_name and self.token_value:
@@ -174,7 +176,7 @@ class TableauServer(Step):
                 self.log.info(f"\nWorking project identified:\n\tName: {lim_p[0].name}\n\tID: {lim_p[0].id}")
                 return lim_p[0]
 
-    def execute(self):
+    def execute(self) -> None:
         raise NotImplementedError("Method `execute` must be implemented in the subclass.")
 
 
@@ -208,7 +210,7 @@ class TableauHyperPublisher(TableauServer):
             default=..., description="DatasourceItem object representing the published datasource"
         )
 
-    def execute(self):
+    def execute(self) -> None:
         # Ensure that the Hyper File exists
         if not os.path.isfile(self.hyper_path):
             raise FileNotFoundError(f"Hyper file not found at: {self.hyper_path.as_posix()}")
@@ -219,7 +221,7 @@ class TableauHyperPublisher(TableauServer):
             self.log.debug(f"Create mode: {self.publish_mode}")
 
             datasource_item = self.server.datasources.publish(
-                datasource_item=DatasourceItem(project_id=self.working_project.id, name=self.datasource_name),
+                datasource_item=DatasourceItem(project_id=str(self.working_project.id), name=self.datasource_name),
                 file=self.hyper_path.as_posix(),
                 mode=self.publish_mode,
             )
@@ -227,5 +229,5 @@ class TableauHyperPublisher(TableauServer):
 
             self.output.datasource_item = datasource_item
 
-    def publish(self):
+    def publish(self) -> None:
         self.execute()

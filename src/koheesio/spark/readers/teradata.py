@@ -37,7 +37,7 @@ class TeradataReader(JdbcReader):
         url="jdbc:teradata://<domain_or_ip>/logmech=ldap,charset=utf8,database=<db>,type=fastexport, maybenull=on",
         user="YOUR_USERNAME",
         password="***",
-        dbtable="schemaname.tablename",
+        dbtable="schema_name.table_name",
     )
     ```
 
