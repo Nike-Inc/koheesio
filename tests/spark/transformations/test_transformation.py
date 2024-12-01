@@ -199,3 +199,13 @@ class TestColumnsTransformationDataTypeLimitations:
         actual = [col for col in multiple_data_types.get_columns()]
         expected = ["str_column", "long_column"]
         assert sorted(actual) == sorted(expected)
+
+    def test_column_does_not_exist(self, str_long_df):
+        class TestTransformation(ColumnsTransformation):
+            def execute(self):
+                pass
+
+        tf = TestTransformation(columns=["non_existent_column"], df=str_long_df)
+
+        with pytest.raises(ValueError, match="Column 'non_existent_column' does not exist in the DataFrame schema"):
+            tf.column_type_of_col("non_existent_column")
