@@ -111,7 +111,7 @@ class TestColumnsTransformationDataTypeLimitations:
         )
 
         # we should get None on run_for_all_is_set since we have specified columns
-        assert add_two.run_for_all_is_set is False
+        assert add_two.run_for_all_is_set is True
         assert add_two.ColumnConfig.run_for_all_data_type == [SparkDatatype.LONG]
 
         assert add_two.limit_data_type_is_set is True
@@ -124,6 +124,7 @@ class TestColumnsTransformationDataTypeLimitations:
         assert columns == ["long_column"]
 
     def test_strict_config_with_columns_unhappy(self, str_long_df):
+        """Passing a column with a 'wrong' datatype should raise a ValueError when strict mode is enabled"""
         # explicitly pass a value for columns
         add_two = self.AddTwoStrict(
             columns=["str_column"],

@@ -7,6 +7,7 @@ import re
 
 from koheesio.models import Field, ListOfColumns
 from koheesio.spark.transformations import ColumnsTransformation
+from koheesio.spark.utils import SPARK_MINOR_VERSION
 
 camel_to_snake_re = re.compile("([a-z0-9])([A-Z])")
 
@@ -48,7 +49,9 @@ class CamelToSnakeTransformation(ColumnsTransformation):
     | ...                | ...               |
 
     ```python
-    output_df = CamelToSnakeTransformation(column="camelCaseColumn").transform(input_df)
+    output_df = CamelToSnakeTransformation(
+        column="camelCaseColumn"
+    ).transform(input_df)
     ```
 
     __output_df:__
@@ -63,20 +66,19 @@ class CamelToSnakeTransformation(ColumnsTransformation):
 
     """
 
-    columns: Optional[ListOfColumns] = Field(  # type: ignore
-        default="",
-        alias="column",
-        description="The column or columns to convert. If no columns are specified, all columns will be converted. "
-        "A list of columns or a single column can be specified. For example: `['column1', 'column2']` or `'column1'` ",
-    )
-
     def execute(self) -> ColumnsTransformation.Output:
         _df = self.df
 
         # Prepare columns input:
-        columns = self.df.columns if self.columns == ["*"] else self.columns
+        columns = self.get_columns()
 
-        for column in columns:
-            _df = _df.withColumnRenamed(column, convert_camel_to_snake(column))
+        if SPARK_MINOR_VERSION < 3.4:
+            # Rename columns using withColumnRenamed for Spark versions < 3.4
+            for column in columns:
+                _df = _df.withColumnRenamed(column, convert_camel_to_snake(column))
+            self.output.df = _df
 
-        self.output.df = _df
+        else:
+            # Rename columns using toDF for Spark versions >= 3.4
+            new_column_names = [convert_camel_to_snake(column) for column in columns]
+            self.output.df = _df.toDF(*new_column_names)
