@@ -2,7 +2,6 @@ from typing import List, Union
 
 import pytest
 
-import pyspark
 from pyspark.sql import SparkSession
 
 from koheesio.utils import get_project_root
