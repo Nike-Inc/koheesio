@@ -135,7 +135,7 @@ class DownloadFileFromUrlTransformation(Transformation):
 
         self.df.select(self.column).foreach(
             partial(
-                DownloadFileFromUrlTransformation._download_file_step,
+                self._download_file_step,
                 download_path=self.download_path,
                 chunk_size=self.chunk_size,
                 mode=self.mode,
