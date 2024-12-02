@@ -61,6 +61,10 @@ class DownloadFileStep(HttpGetStep):
     """
     Downloads a file from the given URL and saves it to the specified download path.
 
+    Examples
+    --------
+    # TODO: add examples
+
     Parameters
     ----------
     url : str
@@ -93,29 +97,14 @@ class DownloadFileStep(HttpGetStep):
     def handle_file_write_modes(self, _filepath: Path, _filename: str) -> Optional[str]:
         """Handle different write modes for the file and return the appropriate write mode."""
         mode = FileWriteMode.from_string(self.mode)  # Convert string to FileWriteMode
-        write_mode = mode.write_mode  # Determine the write mode
+        write_mode = str(mode.write_mode)  # Determine the write mode
 
         # FIXME: logging is not working in the unit tests
-        import logging
-
-        local_logger = logging.getLogger("koheesio.DownloadFileStep")
-        local_logger.setLevel(logging.DEBUG)
-        handler = logging.StreamHandler()
-        handler.setLevel(logging.DEBUG)
-        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-        handler.setFormatter(formatter)
-        local_logger.addHandler(handler)
-
         # OVERWRITE and APPEND modes will write the file irrespective of whether it exists or not
         if _filepath.exists() and mode not in {FileWriteMode.OVERWRITE, FileWriteMode.APPEND}:
             if mode == FileWriteMode.IGNORE:
                 # If the file exists in IGNORE mode, return without writing
-                print(f"File {_filepath} already exists. Ignoring {_filename} based on IGNORE mode.")
                 self.log.info(f"File {_filepath} already exists. Ignoring {_filename} based on IGNORE mode.")
-                local_logger.info(f"File {_filepath} already exists. Ignoring {_filename} based on IGNORE mode.")
-                self.log.error(f"File {_filepath} already exists. Ignoring {_filename} based on IGNORE mode.")
-                self.log.debug(f"File {_filepath} already exists. Ignoring {_filename} based on IGNORE mode.")
-                self.log.warning(f"File {_filepath} already exists. Ignoring {_filename} based on IGNORE mode.")
                 self.output.download_file_path = _filepath
                 return None
 
@@ -136,6 +125,9 @@ class DownloadFileStep(HttpGetStep):
         return write_mode
 
     def execute(self) -> Output:
+        """
+        Executes the file download process, handling different write modes and saving the file to the specified path.
+        """
         _filename = Path(self.url).name
         _filepath = self.download_path / _filename
 
@@ -147,14 +139,10 @@ class DownloadFileStep(HttpGetStep):
         self.output.download_file_path = _filepath
         self.output.download_file_path.touch(exist_ok=True)
 
-        # download the file
-        with self.request() as response:
-            # response = self.output.response_raw
-
-            # write the downloaded content to the file
-            with self.output.download_file_path.open(mode=mode) as f:
-                for chunk in response.iter_content(chunk_size=self.chunk_size):
-                    self.log.debug(f"Downloading chunk of size {len(chunk)}")
-                    self.log.debug(f"Writing to file {self.output.download_file_path}")
-                    self.log.debug(f"Downloaded {f.tell()} bytes")
-                    f.write(chunk)
+        # download the file content and write the downloaded content to the file
+        with self.request() as response, self.output.download_file_path.open(mode=mode) as f:
+            for chunk in response.iter_content(chunk_size=self.chunk_size):
+                self.log.debug(f"Downloading chunk of size {len(chunk)}")
+                self.log.debug(f"Writing to file {self.output.download_file_path}")
+                self.log.debug(f"Downloaded {f.tell()} bytes")
+                f.write(chunk)
