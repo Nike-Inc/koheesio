@@ -6,13 +6,16 @@ Example
 ```python
 from koheesio.steps.http import HttpGetStep
 
-response = HttpGetStep(url="https://google.com").execute().json_payload
+response = (
+    HttpGetStep(url="https://google.com").execute().json_payload
+)
 ```
 
 In the above example, the `response` variable will contain the JSON response from the HTTP request.
 """
 
 from typing import Any, Dict, List, Optional, Union
+import contextlib
 from enum import Enum
 import json
 
@@ -210,6 +213,7 @@ class HttpStep(Step, ExtraParamsMixin):
             **self.params,  # type: ignore
         }
 
+    @contextlib.contextmanager
     def request(self, method: Optional[HttpMethod] = None) -> requests.Response:
         """
         Executes the HTTP request with retry logic.
@@ -251,28 +255,35 @@ class HttpStep(Step, ExtraParamsMixin):
         self.log.debug(f"Received response with status code {response.status_code} and body {response.text}")
         self.set_outputs(response)
 
-        return response
+        try:
+            yield response
+        finally:
+            self.log.debug("Request context manager exiting")
 
     # noinspection PyMethodOverriding
     def get(self) -> requests.Response:
         """Execute an HTTP GET call"""
         self.method = HttpMethod.GET
-        return self.request()
+        with self.request() as response:
+            return response
 
     def post(self) -> requests.Response:
         """Execute an HTTP POST call"""
         self.method = HttpMethod.POST
-        return self.request()
+        with self.request() as response:
+            return response
 
     def put(self) -> requests.Response:
         """Execute an HTTP PUT call"""
         self.method = HttpMethod.PUT
-        return self.request()
+        with self.request() as response:
+            return response
 
     def delete(self) -> requests.Response:
         """Execute an HTTP DELETE call"""
         self.method = HttpMethod.DELETE
-        return self.request()
+        with self.request() as response:
+            return response
 
     def execute(self) -> None:
         """
@@ -286,7 +297,8 @@ class HttpStep(Step, ExtraParamsMixin):
         requests.RequestException, requests.HTTPError
             The last exception that was caught if `self.request()` fails after `self.max_retries` attempts.
         """
-        self.request()
+        with self.request() as response:
+            self.log.info(f"HTTP request to {self.url} was successful with status code {response.status_code}")
 
 
 class HttpGetStep(HttpStep):
@@ -295,7 +307,9 @@ class HttpGetStep(HttpStep):
     Example
     -------
     ```python
-    response = HttpGetStep(url="https://google.com").execute().json_payload
+    response = (
+        HttpGetStep(url="https://google.com").execute().json_payload
+    )
     ```
     In the above example, the `response` variable will contain the JSON response from the HTTP request.
     """
