@@ -253,7 +253,6 @@ class HttpStep(Step, ExtraParamsMixin):
         response.raise_for_status()
 
         self.log.debug(f"Received response with status code {response.status_code} and body {response.text}")
-        self.set_outputs(response)
 
         try:
             yield response
@@ -299,6 +298,7 @@ class HttpStep(Step, ExtraParamsMixin):
         """
         with self.request() as response:
             self.log.info(f"HTTP request to {self.url}, status code {response.status_code}")
+            self.set_outputs(response)
 
 
 class HttpGetStep(HttpStep):

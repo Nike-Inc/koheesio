@@ -168,6 +168,7 @@ if __name__ == "__main__":
     download_path = Path("downloaded_files")
     download_path.mkdir(exist_ok=True)
 
+    ## using pyspark -- does not work
     from pyspark.sql import SparkSession
 
     spark = SparkSession.builder.getOrCreate()
@@ -180,8 +181,24 @@ if __name__ == "__main__":
 
     transformed_df = DownloadFileFromUrlTransformation(
         column="url",
-        download_path="downloaded_files",
-        target_column="downloaded_filepath",
+        download_path=download_path,
     ).transform(df)
 
     transformed_df.show(truncate=False)
+
+    ## using koheesio step -- works
+    print("Downloading file using koheesio core step")
+    step = DownloadFileStep(
+        url="http://www.textfiles.com/100/adventur.txt",
+        download_path=download_path,
+        mode=FileWriteMode.BACKUP,
+    )
+    step.execute()
+
+    ## using requests library
+    print("Downloading file using python")
+    import requests
+
+    url = "http://www.textfiles.com/100/adventur.txt"
+    response = requests.get(url)
+    (download_path / "adventur.txt").write_bytes(response.content)

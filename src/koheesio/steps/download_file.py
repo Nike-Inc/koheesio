@@ -7,6 +7,7 @@ from enum import Enum
 from pathlib import Path
 import time
 
+from koheesio import StepOutput
 from koheesio.models import DirectoryPath, Field, FilePath
 from koheesio.steps.http import HttpGetStep
 
@@ -93,7 +94,7 @@ class DownloadFileStep(HttpGetStep):
         description="Write mode: overwrite, append, ignore, exclusive, backup, or update.",
     )
 
-    class Output(HttpGetStep.Output):
+    class Output(StepOutput):
         download_file_path: FilePath = Field(..., description="The full path where the file was downloaded to.")
 
     def handle_file_write_modes(self, _filepath: Path, _filename: str) -> Optional[str]:
