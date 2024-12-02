@@ -201,7 +201,7 @@ class HttpStep(Step, ExtraParamsMixin):
                 self.output.response_json = response.json()
 
             except json.decoder.JSONDecodeError as e:
-                self.log.info(f"An error occurred while processing the JSON payload. Error message:\n{e.msg}")
+                self.log.error(f"An error occurred while processing the JSON payload. Error message:\n{e.msg}")
 
     def get_options(self) -> dict:
         """options to be passed to requests.request()"""
@@ -298,7 +298,7 @@ class HttpStep(Step, ExtraParamsMixin):
             The last exception that was caught if `self.request()` fails after `self.max_retries` attempts.
         """
         with self.request() as response:
-            self.log.info(f"HTTP request to {self.url} was successful with status code {response.status_code}")
+            self.log.info(f"HTTP request to {self.url}, status code {response.status_code}")
 
 
 class HttpGetStep(HttpStep):

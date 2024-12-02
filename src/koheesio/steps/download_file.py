@@ -1,3 +1,5 @@
+# TODO: add module description
+
 from __future__ import annotations
 
 from typing import Any, Optional, Type
@@ -50,10 +52,10 @@ class FileWriteMode(str, Enum):
     def write_mode(self) -> str:
         """Return the write mode for the given SFTPWriteMode."""
         if self in {FileWriteMode.OVERWRITE, FileWriteMode.BACKUP, FileWriteMode.EXCLUSIVE}:
-            # Overwrite, Backup, and Exclusive modes set the file to be written from the beginning
+            # OVERWRITE, BACKUP, and EXCLUSIVE modes set the file to be written from the beginning
             return "wb"
         if self == FileWriteMode.APPEND:
-            # Append mode sets the file to be written from the end
+            # APPEND mode sets the file to be written from the end
             return "ab"
 
 
@@ -126,7 +128,7 @@ class DownloadFileStep(HttpGetStep):
 
     def execute(self) -> Output:
         """
-        Executes the file download process, handling different write modes and saving the file to the specified path.
+        Executes the file download process, handling different write modes, and saving the file to the specified path.
         """
         _filename = Path(self.url).name
         _filepath = self.download_path / _filename
@@ -135,14 +137,14 @@ class DownloadFileStep(HttpGetStep):
         if (mode := self.handle_file_write_modes(_filepath, _filename)) is None:
             return self.output
 
-        # create the download path if it does not exist
+        # Create the download path if it does not exist
         self.output.download_file_path = _filepath
         self.output.download_file_path.touch(exist_ok=True)
 
-        # download the file content and write the downloaded content to the file
+        # Download the file content and write the downloaded content to the file
         with self.request() as response, self.output.download_file_path.open(mode=mode) as f:
             for chunk in response.iter_content(chunk_size=self.chunk_size):
                 self.log.debug(f"Downloading chunk of size {len(chunk)}")
-                self.log.debug(f"Writing to file {self.output.download_file_path}")
                 self.log.debug(f"Downloaded {f.tell()} bytes")
+                self.log.debug(f"Writing to file {self.output.download_file_path}")
                 f.write(chunk)
