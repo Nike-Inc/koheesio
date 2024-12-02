@@ -1,13 +1,13 @@
-import logging
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import pytest
 from requests_mock.mocker import Mocker
 
+from koheesio import LoggingFactory
 from koheesio.steps.download_file import DownloadFileStep
 
 URL = "http://example.com/testfile.txt"
+log = LoggingFactory.get_logger(name="test_download_file", inherit_from_koheesio=True)
 
 
 @pytest.fixture
@@ -90,32 +90,18 @@ class TestDownloadFileStep:
         # Arrange
         downloaded_file.write_bytes(b"foo")
 
-        # Act and Assert -- dry run
-        with caplog.at_level(logging.INFO):
+        with caplog.at_level("INFO"), Mocker() as mocker:
+            mocker.get(URL, content=b"bar")
+
+            # Act
             step = DownloadFileStep(url=URL, download_path=download_path, mode="ignore")
             step.log.setLevel("INFO")
             step.execute()
-            assert "Ignoring testfile.txt based on IGNORE mode." in caplog.text
 
-        # with caplog.at_level("INFO"), Mocker() as mocker:
-        #     mocker.get(URL, content=b"bar")
-        #
-        #     # FIXME: logging is not working in the unit tests
-        #
-        #     # Act
-        #     step = DownloadFileStep(url=URL, download_path=download_path, mode="ignore")
-        #     step.log.setLevel("INFO")
-        #     step.execute()
-        #     print(f"2 {caplog.record_tuples = }")
-        #
-        #     # Assert
-        #     print(f"5 {caplog.text = }")
-        #     assert "Ignoring testfile.txt based on IGNORE mode." in caplog.text
-        #
-        # print(f"3 {caplog.text = }")
-        # assert downloaded_file.exists()
-        # print(f"4 {caplog.text = }")
-        # assert downloaded_file.read_bytes() == b"foo"
+        # Assert
+        assert "Ignoring testfile.txt based on IGNORE mode." in caplog.text
+        assert downloaded_file.exists()
+        assert downloaded_file.read_bytes() == b"foo"
 
     def test_download_file_step_exclusive_mode(self, download_path, downloaded_file):
         """In EXCLUSIVE mode, an error should be raised if the file exists"""
