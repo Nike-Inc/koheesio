@@ -2,7 +2,7 @@ from typing import Optional, Union
 from functools import partial
 
 from pyspark.sql.functions import udf
-from pyspark.sql.types import StringType
+from pyspark.sql.types import Row, StringType
 
 from koheesio.models import DirectoryPath, Field, ListOfColumns
 from koheesio.spark import Column
@@ -119,21 +119,38 @@ class DownloadFileFromUrlTransformation(Transformation):
         description="Write mode: overwrite, append, ignore, exclusive, or backup.",
     )
 
+    @staticmethod
+    def download_file(row: Row, download_path: str, chunk_size: int, mode: FileWriteMode) -> str:
+        """
+        Download the file from the given URL and save it to the specified download path.
+        """
+        url = row[0]
+        step = DownloadFileStep(url=url, download_path=download_path, mode=mode, chunk_size=chunk_size)
+        step.execute()
+        return step.downloaded_file_path
+
     def execute(self) -> Transformation.Output:
         """
         Download files from URLs in the specified column.
         """
-        import requests
+        # import requests
 
-        def download_file(row):
-            url = row.asDict()["url"]
-            with requests.get(url, stream=True) as r:
-                r.raise_for_status()
-                with open(self.download_path, "wb") as f:
-                    for chunk in r.iter_content(chunk_size=8192):
-                        f.write(chunk)
+        # def download_file(row):
+        #     url = row.asDict()["url"]
+        #     with requests.get(url, stream=True) as r:
+        #         r.raise_for_status()
+        #         with open("downloaded_files", "wb") as f:
+        #             for chunk in r.iter_content(chunk_size=8192):
+        #                 f.write(chunk)
 
-        self.df.foreach(download_file)
+        _download_file_step = partial(
+            self.download_file,
+            download_path=self.download_path,
+            chunk_size=self.chunk_size,
+            mode=self.mode,
+        )
+
+        self.df.select(self.column).foreach(_download_file_step)
 
 
 if __name__ == "__main__":
@@ -148,6 +165,9 @@ if __name__ == "__main__":
 
     from pathlib import Path
 
+    download_path = Path("downloaded_files")
+    download_path.mkdir(exist_ok=True)
+
     from pyspark.sql import SparkSession
 
     spark = SparkSession.builder.getOrCreate()
@@ -157,9 +177,6 @@ if __name__ == "__main__":
         # (102, "http://www.textfiles.com/100/arttext.fun"),
     ]
     df = spark.createDataFrame(data, ["key", "url"])
-
-    download_path = Path("downloaded_files")
-    download_path.mkdir(exist_ok=True)
 
     transformed_df = DownloadFileFromUrlTransformation(
         column="url",
