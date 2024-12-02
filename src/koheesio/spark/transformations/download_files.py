@@ -1,10 +1,9 @@
-from typing import Optional, Union
+from typing import Union
 from functools import partial
 
-from pyspark.sql.functions import udf
-from pyspark.sql.types import Row, StringType
+from pyspark.sql.types import Row
 
-from koheesio.models import DirectoryPath, Field, ListOfColumns
+from koheesio.models import DirectoryPath, Field
 from koheesio.spark import Column
 from koheesio.spark.transformations import Transformation
 from koheesio.steps.download_file import DownloadFileStep, FileWriteMode
@@ -120,37 +119,28 @@ class DownloadFileFromUrlTransformation(Transformation):
     )
 
     @staticmethod
-    def download_file(row: Row, download_path: str, chunk_size: int, mode: FileWriteMode) -> str:
+    def _download_file_step(row: Row, download_path: str, chunk_size: int, mode: FileWriteMode) -> str:
         """
         Download the file from the given URL and save it to the specified download path.
         """
         url = row[0]
         step = DownloadFileStep(url=url, download_path=download_path, mode=mode, chunk_size=chunk_size)
         step.execute()
-        return step.downloaded_file_path
+        return step.output.downloaded_file_path
 
     def execute(self) -> Transformation.Output:
         """
         Download files from URLs in the specified column.
         """
-        # import requests
 
-        # def download_file(row):
-        #     url = row.asDict()["url"]
-        #     with requests.get(url, stream=True) as r:
-        #         r.raise_for_status()
-        #         with open("downloaded_files", "wb") as f:
-        #             for chunk in r.iter_content(chunk_size=8192):
-        #                 f.write(chunk)
-
-        _download_file_step = partial(
-            self.download_file,
-            download_path=self.download_path,
-            chunk_size=self.chunk_size,
-            mode=self.mode,
+        self.df.select(self.column).foreach(
+            partial(
+                DownloadFileFromUrlTransformation._download_file_step,
+                download_path=self.download_path,
+                chunk_size=self.chunk_size,
+                mode=self.mode,
+            )
         )
-
-        self.df.select(self.column).foreach(_download_file_step)
 
 
 if __name__ == "__main__":
