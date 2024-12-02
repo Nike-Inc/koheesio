@@ -126,7 +126,8 @@ class DownloadFileFromUrlTransformation(Transformation):
         url = row[0]
         step = DownloadFileStep(url=url, download_path=download_path, mode=mode, chunk_size=chunk_size)
         step.execute()
-        return step.output.downloaded_file_path
+        # TODO: add download_file_path to a new column in the row
+        return step.output.download_file_path
 
     def execute(self) -> Transformation.Output:
         """
