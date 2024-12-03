@@ -214,7 +214,7 @@ class HttpStep(Step, ExtraParamsMixin):
         }
 
     @contextlib.contextmanager
-    def request(self, method: Optional[HttpMethod] = None) -> requests.Response:
+    def request(self, method: Optional[HttpMethod] = None, stream: bool = False) -> requests.Response:
         """
         Executes the HTTP request with retry logic.
 
@@ -238,6 +238,8 @@ class HttpStep(Step, ExtraParamsMixin):
         method : HttpMethod
             Optional parameter that allows calls to different HTTP methods and bypassing class level `method`
             parameter.
+        stream : bool
+            Whether to stream the response content. Defaults to False.
 
         Raises
         ------
@@ -249,15 +251,14 @@ class HttpStep(Step, ExtraParamsMixin):
 
         self.log.debug(f"Making {_method} request to {options['url']} with headers {options['headers']}")
 
-        response = self.session.request(method=_method, **options)
-        response.raise_for_status()
+        with self.session.request(method=_method, **options, stream=stream) as response:
+            response.raise_for_status()
+            self.log.debug(f"Received response with status code {response.status_code} and body {response.text}")
 
-        self.log.debug(f"Received response with status code {response.status_code} and body {response.text}")
-
-        try:
-            yield response
-        finally:
-            self.log.debug("Request context manager exiting")
+            try:
+                yield response
+            finally:
+                self.log.debug("Request context manager exiting")
 
     # noinspection PyMethodOverriding
     def get(self) -> requests.Response:

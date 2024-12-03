@@ -143,7 +143,7 @@ class DownloadFileStep(HttpGetStep):
         self.output.download_file_path.touch(exist_ok=True)
 
         # Download the file content and write the downloaded content to the file
-        with self.request() as response, self.output.download_file_path.open(mode=mode) as f:
+        with self.request(stream=True) as response, self.output.download_file_path.open(mode=mode) as f:
             for chunk in response.iter_content(chunk_size=self.chunk_size):
                 self.log.debug(f"Downloading chunk of size {len(chunk)}")
                 self.log.debug(f"Downloaded {f.tell()} bytes")

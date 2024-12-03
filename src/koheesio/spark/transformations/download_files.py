@@ -134,31 +134,43 @@ class DownloadFileFromUrlTransformation(Transformation):
         Download files from URLs in the specified column.
         """
 
-        self.df.select(self.column).foreach(
-            partial(
-                self._download_file_step,
-                download_path=self.download_path,
-                chunk_size=self.chunk_size,
-                mode=self.mode,
+        # self.df.select(self.column).foreach(
+        #     partial(
+        #         self._download_file_step,
+        #         download_path=self.download_path,
+        #         chunk_size=self.chunk_size,
+        #         mode=self.mode,
+        #     )
+        # )
+
+        urls = {row.asDict()[self.column] for row in self.df.select(self.column).collect()}
+
+        for url in urls:
+            step = DownloadFileStep(
+                url=url, download_path=self.download_path, mode=self.mode, chunk_size=self.chunk_size
             )
-        )
+            step.execute()
 
 
 if __name__ == "__main__":
-    # ## using koheesio step -- works
-    # print("Downloading file using koheesio core step")
-    # step = DownloadFileStep(
-    #     url="http://www.textfiles.com/100/adventur.txt",
-    #     download_path=download_path,
-    #     mode=FileWriteMode.BACKUP,
-    # )
-    # step.execute()
-    #
-    # ## using requests library
-    # print("Downloading file using python")
-    # import requests
-    #
-    # url = "http://www.textfiles.com/100/adventur.txt"
-    # response = requests.get(url)
-    # (download_path / "adventur.txt").write_bytes(response.content)
-    ...
+    from pathlib import Path
+
+    from pyspark.sql import SparkSession
+
+    spark = SparkSession.builder.appName("example").getOrCreate()
+
+    df = spark.createDataFrame(
+        [
+            (101, "http://www.textfiles.com/100/adventur.txt"),
+            (102, "http://www.textfiles.com/100/arttext.fun"),
+        ],
+        ["key", "url"],
+    )
+
+    download_path = Path("downloads")
+    download_path.mkdir(exist_ok=True)
+
+    DownloadFileFromUrlTransformation(
+        column="url",
+        download_path=download_path,
+    ).transform(df)
