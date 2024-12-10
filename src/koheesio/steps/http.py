@@ -214,7 +214,7 @@ class HttpStep(Step, ExtraParamsMixin):
         }
 
     @contextlib.contextmanager
-    def request(self, method: Optional[HttpMethod] = None, stream: bool = False) -> requests.Response:
+    def _request(self, method: Optional[HttpMethod] = None, stream: bool = False) -> requests.Response:
         """
         Executes the HTTP request with retry logic.
 

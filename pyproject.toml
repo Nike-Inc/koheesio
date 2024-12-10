@@ -75,9 +75,9 @@ test = [
   "pytest-cov",
   "pytest-mock",
   "pytest-order",
+  "pytest-randomly",
   "pytest-sftpserver",
   "pytest-xdist",
-  "pytest-randomly",
   "requests_mock",
   "time_machine",
 ]
