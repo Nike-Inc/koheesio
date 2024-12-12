@@ -297,7 +297,7 @@ class HttpStep(Step, ExtraParamsMixin):
         requests.RequestException, requests.HTTPError
             The last exception that was caught if `self.request()` fails after `self.max_retries` attempts.
         """
-        with self.request() as response:
+        with self._request() as response:
             self.log.info(f"HTTP request to {self.url}, status code {response.status_code}")
             self.set_outputs(response)
 
@@ -449,12 +449,12 @@ class PaginatedHttpGetStep(HttpGetStep):
                 self.log.info(f"Fetching page {page} of {pages - 1}")
 
             self.url = self._url(basic_url=_basic_url, page=page)
-            self.request()
 
-            if isinstance(self.output.response_json, list):
-                data += self.output.response_json
-            else:
-                data.append(self.output.response_json)
+            with self._request() as response:
+                if isinstance(response_json := response.json(), list):
+                    data += response_json
+                else:
+                    data.append(response_json)
 
         self.url = _basic_url
         self.output.response_json = data
