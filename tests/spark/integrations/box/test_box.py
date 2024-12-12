@@ -262,7 +262,7 @@ class TestBoxCsvPathReader:
         assert bcr.df.count() == 2
         assert bcr.df.dtypes == [
             ("foo", "string"),
-            ("bar", "int"),
+            ("bar", "bigint"),
             ("meta_file_id", "string"),
             ("meta_file_name", "string"),
             ("meta_load_timestamp", "timestamp"),
