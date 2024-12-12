@@ -34,6 +34,7 @@ class TestDownloadFileFromUrlTransformation:
         transformed_df = DownloadFileFromUrlTransformation(
             column="url",
             download_path=download_path,
+            target_column="downloaded_file_path",
         ).transform(input_df)
 
         # Check that adventur.txt and arttext.fun are actually downloaded
@@ -42,7 +43,10 @@ class TestDownloadFileFromUrlTransformation:
 
         assert transformed_df.count() == 2
         assert transformed_df.columns == ["key", "url", "downloaded_file_path"]
-        assert transformed_df.select("downloaded_file_path").collect() == [
-            ("downloaded_files/adventur.txt",),
-            ("downloaded_files/arttext.fun",),
+        # check that the rows of the output DataFrame are as expected
+        expected_data = [
+            "downloads/adventur.txt",
+            "downloads/arttext.fun",
         ]
+        actual_data = sorted([row.asDict()["downloaded_file_path"] for row in transformed_df.select("downloaded_file_path").collect()])
+        assert actual_data == expected_data

@@ -1,15 +1,14 @@
 from typing import Union
-from functools import partial
 
 from pyspark.sql.types import Row
 
 from koheesio.models import DirectoryPath, Field
 from koheesio.spark import Column
-from koheesio.spark.transformations import Transformation
+from koheesio.spark.transformations import ColumnsTransformationWithTarget
 from koheesio.steps.download_file import DownloadFileStep, FileWriteMode
 
 
-class DownloadFileFromUrlTransformation(Transformation):
+class DownloadFileFromUrlTransformation(ColumnsTransformationWithTarget):
     """
     Downloads content from URLs in the specified column and stores the downloaded file paths in a new column.
 
@@ -91,10 +90,10 @@ class DownloadFileFromUrlTransformation(Transformation):
 
     Parameters
     ----------
-    columns : ListOfColumns
-        The column (or list of columns) containing the URLs to download.
+    column : Union[Column, str]
+        The column that holds the URLs to download.
     download_path : str
-        The local directory path where the file will be downloaded.
+        The local directory path where the file will be downloaded to.
     chunk_size : int, optional, default=8192
         The size (in bytes) of the chunks to download the file in, must be greater than 16.
     mode : FileWriteMode, optional, default=FileWriteMode.OVERWRITE
@@ -118,59 +117,31 @@ class DownloadFileFromUrlTransformation(Transformation):
         description="Write mode: overwrite, append, ignore, exclusive, or backup.",
     )
 
-    @staticmethod
-    def _download_file_step(row: Row, download_path: str, chunk_size: int, mode: FileWriteMode) -> str:
-        """
-        Download the file from the given URL and save it to the specified download path.
-        """
-        url = row[0]
-        step = DownloadFileStep(url=url, download_path=download_path, mode=mode, chunk_size=chunk_size)
-        step.execute()
-        # TODO: add download_file_path to a new column in the row
-        return step.output.download_file_path
+    class Output(ColumnsTransformationWithTarget.Output):
+        download_file_paths: dict[str, str] = Field(default_factory=dict, description="The downloaded file paths per URL.")
 
-    def execute(self) -> Transformation.Output:
+    def func(self, partition: set[str]):
         """
-        Download files from URLs in the specified column.
+        Takes a set of urls and downloads the files from the URLs in the specified column.
         """
-
-        # self.df.select(self.column).foreach(
-        #     partial(
-        #         self._download_file_step,
-        #         download_path=self.download_path,
-        #         chunk_size=self.chunk_size,
-        #         mode=self.mode,
-        #     )
-        # )
-
-        urls = {row.asDict()[self.column] for row in self.df.select(self.column).collect()}
-
-        for url in urls:
+        for url in partition:
             step = DownloadFileStep(
                 url=url, download_path=self.download_path, mode=self.mode, chunk_size=self.chunk_size
             )
             step.execute()
+            self.output.download_file_paths[url] = step.output.download_file_path.relative_to(self.download_path.parent).as_posix()
 
+    def execute(self) -> Output:
+        """
+        Download files from URLs in the specified column.
+        """
+        # Collect the URLs from the DataFrame and process them
+        partition = {row.asDict()[self.column] for row in self.df.select(self.column).collect()}
+        self.func(partition)
 
-if __name__ == "__main__":
-    from pathlib import Path
-
-    from pyspark.sql import SparkSession
-
-    spark = SparkSession.builder.appName("example").getOrCreate()
-
-    df = spark.createDataFrame(
-        [
-            (101, "http://www.textfiles.com/100/adventur.txt"),
-            (102, "http://www.textfiles.com/100/arttext.fun"),
-        ],
-        ["key", "url"],
-    )
-
-    download_path = Path("downloads")
-    download_path.mkdir(exist_ok=True)
-
-    DownloadFileFromUrlTransformation(
-        column="url",
-        download_path=download_path,
-    ).transform(df)
+        # Using join, re-add the download_file_paths to the DataFrame in the target column
+        url_df = self.spark.createDataFrame(
+            data=self.output.download_file_paths.items(),
+            schema=f"{self.column} string, {self.target_column} string"
+        )
+        self.output.df = self.df.join(url_df, self.column, "left").select(*self.df.columns, self.target_column)
