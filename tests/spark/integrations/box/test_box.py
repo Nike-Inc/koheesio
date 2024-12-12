@@ -245,7 +245,7 @@ class TestBoxCsvReader:
         assert bcr.df.count() == 1
         assert bcr.df.dtypes == [
             ("foo", "string"),
-            ("bar", "string"),
+            ("bar", "int"),
             ("meta_file_id", "string"),
             ("meta_file_name", "string"),
             ("meta_load_timestamp", "timestamp"),
