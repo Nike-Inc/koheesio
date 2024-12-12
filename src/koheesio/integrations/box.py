@@ -419,7 +419,7 @@ class BoxCsvFileReader(BoxReaderBase):
             data = file.content().decode(self.file_encoding)
 
             data_buffer = StringIO(data)
-            temp_df_pandas = pd.read_csv(data_buffer, header=0, dtype=self.schema_ if self.schema_ is not None else str, **self.params)  # type: ignore
+            temp_df_pandas = pd.read_csv(data_buffer, header=0, **self.params)  # type: ignore
             temp_df = self.spark.createDataFrame(temp_df_pandas, schema=self.schema_)
 
             # type: ignore
