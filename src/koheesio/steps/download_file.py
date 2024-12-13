@@ -4,13 +4,12 @@ from a given URL and saving them to a specified local directory path.
 
 It supports various file write modes such as overwrite, append, ignore, exclusive, and backup.
 
-Classes:
-    FileWriteMode: Enum representing different file write modes.
-    DownloadFileStep: Class for downloading files with support for different write modes.
-
-Functions:
-    should_write_file: Determines if the file should be written based on the write mode.
-    execute: Executes the file download process and saves the file to the specified path.
+Classes
+-------
+FileWriteMode
+    Enum representing different file write modes.
+DownloadFileStep
+    Class for downloading files with support for different write modes.
 """
 
 from __future__ import annotations
@@ -88,8 +87,8 @@ class DownloadFileStep(HttpGetStep):
     """
     Downloads a file from the given URL and saves it to the specified download path.
 
-    Examples
-    --------
+    Example
+    -------
     ```python
     URL = "http://example.com/testfile.txt"
     download_path = Path("downloads")

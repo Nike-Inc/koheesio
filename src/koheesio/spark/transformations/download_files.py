@@ -1,6 +1,4 @@
 """
-Module: download_files
-
 This module provides functionality to download files from URLs specified in a Spark DataFrame column and store the 
 downloaded file paths in a new column. It leverages the `DownloadFileStep` class to handle the file download process 
 and supports various write modes to manage existing files.
@@ -13,14 +11,77 @@ DownloadFileFromUrlTransformation
 
 Write Modes
 -----------
-The `DownloadFileFromUrlTransformation` supports the following write modes:
+`DownloadFileFromUrlTransformation` supports the following write modes:
 
-- OVERWRITE
-- APPEND
-- IGNORE
-- EXCLUSIVE
-- BACKUP
+=== "OVERWRITE"
 
+    ```python
+    DownloadFileFromUrlTransformation(
+        ...
+        mode=FileWriteMode.OVERWRITE,
+    )
+    ```
+
+    - If the file exists, it will be overwritten.
+    - If it does not exist, a new file will be created.
+
+    <small>(this is the default mode)</small>
+
+=== "APPEND"
+
+    ```python
+    DownloadFileFromUrlTransformation(
+        ...
+        mode=FileWriteMode.APPEND,
+    )
+    ```
+
+    - If the file exists, the new data will be appended to it.
+    - If it does not exist, a new file will be created.
+
+    <br>
+
+=== "IGNORE"
+
+    ```python
+    DownloadFileFromUrlTransformation(
+        ...
+        mode=FileWriteMode.IGNORE,
+    )
+    ```
+
+    - If the file exists, the method will return without writing anything.
+    - If it does not exist, a new file will be created.
+
+    <br>
+
+=== "EXCLUSIVE"
+
+    ```python
+    DownloadFileFromUrlTransformation(
+        ...
+        mode=FileWriteMode.EXCLUSIVE,
+    )
+    ```
+
+    - If the file exists, an error will be raised.
+    - If it does not exist, a new file will be created.
+
+    <br>
+
+=== "BACKUP"
+
+    ```python
+    DownloadFileFromUrlTransformation(
+        ...
+        mode=FileWriteMode.BACKUP,
+    )
+    ```
+
+    - If the file exists, a backup will be created and the original file will be overwritten.
+    - If it does not exist, a new file will be created.
+
+    <br>
 """
 from typing import Union
 
@@ -37,84 +98,8 @@ class DownloadFileFromUrlTransformation(ColumnsTransformationWithTarget):
     """
     Downloads content from URLs in the specified column and stores the downloaded file paths in a new column.
 
-
-    Write Modes
-    -----------
-
-    `DownloadFileFromUrlTransformation` supports the following write modes:
-
-    === "OVERWRITE"
-
-        ```python
-        DownloadFileFromUrlTransformation(
-            ...
-            mode=FileWriteMode.OVERWRITE,
-        )
-        ```
-
-        - If the file exists, it will be overwritten.
-        - If it does not exist, a new file will be created.
-
-        <small>(this is the default mode)</small>
-
-    === "APPEND"
-
-        ```python
-        DownloadFileFromUrlTransformation(
-            ...
-            mode=FileWriteMode.APPEND,
-        )
-        ```
-
-        - If the file exists, the new data will be appended to it.
-        - If it does not exist, a new file will be created.
-
-        <br>
-
-    === "IGNORE"
-
-        ```python
-        DownloadFileFromUrlTransformation(
-            ...
-            mode=FileWriteMode.IGNORE,
-        )
-        ```
-
-        - If the file exists, the method will return without writing anything.
-        - If it does not exist, a new file will be created.
-
-        <br>
-
-    === "EXCLUSIVE"
-
-        ```python
-        DownloadFileFromUrlTransformation(
-            ...
-            mode=FileWriteMode.EXCLUSIVE,
-        )
-        ```
-
-        - If the file exists, an error will be raised.
-        - If it does not exist, a new file will be created.
-
-        <br>
-
-    === "BACKUP"
-
-        ```python
-        DownloadFileFromUrlTransformation(
-            ...
-            mode=FileWriteMode.BACKUP,
-        )
-        ```
-
-        - If the file exists, a backup will be created and the original file will be overwritten.
-        - If it does not exist, a new file will be created.
-
-        <br>
-
-    Examples
-    --------
+    Example
+    -------
     Example usage of the `DownloadFileFromUrlTransformation` class:
 
     ```python
@@ -165,6 +150,16 @@ class DownloadFileFromUrlTransformation(ColumnsTransformationWithTarget):
         The size (in bytes) of the chunks to download the file in, must be greater than 16.
     mode : FileWriteMode, optional, default=FileWriteMode.OVERWRITE
         Write mode: overwrite, append, ignore, exclusive, or backup.
+
+    Write Modes
+    -----------
+    The `DownloadFileFromUrlTransformation` supports the following write modes:
+
+    - OVERWRITE
+    - APPEND
+    - IGNORE
+    - EXCLUSIVE
+    - BACKUP
     """
 
     column: Union[Column, str] = Field(
