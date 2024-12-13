@@ -58,7 +58,10 @@ class AsyncHttpStep(AsyncStep, ExtraParamsMixin):
     # Initialize the AsyncHttpStep
     async def main():
         session = ClientSession()
-        urls = [URL("https://example.com/api/1"), URL("https://example.com/api/2")]
+        urls = [
+            URL("https://example.com/api/1"),
+            URL("https://example.com/api/2"),
+        ]
         retry_options = ExponentialRetry()
         connector = TCPConnector(limit=10)
         headers = {"Content-Type": "application/json"}
