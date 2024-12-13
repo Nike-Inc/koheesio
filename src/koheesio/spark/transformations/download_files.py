@@ -1,3 +1,27 @@
+"""
+Module: download_files
+
+This module provides functionality to download files from URLs specified in a Spark DataFrame column and store the 
+downloaded file paths in a new column. It leverages the `DownloadFileStep` class to handle the file download process 
+and supports various write modes to manage existing files.
+
+Classes
+-------
+DownloadFileFromUrlTransformation
+    A transformation class that downloads content from URLs in the specified column 
+    and stores the downloaded file paths in a new column.
+
+Write Modes
+-----------
+The `DownloadFileFromUrlTransformation` supports the following write modes:
+
+- OVERWRITE
+- APPEND
+- IGNORE
+- EXCLUSIVE
+- BACKUP
+
+"""
 from typing import Union
 
 from pyspark.sql.types import Row
@@ -89,6 +113,48 @@ class DownloadFileFromUrlTransformation(ColumnsTransformationWithTarget):
 
         <br>
 
+    Examples
+    --------
+    Example usage of the `DownloadFileFromUrlTransformation` class:
+
+    ```python
+    from pyspark.sql import SparkSession
+    from koheesio.spark.transformations.download_files import DownloadFileFromUrlTransformation
+    from koheesio.steps.download_file import FileWriteMode
+
+    spark = SparkSession.builder.appName("DownloadFilesExample").getOrCreate()
+    df = spark.createDataFrame([("http://example.com/file1.txt",), ("http://example.com/file2.txt",)], ["url"])
+
+    transformation = DownloadFileFromUrlTransformation(
+        column="url",
+        target_column="downloaded_file_path",
+        mode=FileWriteMode.OVERWRITE,
+        download_path="/path/to/download"
+    )
+
+    transformed_df = transformation.transform(df)
+    transformed_df.show()
+    ```
+
+    In this example, the `DownloadFileFromUrlTransformation` class is used to download files from the URLs specified in
+    the `url` column of the DataFrame `df`. The downloaded file paths are stored in a new column named
+    `downloaded_file_path`. The downloaded files are saved to the `/path/to/download` directory with the `OVERWRITE`
+    write mode. (The `OVERWRITE` mode is the default mode.)
+
+    ### Input DataFrame:
+
+    | url                          |
+    |------------------------------|
+    | http://example.com/file1.txt |
+    | http://example.com/file2.txt |
+
+    ### Output DataFrame:
+
+    | url                          | downloaded_file_path |
+    |------------------------------|----------------------|
+    | http://example.com/file1.txt | download/file1.txt   |
+    | http://example.com/file2.txt | download/file2.txt   |
+
     Parameters
     ----------
     column : Union[Column, str]
@@ -146,7 +212,10 @@ class DownloadFileFromUrlTransformation(ColumnsTransformationWithTarget):
         Download files from URLs in the specified column.
         """
         # Collect the URLs from the DataFrame and process them
-        source_column_name = self.column if isinstance(self.column, str) else get_column_name(self.column)  # type: ignore
+        source_column_name = self.column
+        if not isinstance(source_column_name, str):
+            source_column_name = get_column_name(source_column_name)
+       
         partition = {row.asDict()[source_column_name] for row in self.df.select(self.column).collect()}  # type: ignore
         self.func(partition)
 
