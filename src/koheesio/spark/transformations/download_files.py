@@ -146,7 +146,7 @@ class DownloadFileFromUrlTransformation(ColumnsTransformationWithTarget):
         Download files from URLs in the specified column.
         """
         # Collect the URLs from the DataFrame and process them
-        source_column_name = get_column_name(self.column)  # type: ignore
+        source_column_name = self.column if isinstance(self.column, str) else get_column_name(self.column)  # type: ignore
         partition = {row.asDict()[source_column_name] for row in self.df.select(self.column).collect()}  # type: ignore
         self.func(partition)
 
