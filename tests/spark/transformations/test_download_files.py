@@ -48,5 +48,7 @@ class TestDownloadFileFromUrlTransformation:
             "downloads/adventur.txt",
             "downloads/arttext.fun",
         ]
-        actual_data = sorted([row.asDict()["downloaded_file_path"] for row in transformed_df.select("downloaded_file_path").collect()])
+        actual_data = sorted(
+            [row.asDict()["downloaded_file_path"] for row in transformed_df.select("downloaded_file_path").collect()]
+        )
         assert actual_data == expected_data

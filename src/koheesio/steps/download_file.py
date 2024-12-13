@@ -1,14 +1,27 @@
-# TODO: add module description
+"""
+This module contains the implementation of the `DownloadFileStep` class, which is responsible for downloading files
+from a given URL and saving them to a specified local directory path.
+
+It supports various file write modes such as overwrite, append, ignore, exclusive, and backup.
+
+Classes:
+    FileWriteMode: Enum representing different file write modes.
+    DownloadFileStep: Class for downloading files with support for different write modes.
+
+Functions:
+    should_write_file: Determines if the file should be written based on the write mode.
+    execute: Executes the file download process and saves the file to the specified path.
+"""
 
 from __future__ import annotations
 
-from typing import Any, Optional, Type
+from typing import Union
 from enum import Enum
 from pathlib import Path
 import time
 
 from koheesio import StepOutput
-from koheesio.models import DirectoryPath, Field, FilePath
+from koheesio.models import DirectoryPath, Field, FilePath, field_validator
 from koheesio.steps.http import HttpGetStep
 
 
@@ -45,13 +58,24 @@ class FileWriteMode(str, Enum):
     BACKUP = "backup"
 
     @classmethod
-    def from_string(cls, mode: str) -> Type[FileWriteMode[Any]]:
-        """Return the FileWriteMode for the given string."""
+    def from_string(cls, mode: str) -> FileWriteMode:
+        """Return the FileWriteMode for the given string.
+
+        Parameters
+        ----------
+        mode : str
+            The string representation of the FileWriteMode.
+
+        Returns
+        -------
+        FileWriteMode
+            The FileWriteMode enum corresponding to the given string
+        """
         return cls[mode.upper()]
 
     @property
     def write_mode(self) -> str:
-        """Return the write mode for the given SFTPWriteMode."""
+        """Return the write mode for the given FileWriteMode."""
         if self in {FileWriteMode.OVERWRITE, FileWriteMode.BACKUP, FileWriteMode.EXCLUSIVE}:
             # OVERWRITE, BACKUP, and EXCLUSIVE modes set the file to be written from the beginning
             return "wb"
@@ -66,7 +90,17 @@ class DownloadFileStep(HttpGetStep):
 
     Examples
     --------
-    # TODO: add examples
+    ```python
+    URL = "http://example.com/testfile.txt"
+    download_path = Path("downloads")
+    step = DownloadFileStep(
+        url=URL, download_path=download_path, mode="ignore"
+    )
+    step.execute()
+    ```
+
+    In the above example, the file `testfile.txt` will be downloaded from the URL `http://example.com/testfile.txt` to
+    the `downloads` directory.
 
     Parameters
     ----------
@@ -97,27 +131,43 @@ class DownloadFileStep(HttpGetStep):
     class Output(StepOutput):
         download_file_path: FilePath = Field(..., description="The full path where the file was downloaded to.")
 
-    def handle_file_write_modes(self, _filepath: Path, _filename: str) -> Optional[str]:
-        """Handle different write modes for the file and return the appropriate write mode."""
-        mode = FileWriteMode.from_string(self.mode)  # Convert string to FileWriteMode
-        write_mode = str(mode.write_mode)  # Determine the write mode
+    @field_validator("mode")
+    def validate_mode(cls, v: Union[str, FileWriteMode]) -> FileWriteMode:
+        """Ensure that the mode is a valid FileWriteMode."""
+        return FileWriteMode.from_string(v) if isinstance(v, str) else v
 
-        # FIXME: logging is not working in the unit tests
+    def should_write_file(self, _filepath: Path, _filename: str) -> bool:
+        """
+        Determine if the file should be written based on the write mode.
+
+        Parameters
+        ----------
+        _filepath : Path
+            The path of the file to be written.
+        _filename : str
+            The name of the file to be written.
+
+        Returns
+        -------
+        bool
+            True if the file should be written, False otherwise.
+        """
+        _mode = self.mode
+
         # OVERWRITE and APPEND modes will write the file irrespective of whether it exists or not
-        if _filepath.exists() and mode not in {FileWriteMode.OVERWRITE, FileWriteMode.APPEND}:
-            if mode == FileWriteMode.IGNORE:
-                # If the file exists in IGNORE mode, return without writing
+        if _filepath.exists() and _mode not in {FileWriteMode.OVERWRITE, FileWriteMode.APPEND}:
+            if _mode == FileWriteMode.IGNORE:
+                # If the file exists in IGNORE mode, return False
                 self.log.info(f"File {_filepath} already exists. Ignoring {_filename} based on IGNORE mode.")
                 self.output.download_file_path = _filepath
-                return None
+                return False
 
-            elif mode == FileWriteMode.EXCLUSIVE:
-                # If the file exists in EXCLUSIVE mode, raise an error
+            elif _mode == FileWriteMode.EXCLUSIVE:
                 raise FileExistsError(
                     f"File {_filepath} already exists. Cannot write to {_filename} based on EXCLUSIVE mode."
                 )
 
-            elif mode == FileWriteMode.BACKUP:
+            elif _mode == FileWriteMode.BACKUP:
                 # In BACKUP mode, we first create a timestamped backup before overwriting the existing file.
                 file_to_be_backed_up = _filepath
                 backup_path = _filepath.with_suffix(f"{_filepath.suffix}.{int(time.time())}.bak")
@@ -125,28 +175,33 @@ class DownloadFileStep(HttpGetStep):
                 self.log.info(f"Creating backup of {_filename} as {backup_path}...")
                 file_to_be_backed_up.rename(backup_path)
 
-        return write_mode
+        return True
 
     def execute(self) -> Output:
         """
         Executes the file download process, handling different write modes, and saving the file to the specified path.
+
+        Returns
+        -------
+        Output
+            An instance of the Output class containing the path where the file was downloaded.
         """
         _filename = Path(self.url).name
         _filepath = self.download_path / _filename
+        _write_mode = self.mode.write_mode
 
-        # Handle different write modes. If mode comes back as None, return without writing
-        if (mode := self.handle_file_write_modes(_filepath, _filename)) is None:
+        # Check if the file should be written based on the given mode
+        if not self.should_write_file(_filepath, _filename):
             return self.output
 
         # Create the download path if it does not exist
         self.output.download_file_path = _filepath
         self.output.download_file_path.touch(exist_ok=True)
 
-        # Download the file content and write the downloaded content to the file
-        with self._request(stream=True) as response, self.output.download_file_path.open(mode=mode) as f:
-            for chunk in response.iter_content(chunk_size=self.chunk_size):
-                self.log.debug(f"Downloading chunk of size {len(chunk)}")
-                self.log.debug(f"Downloaded {f.tell()} bytes")
-                self.log.debug(f"Writing to file {self.output.download_file_path}")
-                f.write(chunk)
-3
+        with self._request(stream=True) as response:  # type: ignore
+            with self.output.download_file_path.open(mode=_write_mode) as f:  # type: ignore
+                for chunk in response.iter_content(chunk_size=self.chunk_size):
+                    self.log.debug(f"Downloading chunk of size {len(chunk)}")
+                    self.log.debug(f"Downloaded {f.tell()} bytes")
+                    self.log.debug(f"Writing to file {self.output.download_file_path}")
+                    f.write(chunk)
