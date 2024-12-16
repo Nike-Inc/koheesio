@@ -116,10 +116,10 @@ if check_if_pyspark_connect_is_supported():
     SparkSession = Union[sql.SparkSession, ConnectSparkSession]
     ParseException = (CapturedParseException, ConnectParseException)
     DataType = Union[SqlDataType, ConnectDataType]
-    DataFrameReader = Union[sql.readwriter.DataFrameReader, DataFrameReader]
-    DataStreamReader = Union[sql.streaming.readwriter.DataStreamReader, DataStreamReader]
-    DataFrameWriter = Union[sql.readwriter.DataFrameWriter, DataFrameWriter]
-    DataStreamWriter = Union[sql.streaming.readwriter.DataStreamWriter, DataStreamWriter]
+    DataFrameReader = Union[sql.readwriter.DataFrameReader, DataFrameReader]  # type: ignore
+    DataStreamReader = Union[sql.streaming.readwriter.DataStreamReader, DataStreamReader]  # type: ignore
+    DataFrameWriter = Union[sql.readwriter.DataFrameWriter, DataFrameWriter]  # type: ignore
+    DataStreamWriter = Union[sql.streaming.readwriter.DataStreamWriter, DataStreamWriter]  # type: ignore
     StreamingQuery = StreamingQuery
 else:
     """Import the regular PySpark modules if the current version of PySpark does not support the connect module"""
@@ -137,8 +137,8 @@ else:
     from pyspark.sql.types import DataType  # type: ignore
 
     try:
-        from pyspark.sql.streaming.query import StreamingQuery
-        from pyspark.sql.streaming.readwriter import DataStreamReader, DataStreamWriter
+        from pyspark.sql.streaming.query import StreamingQuery  # type: ignore
+        from pyspark.sql.streaming.readwriter import DataStreamReader, DataStreamWriter  # type: ignore
     except (ImportError, ModuleNotFoundError):
         from pyspark.sql.streaming import (  # type: ignore
             DataStreamReader,
