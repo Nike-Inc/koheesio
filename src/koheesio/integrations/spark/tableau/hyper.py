@@ -209,9 +209,19 @@ class HyperFileListWriter(HyperFileWriter):
         table_definition=TableDefinition(
             table_name=TableName("Extract", "Extract"),
             columns=[
-                TableDefinition.Column(name="string", type=SqlType.text(), nullability=NOT_NULLABLE),
-                TableDefinition.Column(name="int", type=SqlType.int(), nullability=NULLABLE),
-                TableDefinition.Column(name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE),
+                TableDefinition.Column(
+                    name="string",
+                    type=SqlType.text(),
+                    nullability=NOT_NULLABLE,
+                ),
+                TableDefinition.Column(
+                    name="int", type=SqlType.int(), nullability=NULLABLE
+                ),
+                TableDefinition.Column(
+                    name="timestamp",
+                    type=SqlType.timestamp(),
+                    nullability=NULLABLE,
+                ),
             ],
         ),
         data=[
@@ -267,9 +277,19 @@ class HyperFileParquetWriter(HyperFileWriter):
         table_definition=TableDefinition(
             table_name=TableName("Extract", "Extract"),
             columns=[
-                TableDefinition.Column(name="string", type=SqlType.text(), nullability=NOT_NULLABLE),
-                TableDefinition.Column(name="int", type=SqlType.int(), nullability=NULLABLE),
-                TableDefinition.Column(name="timestamp", type=SqlType.timestamp(), nullability=NULLABLE),
+                TableDefinition.Column(
+                    name="string",
+                    type=SqlType.text(),
+                    nullability=NOT_NULLABLE,
+                ),
+                TableDefinition.Column(
+                    name="int", type=SqlType.int(), nullability=NULLABLE
+                ),
+                TableDefinition.Column(
+                    name="timestamp",
+                    type=SqlType.timestamp(),
+                    nullability=NULLABLE,
+                ),
             ],
         ),
         files=[
@@ -316,13 +336,17 @@ class HyperFileDataFrameWriter(HyperFileWriter):
     --------
     ```python
     hw = HyperFileDataFrameWriter(
-        df=spark.createDataFrame([(1, "foo"), (2, "bar")], ["id", "name"]),
+        df=spark.createDataFrame(
+            [(1, "foo"), (2, "bar")], ["id", "name"]
+        ),
         name="test",
     ).execute()
 
     # or in Databricks
     hw = HyperFileDataFrameWriter(
-        df=spark.createDataFrame([(1, "foo"), (2, "bar")], ["id", "name"]),
+        df=spark.createDataFrame(
+            [(1, "foo"), (2, "bar")], ["id", "name"]
+        ),
         name="test",
         path="dbfs:/tmp/hyper/",
     ).execute()

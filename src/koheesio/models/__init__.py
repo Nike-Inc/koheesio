@@ -21,7 +21,9 @@ from pydantic import BaseModel as PydanticBaseModel
 from pydantic import (
     BeforeValidator,
     ConfigDict,
+    DirectoryPath,
     Field,
+    FilePath,
     InstanceOf,
     PositiveInt,
     PrivateAttr,
@@ -53,6 +55,8 @@ __all__ = [
     "ListOfColumns",
     # Directly from pydantic
     "ConfigDict",
+    "DirectoryPath",
+    "FilePath",
     "InstanceOf",
     "ModelMetaclass",
     "PositiveInt",

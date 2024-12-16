@@ -130,9 +130,10 @@ def test_http_step_request():
     with Mocker() as rm:
         rm.put(PUT_ENDPOINT, status_code=int(200))
         # The default method for HttpStep class is GET, however the method specified in `request` options is PUT and
-        # it will override the default.
-        response = HttpStep(url=PUT_ENDPOINT).request(method=HttpMethod.PUT)
-        assert response.status_code == 200
+        # it will override the default
+        step = HttpStep(url=PUT_ENDPOINT)
+        with step._request(method=HttpMethod.PUT) as response:
+            assert response.status_code == 200
 
 
 def test_get_headers():
