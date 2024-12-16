@@ -140,6 +140,20 @@ class DownloadFileFromUrlTransformation(ColumnsTransformationWithTarget):
     | http://example.com/file1.txt | download/file1.txt   |
     | http://example.com/file2.txt | download/file2.txt   |
 
+    Since the `DownloadFileFromUrlTransformation` class is a `ColumnsTransformationWithTarget`, the `transform` method
+    is used to apply the transformation to the input DataFrame `df`. Alternatively, the `execute` method can be used
+    to apply the transformation in place, or the class can be used on a `df.transform()` call.
+
+    I.e.:
+    ```python
+    # Using the transform method
+    transformed_df = transformation.transform(df)
+    # Using the execute method
+    transformed_df = transformation.execute().df  # note: while doing this, df needs to be passed in the constructor
+    # Using the df.transform() method
+    transformed_df = df.transform(transformation)
+    ```
+
     Parameters
     ----------
     column : Union[Column, str]
