@@ -177,7 +177,6 @@ class TestSyncTableAndDataFrameSchema:
                 df=df,
                 dry_run=True,
             ).execute()
-            print(f"{caplog.text = }")
             assert "Columns to be added to Snowflake table: {'foo'}" in caplog.text
             assert "Columns to be added to Spark DataFrame: {'bar'}" in caplog.text
             assert k.new_df_schema == StructType()

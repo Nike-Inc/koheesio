@@ -9,6 +9,12 @@ from pydantic import SecretStr
 from koheesio.sso import okta as o
 
 
+@pytest.fixture(scope="function")
+def requests_mocker():
+    with Mocker() as rm:
+        yield rm
+
+
 class TestOktaToken:
     url = "https://host.okta.com/oauth2/auth/v1/token"
     ot = o.OktaAccessToken(
@@ -17,22 +23,20 @@ class TestOktaToken:
         client_secret=SecretStr("secret"),
     )
 
-    def test_okta_token_w_token(self):
-        with Mocker() as rm:
-            rm.post(self.url, json={"access_token": "bar"}, status_code=int(200))
-            assert self.ot.execute().token.get_secret_value() == "bar"
+    def test_okta_token_w_token(self, requests_mocker):
+        requests_mocker.post(self.url, json={"access_token": "bar"}, status_code=int(200))
+        output = self.ot.execute()
+        assert output.token.get_secret_value() == "bar"
 
-    def test_okta_token_wo_token(self):
-        with Mocker() as rm:
-            rm.post(self.url, json={"foo": "bar"}, status_code=int(200))
-            with pytest.raises(ValueError):
-                self.ot.execute()
+    def test_okta_token_wo_token(self, requests_mocker):
+        requests_mocker.post(self.url, json={"foo": "bar"}, status_code=int(200))
+        with pytest.raises(ValueError):
+            self.ot.execute()
 
-    def test_okta_token_non_200(self):
-        with Mocker() as rm:
-            rm.post(self.url, status_code=int(404))
-            with pytest.raises(o.HTTPError):
-                self.ot.execute()
+    def test_okta_token_non_200(self, requests_mocker):
+        requests_mocker.post(self.url, status_code=int(404))
+        with pytest.raises(o.HTTPError):
+            self.ot.execute()
 
     def test_wo_extra_params(self):
         oat = o.OktaAccessToken(url="url", client_id="client", client_secret=SecretStr("secret"))
