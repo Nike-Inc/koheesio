@@ -6,9 +6,9 @@ from pyspark.sql import functions as f
 
 from koheesio.logger import LoggingFactory
 from koheesio.spark import DataFrame
+from koheesio.spark.transformations.hash import Sha2Hash
 from koheesio.spark.transformations.strings.substring import Substring
 from koheesio.spark.transformations.transform import Transform
-from koheesio.spark.transformations.hash import Sha2Hash
 
 pytestmark = pytest.mark.spark
 
@@ -88,7 +88,6 @@ def test_from_func(dummy_df):
 
 
 def test_df_transform_compatibility(dummy_df: DataFrame):
-
     expected_data = {
         "id": 0,
         "foo": "bar",
