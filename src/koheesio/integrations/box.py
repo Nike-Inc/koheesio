@@ -35,6 +35,7 @@ from koheesio.models import (
     model_validator,
 )
 from koheesio.spark.readers import Reader
+from koheesio.spark.readers.memory import InMemoryReader
 from koheesio.utils import utc_now
 
 
@@ -418,10 +419,8 @@ class BoxCsvFileReader(BoxReaderBase):
             file = self.client.file(file_id=f)
             data = file.content().decode(self.file_encoding)
 
-            data_buffer = StringIO(data)
-            temp_df_pandas = pd.read_csv(data_buffer, header=0, **self.params)  # type: ignore
-            temp_df = self.spark.createDataFrame(temp_df_pandas, schema=self.schema_)
-
+            temp_df = InMemoryReader(data=data, schema=self.schema_, params=self.params, format="csv").read()
+            
             # type: ignore
             # noinspection PyUnresolvedReferences
             temp_df = (
