@@ -21,7 +21,9 @@ from pydantic import BaseModel as PydanticBaseModel
 from pydantic import (
     BeforeValidator,
     ConfigDict,
+    DirectoryPath,
     Field,
+    FilePath,
     InstanceOf,
     PositiveInt,
     PrivateAttr,
@@ -53,6 +55,8 @@ __all__ = [
     "ListOfColumns",
     # Directly from pydantic
     "ConfigDict",
+    "DirectoryPath",
+    "FilePath",
     "InstanceOf",
     "ModelMetaclass",
     "PositiveInt",
@@ -407,7 +411,9 @@ class BaseModel(PydanticBaseModel, ABC):  # type: ignore[no-redef]
         ```python
         step_output_1 = StepOutput(foo="bar")
         step_output_2 = StepOutput(lorem="ipsum")
-        (step_output_1 + step_output_2)  # step_output_1 will now contain {'foo': 'bar', 'lorem': 'ipsum'}
+        (
+            step_output_1 + step_output_2
+        )  # step_output_1 will now contain {'foo': 'bar', 'lorem': 'ipsum'}
         ```
 
         Parameters
@@ -531,7 +537,9 @@ class BaseModel(PydanticBaseModel, ABC):  # type: ignore[no-redef]
         --------
         ```python
         step_output = StepOutput(foo="bar")
-        step_output.merge({"lorem": "ipsum"})  # step_output will now contain {'foo': 'bar', 'lorem': 'ipsum'}
+        step_output.merge(
+            {"lorem": "ipsum"}
+        )  # step_output will now contain {'foo': 'bar', 'lorem': 'ipsum'}
         ```
 
         Parameters
