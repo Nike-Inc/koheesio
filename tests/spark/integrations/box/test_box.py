@@ -39,7 +39,7 @@ CUSTOM_SCHEMA = StructType.fromJson(
     {
         "fields": [
             {"metadata": {}, "name": "foo", "nullable": True, "type": "string"},
-            {"metadata": {}, "name": "bar", "nullable": True, "type": "bigint"},
+            {"metadata": {}, "name": "bar", "nullable": True, "type": "integer"},
         ],
         "type": "struct",
     }
@@ -245,7 +245,7 @@ class TestBoxCsvReader:
         assert bcr.df.count() == 1
         assert bcr.df.dtypes == [
             ("foo", "string"),
-            ("bar", "int"),
+            ("bar", "bigint"),
             ("meta_file_id", "string"),
             ("meta_file_name", "string"),
             ("meta_load_timestamp", "timestamp"),
@@ -262,7 +262,7 @@ class TestBoxCsvPathReader:
         assert bcr.df.count() == 2
         assert bcr.df.dtypes == [
             ("foo", "string"),
-            ("bar", "bigint"),
+            ("bar", "int"),
             ("meta_file_id", "string"),
             ("meta_file_name", "string"),
             ("meta_load_timestamp", "timestamp"),
