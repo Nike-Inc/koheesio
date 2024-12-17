@@ -39,7 +39,7 @@ CUSTOM_SCHEMA = StructType.fromJson(
     {
         "fields": [
             {"metadata": {}, "name": "foo", "nullable": True, "type": "string"},
-            {"metadata": {}, "name": "bar", "nullable": True, "type": "integer"},
+            {"metadata": {}, "name": "bar", "nullable": True, "type": "bigint"},
         ],
         "type": "struct",
     }
