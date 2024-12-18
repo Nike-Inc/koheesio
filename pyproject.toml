@@ -243,7 +243,6 @@ features = [
   "delta",
   "dev",
   "excel",
-  "ml",
   "pandas",
   "pyspark",
   "se",
@@ -266,15 +265,15 @@ cov-report = "coverage report"
 
 [[tool.hatch.envs.hatch-test.matrix]]
 python = ["3.9"]
-version = ["pyspark33", "pyspark34"]
+version = ["pyspark33", "pyspark34", "ml"]
 
 [[tool.hatch.envs.hatch-test.matrix]]
 python = ["3.10"]
-version = ["pyspark33", "pyspark34", "pyspark35", "pyspark35r"]
+version = ["pyspark33", "pyspark34", "pyspark35", "pyspark35r", "ml"]
 
 [[tool.hatch.envs.hatch-test.matrix]]
 python = ["3.11", "3.12"]
-version = ["pyspark35", "pyspark35r"]
+version = ["pyspark35", "pyspark35r", "ml"]
 
 [tool.hatch.envs.hatch-test.overrides]
 matrix.version.extra-dependencies = [
@@ -314,6 +313,15 @@ name.".*(pyspark35r).*".env-vars = [
   { key = "SPARK_REMOTE", value = "local" },
   { key = "SPARK_TESTING", value = "True" },
 ]
+
+[tool.hatch.envs.ml]
+description = """
+The ml environment is used for running machine learning related tests.
+---
+Run `hatch run ml:test` to run the ML test suite.
+"""
+features = ["ml"]
+scripts.test = "pytest{env:HATCH_TEST_ARGS:} {args}"
 
 
 [tool.pytest.ini_options]
