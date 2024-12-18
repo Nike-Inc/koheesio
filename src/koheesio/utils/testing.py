@@ -1,19 +1,23 @@
-import socket
+"""TODO: add documentation"""
+from typing import Generator
 import uuid
 
-from _pytest.fixtures import FixtureFunction
+from _pytest.fixtures import FixtureFunction, FixtureValue
 import pytest
 from pytest import fixture
 
 from koheesio import LoggingFactory
+from koheesio.logger import Logger
 
 __all__ = [
     "pytest",
     "FixtureFunction",
+    "FixtureValue",
     "fixture",
 ]
 
-def register_fixtures(*fixture_functions: FixtureFunction, scope: str = "function"):
+
+def register_fixtures(*fixture_functions: FixtureFunction, scope: str = "function") -> Generator[FixtureFunction]:
     """
     Register multiple fixtures with the provided scope.
 
@@ -49,25 +53,15 @@ def register_fixtures(*fixture_functions: FixtureFunction, scope: str = "functio
         The scope of the fixtures to register, by default "session"
     """
     for fixture_function in fixture_functions:
-        yield pytest.fixture(scope=scope)(fixture_function)
+        yield pytest.fixture(scope=scope)(fixture_function)  # type: ignore
 
 
 
 @pytest.fixture
-def random_uuid():
+def random_uuid() -> str:
     return str(uuid.uuid4()).replace("-", "_")
 
 
 @pytest.fixture
-def logger(random_uuid):
+def logger(random_uuid: str) -> Logger:
     return LoggingFactory.get_logger(name="conf_test" + random_uuid)
-
-
-def is_port_free(port):
-    """Check if a port is free."""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        try:
-            s.bind(("localhost", port))
-            return True
-        except socket.error:
-            return False

@@ -292,7 +292,7 @@ class BaseModel(PydanticBaseModel, ABC):  # type: ignore[no-redef]
         return cls(**kwargs)
 
     @classmethod
-    def from_context(cls, context: Context) -> BaseModel:
+    def from_context(cls, context: Context, **kwargs: dict) -> BaseModel:
         """Creates BaseModel instance from a given Context
 
         You have to make sure that the Context object has the necessary attributes to create the model.
@@ -317,6 +317,9 @@ class BaseModel(PydanticBaseModel, ABC):  # type: ignore[no-redef]
         -------
         BaseModel
         """
+        # TODO: create context with overwritten kwargs
+        if kwargs:
+            context = Context.merge(context, Context.from_dict(kwargs))  # TODO: can this directly be kwargs, or does it need Context.from_dict?
         return cls(**context)
 
     @classmethod

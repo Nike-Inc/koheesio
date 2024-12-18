@@ -8,10 +8,10 @@ The following fixtures are available:
 - `spark_with_delta`: A Spark session fixture with Delta enabled.
 ...
 """
-from typing import Union
-from collections import namedtuple
+from dataclasses import dataclass, field
+from typing import Any, Generator, Optional
 import datetime
-from decimal import Decimal
+from logging import Logger
 import os
 from pathlib import Path
 import sys
@@ -19,49 +19,28 @@ from textwrap import dedent
 from unittest import mock
 
 from delta import configure_spark_with_delta_pip
-import pytest
-
-from pyspark.sql import SparkSession
-from pyspark.sql.types import (
-    ArrayType,
-    BinaryType,
-    BooleanType,
-    ByteType,
-    DateType,
-    DecimalType,
-    DoubleType,
-    FloatType,
-    IntegerType,
-    LongType,
-    MapType,
-    NullType,
-    ShortType,
-    StringType,
-    StructField,
-    StructType,
-    TimestampType,
-)
 
 from koheesio.logger import LoggingFactory
 from koheesio.models import FilePath
-from koheesio.utils.testing import fixture, is_port_free, logger, random_uuid, register_fixtures
+from koheesio.spark import DataFrame, SparkSession
+from koheesio.utils.testing import fixture, is_port_free, logger, pytest, random_uuid, register_fixtures
 
 __all__ = [
     "fixture",
     "warehouse_path",
+    "checkpoint_folder",
     "spark_with_delta",
     "spark",
+    "set_env_vars",
     "sample_df_with_all_types",
     'sample_df_with_string_timestamp',
     'sample_df_with_timestamp',
     'sample_df_with_strings',
     'sample_df_to_partition',
-    "set_env_vars",
     "setup_test_data",
     "register_fixture",
     "register_fixtures",
     # ...
-    "checkpoint_folder",
     "is_port_free",
     "dummy_df",
     "dummy_spark",
@@ -75,7 +54,7 @@ __all__ = [
 
 
 @pytest.fixture
-def warehouse_path(tmp_path_factory, random_uuid, logger):
+def warehouse_path(tmp_path_factory: pytest.TempPathFactory, random_uuid: str, logger: Logger) -> Generator[str]:
     """Fixture to create a temporary warehouse folder that can be used with Spark.
 
     This fixture uses pytest's built-in `tmp_path_factory` to create a temporary folder that can be used as a warehouse
@@ -108,7 +87,24 @@ def warehouse_path(tmp_path_factory, random_uuid, logger):
 
 
 @pytest.fixture
-def spark_with_delta(warehouse_path, random_uuid):
+def checkpoint_folder(tmp_path_factory: pytest.TempPathFactory, random_uuid: str, logger: Logger) -> Generator[str]:
+    """Fixture to create a temporary checkpoint folder that can be used with Spark streams.
+    
+    Example
+    -------
+    ```python
+    def test_writing_to_delta_with_checkpoint(spark, checkpoint_folder):
+        df = spark.range(1)
+        df.writeStream.format("delta").option("checkpointLocation", checkpoint_folder).start()
+    ```
+    """
+    fldr = tmp_path_factory.mktemp("checkpoint" + random_uuid)
+    logger.debug(f"Building test checkpoint folder '{fldr}'")
+    yield fldr.as_posix()
+
+
+@pytest.fixture
+def spark_with_delta(warehouse_path: str, random_uuid: str) -> Generator[SparkSession]:
     """Spark session fixture with Delta enabled.
 
     Dynamically creates a Spark session that has Delta enabled. The session is created with a unique name to avoid
@@ -162,28 +158,14 @@ def spark_with_delta(warehouse_path, random_uuid):
 
     spark_session = builder.getOrCreate()
 
-    spark_session.stop()
     yield spark_session
-
-
-
-
-
-@pytest.fixture
-def checkpoint_folder(tmp_path_factory, random_uuid, logger):
-    # TODO
-    fldr = tmp_path_factory.mktemp("checkpoint" + random_uuid)
-    logger.debug(f"Building test checkpoint folder '{fldr}'")
-    yield fldr.as_posix()
-
-
-
+    
+    # stop the spark session after the test session is completed
+    spark_session.stop()
 
 
 @pytest.fixture
-def set_env_vars():
-    # @pytest.fixture(autouse=True, scope="session")
-    # TODO
+def set_env_vars() -> Generator:
     """
     Set environment variables for PYSPARK_PYTHON and PYSPARK_DRIVER_PYTHON.
 
@@ -211,123 +193,12 @@ def set_env_vars():
         os.environ["PYSPARK_DRIVER_PYTHON"] = existing_pyspark_driver_python
 
 
-
 @pytest.fixture
-def spark(set_env_vars, spark_with_delta):
+def spark(set_env_vars: pytest.FixtureRequest, spark_with_delta: SparkSession) -> Generator[SparkSession]:
     """Ensures PYSPARK_PYTHON and PYSPARK_DRIVER_PYTHON are set to the current Python executable and returns a Spark
     session.
     """
     yield spark_with_delta
-
-
-@pytest.fixture
-def dummy_df(spark):
-    """
-    A 1-row DataFrame with one column: id.
-
-    ## df:
-    | id |
-    |----|
-    | 1  |
-
-    ## schema:
-    - id: long (nullable = false)
-    """
-    return spark.range(1)
-
-
-@pytest.fixture
-def sample_df_to_partition(spark):
-    """
-    DataFrame with two columns: partition and value.
-
-    ## df:
-    | partition | Value |
-    |-----------|-------|
-    | BE        | 12    |
-    | FR        | 20    |
-
-    ## schema:
-    - partition: string (nullable = true)
-    - value: long (nullable = true)
-    """
-    data = [["BE", 12], ["FR", 20]]
-    schema = ["partition", "value"]
-    return spark.createDataFrame(data, schema)
-
-
-@pytest.fixture
-def sample_df_with_strings(spark):
-    """
-    DataFrame with two columns: id and string.
-    Includes 3 rows of data, including a null value.
-
-    ## df:
-    | id | string |
-    |----|--------|
-    | 1  | hello  |
-    | 2  | world  |
-    | 3  |        |
-
-    ## schema:
-    - id: bigint (nullable = true)
-    - string: string (nullable = true)
-    """
-    data = [[1, "hello"], [2, "world"], [3, ""]]
-    schema = ["id", "string"]
-    return spark.createDataFrame(data, schema)
-
-
-@pytest.fixture
-def sample_df_with_timestamp(spark):
-    """
-    DataFrame with two columns: a_date and a_timestamp.
-
-    ## df:
-    | id | a_date              | a_timestamp         |
-    |----|---------------------|---------------------|
-    | 1  | 1970-04-20 12:33:09 | 2000-07-01 01:01:00 |
-    | 2  | 1980-05-21 13:34:08 | 2010-08-02 02:02:00 |
-    | 3  | 1990-06-22 14:35:07 | 2020-09-03 03:03:00 |
-
-    ## schema:
-    - id: bigint (nullable = true)
-    - a_date: timestamp (nullable = true)
-    - a_timestamp: timestamp (nullable = true)
-    """
-    data = [
-        (1, datetime.datetime(1970, 4, 20, 12, 33, 9), datetime.datetime(2000, 7, 1, 1, 1)),
-        (2, datetime.datetime(1980, 5, 21, 13, 34, 8), datetime.datetime(2010, 8, 2, 2, 2)),
-        (3, datetime.datetime(1990, 6, 22, 14, 35, 7), datetime.datetime(2020, 9, 3, 3, 3)),
-    ]
-    schema = ["id", "a_date", "a_timestamp"]
-    return spark.createDataFrame(data, schema)
-
-
-@pytest.fixture(scope="class")
-def sample_df_with_string_timestamp(spark):
-    """
-    DataFrame with two columns: id and a_string_timestamp.
-    The timestamps in this data are stored as strings.
-
-    ## df:
-    | id | a_string_timestamp |
-    |----|--------------------|
-    | 1  | 202301010420       |
-    | 2  | 202302020314       |
-
-    ## schema:
-    - id: bigint (nullable = true)
-    - a_string_timestamp: string (nullable = true)
-    """
-    data = [(1, "202301010420"), (2, "202302020314")]
-    schema = ["id", "a_string_timestamp"]
-    return spark.createDataFrame(data, schema)
-
-
-
-
-
 
 
 
@@ -336,12 +207,6 @@ def streaming_dummy_df(spark, delta_file):
     # TODO
     setup_test_data(spark=spark, delta_file=Path(delta_file))
     yield spark.readStream.table("delta_test_table")
-
-
-
-
-
-
 
 
 
@@ -375,45 +240,7 @@ def setup_test_data(spark: SparkSession, delta_file: FilePath, view_name: str ="
     )
 
 
-SparkContextData = namedtuple("SparkContextData", ["spark", "options_dict"])
-"""A named tuple containing the Spark session and the options dictionary used to create the DataFrame"""
 
-
-@pytest.fixture(scope="class")
-def dummy_spark(spark, sample_df_with_strings) -> SparkContextData:
-    # TODO:
-    #  - make the sample data a parameter
-    #  - Update documentation
-    #  - Add better examples
-    #  - Take inspiration from the Snowflake RunQuery fixture
-    """SparkSession fixture that makes any call to SparkSession.read.load() return a DataFrame with strings.
-
-    Because of the use of `type(spark.read)`, this fixture automatically alters its behavior for either a remote or
-    regular Spark session.
-
-    Example
-    -------
-    ```python
-    def test_dummy_spark(dummy_spark, sample_df_with_strings):
-        df = dummy_spark.read.load()
-        assert df.count() == sample_df_with_strings.count()
-    ```
-
-    Returns
-    -------
-    SparkContextData
-        A named tuple containing the Spark session and the options dictionary used to create the DataFrame
-    """
-    _options_dict = {}
-
-    def mock_options(*args, **kwargs):
-        _options_dict.update(kwargs)
-        return spark.read
-
-    spark_reader = type(spark.read)
-    with mock.patch.object(spark_reader, "options", side_effect=mock_options):
-        with mock.patch.object(spark_reader, "load", return_value=sample_df_with_strings):
-            yield SparkContextData(spark, _options_dict)
 
 
 @pytest.fixture
@@ -471,59 +298,4 @@ def await_job_completion(spark, timeout=300, query_id=None):
             spark.streams.awaitAnyTermination(20)
     spark.streams.resetTerminated()
     logger.info("Streaming job completed")
-
-
-@pytest.fixture
-def sample_df_with_all_types(spark):
-    """Create a DataFrame with all supported Spark datatypes
-
-    This DataFrame has 1 row and 14 columns, each column containing a single value of the given datatype.
-
-    ## df:
-    | BYTE | SHORT | INTEGER | LONG | FLOAT | DOUBLE | DECIMAL | STRING | BINARY | BOOLEAN | TIMESTAMP           | DATE       | ARRAY | MAP        | VOID |
-    |------|-------|---------|------|-------|--------|---------|--------|--------|---------|---------------------|------------|-------|------------|------|
-    | 1    | 1     | 1       | 1    | 1.0   | 1.0    | 1.0     | a      | a      | true    | 2023-01-01T00:01:01 | 2023-01-01 | ["a"] | {"a": "b"} | null |
-
-    ## schema:
-    - BYTE: byte (nullable = true)
-    - SHORT: short (nullable = true)
-    - INTEGER: integer (nullable = true)
-    - LONG: long (nullable = true)
-    - FLOAT: float (nullable = true)
-    - DOUBLE: double (nullable = true)
-    - DECIMAL: decimal(10,0) (nullable = true)
-    - STRING: string (nullable = true)
-    - BINARY: binary (nullable = true)
-    - BOOLEAN: boolean (nullable = true)
-    - TIMESTAMP: timestamp (nullable = true)
-    - DATE: date (nullable = true)
-    - ARRAY: array (nullable = true)
-    - MAP: map (nullable = true)
-    - VOID: void (nullable = true)
-
-    """
-    data = dict(
-        BYTE=(1, "byte", ByteType()),
-        SHORT=(1, "short", ShortType()),
-        INTEGER=(1, "integer", IntegerType()),
-        LONG=(1, "long", LongType()),
-        FLOAT=(1.0, "float", FloatType()),
-        DOUBLE=(1.0, "double", DoubleType()),
-        DECIMAL=(Decimal(1.0), "decimal", DecimalType()),
-        STRING=("a", "string", StringType()),
-        BINARY=(b"a", "binary", BinaryType()),
-        BOOLEAN=(True, "boolean", BooleanType()),
-        # '2023-01-01T00:01:01'
-        TIMESTAMP=(datetime.datetime.utcfromtimestamp(1672531261), "timestamp", TimestampType()),
-        DATE=(datetime.date(2023, 1, 1), "date", DateType()),
-        ARRAY=(["a"], "array", ArrayType(StringType())),
-        MAP=({"a": "b"}, "map", MapType(StringType(), StringType())),
-        VOID=(None, "void", NullType()),
-    )
-    return spark.createDataFrame(
-        data=[[v[0] for v in data.values()]],
-        schema=StructType([StructField(name=v[1], dataType=v[2]) for v in data.values()]),
-    )
-
-
 

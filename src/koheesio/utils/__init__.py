@@ -8,6 +8,7 @@ from functools import partial
 from importlib import import_module
 import inspect
 from pathlib import Path
+import socket
 from sys import version_info as PYTHON_VERSION
 import uuid
 
@@ -17,6 +18,7 @@ __all__ = [
     "import_class",
     "get_random_string",
     "convert_str_to_bool",
+    "is_port_free",
 ]
 
 
@@ -80,12 +82,13 @@ def import_class(module_class: str) -> Any:
 
     Parameters
     ----------
-    module_class module+class to be imported.
+    module_class : str
+        module and class to be imported. E.g. `koheesio.models.ExtraParamsMixin`
 
     Returns
     -------
-    object  Class from specified input string.
-
+    object
+        Class from specified input string.
     """
     module_path, class_name = module_class.rsplit(".", 1)
     module = import_module(module_path)
@@ -103,7 +106,7 @@ def get_random_string(length: int = 64, prefix: Optional[str] = None) -> str:
 def convert_str_to_bool(value: str) -> Any:
     """Converts a string to a boolean if the string is either 'true' or 'false'"""
     if isinstance(value, str) and (v := value.lower()) in ["true", "false"]:
-        value = v == "true"
+        value = v == "true"  # type: ignore
     return value
 
 
@@ -112,3 +115,23 @@ def utc_now() -> datetime.datetime:
     if PYTHON_MINOR_VERSION < 3.11:
         return datetime.datetime.utcnow()
     return datetime.datetime.now(datetime.timezone.utc)
+
+def is_port_free(port: int) -> bool:
+    """Check if a given port is free.
+    
+    Parameters
+    ----------
+    port : int
+        The port number to check
+
+    Returns
+    -------
+    bool
+    """
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            s.bind(("localhost", port))
+            return True
+        except socket.error:
+            return False
+        
