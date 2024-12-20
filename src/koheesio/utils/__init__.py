@@ -116,9 +116,10 @@ def utc_now() -> datetime.datetime:
         return datetime.datetime.utcnow()
     return datetime.datetime.now(datetime.timezone.utc)
 
+
 def is_port_free(port: int) -> bool:
     """Check if a given port is free.
-    
+
     Parameters
     ----------
     port : int
@@ -134,4 +135,3 @@ def is_port_free(port: int) -> bool:
             return True
         except socket.error:
             return False
-        

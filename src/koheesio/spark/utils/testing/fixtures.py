@@ -2,7 +2,14 @@ from typing import Any, Generator, Optional
 from dataclasses import dataclass, field
 
 from koheesio.spark import DataFrame, SparkSession
-from koheesio.utils.testing import pytest
+from koheesio.utils.testing import pytest, register_fixtures, FixtureValue
+
+
+__all__ = [
+    "mock_spark_reader",
+    "SparkContextData",
+    "register_fixtures",
+]
 
 
 @dataclass
@@ -15,6 +22,7 @@ class SparkContextData:
 
     See `mock_spark_reader` for more details
     """
+
     spark: SparkSession
     _options_dict: dict[str, Any] = field(default_factory=dict)
     _output_df: Optional[DataFrame] = None
@@ -42,15 +50,17 @@ class SparkContextData:
 
     def assert_option_called_with(self, key: str, value: Any) -> None:
         """Asserts that a specific option was called with the expected value."""
-        assert self._options_dict.get(key) is not None, f"No option with name {key} was called. Actual options: {self._options_dict}"
-        assert self._options_dict.get(key) == value, f"Expected {key} to be {value}, but got {self._options_dict.get(key)}"
+        assert (
+            self._options_dict.get(key) is not None
+        ), f"No option with name {key} was called. Actual options: {self._options_dict}"
+        assert (
+            self._options_dict.get(key) == value
+        ), f"Expected {key} to be {value}, but got {self._options_dict.get(key)}"
 
 
 @pytest.fixture
 def mock_spark_reader(
-        spark: SparkSession,
-        sample_df_with_strings: DataFrame,
-        mocker: pytest.FixtureRequest
+    spark: SparkSession, sample_df_with_strings: DataFrame, mocker: FixtureValue
 ) -> Generator[SparkContextData]:
     """SparkSession fixture that makes any call to `SparkSession.read.load()` return a custom DataFrame.
 
@@ -76,8 +86,8 @@ def mock_spark_reader(
     ### Checking that specific options were called
     ```python
     def test_spark_called_with_right_options(mock_spark_reader):
-       spark.read.format("csv").option("foo", "bar")
-       mock_spark_reader.assert_option_called_with("foo", "bar")
+        spark.read.format("csv").option("foo", "bar")
+        mock_spark_reader.assert_option_called_with("foo", "bar")
     ```
 
     Parameters

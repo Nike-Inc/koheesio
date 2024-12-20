@@ -8,6 +8,7 @@ The following fixtures are available:
 - `spark_with_delta`: A Spark session fixture with Delta enabled.
 ...
 """
+
 from dataclasses import dataclass, field
 from typing import Any, Generator, Optional
 import datetime
@@ -33,10 +34,10 @@ __all__ = [
     "spark",
     "set_env_vars",
     "sample_df_with_all_types",
-    'sample_df_with_string_timestamp',
-    'sample_df_with_timestamp',
-    'sample_df_with_strings',
-    'sample_df_to_partition',
+    "sample_df_with_string_timestamp",
+    "sample_df_with_timestamp",
+    "sample_df_with_strings",
+    "sample_df_to_partition",
     "setup_test_data",
     "register_fixture",
     "register_fixtures",
@@ -69,11 +70,11 @@ def warehouse_path(tmp_path_factory: pytest.TempPathFactory, random_uuid: str, l
     def spark_builder_with_warehouse(warehouse_path):
         '''example of a fixture that uses the warehouse_path fixture'''
         from spark.sql import SparkSession
+
         assert os.path.exists(warehouse_path)
 
         builder = (
-            SparkSession
-            .builder
+            SparkSession.builder
             # the warehouse_path fixture is used here
             .config("spark.sql.warehouse.dir", warehouse_path)
         )
@@ -89,7 +90,7 @@ def warehouse_path(tmp_path_factory: pytest.TempPathFactory, random_uuid: str, l
 @pytest.fixture
 def checkpoint_folder(tmp_path_factory: pytest.TempPathFactory, random_uuid: str, logger: Logger) -> Generator[str]:
     """Fixture to create a temporary checkpoint folder that can be used with Spark streams.
-    
+
     Example
     -------
     ```python
@@ -159,7 +160,7 @@ def spark_with_delta(warehouse_path: str, random_uuid: str) -> Generator[SparkSe
     spark_session = builder.getOrCreate()
 
     yield spark_session
-    
+
     # stop the spark session after the test session is completed
     spark_session.stop()
 
@@ -201,7 +202,6 @@ def spark(set_env_vars: pytest.FixtureRequest, spark_with_delta: SparkSession) -
     yield spark_with_delta
 
 
-
 @pytest.fixture
 def streaming_dummy_df(spark, delta_file):
     # TODO
@@ -209,9 +209,7 @@ def streaming_dummy_df(spark, delta_file):
     yield spark.readStream.table("delta_test_table")
 
 
-
-
-def setup_test_data(spark: SparkSession, delta_file: FilePath, view_name: str ="delta_test_view"):
+def setup_test_data(spark: SparkSession, delta_file: FilePath, view_name: str = "delta_test_view"):
     """
     Sets up test data for the Spark session.
 
@@ -236,11 +234,9 @@ def setup_test_data(spark: SparkSession, delta_file: FilePath, view_name: str ="
             TBLPROPERTIES ("delta.enableChangeDataFeed" = "true")
             AS SELECT v.* FROM {view_name} v
             """
-        ), view_name=view_name
+        ),
+        view_name=view_name,
     )
-
-
-
 
 
 @pytest.fixture
@@ -298,4 +294,3 @@ def await_job_completion(spark, timeout=300, query_id=None):
             spark.streams.awaitAnyTermination(20)
     spark.streams.resetTerminated()
     logger.info("Streaming job completed")
-

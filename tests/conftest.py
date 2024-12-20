@@ -35,5 +35,3 @@ def data_path():
 @pytest.fixture(scope="session")
 def delta_file():
     return DELTA_FILE.as_posix()
-
-

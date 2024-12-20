@@ -1,4 +1,5 @@
 """TODO: add documentation"""
+
 from typing import Generator
 import uuid
 
@@ -54,7 +55,6 @@ def register_fixtures(*fixture_functions: FixtureFunction, scope: str = "functio
     """
     for fixture_function in fixture_functions:
         yield pytest.fixture(scope=scope)(fixture_function)  # type: ignore
-
 
 
 @pytest.fixture
