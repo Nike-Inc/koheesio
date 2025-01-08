@@ -103,9 +103,7 @@ class DataframeLookup(Transformation):
         df=left_df,
         other=right_df,
         on=JoinMapping(source_column="id", joined_column="id"),
-        targets=TargetColumn(
-            target_column="value", target_column_alias="right_value"
-        ),
+        targets=TargetColumn(target_column="value", target_column_alias="right_value"),
         how=JoinType.LEFT,
     )
 
