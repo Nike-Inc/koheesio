@@ -102,14 +102,10 @@ from koheesio.spark.transformations.date_time.interval import (
     DateTimeAddInterval,
 )
 
-input_df = spark.createDataFrame(
-    [(1, "2022-01-01 00:00:00")], ["id", "my_column"]
-)
+input_df = spark.createDataFrame([(1, "2022-01-01 00:00:00")], ["id", "my_column"])
 
 # add 1 day to my_column and store the result in a new column called 'one_day_later'
-output_df = DateTimeAddInterval(
-    column="my_column", target_column="one_day_later", interval="1 day"
-).transform(input_df)
+output_df = DateTimeAddInterval(column="my_column", target_column="one_day_later", interval="1 day").transform(input_df)
 ```
 __output_df__:
 

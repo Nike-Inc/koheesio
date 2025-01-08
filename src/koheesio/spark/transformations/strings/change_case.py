@@ -51,9 +51,7 @@ class LowerCase(ColumnsTransformationWithTarget):
     |              Beans|  1600|    USA|
 
     ```python
-    output_df = LowerCase(
-        column="product", target_column="product_lower"
-    ).transform(df)
+    output_df = LowerCase(column="product", target_column="product_lower").transform(df)
     ```
 
     __output_df:__
@@ -109,9 +107,7 @@ class UpperCase(LowerCase):
     |              Beans|  1600|    USA|
 
     ```python
-    output_df = UpperCase(
-        column="product", target_column="product_upper"
-    ).transform(df)
+    output_df = UpperCase(column="product", target_column="product_upper").transform(df)
     ```
 
     __output_df:__
@@ -162,9 +158,7 @@ class TitleCase(LowerCase):
     |              Beans|  1600|    USA|
 
     ```python
-    output_df = TitleCase(
-        column="product", target_column="product_title"
-    ).transform(df)
+    output_df = TitleCase(column="product", target_column="product_title").transform(df)
     ```
 
     __output_df:__

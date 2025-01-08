@@ -615,16 +615,12 @@ class BoxFileWriter(BoxFolderBase):
     from koheesio.steps.integrations.box import BoxFileWriter
 
     auth_params = {...}
-    f1 = BoxFileWriter(
-        **auth_params, path="/foo/bar", file="path/to/my/file.ext"
-    ).execute()
+    f1 = BoxFileWriter(**auth_params, path="/foo/bar", file="path/to/my/file.ext").execute()
     # or
     import io
 
     b = io.BytesIO(b"my-sample-data")
-    f2 = BoxFileWriter(
-        **auth_params, path="/foo/bar", file=b, name="file.ext"
-    ).execute()
+    f2 = BoxFileWriter(**auth_params, path="/foo/bar", file=b, name="file.ext").execute()
     ```
     """
 

@@ -1,16 +1,18 @@
-"""Utilities for testing Spark applications.
-
-This module contains utilities and pytest fixtures that can be used to run tests using Spark.
+"""
 
 The following fixtures are available:
 - `warehouse_path`: A temporary warehouse folder that can be used with SparkSessions.
 - `checkpoint_folder`: A temporary checkpoint folder that can be used with Spark streams.
 - `spark_with_delta`: A Spark session fixture with Delta enabled.
-...
+- `set_env_vars`: A fixture to set environment variables for PYSPARK_PYTHON and PYSPARK_DRIVER_PYTHON.
+- `spark`: A fixture that ensures PYSPARK_PYTHON and PYSPARK_DRIVER_PYTHON are set to the current Python executable
+    and returns a Spark session.
+- `streaming_dummy_df`: A fixture that creates a streaming DataFrame from a Delta table for testing purposes.
+- `mock_df`: A fixture to mock a DataFrame's methods.
+- `mock_spark_reader`: SparkSession fixture that makes any call to `SparkSession.read.load()` return a custom DataFrame.
 """
-
-from dataclasses import dataclass, field
 from typing import Any, Generator, Optional
+from dataclasses import dataclass, field
 import datetime
 from logging import Logger
 import os
@@ -21,38 +23,27 @@ from unittest import mock
 
 from delta import configure_spark_with_delta_pip
 
-from koheesio.logger import LoggingFactory
 from koheesio.models import FilePath
 from koheesio.spark import DataFrame, SparkSession
-from koheesio.utils.testing import fixture, is_port_free, logger, pytest, random_uuid, register_fixtures
+from koheesio.spark.testing.utils import setup_test_data
+from koheesio.utils.testing import FixtureValue, pytest, register_fixture, register_fixtures
 
 __all__ = [
-    "fixture",
+    "SparkContextData",
+    "register_fixture",
+    "register_fixtures",
+    # fixtures
     "warehouse_path",
     "checkpoint_folder",
     "spark_with_delta",
-    "spark",
     "set_env_vars",
-    "sample_df_with_all_types",
-    "sample_df_with_string_timestamp",
-    "sample_df_with_timestamp",
-    "sample_df_with_strings",
-    "sample_df_to_partition",
-    "setup_test_data",
-    "register_fixture",
-    "register_fixtures",
-    # ...
-    "is_port_free",
-    "dummy_df",
-    "dummy_spark",
-    "logger",
-    "mock_df",
-    "random_uuid",
-    "sample_df_to_partition",
-    "spark",
+    "spark", 
     "streaming_dummy_df",
+    "mock_df",
+    "mock_spark_reader",
+    # utility functions
+    "setup_test_data",
 ]
-
 
 @pytest.fixture
 def warehouse_path(tmp_path_factory: pytest.TempPathFactory, random_uuid: str, logger: Logger) -> Generator[str]:
@@ -203,44 +194,19 @@ def spark(set_env_vars: pytest.FixtureRequest, spark_with_delta: SparkSession) -
 
 
 @pytest.fixture
-def streaming_dummy_df(spark, delta_file):
-    # TODO
+def streaming_dummy_df(spark: SparkSession, delta_file: FilePath) -> Generator[DataFrame]:
+    """
+    Creates a streaming DataFrame from a Delta table for testing purposes.
+
+    This function sets up test data in a Delta table and returns a streaming DataFrame
+    that reads from this table.
+    """
     setup_test_data(spark=spark, delta_file=Path(delta_file))
     yield spark.readStream.table("delta_test_table")
 
 
-def setup_test_data(spark: SparkSession, delta_file: FilePath, view_name: str = "delta_test_view"):
-    """
-    Sets up test data for the Spark session.
-
-    Reads a given Delta file, creates a temporary view, and populates a Delta table with the view's data.
-
-    Parameters
-    ----------
-    spark : SparkSession
-        The Spark session to use.
-    delta_file : Union[str, Path]
-        The path to the Delta file to read.
-    view_name : str, optional
-        The name of the temporary view to create, by default "delta_test_view"
-    """
-    delta_file = delta_file.absolute().as_posix()
-    spark.read.format("delta").load(delta_file).limit(10).createOrReplaceTempView("delta_test_view")
-    spark.sql(
-        dedent(
-            """
-            CREATE TABLE IF NOT EXISTS delta_test_table
-            USING DELTA
-            TBLPROPERTIES ("delta.enableChangeDataFeed" = "true")
-            AS SELECT v.* FROM {view_name} v
-            """
-        ),
-        view_name=view_name,
-    )
-
-
 @pytest.fixture
-def mock_df(spark) -> mock.Mock:
+def mock_df(spark: SparkSession) -> Generator[mock.Mock]:
     """
     Fixture to mock a DataFrame's methods.
 
@@ -272,25 +238,142 @@ def mock_df(spark) -> mock.Mock:
     yield mock_df
 
 
-def await_job_completion(spark, timeout=300, query_id=None):
-    """
-    Waits for a Spark streaming job to complete.
+@dataclass
+class SparkContextData:
+    """Helper class to mock the behavior of a Spark session's `read` object.
 
-    This function checks the status of a Spark streaming job and waits until it is completed or a timeout is reached.
-    If a query_id is provided, it waits for the specific streaming job with that id. Otherwise, it waits for any active
-    streaming job.
-    """
-    logger = LoggingFactory.get_logger(name="await_job_completion", inherit_from_koheesio=True)
+    This class is used to mock the behavior of a Spark session's `read` object. It allows the user to set the output
+    DataFrame that will be returned by the `load` method. The class also provides methods to get the options that were
+    passed to the `load` method.
 
-    start_time = datetime.datetime.now()
-    spark = spark.getActiveSession()
-    logger.info("Waiting for streaming job to complete")
-    if query_id is not None:
-        stream = spark.streams.get(query_id)
-        while stream.isActive and (datetime.datetime.now() - start_time).seconds < timeout:
-            spark.streams.awaitAnyTermination(20)
-    else:
-        while len(spark.streams.active) > 0 and (datetime.datetime.now() - start_time).seconds < timeout:
-            spark.streams.awaitAnyTermination(20)
-    spark.streams.resetTerminated()
-    logger.info("Streaming job completed")
+    See `mock_spark_reader` for more details.
+
+    Methods used for mocking
+    ------------------------
+    mock_options(*args, **kwargs) -> SparkSession.read:
+        Mock method for the `options` and `option` methods of a Spark session's `read` object.
+    
+    get_options -> dict[str, Any]:
+        Returns the options that were passed.
+    
+    load() -> DataFrame:
+        Mock method for the `load` method of a Spark session's `read` object.    
+    
+    Methods for testing
+    -------------------
+    set_output_df(df: DataFrame) -> None:
+        Allows the user to set the output DataFrame that will be returned by the `load` method.
+    
+    set_df(df: DataFrame) -> None:
+        Alias for `set_output_df`.
+    
+    assert_option_called_with(key: str, value: Any) -> None:
+        Asserts that a specific option was called with the expected value.
+    """
+
+    spark: SparkSession
+    _options_dict: dict[str, Any] = field(default_factory=dict)
+    _output_df: Optional[DataFrame] = None
+
+    def mock_options(self, *args, **kwargs) -> SparkSession.read:  # type: ignore
+        """Mock method for the `options` and `option` methods of a Spark session's `read` object."""
+        self._options_dict.update(kwargs)
+        return self.spark.read
+
+    def set_output_df(self, df: DataFrame) -> None:
+        """Allows the user to set the output DataFrame that will be returned by the `load` method."""
+        self._output_df = df  # type: ignore
+
+    set_df = set_output_df
+    """Alias for `set_output_df`"""
+
+    @property
+    def get_options(self) -> dict[str, Any]:
+        """Returns the options that were passed"""
+        return self._options_dict
+
+    def load(self) -> DataFrame:
+        """Mock method for the `load` method of a Spark session's `read` object."""
+        return self._output_df
+
+    def assert_option_called_with(self, key: str, value: Any) -> None:
+        """Asserts that a specific option was called with the expected value."""
+        assert (
+            self._options_dict.get(key) is not None
+        ), f"No option with name {key} was called. Actual options: {self._options_dict}"
+        assert (
+            self._options_dict.get(key) == value
+        ), f"Expected {key} to be {value}, but got {self._options_dict.get(key)}"
+
+
+@pytest.fixture
+def mock_spark_reader(
+    spark: SparkSession, sample_df_with_strings: DataFrame, mocker: FixtureValue
+) -> Generator[SparkContextData]:
+    """SparkSession fixture that makes any call to `SparkSession.read.load()` return a custom DataFrame.
+
+    Note: This fixture is meant to be used with read operations of a Spark session.
+
+    Because of the use of `type(spark.read)`, this fixture automatically alters its behavior for either a remote or
+    regular Spark session.
+
+    By default, `mock_spark_reader` will set the output data to `sample_df_with_strings`. You can use the
+    `set_output_df` or `set_df` methods to overwrite this with any DataFrame of your choosing.
+
+    The fixture also provides a method `assert_option_called_with` to check that specific options were called.
+
+    Example
+    -------
+    ### Example of setting up `mock_spark_reader` with a custom DataFrame
+    ```python
+    def test_with_mock_spark_reader(mock_spark_reader):
+        my_custom_df = spark.range(10)
+
+        # set the output DataFrame to `my_custom_df`
+        mock_spark_reader.set_output_df(my_custom_df)
+        
+        # now any call to `spark.read...load()` will return `my_custom_df`
+        df = spark.read.format("csv").load()
+        
+        # asserting that the output DataFrame is `my_custom_df` will pass
+        assert df.count() == my_custom_df.count()
+    ```
+
+    ### Checking that specific options were called
+    ```python
+    def test_spark_called_with_right_options(mock_spark_reader):
+        spark.read.format("csv").option("foo", "bar")
+        mock_spark_reader.assert_option_called_with("foo", "bar")
+    ```
+
+    Parameters
+    ----------
+    spark : SparkSession
+        The Spark session to use.
+    sample_df_with_strings : DataFrame
+        Default DataFrame if not specifically being overwritten
+    mocker : MockerFixture
+
+    Returns
+    -------
+    SparkContextData
+        An instance of SparkContextData containing the SparkReader and methods to set the output DataFrame and get
+        options.
+    """
+    context_data = SparkContextData(spark)
+    context_data.set_output_df(sample_df_with_strings)
+
+    spark_reader = type(spark.read)
+
+    mocker.patch.object(spark_reader, "options", side_effect=context_data.mock_options)
+    mocker.patch.object(spark_reader, "load", side_effect=context_data.load)
+
+    # TODO: 
+    #   - [ ] check what happens when the formatting methods (like `.csv` or `.json`) are called
+    #   - [ ] check what happens if the `format` method is called
+    #   - [ ] see if there are any other methods that need to be mocked or tracked
+    #   - [ ] add neccessary tests
+    #   - [ ] add more examples
+    #   - [ ] add more documentation
+
+    yield context_data

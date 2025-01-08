@@ -95,12 +95,14 @@ class HttpStep(Step, ExtraParamsMixin):
         alias="uri",
     )
     headers: Optional[Dict[str, Union[str, SecretStr]]] = Field(
-        default_factory=dict,
+        default_factory=dict,  # type: ignore
         description="Request headers",
         alias="header",
     )
     data: Optional[Union[Dict[str, str], str]] = Field(
-        default_factory=dict, description="[Optional] Data to be sent along with the request", alias="body"
+        default_factory=dict, # type: ignore
+        description="[Optional] Data to be sent along with the request", 
+        alias="body"
     )
     params: Optional[Dict[str, Any]] = Field(  # type: ignore[assignment]
         default_factory=dict,

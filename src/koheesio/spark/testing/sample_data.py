@@ -9,11 +9,11 @@ Functions
     A 1-row DataFrame with one column: id.
 - sample_df_to_partition:
     DataFrame with two columns: partition and value.
-- sample_df_with_strings: 
+- sample_df_with_strings:
     DataFrame with two columns: id and string.
-- sample_df_with_timestamp: 
+- sample_df_with_timestamp:
     DataFrame with two columns: a_date and a_timestamp.
-- sample_df_with_string_timestamp: 
+- sample_df_with_string_timestamp:
     DataFrame with two columns: id and a_string_timestamp.
 - sample_df_with_all_types:
     DataFrame with all supported Spark datatypes.
@@ -32,6 +32,7 @@ from koheesio.spark.utils.testing.sample_data import sample_df_to_partition
 
 register_fixtures(sample_df_to_partition)
 
+
 def test_sample_df_to_partition(sample_df_to_partition):
     # Test code here
     assert sample_df_to_partition.count() == 2
@@ -44,6 +45,7 @@ in the test function to access the DataFrame.
 
 ```python
 from koheesio.spark.utils.testing.sample_data import sample_df_with_strings
+
 
 def test_sample_df_with_strings(spark):
     df = sample_df_with_strings(spark)
@@ -229,4 +231,3 @@ def sample_df_with_all_types(spark: SparkSession) -> DataFrame:
         data=[[v[0] for v in data.values()]],
         schema=StructType([StructField(name=v[1], dataType=v[2]) for v in data.values()]),
     )
-
