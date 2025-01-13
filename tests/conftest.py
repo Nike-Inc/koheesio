@@ -7,11 +7,11 @@ from koheesio.testing.fixtures import logger, random_uuid
 from koheesio.utils import get_project_root
 
 # TODO:
-#  - create an 'on_windows' util
-#  - move to utils, and make it a fixture
-#  - add documentation
-#  - investigate if we can do this for windows as well
-#  - somehow test it on windows
+#  - [ ] create an 'on_windows' util
+#  - [ ] move to utils, and make it a fixture
+#  - [ ] add documentation
+#  - [ ] investigate if we can do this for windows as well
+#  - [ ] somehow test it on windows
 if os.name != "nt":  # 'nt' is the name for Windows
     # force time zone to be UTC
     os.environ["TZ"] = "UTC"
