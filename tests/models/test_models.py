@@ -20,12 +20,26 @@ class TestBaseModel:
         foo: Optional[str] = None
         baz: Optional[int] = None
 
+    def test_partial(self) -> None:
+        """Test BaseModel's partial method"""
+        # Arrange
+        partial_model = self.SimpleModel.partial(a=42, b="baz")
+        # Act
+        model_standard = partial_model()
+        model_with_overwrite = partial_model(b="bla")
+        # Assert
+        assert model_standard.a == 42
+        assert model_standard.b == "baz"
+        assert model_with_overwrite.a == 42
+        assert model_with_overwrite.b == "bla"
+
     def test_a_simple_model(self) -> None:
         """Test a simple model."""
         foo = self.SimpleModel(a=1)
         assert foo.model_dump() == {"a": 1, "b": "default", "description": "SimpleModel", "name": "SimpleModel"}
 
     def test_context_management_no_exception(self) -> None:
+        """Test that with-statement works without throwing exceptions"""
         with self.SimpleModel.lazy() as m:
             m.a = 1
             m.b = "test"
