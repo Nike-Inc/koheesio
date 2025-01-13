@@ -28,10 +28,7 @@ from koheesio.spark import DataFrame, SparkSession
 from koheesio.spark.testing.utils import setup_test_data
 from koheesio.utils.testing import FixtureValue, pytest, register_fixture, register_fixtures
 
-__all__ = [
-    "SparkContextData",
-    "register_fixture",
-    "register_fixtures",
+__fixtures__ = [
     # fixtures
     "warehouse_path",
     "checkpoint_folder",
@@ -41,8 +38,13 @@ __all__ = [
     "streaming_dummy_df",
     "mock_df",
     "mock_spark_reader",
-    # utility functions
+]
+__all__ = [
+    "SparkContextData",
     "setup_test_data",
+    "register_fixture",
+    "register_fixtures",
+    *__fixtures__,
 ]
 
 @pytest.fixture
