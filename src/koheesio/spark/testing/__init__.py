@@ -23,7 +23,6 @@ The following utility functions are available:
 from typing import Any, Generator, Optional
 from dataclasses import dataclass, field
 import datetime
-from logging import Logger
 import os
 from pathlib import Path
 import sys
@@ -35,9 +34,12 @@ from delta import configure_spark_with_delta_pip
 from koheesio.logger import LoggingFactory
 from koheesio.models import FilePath
 from koheesio.spark import DataFrame, SparkSession
-from koheesio.utils.testing import fixture, is_port_free, logger, pytest, random_uuid, register_fixtures
+from koheesio.testing import fixture, pytest, register_fixtures
+from koheesio.testing.fixtures import logger, random_uuid
+from koheesio.utils import is_port_free
 
 __all__ = [
+    "pytest",
     "fixture",
     # fixtures
     "warehouse_path",
@@ -66,10 +68,6 @@ __all__ = [
     "random_uuid",
     "sample_df_to_partition",
 ]
-
-
-
-
 
 
 def await_job_completion(spark: SparkSession, timeout: int = 300, query_id: Optional[str] = None) -> None:

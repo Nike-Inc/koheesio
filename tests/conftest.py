@@ -2,8 +2,9 @@ import os
 from pathlib import Path
 import time
 
+from koheesio.testing import pytest, register_fixtures
+from koheesio.testing.fixtures import logger, random_uuid
 from koheesio.utils import get_project_root
-from koheesio.utils.testing import logger, pytest, random_uuid, register_fixtures
 
 # TODO:
 #  - create an 'on_windows' util
@@ -24,14 +25,15 @@ PROJECT_ROOT = get_project_root()
 TEST_DATA_PATH = Path(PROJECT_ROOT / "tests" / "_data")
 DELTA_FILE = Path(TEST_DATA_PATH / "readers" / "delta_file")
 
-register_fixtures(random_uuid, logger, scope="session")
+random_uuid = register_fixtures(random_uuid, scope="function")
+logger = register_fixtures(logger, scope="session")
 
 
 @pytest.fixture(scope="session")
-def data_path():
+def data_path() -> str:
     return TEST_DATA_PATH.as_posix()
 
 
 @pytest.fixture(scope="session")
-def delta_file():
+def delta_file() -> str:
     return DELTA_FILE.as_posix()

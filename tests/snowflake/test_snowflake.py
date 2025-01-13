@@ -13,7 +13,7 @@ from koheesio.integrations.snowflake import (
     SnowflakeStep,
     SnowflakeTableStep,
 )
-from koheesio.integrations.snowflake.test_utils import mock_query
+from koheesio.integrations.snowflake.testing import mock_query
 
 COMMON_OPTIONS = {
     "url": "url",

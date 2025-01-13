@@ -1,4 +1,5 @@
 from textwrap import dedent
+from pathlib import Path
 
 from koheesio.models import FilePath
 from koheesio.spark.utils.common import SparkSession
@@ -19,6 +20,9 @@ def setup_test_data(spark: SparkSession, delta_file: FilePath, view_name: str = 
     view_name : str, optional
         The name of the temporary view to create, by default "delta_test_view"
     """
+    if not isinstance(delta_file, Path):
+        delta_file = Path(delta_file)
+
     delta_file_str = delta_file.absolute().as_posix()
     spark.read.format("delta").load(delta_file_str).limit(10).createOrReplaceTempView("delta_test_view")
     spark.sql(
@@ -28,7 +32,6 @@ def setup_test_data(spark: SparkSession, delta_file: FilePath, view_name: str = 
             USING DELTA
             TBLPROPERTIES ("delta.enableChangeDataFeed" = "true")
             AS SELECT v.* FROM {view_name} v
-            """
+            """.format(view_name=view_name)
         ),
-        view_name=view_name,
     )  # type: ignore

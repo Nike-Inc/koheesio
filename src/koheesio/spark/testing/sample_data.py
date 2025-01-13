@@ -79,6 +79,7 @@ from pyspark.sql.types import (
 )
 
 from koheesio.spark import DataFrame, SparkSession
+from koheesio.testing import pytest
 
 
 def dummy_df(spark: SparkSession) -> DataFrame:

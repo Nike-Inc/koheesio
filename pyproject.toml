@@ -248,12 +248,15 @@ features = [
   "test",
 ]
 
-parallel = true
-retries = 2
-retry-delay = 3
+parallel = false
+retries = 0
+retry-delay = 0
+# parallel = true
+# retries = 2
+# retry-delay = 3
 
 [tool.hatch.envs.hatch-test.scripts]
-run = "pytest{env:HATCH_TEST_ARGS:} {args}"
+run = "pytest {env:HATCH_TEST_ARGS:} {args}"
 run-cov = "coverage run -m pytest{env:HATCH_TEST_ARGS:} {args}"
 cov-combine = "coverage combine"
 cov-report = "coverage report"

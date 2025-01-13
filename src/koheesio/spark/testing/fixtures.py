@@ -13,12 +13,10 @@ The following fixtures are available:
 """
 from typing import Any, Generator, Optional
 from dataclasses import dataclass, field
-import datetime
 from logging import Logger
 import os
 from pathlib import Path
 import sys
-from textwrap import dedent
 from unittest import mock
 
 from delta import configure_spark_with_delta_pip
@@ -26,7 +24,7 @@ from delta import configure_spark_with_delta_pip
 from koheesio.models import FilePath
 from koheesio.spark import DataFrame, SparkSession
 from koheesio.spark.testing.utils import setup_test_data
-from koheesio.utils.testing import FixtureValue, pytest, register_fixture, register_fixtures
+from koheesio.testing import FixtureValue, pytest, register_fixtures
 
 __fixtures__ = [
     # fixtures
@@ -42,13 +40,11 @@ __fixtures__ = [
 __all__ = [
     "SparkContextData",
     "setup_test_data",
-    "register_fixture",
     "register_fixtures",
     *__fixtures__,
 ]
 
-@pytest.fixture
-def warehouse_path(tmp_path_factory: pytest.TempPathFactory, random_uuid: str, logger: Logger) -> Generator[str]:
+def warehouse_path(tmp_path_factory: pytest.TempPathFactory, random_uuid: str, logger: Logger) -> Generator[str, None, None]:
     """Fixture to create a temporary warehouse folder that can be used with Spark.
 
     This fixture uses pytest's built-in `tmp_path_factory` to create a temporary folder that can be used as a warehouse
@@ -80,8 +76,7 @@ def warehouse_path(tmp_path_factory: pytest.TempPathFactory, random_uuid: str, l
     yield warehouse_folder.as_posix()
 
 
-@pytest.fixture
-def checkpoint_folder(tmp_path_factory: pytest.TempPathFactory, random_uuid: str, logger: Logger) -> Generator[str]:
+def checkpoint_folder(tmp_path_factory: pytest.TempPathFactory, random_uuid: str, logger: Logger) -> Generator[str, None, None]:
     """Fixture to create a temporary checkpoint folder that can be used with Spark streams.
 
     Example
@@ -97,8 +92,7 @@ def checkpoint_folder(tmp_path_factory: pytest.TempPathFactory, random_uuid: str
     yield fldr.as_posix()
 
 
-@pytest.fixture
-def spark_with_delta(warehouse_path: str, random_uuid: str) -> Generator[SparkSession]:
+def spark_with_delta(warehouse_path: str, random_uuid: str) -> Generator[SparkSession, None, None]:
     """Spark session fixture with Delta enabled.
 
     Dynamically creates a Spark session that has Delta enabled. The session is created with a unique name to avoid
@@ -158,7 +152,6 @@ def spark_with_delta(warehouse_path: str, random_uuid: str) -> Generator[SparkSe
     spark_session.stop()
 
 
-@pytest.fixture
 def set_env_vars() -> Generator:
     """
     Set environment variables for PYSPARK_PYTHON and PYSPARK_DRIVER_PYTHON.
@@ -187,16 +180,14 @@ def set_env_vars() -> Generator:
         os.environ["PYSPARK_DRIVER_PYTHON"] = existing_pyspark_driver_python
 
 
-@pytest.fixture
-def spark(set_env_vars: pytest.FixtureRequest, spark_with_delta: SparkSession) -> Generator[SparkSession]:
+def spark(set_env_vars: pytest.FixtureRequest, spark_with_delta: SparkSession) -> Generator[SparkSession, None, None]:
     """Ensures PYSPARK_PYTHON and PYSPARK_DRIVER_PYTHON are set to the current Python executable and returns a Spark
     session.
     """
     yield spark_with_delta
 
 
-@pytest.fixture
-def streaming_dummy_df(spark: SparkSession, delta_file: FilePath) -> Generator[DataFrame]:
+def streaming_dummy_df(spark: SparkSession, delta_file: FilePath) -> Generator[DataFrame, None, None]:
     """
     Creates a streaming DataFrame from a Delta table for testing purposes.
 
@@ -207,8 +198,7 @@ def streaming_dummy_df(spark: SparkSession, delta_file: FilePath) -> Generator[D
     yield spark.readStream.table("delta_test_table")
 
 
-@pytest.fixture
-def mock_df(spark: SparkSession) -> Generator[mock.Mock]:
+def mock_df(spark: SparkSession) -> Generator[mock.Mock, None, None]:
     """
     Fixture to mock a DataFrame's methods.
 
@@ -308,10 +298,9 @@ class SparkContextData:
         ), f"Expected {key} to be {value}, but got {self._options_dict.get(key)}"
 
 
-@pytest.fixture
 def mock_spark_reader(
     spark: SparkSession, sample_df_with_strings: DataFrame, mocker: FixtureValue
-) -> Generator[SparkContextData]:
+) -> Generator[SparkContextData, None, None]:
     """SparkSession fixture that makes any call to `SparkSession.read.load()` return a custom DataFrame.
 
     Note: This fixture is meant to be used with read operations of a Spark session.

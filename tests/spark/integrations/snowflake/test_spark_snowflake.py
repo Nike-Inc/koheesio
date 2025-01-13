@@ -24,6 +24,7 @@ from koheesio.integrations.spark.snowflake import (
     map_spark_type,
 )
 from koheesio.spark.writers import BatchOutputMode
+from koheesio.testing import FixtureFunction
 
 pytestmark = pytest.mark.spark
 
@@ -38,7 +39,7 @@ COMMON_OPTIONS = {
 }
 
 
-def test_snowflake_module_import():
+def test_snowflake_module_import() -> None:
     # test that the pass-through imports in the koheesio.spark snowflake modules are working
     from koheesio.spark.readers import snowflake as snowflake_writers
     from koheesio.spark.writers import snowflake as snowflake_readers
@@ -47,7 +48,7 @@ def test_snowflake_module_import():
 class TestSnowflakeReader:
     reader_options = {"dbtable": "table", **COMMON_OPTIONS}
 
-    def test_get_options(self):
+    def test_get_options(self) -> None:
         sf = SnowflakeReader(**(self.reader_options | {"authenticator": None}))
         o = sf.get_options()
         assert sf.format == "snowflake"
@@ -55,14 +56,14 @@ class TestSnowflakeReader:
         assert o["sfCompress"] == "on"
         assert "authenticator" not in o
 
-    def test_execute(self, dummy_spark):
+    def test_execute(self, mock_spark_reader: FixtureFunction) -> None:
         """Method should be callable from parent class"""
         k = SnowflakeReader(**self.reader_options).execute()
         assert k.df.count() == 3
 
 
 class TestRunQuery:
-    def test_deprecation(self):
+    def test_deprecation(self) -> None:
         """Test for the deprecation warning"""
         with pytest.warns(
             DeprecationWarning, match="The RunQuery class is deprecated and will be removed in a future release."
@@ -75,7 +76,7 @@ class TestRunQuery:
             except RuntimeError:
                 pass  # Ignore any RuntimeError that occur after the warning
 
-    def test_spark_connect(self, spark):
+    def test_spark_connect(self, spark: FixtureFunction) -> None:
         """Test that we get a RuntimeError when using a SparkSession without a JVM"""
         from koheesio.spark.utils.connect import is_remote_session
 
@@ -92,7 +93,7 @@ class TestRunQuery:
 class TestQuery:
     options = {"query": "query", **COMMON_OPTIONS}
 
-    def test_execute(self, dummy_spark):
+    def test_execute(self, mock_spark_reader: FixtureFunction) -> None:
         k = Query(**self.options).execute()
         assert k.df.count() == 3
 
@@ -100,7 +101,7 @@ class TestQuery:
 class TestTableQuery:
     options = {"table": "table", **COMMON_OPTIONS}
 
-    def test_execute(self, dummy_spark):
+    def test_execute(self, mock_spark_reader: FixtureFunction) -> None:
         k = DbTableQuery(**self.options).execute()
         assert k.df.count() == 3
 
@@ -108,7 +109,12 @@ class TestTableQuery:
 class TestCreateOrReplaceTableFromDataFrame:
     options = {"table": "table", "account": "bar", **COMMON_OPTIONS}
 
-    def test_execute(self, dummy_spark, dummy_df, mock_query):
+    def test_execute(
+            self, 
+            mock_spark_reader: FixtureFunction, 
+            dummy_df: FixtureFunction, 
+            mock_query: FixtureFunction
+        ) -> None:
         k = CreateOrReplaceTableFromDataFrame(**self.options, df=dummy_df).execute()
         assert k.snowflake_schema == "id BIGINT"
         assert k.query == "CREATE OR REPLACE TABLE db.schema.table (id BIGINT)"
@@ -119,7 +125,7 @@ class TestCreateOrReplaceTableFromDataFrame:
 class TestGetTableSchema:
     options = {"table": "table", **COMMON_OPTIONS}
 
-    def test_execute(self, dummy_spark):
+    def test_execute(self, mock_spark_reader: FixtureFunction) -> None:
         k = GetTableSchema(**self.options)
         assert len(k.execute().table_schema.fields) == 2
 
@@ -127,14 +133,14 @@ class TestGetTableSchema:
 class TestAddColumn:
     options = {"table": "foo", "column": "bar", "type": t.DateType(), "account": "foo", **COMMON_OPTIONS}
 
-    def test_execute(self, dummy_spark, mock_query):
+    def test_execute(self, mock_spark_reader: FixtureFunction, mock_query: FixtureFunction) -> None:
         k = AddColumn(**self.options).execute()
         assert k.query == "ALTER TABLE FOO ADD COLUMN BAR DATE"
         mock_query.assert_called_with(k.query)
 
 
 class TestSnowflakeWriter:
-    def test_execute(self, mock_df):
+    def test_execute(self, mock_df: FixtureFunction) -> None:
         k = SnowflakeWriter(
             **COMMON_OPTIONS,
             table="foo",
@@ -152,7 +158,13 @@ class TestSnowflakeWriter:
 class TestSyncTableAndDataFrameSchema:
     @mock.patch("koheesio.integrations.spark.snowflake.AddColumn")
     @mock.patch("koheesio.integrations.spark.snowflake.GetTableSchema")
-    def test_execute(self, mock_get_table_schema, mock_add_column, spark, caplog):
+    def test_execute(
+        self, 
+        mock_get_table_schema: Mock, 
+        mock_add_column: Mock, 
+        spark: FixtureFunction, 
+        caplog: FixtureFunction
+    ) -> None:
         # Arrange
         from pyspark.sql.types import StringType, StructField, StructType
 
@@ -217,7 +229,7 @@ class TestSyncTableAndDataFrameSchema:
         (t.DayTimeIntervalType(), "STRING"),
     ],
 )
-def test_map_spark_type(input_value, expected):
+def test_map_spark_type(input_value: t.StructType, expected: str) -> None:
     assert map_spark_type(input_value) == expected
 
 
@@ -233,7 +245,7 @@ class TestTableExists:
         table="table",
     )
 
-    def test_table_exists(self, dummy_spark):
+    def test_table_exists(self, mock_spark_reader: FixtureFunction) -> None:
         # Arrange
         te = TableExists(**self.options)
         expected_query = dedent(
@@ -251,12 +263,12 @@ class TestTableExists:
         output = te.execute()
 
         # Assert that the query is as expected and that we got exists as True
-        assert dummy_spark.options_dict["query"] == expected_query
+        assert mock_spark_reader.assert_option_called_with("query", expected_query)
         assert output.exists
 
 
 class TestTagSnowflakeQuery:
-    def test_tag_query_no_existing_preactions(self):
+    def test_tag_query_no_existing_preactions(self) -> None:
         expected_preactions = (
             """ALTER SESSION SET QUERY_TAG = '{"pipeline_name": "test-pipeline-1","task_name": "test_task_1"}';"""
         )
@@ -274,7 +286,7 @@ class TestTagSnowflakeQuery:
         preactions = tagged_options["preactions"].replace("    ", "").replace("\n", "")
         assert preactions == expected_preactions
 
-    def test_tag_query_present_existing_preactions(self):
+    def test_tag_query_present_existing_preactions(self) -> None:
         options = {
             "otherSfOption": "value",
             "preactions": "SET TEST_VAR = 'ABC';",
