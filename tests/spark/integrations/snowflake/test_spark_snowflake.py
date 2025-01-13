@@ -8,7 +8,7 @@ import pytest
 
 from pyspark.sql import types as t
 
-from koheesio.integrations.snowflake.test_utils import mock_query
+from koheesio.integrations.snowflake.testing import mock_query
 from koheesio.integrations.spark.snowflake import (
     AddColumn,
     CreateOrReplaceTableFromDataFrame,

@@ -3,11 +3,7 @@
 from typing import Generator
 from unittest.mock import MagicMock, patch
 
-# safe import pytest fixture
-try:
-    import pytest
-except (ImportError, ModuleNotFoundError):
-    pytest = MagicMock()
+from koheesio.testing import pytest
 
 
 @pytest.fixture(scope="function")
