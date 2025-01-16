@@ -76,7 +76,7 @@ Here's an example of a `ColumnsTransformation`:
 
 ```python
 from pyspark.sql import functions as f
-from koheesio.steps.transformations import ColumnsTransformation
+from koheesio.spark.transformations import ColumnsTransformation
 
 class AddOne(ColumnsTransformation):
     def execute(self):
@@ -109,7 +109,7 @@ Here's an example of a `ColumnsTransformationWithTarget`:
 
 ```python
 from pyspark.sql import Column
-from koheesio.steps.transformations import ColumnsTransformationWithTarget
+from koheesio.spark.transformations import ColumnsTransformationWithTarget
 
 class AddOneWithTarget(ColumnsTransformationWithTarget):
     def func(self, col: Column):
@@ -167,7 +167,7 @@ examples:
 
     ```python
     from pyspark.sql import SparkSession
-    from koheesio.steps.transformations import DataframeLookup, JoinMapping, TargetColumn, JoinType
+    from koheesio.spark.transformations.lookup import DataframeLookup, JoinMapping, TargetColumn, JoinType
 
     spark = SparkSession.builder.getOrCreate()
     left_df = spark.createDataFrame([(1, "A"), (2, "B")], ["id", "value"])
@@ -191,7 +191,7 @@ examples:
 
     ```python
     from pyspark.sql import SparkSession
-    from koheesio.steps.transformations import HashUUID5
+    from koheesio.spark.transformations.uuid5 import HashUUID5
 
     spark = SparkSession.builder.getOrCreate()
     df = spark.createDataFrame([(1, "A"), (2, "B")], ["id", "value"])
@@ -245,8 +245,8 @@ how to chain transformations:
 
 ```python
 from pyspark.sql import SparkSession
-from koheesio.steps.transformations import HashUUID5
-from koheesio.steps.transformations import DataframeLookup, JoinMapping, TargetColumn, JoinType
+from koheesio.spark.transformations.uuid5 import HashUUID5
+from koheesio.spark.transformations.lookup import DataframeLookup, JoinMapping, TargetColumn, JoinType
 
 # Create a SparkSession
 spark = SparkSession.builder.getOrCreate()

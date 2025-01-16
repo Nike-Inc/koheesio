@@ -6,6 +6,7 @@ import pytest
 
 from koheesio.logger import LoggingFactory
 from koheesio.spark.transformations.strings.substring import Substring
+from koheesio.spark.utils import show_string
 
 pytestmark = pytest.mark.spark
 
@@ -68,7 +69,7 @@ def test_substring(input_values, data, schema, expected, spark):
     output_df = substring.transform(input_df)
 
     # log equivalent of doing df.show()
-    log.info(f"show output_df: \n{output_df._jdf.showString(20, 20, False)}")
+    log.info(f"show output_df: \n{show_string(output_df, 20, 20, False)}")
 
     if target_column := substring.target_column:
         actual = [row.asDict()[target_column] for row in output_df.collect()]

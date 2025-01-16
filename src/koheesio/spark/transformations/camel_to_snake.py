@@ -2,16 +2,17 @@
 Class for converting DataFrame column names from camel case to snake case.
 """
 
-import re
 from typing import Optional
+import re
 
 from koheesio.models import Field, ListOfColumns
 from koheesio.spark.transformations import ColumnsTransformation
+from koheesio.spark.utils import SPARK_MINOR_VERSION
 
 camel_to_snake_re = re.compile("([a-z0-9])([A-Z])")
 
 
-def convert_camel_to_snake(name: str):
+def convert_camel_to_snake(name: str) -> str:
     """
     Converts a string from camelCase to snake_case.
 
@@ -48,9 +49,9 @@ class CamelToSnakeTransformation(ColumnsTransformation):
     | ...                | ...               |
 
     ```python
-    output_df = CamelToSnakeTransformation(column="camelCaseColumn").transform(
-        input_df
-    )
+    output_df = CamelToSnakeTransformation(
+        column="camelCaseColumn"
+    ).transform(input_df)
     ```
 
     __output_df:__
@@ -65,20 +66,25 @@ class CamelToSnakeTransformation(ColumnsTransformation):
 
     """
 
-    columns: Optional[ListOfColumns] = Field(
-        default="",
-        alias="column",
-        description="The column or columns to convert. If no columns are specified, all columns will be converted. "
-        "A list of columns or a single column can be specified. For example: `['column1', 'column2']` or `'column1'` ",
-    )
-
-    def execute(self):
+    def execute(self) -> ColumnsTransformation.Output:
         _df = self.df
 
         # Prepare columns input:
-        columns = self.df.columns if self.columns == ["*"] else self.columns
+        columns = list(self.get_columns())
 
-        for column in columns:
-            _df = _df.withColumnRenamed(column, convert_camel_to_snake(column))
+        if SPARK_MINOR_VERSION < 3.4:
+            for column in columns:
+                _df = _df.withColumnRenamed(column, convert_camel_to_snake(column))
+
+        else:
+            # Rename columns using toDF for Spark versions >= 3.4
+            # Note: toDF requires all column names to be specified
+            new_column_names = []
+            for column in _df.columns:
+                if column in columns:
+                    new_column_names.append(convert_camel_to_snake(column))
+                    continue
+                new_column_names.append(column)
+            _df = _df.toDF(*new_column_names)
 
         self.output.df = _df

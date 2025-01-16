@@ -17,7 +17,7 @@ HASH_ALGORITHM = Literal[224, 256, 384, 512]
 STRING = SparkDatatype.STRING
 
 
-def sha2_hash(columns: List[str], delimiter: Optional[str] = "|", num_bits: Optional[HASH_ALGORITHM] = 256):
+def sha2_hash(columns: List[str], delimiter: Optional[str] = "|", num_bits: Optional[HASH_ALGORITHM] = 256) -> Column:
     """
     hash the value of 1 or more columns using SHA-2 family of hash functions
 
@@ -43,16 +43,16 @@ def sha2_hash(columns: List[str], delimiter: Optional[str] = "|", num_bits: Opti
     _columns = []
     for c in columns:
         if isinstance(c, str):
-            c: Column = col(c)
+            c: Column = col(c)  # type: ignore
         _columns.append(c.cast(STRING.spark_type()))
 
     # concatenate columns if more than 1 column is provided
     if len(_columns) > 1:
-        column = concat_ws(delimiter, *_columns)
+        column = concat_ws(delimiter, *_columns)  # type: ignore
     else:
         column = _columns[0]
 
-    return sha2(column, num_bits)
+    return sha2(column, num_bits)  # type: ignore
 
 
 class Sha2Hash(ColumnsTransformation):
@@ -92,7 +92,7 @@ class Sha2Hash(ColumnsTransformation):
         default=..., description="The generated hash will be written to the column name specified here"
     )
 
-    def execute(self):
+    def execute(self) -> ColumnsTransformation.Output:
         columns = list(self.get_columns())
         self.output.df = (
             self.df.withColumn(

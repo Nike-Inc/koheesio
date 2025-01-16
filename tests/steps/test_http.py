@@ -130,9 +130,10 @@ def test_http_step_request():
     with Mocker() as rm:
         rm.put(PUT_ENDPOINT, status_code=int(200))
         # The default method for HttpStep class is GET, however the method specified in `request` options is PUT and
-        # it will override the default.
-        response = HttpStep(url=PUT_ENDPOINT).request(method=HttpMethod.PUT)
-        assert response.status_code == 200
+        # it will override the default
+        step = HttpStep(url=PUT_ENDPOINT)
+        with step._request(method=HttpMethod.PUT) as response:
+            assert response.status_code == 200
 
 
 def test_get_headers():
@@ -162,6 +163,7 @@ def test_max_retries(max_retries, endpoint, status_code, expected_count, error_t
     session = requests.Session()
     retry_logic = Retry(total=max_retries, status_forcelist=[status_code])
     session.mount("https://", HTTPAdapter(max_retries=retry_logic))
+    # noinspection HttpUrlsUsage
     session.mount("http://", HTTPAdapter(max_retries=retry_logic))
 
     step = HttpGetStep(url=endpoint, session=session)
@@ -187,6 +189,7 @@ def test_initial_delay_and_backoff(monkeypatch, backoff, expected):
     session = requests.Session()
     retry_logic = Retry(total=3, backoff_factor=backoff, status_forcelist=[503])
     session.mount("https://", HTTPAdapter(max_retries=retry_logic))
+    # noinspection HttpUrlsUsage
     session.mount("http://", HTTPAdapter(max_retries=retry_logic))
 
     step = HttpGetStep(

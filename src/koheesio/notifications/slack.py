@@ -2,14 +2,15 @@
 Classes to ease interaction with Slack
 """
 
-import json
 from typing import Any, Dict, Optional
-from datetime import datetime
+import datetime
+import json
 from textwrap import dedent
 
 from koheesio.models import ConfigDict, Field
 from koheesio.notifications import NotificationSeverity
 from koheesio.steps.http import HttpPostStep
+from koheesio.utils import utc_now
 
 
 class SlackNotification(HttpPostStep):
@@ -34,7 +35,7 @@ class SlackNotification(HttpPostStep):
     channel: Optional[str] = Field(default=None, description="Slack channel id")
     headers: Optional[Dict[str, Any]] = {"Content-type": "application/json"}
 
-    def get_payload(self):
+    def get_payload(self) -> str:
         """
         Generate payload with `Block Kit`.
         More details: https://api.slack.com/block-kit
@@ -56,11 +57,11 @@ class SlackNotification(HttpPostStep):
         }
 
         if self.channel:
-            payload["channel"] = self.channel
+            payload["channel"] = self.channel  # type: ignore[assignment]
 
         return json.dumps(payload)
 
-    def execute(self):
+    def execute(self) -> None:
         """
         Generate payload and send post request
         """
@@ -92,14 +93,14 @@ class SlackNotificationWithSeverity(SlackNotification):
     environment: str = Field(default=..., description="Environment description, e.g. dev / qa /prod")
     application: str = Field(default=..., description="Pipeline or application name")
     timestamp: datetime = Field(
-        default=datetime.utcnow(),
+        default_factory=utc_now,
         alias="execution_timestamp",
         description="Pipeline or application execution timestamp",
     )
 
     model_config = ConfigDict(use_enum_values=False)
 
-    def get_payload_message(self):
+    def get_payload_message(self) -> str:
         """
         Generate payload message based on the predefined set of parameters
         """
@@ -113,7 +114,7 @@ class SlackNotificationWithSeverity(SlackNotification):
             """
         )
 
-    def execute(self):
+    def execute(self) -> None:
         """
         Generate payload and send post request
         """

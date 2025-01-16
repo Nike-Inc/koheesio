@@ -36,7 +36,7 @@ class DummyStep(Step):
 
         c: str
 
-    def execute(self):
+    def execute(self) -> None:
         """Dummy execute for testing purposes."""
         self.output.a = self.a
         self.output.b = self.b

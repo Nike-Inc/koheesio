@@ -13,6 +13,7 @@ from typing import List, Tuple, Union
 
 from pydantic import Field, InstanceOf
 
+# noinspection PyProtectedMember
 from pyspark.sql.types import AtomicType, StructType
 
 from koheesio.asyncio.http import AsyncHttpGetStep
@@ -20,7 +21,9 @@ from koheesio.spark.readers import Reader
 from koheesio.steps.http import HttpGetStep
 
 
+# noinspection HttpUrlsUsage
 class RestApiReader(Reader):
+    # noinspection HttpUrlsUsage
     """
     A reader class that executes an API call and stores the response in a DataFrame.
 
@@ -61,14 +64,15 @@ class RestApiReader(Reader):
     session.mount("https://", HTTPAdapter(max_retries=retry_logic))
     session.mount("http://", HTTPAdapter(max_retries=retry_logic))
 
-    transport = PaginatedHtppGetStep(
+    transport = PaginatedHttpGetStep(
         url="https://api.example.com/data?page={page}",
         paginate=True,
         pages=3,
         session=session,
     )
     task = RestApiReader(
-        transport=transport, spark_schema="id: int, page:int, value: string"
+        transport=transport,
+        spark_schema="id: int, page:int, value: string",
     )
     task.execute()
     all_data = [row.asDict() for row in task.output.df.collect()]
@@ -95,7 +99,8 @@ class RestApiReader(Reader):
     )
 
     task = RestApiReader(
-        transport=transport, spark_schema="id: int, page:int, value: string"
+        transport=transport,
+        spark_schema="id: int, page:int, value: string",
     )
     task.execute()
     all_data = [row.asDict() for row in task.output.df.collect()]
@@ -121,6 +126,7 @@ class RestApiReader(Reader):
         """
         raw_data = self.transport.execute()
 
+        data = None
         if isinstance(raw_data, HttpGetStep.Output):
             data = raw_data.response_json
         elif isinstance(raw_data, AsyncHttpGetStep.Output):
