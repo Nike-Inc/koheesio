@@ -55,9 +55,9 @@ class HttpRequestTransformation(Transformation):
         default=None,
         description="The authorization token for the request.",
     )
-    body: Union[str, None] = Field(
+    body_column: Union[str, None] = Field(
         default=None,
-        description="The body of the request.",
+        description="The body_column name to be used in the request. If None, no body is sent with the request. GET requests do not have a body for instance.",
     )
 
     def execute(self):
@@ -70,44 +70,15 @@ class HttpRequestTransformation(Transformation):
             source_column_name = get_column_name(source_column_name)
 
         self.df = self.df.withColumn(
-            _HttpRequestTransformation_chunk_size_column,
-            lit(self.chunk_size)
-        )
-        self.df = self.df.withColumn(
-            _HttpRequestTransformation_method_column,
-            lit(self.method)
-        )
-        self.df = self.df.withColumn(
-            _HttpRequestTransformation_content_type_column,
-            lit(self.content_type)
-        )
-        self.df = self.df.withColumn(
-            _HttpRequestTransformation_authorization_token_column,
-            lit(self.authorization_token)
-        )
-        self.df = self.df.withColumn(
-            _HttpRequestTransformation_body_column,
-            lit(self.body)
-        )
-
-        self.df = self.df.withColumn(
             self.target_column,
             execute_http_request(
-                source_column_name, 
-                _HttpRequestTransformation_method_column, 
-                _HttpRequestTransformation_content_type_column, 
-                _HttpRequestTransformation_authorization_token_column,
-                _HttpRequestTransformation_body_column, 
-                _HttpRequestTransformation_chunk_size_column
+                col(source_column_name), 
+                lit(self.method),
+                lit(self.content_type),
+                lit(self.authorization_token),
+                col(self.body_column) if self.body_column else lit(None), 
+                lit(self.chunk_size)
             )
-        )
-
-        self.df = self.df.drop(
-            _HttpRequestTransformation_chunk_size_column,
-            _HttpRequestTransformation_method_column,
-            _HttpRequestTransformation_content_type_column,
-            _HttpRequestTransformation_authorization_token_column,
-            _HttpRequestTransformation_body_column
         )
 
         self.output.df = self.df
