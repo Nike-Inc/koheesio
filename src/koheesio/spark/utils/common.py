@@ -93,7 +93,7 @@ def check_if_pyspark_connect_is_supported() -> bool:
         accessed
     """
     # before pyspark 3.4, connect was not supported
-    if SPARK_MINOR_VERSION >= 3.4:  
+    if SPARK_MINOR_VERSION < 3.4:  
         return False
     
     # we can assume that Spark Connect is available if either of these environment variables are set
