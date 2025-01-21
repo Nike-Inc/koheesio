@@ -41,12 +41,9 @@ from unittest.mock import MagicMock
 #     fixture = MagicMock()
 #     FixtureFunction = MagicMock()  # type: ignore
 #     FixtureValue = MagicMock()  # type: ignore
-
-
 from _pytest.fixtures import FixtureFunction, FixtureValue
 import pytest
 from pytest import fixture
-
 
 __all__ = [
     "pytest",
@@ -95,6 +92,10 @@ def register_fixtures(
     scope : str, optional
         The scope of the fixtures to register, by default "function"
     """
+    # TODO: handle "ValueError: @pytest.fixture is being applied more than once to the same function '...'""
     for fixture_function in fixture_functions:
-        print(f"Registering fixture: {fixture_function.__name__}")
-        yield fixture(fixture_function=fixture_function, scope=scope, name=fixture_function.__name__)  # type: ignore
+        name = fixture_function.__name__
+        print(f"Registering fixture: {name}")
+        # FIXME: globals call does not work. Problem is that fixture definition needs to be local to a module the way 
+        #        it is normally set up
+        globals()[name] = fixture(fixture_function=fixture_function, scope=scope, name=name)  # type: ignore

@@ -22,9 +22,9 @@ from koheesio.spark.writers.stream import Trigger
 pytestmark = pytest.mark.spark
 
 
-def test_delta_table_writer(dummy_df, spark):
+def test_delta_table_writer(mock_df, spark):
     table_name = "test_table"
-    writer = DeltaTableWriter(table=table_name, output_mode=BatchOutputMode.APPEND, df=dummy_df)
+    writer = DeltaTableWriter(table=table_name, output_mode=BatchOutputMode.APPEND, df=mock_df)
     writer.execute()
     actual_count = spark.read.table(table_name).count()
     assert actual_count == 1
@@ -99,7 +99,7 @@ def test_delta_table_merge_all(spark):
         assert result == expected
 
 
-def test_deltatablewriter_with_invalid_conditions(spark, dummy_df):
+def test_deltatablewriter_with_invalid_conditions(spark, mock_df):
     from koheesio.spark.utils.connect import is_remote_session
     from koheesio.spark.writers.delta.utils import get_delta_table_for_name
 
@@ -114,13 +114,13 @@ def test_deltatablewriter_with_invalid_conditions(spark, dummy_df):
         with pytest.raises(AnalysisException):
             builder = get_delta_table_for_name(spark_session=spark, table_name=table_name)
             merge_builder = builder.alias("target").merge(
-                condition="invalid_condition", source=dummy_df.alias("source")
+                condition="invalid_condition", source=mock_df.alias("source")
             )
             writer = DeltaTableWriter(
                 table=table_name,
                 output_mode=BatchOutputMode.MERGE,
                 output_mode_params={"merge_builder": merge_builder},
-                df=dummy_df,
+                df=mock_df,
             )
             writer.execute()
 
@@ -293,11 +293,11 @@ def test_delta_with_options(spark):
         mock_writer.options.assert_called_once_with(testParam1="testValue1", testParam2="testValue2")
 
 
-def test_merge_from_args(spark, dummy_df):
+def test_merge_from_args(spark, mock_df):
     from koheesio.spark.utils.connect import is_remote_session
 
     table_name = "test_table_merge_from_args"
-    dummy_df.write.format("delta").saveAsTable(table_name)
+    mock_df.write.format("delta").saveAsTable(table_name)
 
     with patch("delta.DeltaTable.merge", new_callable=MagicMock) as mock_merge:
         mock_delta_builder = MagicMock()
@@ -308,7 +308,7 @@ def test_merge_from_args(spark, dummy_df):
         mock_delta_builder.whenNotMatchedInsert.return_value = mock_delta_builder
 
         writer = DeltaTableWriter(
-            df=dummy_df,
+            df=mock_df,
             table=table_name,
             output_mode=BatchOutputMode.MERGE,
             output_mode_params={

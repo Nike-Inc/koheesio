@@ -11,12 +11,12 @@ def test_path_validator():
     assert isinstance(file_writer.path, str)
 
 
-def test_execute(dummy_df, mocker):
+def test_execute(mock_df, mocker):
     path = "expected_path"
     output_mode = BatchOutputMode.APPEND
     options = {"option1": "value1", "option2": "value2"}
     format = FileFormat.parquet
-    writer = FileWriter(df=dummy_df, output_mode=output_mode, path=path, format=format, **options)
+    writer = FileWriter(df=mock_df, output_mode=output_mode, path=path, format=format, **options)
 
     mock_df_writer = MagicMock()
 

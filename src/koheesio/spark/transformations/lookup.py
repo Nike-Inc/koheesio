@@ -122,6 +122,7 @@ class DataframeLookup(Transformation):
     """
 
     df: Optional[DataFrame] = Field(default=None, description="The left Spark DataFrame")
+    # TODO: add possibility to init with a Reader class rather than just a df
     other: Optional[DataFrame] = Field(default=None, description="The right Spark DataFrame")
     on: Union[List[JoinMapping], JoinMapping] = Field(
         default=...,

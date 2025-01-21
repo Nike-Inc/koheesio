@@ -112,10 +112,10 @@ class TestCreateOrReplaceTableFromDataFrame:
     def test_execute(
             self, 
             mock_spark_reader: FixtureFunction, 
-            dummy_df: FixtureFunction, 
+            mock_df: FixtureFunction, 
             mock_query: FixtureFunction
         ) -> None:
-        k = CreateOrReplaceTableFromDataFrame(**self.options, df=dummy_df).execute()
+        k = CreateOrReplaceTableFromDataFrame(**self.options, df=mock_df).execute()
         assert k.snowflake_schema == "id BIGINT"
         assert k.query == "CREATE OR REPLACE TABLE db.schema.table (id BIGINT)"
         assert len(k.input_schema) > 0

@@ -56,7 +56,7 @@ class RestApiReader(Reader):
     import requests
     from urllib3 import Retry
 
-    from koheesio.steps.http import HttpGetStep
+    from koheesio.steps.http import PaginatedHttpGetStep
     from koheesio.spark.readers.rest_api import RestApiReader
 
     session = requests.Session()
@@ -68,10 +68,9 @@ class RestApiReader(Reader):
         url="https://api.example.com/data?page={page}",
         paginate=True,
         pages=3,
-        session=session,
     )
     task = RestApiReader(transport=transport, spark_schema="id: int, page:int, value: string")
-    task.execute()
+    df = task.read()
     all_data = [row.asDict() for row in task.output.df.collect()]
     ```
 

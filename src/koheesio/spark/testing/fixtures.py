@@ -44,6 +44,8 @@ __all__ = [
     *__fixtures__,
 ]
 
+
+@pytest.fixture(scope="session")
 def warehouse_path(tmp_path_factory: pytest.TempPathFactory, random_uuid: str, logger: Logger) -> Generator[str, None, None]:
     """Fixture to create a temporary warehouse folder that can be used with Spark.
 
@@ -76,6 +78,7 @@ def warehouse_path(tmp_path_factory: pytest.TempPathFactory, random_uuid: str, l
     yield warehouse_folder.as_posix()
 
 
+@pytest.fixture(scope="session")
 def checkpoint_folder(tmp_path_factory: pytest.TempPathFactory, random_uuid: str, logger: Logger) -> Generator[str, None, None]:
     """Fixture to create a temporary checkpoint folder that can be used with Spark streams.
 
@@ -92,6 +95,7 @@ def checkpoint_folder(tmp_path_factory: pytest.TempPathFactory, random_uuid: str
     yield fldr.as_posix()
 
 
+@pytest.fixture(scope="session")
 def spark_with_delta(warehouse_path: str, random_uuid: str) -> Generator[SparkSession, None, None]:
     """Spark session fixture with Delta enabled.
 
@@ -152,6 +156,7 @@ def spark_with_delta(warehouse_path: str, random_uuid: str) -> Generator[SparkSe
     spark_session.stop()
 
 
+@pytest.fixture(scope="session", autouse=True)
 def set_env_vars() -> Generator:
     """
     Set environment variables for PYSPARK_PYTHON and PYSPARK_DRIVER_PYTHON.
@@ -180,13 +185,14 @@ def set_env_vars() -> Generator:
         os.environ["PYSPARK_DRIVER_PYTHON"] = existing_pyspark_driver_python
 
 
+@pytest.fixture(scope="session")
 def spark(set_env_vars: pytest.FixtureRequest, spark_with_delta: SparkSession) -> Generator[SparkSession, None, None]:
     """Ensures PYSPARK_PYTHON and PYSPARK_DRIVER_PYTHON are set to the current Python executable and returns a Spark
     session.
     """
     yield spark_with_delta
 
-
+@pytest.fixture
 def streaming_dummy_df(spark: SparkSession, delta_file: FilePath) -> Generator[DataFrame, None, None]:
     """
     Creates a streaming DataFrame from a Delta table for testing purposes.
@@ -197,7 +203,7 @@ def streaming_dummy_df(spark: SparkSession, delta_file: FilePath) -> Generator[D
     setup_test_data(spark=spark, delta_file=Path(delta_file))
     yield spark.readStream.table("delta_test_table")
 
-
+@pytest.fixture
 def mock_df(spark: SparkSession) -> Generator[mock.Mock, None, None]:
     """
     Fixture to mock a DataFrame's methods.
@@ -297,7 +303,7 @@ class SparkContextData:
             self._options_dict.get(key) == value
         ), f"Expected {key} to be {value}, but got {self._options_dict.get(key)}"
 
-
+@pytest.fixture
 def mock_spark_reader(
     spark: SparkSession, sample_df_with_strings: DataFrame, mocker: FixtureValue
 ) -> Generator[SparkContextData, None, None]:

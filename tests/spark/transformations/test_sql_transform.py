@@ -70,10 +70,10 @@ def test_data_path(data_path) -> Path:
         ),
     ],
 )
-def test_sql_transform(input_values, expected, dummy_df, test_data_path):
+def test_sql_transform(input_values, expected, mock_df, test_data_path):
     if sql_path := input_values.get("sql_path"):
         input_values["sql_path"] = str((test_data_path / sql_path).as_posix())
-    result = SqlTransform(**input_values).transform(dummy_df)
+    result = SqlTransform(**input_values).transform(mock_df)
     actual = result.head().asDict()
 
     log.info(

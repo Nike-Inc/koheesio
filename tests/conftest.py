@@ -25,8 +25,8 @@ PROJECT_ROOT = get_project_root()
 TEST_DATA_PATH = Path(PROJECT_ROOT / "tests" / "_data")
 DELTA_FILE = Path(TEST_DATA_PATH / "readers" / "delta_file")
 
-random_uuid = register_fixtures(random_uuid, scope="function")
-logger = register_fixtures(logger, scope="session")
+# random_uuid = register_fixtures(random_uuid, scope="function")
+# logger = register_fixtures(logger, scope="session")
 
 
 @pytest.fixture(scope="session")

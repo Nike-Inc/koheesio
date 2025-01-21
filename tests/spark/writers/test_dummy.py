@@ -7,9 +7,9 @@ pytestmark = pytest.mark.spark
 expected = {"id": 0}
 
 
-def test_write(dummy_df):
+def test_write(mock_df):
     test_writer = DummyWriter()
-    actual = test_writer.write(dummy_df)
+    actual = test_writer.write(mock_df)
     assert actual.get("head") == expected
 
 
@@ -20,7 +20,7 @@ def test_write_unhappy():
         test_writer.write()
 
 
-def test_execute(dummy_df):
-    test_writer = DummyWriter(df=dummy_df)
+def test_execute(mock_df):
+    test_writer = DummyWriter(df=mock_df)
     actual = test_writer.execute()
     assert actual.get("head") == expected

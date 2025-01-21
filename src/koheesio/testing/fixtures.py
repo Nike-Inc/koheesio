@@ -5,6 +5,7 @@ from koheesio.logger import Logger
 from koheesio.testing import pytest
 
 
+@pytest.fixture(scope="session")
 def random_uuid() -> str:
     """
     Generate a random UUID4 string with hyphens replaced by underscores.
@@ -16,7 +17,7 @@ def random_uuid() -> str:
     """
     return str(uuid.uuid4()).replace("-", "_")
 
-
+@pytest.fixture(scope="session")
 def logger(random_uuid: str) -> Logger:
     """
     Create and return a logger instance with a unique name.
@@ -32,18 +33,3 @@ def logger(random_uuid: str) -> Logger:
         A logger instance with a unique name based on the provided UUID.
     """
     return LoggingFactory.get_logger(name="conf_test" + random_uuid)
-
-
-def main():
-    from pytest import fixture
-    from _pytest.config import Config
-    from _pytest.fixtures import showfixtures
-
-    def print_hello_world():
-        print("hello world!")
-
-    _ = fixture(fixture_function=print_hello_world, scope="function", name="bla_bla")
-
-    config = Config.fromdictargs({}, [])
-    showfixtures(config)
-    return _

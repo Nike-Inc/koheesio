@@ -82,6 +82,7 @@ from koheesio.spark import DataFrame, SparkSession
 from koheesio.testing import pytest
 
 
+@pytest.fixture
 def dummy_df(spark: SparkSession) -> DataFrame:
     """
     A 1-row DataFrame with one column: id.
@@ -97,6 +98,7 @@ def dummy_df(spark: SparkSession) -> DataFrame:
     return spark.range(1)
 
 
+@pytest.fixture
 def sample_df_to_partition(spark: SparkSession) -> DataFrame:
     """
     DataFrame with two columns: partition and value.
@@ -116,6 +118,7 @@ def sample_df_to_partition(spark: SparkSession) -> DataFrame:
     return spark.createDataFrame(data, schema)
 
 
+@pytest.fixture
 def sample_df_with_strings(spark: SparkSession) -> DataFrame:
     """
     DataFrame with two columns: id and string.
@@ -137,6 +140,7 @@ def sample_df_with_strings(spark: SparkSession) -> DataFrame:
     return spark.createDataFrame(data, schema)
 
 
+@pytest.fixture
 def sample_df_with_timestamp(spark: SparkSession) -> DataFrame:
     """
     DataFrame with two columns: a_date and a_timestamp.
@@ -162,6 +166,7 @@ def sample_df_with_timestamp(spark: SparkSession) -> DataFrame:
     return spark.createDataFrame(data, schema)
 
 
+@pytest.fixture
 def sample_df_with_string_timestamp(spark: SparkSession) -> DataFrame:
     """
     DataFrame with two columns: id and a_string_timestamp.
@@ -182,6 +187,7 @@ def sample_df_with_string_timestamp(spark: SparkSession) -> DataFrame:
     return spark.createDataFrame(data, schema)
 
 
+@pytest.fixture
 def sample_df_with_all_types(spark: SparkSession) -> DataFrame:
     """Create a DataFrame with all supported Spark datatypes
 

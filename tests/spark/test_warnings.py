@@ -8,13 +8,13 @@ pytestmark = pytest.mark.spark
 
 
 @pytest.mark.parametrize("output_mode", [(BatchOutputMode.APPEND)])
-def test_muted_warnings(output_mode, dummy_df, spark):
+def test_muted_warnings(output_mode, mock_df, spark):
     table_name = "test_table"
 
     with warnings.catch_warnings(record=True) as w:
         from koheesio.spark.writers.delta import DeltaTableWriter
 
-        DeltaTableWriter(table=table_name, output_mode=output_mode, df=dummy_df)
+        DeltaTableWriter(table=table_name, output_mode=output_mode, df=mock_df)
         params_warnings = []
 
         for warning in w:

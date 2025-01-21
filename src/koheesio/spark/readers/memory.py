@@ -60,6 +60,7 @@ class InMemoryDataReader(Reader, ExtraParamsMixin):
     ```
     """
 
+    # TODO: add ability to pass a FilePath pointing to a json file that is accessible through the filesystem
     data: Union[str, list, dict, bytes] = Field(default=..., description="Source data")
     format: DataFormat = Field(default=..., description="File / data format")
     schema_: Optional[StructType] = Field(

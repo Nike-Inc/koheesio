@@ -13,9 +13,9 @@ from koheesio.spark.utils import SparkDatatype
 pytestmark = pytest.mark.spark
 
 
-def test_transform(dummy_df):
+def test_transform(mock_df):
     tf = DummyTransformation()
-    df = tf.transform(dummy_df)
+    df = tf.transform(mock_df)
     actual = df.head().asDict()
     expected = {"id": 0, "hello": "world"}
     assert actual == expected
@@ -29,8 +29,8 @@ def test_transform_unhappy():
         tf.transform()
 
 
-def test_execute(dummy_df):
-    tf = DummyTransformation(df=dummy_df)
+def test_execute(mock_df):
+    tf = DummyTransformation(df=mock_df)
     output = tf.execute()
     df = output.df
     actual = df.head().asDict()
