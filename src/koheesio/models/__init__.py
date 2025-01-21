@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import Annotated, Any, Dict, List, Optional, Union
 from abc import ABC
-from functools import cached_property
+from functools import cached_property, partial
 from pathlib import Path
 
 # to ensure that koheesio.models is a drop in replacement for pydantic
@@ -107,6 +107,7 @@ class BaseModel(PydanticBaseModel, ABC):  # type: ignore[no-redef]
     - `log`: Returns a logger with the name of the class.
 
     ### Class Methods
+    - `partial`: Create a partial object of the BaseModel, allowing you to set/override default values for some fields.
     - `from_basemodel`: Returns a new BaseModel instance based on the data of another BaseModel.
     - `from_context`: Creates BaseModel instance from a given Context.
     - `from_dict`: Creates BaseModel instance from a given dictionary.
@@ -284,6 +285,53 @@ class BaseModel(PydanticBaseModel, ABC):  # type: ignore[no-redef]
     def log(self) -> Logger:
         """Returns a logger with the name of the class"""
         return LoggingFactory.get_logger(name=self.__class__.__name__, inherit_from_koheesio=True)
+
+    @classmethod
+    def partial(cls: type, **kwargs: dict) -> partial:
+        """
+        Create a partial function of the BaseModel.
+
+        Partial allows you to alter or set defaults on an existing BaseModel without needing to create another class to 
+        use it. Newly provided defaults can always be overridden in a subsequent call.
+
+        Examples
+        --------
+        ```python
+        class SomeStep(BaseModel):
+            foo: str
+            bar: int
+
+        # Create a partial BaseModel with a default value for 'foo'
+        partial_step = SomeStep.partial(foo="default_foo")
+
+        # Instantiate SomeStep with only 'bar' provided, 'foo' will use the default value provided above
+        some_step = partial_step(bar=42)
+        print(some_step.foo)  # prints 'default_foo'
+        print(some_step.bar)  # prints 42
+
+        # Instantiate SomeStep with both 'foo' and 'bar' provided, overriding the default value for 'foo'
+        another_step = partial_step(foo="custom_foo", bar=100)
+        print(another_step.foo)  # prints 'custom_foo'
+        print(another_step.bar)  # prints 100
+        ```
+
+        This is advantageous because it allows you to create variations of a model with preset values without having to 
+        redefine the entire model. It simplifies the instantiation process when you have common default values that 
+        need to be reused across different instances.
+
+        Parameters
+        ----------
+        cls : type
+            The class type to create a partial function for.
+        **kwargs : dict
+            Keyword arguments to be passed to the partial function.
+
+        Returns
+        -------
+        partial
+            A partial object with the specified class and keyword arguments.
+        """
+        return partial(cls, **kwargs)
 
     @classmethod
     def from_basemodel(cls, basemodel: BaseModel, **kwargs) -> InstanceOf[BaseModel]:  # type: ignore[no-untyped-def]
