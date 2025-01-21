@@ -79,9 +79,14 @@ SPARK_MINOR_VERSION: float = get_spark_minor_version()
 
 def check_if_pyspark_connect_is_supported() -> bool:
     """Check if the current version of PySpark supports the connect module"""
-    if SPARK_MINOR_VERSION >= 3.5:
+    if SPARK_MINOR_VERSION >= 3.4:  # before 3.4, connect was not supported
         try:
+            # check if connect is available (and importable)
             importlib.import_module("pyspark.sql.connect")
+            # check extras: grpcio and protobuf packages are needed for pyspark[connect] to work
+            importlib.import_module("grpc")
+            importlib.import_module("protobuf")
+            # try interacting with the connect package
             from pyspark.sql.connect.column import Column
 
             _col: Column  # type: ignore
