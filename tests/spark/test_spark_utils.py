@@ -88,7 +88,7 @@ class TestCheckIfPysparkConnectIsSupported:
             },
         )
         mocker.patch.dict(os.environ, {"SPARK_REMOTE": "UNIT_TEST"})
-        
+
         # Act
         actual_check = check_if_pyspark_connect_is_supported()
 
@@ -98,7 +98,7 @@ class TestCheckIfPysparkConnectIsSupported:
             assert actual_check is True
         else:
             assert actual_check is False
-    
+
     @pytest.mark.parametrize("spark_minor_version", [3.3, 3.4, 3.5])
     def test_pyspark_connect_set_without_deps(self, spark_minor_version: float, mocker):
         """Test that check_if_pyspark_connect_is_supported raises an ImportError if pyspark connect is accessed without
@@ -112,7 +112,7 @@ class TestCheckIfPysparkConnectIsSupported:
                 "grpc": None,  # but extras are not installed
             },
         )
-        mocker.patch.dict(os.environ, {"SPARK_CONNECT_MODE_ENABLED": "1"}) 
+        mocker.patch.dict(os.environ, {"SPARK_CONNECT_MODE_ENABLED": "1"})
 
         # Act & Assert
         if spark_minor_version < 3.4:
