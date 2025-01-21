@@ -116,7 +116,7 @@ class TestCheckIfPysparkConnectIsSupported:
 
         # Act & Assert
         if spark_minor_version < 3.4:
-            assert check_if_pyspark_connect_is_supported() is True
+            assert check_if_pyspark_connect_is_supported() is False
         else:
             with pytest.raises(ImportError, ModuleNotFoundError):
                 check_if_pyspark_connect_is_supported()
