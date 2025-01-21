@@ -98,10 +98,19 @@ def check_if_pyspark_connect_is_supported() -> bool:
 
     # we can assume that Spark Connect is available if either of these environment variables are set
     if os.environ.get("SPARK_CONNECT_MODE_ENABLED") == "1" or os.environ.get("SPARK_REMOTE"):
-        importlib.import_module("pyspark.sql.connect")
-        # check extras: grpcio package is needed for pyspark[connect] to work
-        importlib.import_module("grpc")
-        return True
+        try:
+            importlib.import_module("pyspark.sql.connect")
+            # check extras: grpcio package is needed for pyspark[connect] to work
+            importlib.import_module("grpc")
+            return True
+        except (ImportError, ModuleNotFoundError) as e:
+            raise ImportError(
+                "The required modules for Spark Connect (grpcio and protobuf) are not installed. "
+                "Please install the required modules to use the Spark Connect module (use "
+                "`pip install pyspark[connect]` or `koheesio[pyspark_connect]`). "
+                "If you are not using Spark Connect, you can disable it by correctly setting you environment "
+                "variables. `SPARK_CONNECT_MODE_ENABLED=0` and remove `SPARK_REMOTE`."
+            ) from e
 
     return False
 

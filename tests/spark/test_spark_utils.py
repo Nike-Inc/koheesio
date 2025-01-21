@@ -64,13 +64,18 @@ class TestGetActiveSession:
 
 class TestCheckIfPysparkConnectIsSupported:
     def test_if_pyspark_connect_is_not_supported(self, mocker):
-        """Test that check_if_pyspark_connect_is_supported returns False when pyspark connect is not supported."""
+        """Test that check_if_pyspark_connect_is_supported returns False or raises an ImportError when pyspark connect 
+        is not supported irregardless of the pyspark version used."""
         mocker.patch.dict(
             "sys.modules",
             {
                 "pyspark.sql.connect": None,
                 "grpc": None,
             },
+        )
+        mocker.patch.dict(os.environ, {
+                "SPARK_CONNECT_MODE_ENABLED": "0",
+            }, clear=True
         )
         assert check_if_pyspark_connect_is_supported() is False
 
@@ -100,7 +105,7 @@ class TestCheckIfPysparkConnectIsSupported:
             assert actual_check is False
 
     @pytest.mark.parametrize("spark_minor_version", [3.3, 3.4, 3.5])
-    def test_pyspark_connect_set_without_deps(self, spark_minor_version: float, mocker):
+    def test_pyspark_connect_set_without_partial_deps(self, spark_minor_version: float, mocker):
         """Test that check_if_pyspark_connect_is_supported raises an ImportError if pyspark connect is accessed without
         the dependencies being available"""
         # Arrange
@@ -118,7 +123,7 @@ class TestCheckIfPysparkConnectIsSupported:
         if spark_minor_version < 3.4:
             assert check_if_pyspark_connect_is_supported() is False
         else:
-            with pytest.raises(ModuleNotFoundError):
+            with pytest.raises(ImportError):
                 check_if_pyspark_connect_is_supported()
 
 
