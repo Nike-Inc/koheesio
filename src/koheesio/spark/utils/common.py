@@ -102,6 +102,7 @@ def check_if_pyspark_connect_is_supported() -> bool:
         # check extras: grpcio package is needed for pyspark[connect] to work
         importlib.import_module("pyspark.sql.connect")
         importlib.import_module("grpc")
+        return True
     
     return False
 
