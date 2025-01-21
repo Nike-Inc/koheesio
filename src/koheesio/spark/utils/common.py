@@ -80,6 +80,9 @@ SPARK_MINOR_VERSION: float = get_spark_minor_version()
 def check_if_pyspark_connect_is_supported() -> bool:
     """Check if the current version of PySpark supports the connect module"""
     if SPARK_MINOR_VERSION >= 3.4:  # before 3.4, connect was not supported
+        if os.environ.get("SPARK_CONNECT_MODE_ENABLED", 0) == 1 or os.environ.get("SPARK_REMOTE"):
+            # we can assume that Spark Connect is available if any of these environment variables are set
+            return True
         try:
             # check if connect is available (and importable)
             importlib.import_module("pyspark.sql.connect")
