@@ -112,7 +112,7 @@ class TestCheckIfPysparkConnectIsSupported:
                 "grpc": None,  # but extras are not installed
             },
         )
-        mocker.patch.dict(os.environ, {"SPARK_CONNECT_MODE_ENABLED": 1}) 
+        mocker.patch.dict(os.environ, {"SPARK_CONNECT_MODE_ENABLED": "1"}) 
 
         # Act & Assert
         if spark_minor_version < 3.4:

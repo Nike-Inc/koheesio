@@ -97,10 +97,9 @@ def check_if_pyspark_connect_is_supported() -> bool:
         return False
     
     # we can assume that Spark Connect is available if either of these environment variables are set
-    if os.environ.get("SPARK_CONNECT_MODE_ENABLED", 0) == 1 or (spark_remote := os.environ.get("SPARK_REMOTE")):
-        # FIXME: extras check breaks a bunch of tests right now
-        # check extras: grpcio package is needed for pyspark[connect] to work
+    if os.environ.get("SPARK_CONNECT_MODE_ENABLED", 0) == 1 or os.environ.get("SPARK_REMOTE"):
         importlib.import_module("pyspark.sql.connect")
+        # check extras: grpcio package is needed for pyspark[connect] to work
         importlib.import_module("grpc")
         return True
     
