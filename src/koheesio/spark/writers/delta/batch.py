@@ -102,7 +102,10 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
                 },
                 {
                     "clause": "whenNotMatchedInsert",
-                    "values": {"id": "source.id", "value": "source.value"},
+                    "values": {
+                        "id": "source.id",
+                        "value": "source.value",
+                    },
                     "condition": "<insert_condition>",
                 },
             ],
@@ -279,9 +282,11 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
         )
 
         for merge_clause in merge_clauses:
-            clause_type = merge_clause.pop("clause", None)
+            _merge_clause = merge_clause.copy()
+            clause_type = _merge_clause.pop("clause", None)
+            self.log.debug(f"Adding {clause_type} clause to the merge builder")
             method = getattr(builder, clause_type)
-            builder = method(**merge_clause)
+            builder = method(**_merge_clause)
 
         return builder
 
