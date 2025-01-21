@@ -78,24 +78,31 @@ SPARK_MINOR_VERSION: float = get_spark_minor_version()
 
 
 def check_if_pyspark_connect_is_supported() -> bool:
-    """Check if the current version of PySpark supports the connect module"""
-    if SPARK_MINOR_VERSION >= 3.4:  # before 3.4, connect was not supported
-        if os.environ.get("SPARK_CONNECT_MODE_ENABLED", 0) == 1 or os.environ.get("SPARK_REMOTE"):
-            # we can assume that Spark Connect is available if any of these environment variables are set
-            # return True
-            try:
-                # check if connect is available (and importable)
-                importlib.import_module("pyspark.sql.connect")
-                # # check extras: grpcio and protobuf packages are needed for pyspark[connect] to work
-                # importlib.import_module("grpc")
-                # importlib.import_module("protobuf")
-                # try interacting with the connect package
-                from pyspark.sql.connect.column import Column
+    """Check if the current version of PySpark supports the connect module
+    
+    Returns
+    -------
+    bool
+        True if the current version of PySpark supports the connect module, False otherwise.
+        If the required modules for Spark Connect (grpcio and protobuf) are not importable.
 
-                _col: Column  # type: ignore
-                return True
-            except (ModuleNotFoundError, ImportError):
-                return False
+    Raises
+    ------
+    ImportError
+        If the required modules for Spark Connect (grpcio and protobuf) are not importable while Spark Connect is being
+        accessed
+    """
+    # before pyspark 3.4, connect was not supported
+    if SPARK_MINOR_VERSION >= 3.4:  
+        return False
+    
+    # we can assume that Spark Connect is available if either of these environment variables are set
+    if os.environ.get("SPARK_CONNECT_MODE_ENABLED", 0) == 1 or (spark_remote := os.environ.get("SPARK_REMOTE")):
+        # FIXME: extras check breaks a bunch of tests right now
+        # check extras: grpcio package is needed for pyspark[connect] to work
+        importlib.import_module("pyspark.sql.connect")
+        importlib.import_module("grpc")
+    
     return False
 
 
