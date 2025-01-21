@@ -105,9 +105,8 @@ def check_if_pyspark_connect_is_supported() -> bool:
             return True
         except (ImportError, ModuleNotFoundError) as e:
             raise ImportError(
-                "Required modules for Spark Connect (grpcio and protobuf) are not installed. "
-                "Install them using `pip install pyspark[connect]` or `koheesio[pyspark_connect]`. "
-                "To disable Spark Connect, set `SPARK_CONNECT_MODE_ENABLED=0` and remove `SPARK_REMOTE`."
+                "It looks like the required modules for Spark Connect (e.g. grpcio) are not installed. "
+                "If not, you can install them using `pip install pyspark[connect]` or `koheesio[pyspark_connect]`. "
             )
 
     return False
