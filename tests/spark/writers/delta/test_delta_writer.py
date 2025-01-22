@@ -337,6 +337,9 @@ def test_merge_from_args(spark, dummy_df):
             mock_delta_builder.whenNotMatchedInsert.assert_called_once_with(
                 values={"id": "source.id"}, condition="source.id IS NOT NULL"
             )
+            assert ["clause" in c for c in writer.params["merge_builder"]] == [True] * len(
+                writer.params["merge_builder"]
+            )
 
 
 @pytest.mark.parametrize(
