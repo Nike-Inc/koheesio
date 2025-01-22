@@ -78,16 +78,37 @@ SPARK_MINOR_VERSION: float = get_spark_minor_version()
 
 
 def check_if_pyspark_connect_is_supported() -> bool:
-    """Check if the current version of PySpark supports the connect module"""
-    if SPARK_MINOR_VERSION >= 3.5:
+    """Check if the current version of PySpark supports the connect module
+
+    Returns
+    -------
+    bool
+        True if the current version of PySpark supports the connect module, False otherwise.
+        If the required modules for Spark Connect (grpcio and protobuf) are not importable.
+
+    Raises
+    ------
+    ImportError
+        If the required modules for Spark Connect (grpcio and protobuf) are not importable while Spark Connect is being 
+        accessed.
+    """
+    # before pyspark 3.4, connect was not supported
+    if SPARK_MINOR_VERSION < 3.4:
+        return False
+
+    # we can assume that Spark Connect is available if either of these environment variables are set
+    if os.environ.get("SPARK_CONNECT_MODE_ENABLED") == "1" or os.environ.get("SPARK_REMOTE"):
         try:
             importlib.import_module("pyspark.sql.connect")
-            from pyspark.sql.connect.column import Column
-
-            _col: Column  # type: ignore
+            # check extras: grpcio package is needed for pyspark[connect] to work
+            importlib.import_module("grpc")
             return True
-        except (ModuleNotFoundError, ImportError):
-            return False
+        except (ImportError, ModuleNotFoundError) as e:
+            raise ImportError(
+                "It looks like the required modules for Spark Connect (e.g. grpcio) are not installed. "
+                "If not, you can install them using `pip install pyspark[connect]` or `koheesio[pyspark_connect]`. "
+            )
+
     return False
 
 

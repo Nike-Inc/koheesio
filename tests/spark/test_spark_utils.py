@@ -1,4 +1,4 @@
-from os import environ
+import os
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -63,24 +63,68 @@ class TestGetActiveSession:
 
 
 class TestCheckIfPysparkConnectIsSupported:
-    def test_if_pyspark_connect_is_not_supported(self):
-        """Test that check_if_pyspark_connect_is_supported returns False when pyspark connect is not supported."""
-        with patch.dict("sys.modules", {"pyspark.sql.connect": None}):
-            assert check_if_pyspark_connect_is_supported() is False
+    def test_if_pyspark_connect_is_not_supported(self, mocker):
+        """Test that check_if_pyspark_connect_is_supported returns False or raises an ImportError when pyspark connect 
+        is not supported irregardless of the pyspark version used."""
+        mocker.patch.dict(
+            "sys.modules",
+            {
+                "pyspark.sql.connect": None,
+                "grpc": None,
+            },
+        )
+        mocker.patch.dict(os.environ, {
+                "SPARK_CONNECT_MODE_ENABLED": "0",
+            }, clear=True
+        )
+        assert check_if_pyspark_connect_is_supported() is False
 
-    def test_check_if_pyspark_connect_is_supported(self):
+    @pytest.mark.parametrize("spark_minor_version", [3.3, 3.4, 3.5])
+    def test_check_if_pyspark_connect_is_supported(self, spark_minor_version: float, mocker):
         """Test that check_if_pyspark_connect_is_supported returns True when pyspark connect is supported."""
-        with (
-            patch("koheesio.spark.utils.common.SPARK_MINOR_VERSION", 3.5),
-            patch.dict(
-                "sys.modules",
-                {
-                    "pyspark.sql.connect.column": MagicMock(Column=MagicMock()),
-                    "pyspark.sql.connect": MagicMock(),
-                },
-            ),
-        ):
-            assert check_if_pyspark_connect_is_supported() is True
+        # Arrange
+        mocker.patch("koheesio.spark.utils.common.SPARK_MINOR_VERSION", spark_minor_version)
+        mocker.patch.dict(
+            "sys.modules",
+            {
+                "pyspark.sql.connect.column": MagicMock(Column=MagicMock()),
+                "pyspark.sql.connect": MagicMock(),
+                "grpc": MagicMock(),
+            },
+        )
+        mocker.patch.dict(os.environ, {"SPARK_REMOTE": "UNIT_TEST"})
+
+        # Act
+        actual_check = check_if_pyspark_connect_is_supported()
+
+        # Assert
+        assert os.environ["SPARK_REMOTE"] == "UNIT_TEST"
+        if spark_minor_version >= 3.4:
+            assert actual_check is True
+        else:
+            assert actual_check is False
+
+    @pytest.mark.parametrize("spark_minor_version", [3.3, 3.4, 3.5])
+    def test_pyspark_connect_set_without_partial_deps(self, spark_minor_version: float, mocker):
+        """Test that check_if_pyspark_connect_is_supported raises an ImportError if pyspark connect is accessed without
+        the dependencies being available"""
+        # Arrange
+        mocker.patch("koheesio.spark.utils.common.SPARK_MINOR_VERSION", spark_minor_version)
+        mocker.patch.dict(
+            "sys.modules",
+            {
+                "pyspark.sql.connect": MagicMock(Column=MagicMock()),  # pyspark module exists
+                "grpc": None,  # but extras are not installed
+            },
+        )
+        mocker.patch.dict(os.environ, {"SPARK_CONNECT_MODE_ENABLED": "1"})
+
+        # Act & Assert
+        if spark_minor_version < 3.4:
+            assert check_if_pyspark_connect_is_supported() is False
+        else:
+            with pytest.raises(ImportError):
+                check_if_pyspark_connect_is_supported()
 
 
 def test_get_spark_minor_version():
@@ -102,10 +146,10 @@ def test_schema_struct_to_schema_str():
 )
 def test_on_databricks(env_var_value, expected_result):
     if env_var_value is not None:
-        with patch.dict(environ, {"DATABRICKS_RUNTIME_VERSION": env_var_value}):
+        with patch.dict(os.environ, {"DATABRICKS_RUNTIME_VERSION": env_var_value}):
             assert on_databricks() == expected_result
     else:
-        with patch.dict(environ, clear=True):
+        with patch.dict(os.environ, clear=True):
             assert on_databricks() == expected_result
 
 
