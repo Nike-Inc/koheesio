@@ -477,24 +477,3 @@ class PaginatedHttpGetStep(HttpGetStep):
         self.output.response_raw = None
         self.output.raw_payload = None
         self.output.status_code = None
-
-
-if __name__ == "__main__":
-
-    class CustomHttpStep(HttpStep):
-        ...
-        # bearer_token: SecretStr
-
-        # def get_headers(self) -> dict:
-        #     """Construct the headers for the API request."""
-        #     self.headers = {
-        #         "Authorization": f"Bearer {self.bearer_token.get_secret_value()}",
-        #         "Content-Type": "application/json",
-        #     }
-        #     return super().get_headers()
-
-    step = CustomHttpStep(
-        url="https://example.com",
-        bearer_token="foo_bar_token",
-        headers={"Content-Type": "application/json"},
-    )
