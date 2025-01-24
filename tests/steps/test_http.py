@@ -151,7 +151,7 @@ def test_get_headers(params):
     converted back to string, otherwise sensitive info would have looked like '**********'.
     """
     # Arrange and Act
-    step = HttpStep(**params).get_headers()
+    step = HttpStep(**params)
 
     # Assert
     actual_headers = step.get_headers()
