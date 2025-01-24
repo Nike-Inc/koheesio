@@ -14,7 +14,7 @@ response = (
 In the above example, the `response` variable will contain the JSON response from the HTTP request.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Generator, List, Optional, Union
 import contextlib
 from enum import Enum
 import json
@@ -28,6 +28,7 @@ from koheesio.models import (
     SecretStr,
     field_serializer,
     field_validator,
+    model_validator,
 )
 
 __all__ = [
@@ -97,10 +98,16 @@ class HttpStep(Step, ExtraParamsMixin):
         description="API endpoint URL",
         alias="uri",
     )
-    headers: Optional[Dict[str, Union[str, SecretStr]]] = Field(
-        default_factory=dict,
+    headers: Dict[str, Union[str, SecretStr]] = Field(
+        default={"Content-Type": "application/json"},
         description="Request headers",
         alias="header",
+    )
+    bearer_token: Optional[SecretStr] = Field(
+        default=None,
+        description="Bearer token for authorization",
+        alias="token",
+        repr=False,
     )
     data: Optional[Union[Dict[str, str], str]] = Field(
         default_factory=dict, description="[Optional] Data to be sent along with the request", alias="body"
@@ -156,15 +163,22 @@ class HttpStep(Step, ExtraParamsMixin):
 
         return method_value
 
-    @field_validator("headers", mode="before")
-    def encode_sensitive_headers(cls, headers: dict) -> dict:
+    @model_validator(mode="after")
+    def encode_sensitive_headers(self) -> dict:
         """
         Encode potentially sensitive data into pydantic.SecretStr class to prevent them
         being displayed as plain text in logs.
         """
-        if auth := headers.get("Authorization"):
-            headers["Authorization"] = auth if isinstance(auth, SecretStr) else SecretStr(auth)
-        return headers
+        if token := self.bearer_token:
+            _secret_token = token.get_secret_value()
+            # ensure the token is preceded with the word 'Bearer'
+            self.headers["Authorization"] = (
+                _secret_token if _secret_token.startswith("Bearer") else f"Bearer {_secret_token}"
+            )
+            del self.bearer_token
+        if auth := self.headers.get("Authorization"):
+            self.headers["Authorization"] = auth if isinstance(auth, SecretStr) else SecretStr(auth)
+        return self
 
     @field_serializer("headers", when_used="json")
     def decode_sensitive_headers(self, headers: dict) -> dict:
@@ -214,7 +228,9 @@ class HttpStep(Step, ExtraParamsMixin):
         }
 
     @contextlib.contextmanager
-    def _request(self, method: Optional[HttpMethod] = None, stream: bool = False) -> requests.Response:
+    def _request(
+        self, method: Optional[HttpMethod] = None, stream: bool = False
+    ) -> Generator[requests.Response, None, None]:
         """
         Executes the HTTP request with retry logic.
 
@@ -461,3 +477,24 @@ class PaginatedHttpGetStep(HttpGetStep):
         self.output.response_raw = None
         self.output.raw_payload = None
         self.output.status_code = None
+
+
+if __name__ == "__main__":
+
+    class CustomHttpStep(HttpStep):
+        ...
+        # bearer_token: SecretStr
+
+        # def get_headers(self) -> dict:
+        #     """Construct the headers for the API request."""
+        #     self.headers = {
+        #         "Authorization": f"Bearer {self.bearer_token.get_secret_value()}",
+        #         "Content-Type": "application/json",
+        #     }
+        #     return super().get_headers()
+
+    step = CustomHttpStep(
+        url="https://example.com",
+        bearer_token="foo_bar_token",
+        headers={"Content-Type": "application/json"},
+    )
