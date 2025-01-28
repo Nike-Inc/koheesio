@@ -85,7 +85,7 @@ class Context(Mapping):
             if isinstance(arg, dict):
                 kwargs.update(arg)
             if isinstance(arg, Context):
-                kwargs = kwargs.update(arg.to_dict())
+                kwargs.update(arg.to_dict())
 
         if kwargs:
             for key, value in kwargs.items():
