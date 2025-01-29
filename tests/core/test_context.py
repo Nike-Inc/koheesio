@@ -234,6 +234,11 @@ def test_from_dict():
             Context(foo="bar", baz="qux"),
             {"foo": "bar", "baz": "qux"},
         ),
+        (
+            # Test with dotted keys
+            Context({"a.b.c": 1}),
+            {"a.b.c": 1},
+        )
     ],
 )
 def test_to_dict(context, expected):

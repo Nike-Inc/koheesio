@@ -337,18 +337,20 @@ class Context(Mapping):
         Returns `c`
         """
         try:
-            # try full dotted natation first
+            # in case key is directly available, or is written in dotted notation
             try:
                 return self.__dict__[key]
             except KeyError:
                 pass
-
-            # handle nested keys
-            nested_keys = key.split(".")
-            value = self  # parent object
-            for k in nested_keys:
-                value = value[k]  # iterate through nested values
-            return value
+            if "." in key:
+                # handle nested keys
+                nested_keys = key.split(".")
+                value = self  # parent object
+                for k in nested_keys:
+                    value = value[k]  # iterate through nested values
+                return value
+            
+            raise KeyError
 
         except (AttributeError, KeyError, TypeError) as e:
             if not safe:
