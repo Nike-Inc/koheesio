@@ -23,7 +23,9 @@ from koheesio.integrations.box import (
     JWTAuth,
     SecretStr,
     StructType,
+    BoxBufferFileWriter,
 )
+from koheesio.spark.writers.buffer import PandasCsvBufferWriter
 
 pytestmark = pytest.mark.spark
 
@@ -305,4 +307,21 @@ class TestBoxFileWriter:
             file=__file__,
             file_name="upload.txt",
         ).execute()
+        assert f.file.get().name == "upload.txt"
+
+
+class TestBoxBufferFileWriter:
+    def test_execute(self, dummy_box, spark):
+        df = spark.createDataFrame([("A", 1), ("B", 2)], ["foo", "bar"])
+        buffer_writer = PandasCsvBufferWriter(df=df)
+
+        f = BoxBufferFileWriter(
+            **COMMON_PARAMS,
+            path="/foo",
+            buffer_writer=buffer_writer,
+            file_name="upload.txt",
+        ).execute()
+
+        assert f.shared_link
+        assert isinstance(f.file, File)
         assert f.file.get().name == "upload.txt"
