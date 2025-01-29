@@ -168,6 +168,18 @@ def test_contains():
             # recursive
             True,
         ),
+        (
+            # Test Context initialization with another Context object
+            # ---
+            # left_context
+            Context({"foo": "bar"}),
+            # right_context
+            Context(Context({"baz": "qux"})),
+            # expected
+            {"foo": "bar", "baz": "qux"},
+            # recursive
+            None,
+        ),
     ],
 )
 def test_merge(left_context, right_context, expected, recursive):
@@ -212,6 +224,21 @@ def test_from_dict():
                 "c": [{"d": 2, "e": "nested"}, 1, "test2", False, {"f": 2, "g": [{"d": 2, "e": "nested"}, 1, "test3"]}],
             },
         ),
+        (
+            # Test Context initialization with another Context object
+            Context(Context({"baz": "qux"})),
+            {"baz": "qux"},
+        ),
+        (
+            # Test with just kwargs
+            Context(foo="bar", baz="qux"),
+            {"foo": "bar", "baz": "qux"},
+        ),
+        (
+            # Test with dotted keys
+            Context({"a.b.c": 1}),
+            {"a.b.c": 1},
+        )
     ],
 )
 def test_to_dict(context, expected):
