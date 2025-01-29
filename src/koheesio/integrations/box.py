@@ -662,6 +662,17 @@ class BoxBaseFileWriter(BoxFolderBase):
 
         return new_file
 
+    def write_file(self, file_stream: IO[bytes], file_name: str) -> File:
+        folder: Folder = BoxFolderGet.from_step(self, create_sub_folders=True).execute().folder
+
+        # noinspection PyUnresolvedReferences
+        self.log.info(f"Uploading file '{file_name}' to Box folder '{folder.get().name}'...")
+        _box_file: File = self.write_or_overwrite_file_with_stream(folder=folder, file_stream=file_stream,
+                                                                   file_name=file_name)
+
+        self.output.file = _box_file
+        self.output.shared_link = _box_file.get_shared_link()
+
 
 class BoxFileWriter(BoxBaseFileWriter):
     """
@@ -707,14 +718,7 @@ class BoxFileWriter(BoxBaseFileWriter):
             with open(_file, "rb") as f:
                 _file = BytesIO(f.read())
 
-        folder: Folder = BoxFolderGet.from_step(self, create_sub_folders=True).execute().folder
-
-        # noinspection PyUnresolvedReferences
-        self.log.info(f"Uploading file '{_name}' to Box folder '{folder.get().name}'...")
-        _box_file: File = self.write_or_overwrite_file_with_stream(folder=folder, file_stream=_file, file_name=_name)
-
-        self.output.file = _box_file
-        self.output.shared_link = _box_file.get_shared_link()
+        self.write_file(file_stream=_file, file_name=_name)
 
 
 class BoxBufferFileWriter(BoxBaseFileWriter):
@@ -724,19 +728,11 @@ class BoxBufferFileWriter(BoxBaseFileWriter):
                                         description="Koheesio buffer writer that will be used to produce the output")
     file_name: str = Field(default=..., description="Name to be used for the Box file that is going to be written")
 
-    # TODO: add validation - buffer writer has to have a df for sourcing the data (df is optional in spar step!)
+    # TODO: add warning if buffer_writer dataframe is emtpy (or None)?
 
     def action(self):
         # Writes the data to the buffer using the provided buffer writer
         self.buffer_writer.write()
         buffer = self.buffer_writer.output.buffer
 
-        folder: Folder = BoxFolderGet.from_step(self, create_sub_folders=True).execute().folder
-
-        # noinspection PyUnresolvedReferences
-        self.log.info(f"Uploading file '{self.file_name}' to Box folder '{folder.get().name}'...")
-        _box_file: File = self.write_or_overwrite_file_with_stream(folder=folder, file_stream=buffer,
-                                                                   file_name=self.file_name)
-
-        self.output.file = _box_file
-        self.output.shared_link = _box_file.get_shared_link()
+        self.write_file(file_stream=buffer, file_name=self.file_name)
