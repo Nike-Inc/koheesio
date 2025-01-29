@@ -337,8 +337,11 @@ class Context(Mapping):
         Returns `c`
         """
         try:
-            if "." not in key:
+            # try full dotted natation first
+            try:
                 return self.__dict__[key]
+            except KeyError:
+                pass
 
             # handle nested keys
             nested_keys = key.split(".")
