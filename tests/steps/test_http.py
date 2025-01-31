@@ -136,15 +136,25 @@ def test_http_step_request():
             assert response.status_code == 200
 
 
-def test_get_headers():
-    # Authorization headers are being converted into SecretStr under the hood to avoid dumping any
-    # sensitive content into logs. However, when calling the `get_headers` method, the SecretStr is being
-    # converted back to string, otherwise sensitive info would have looked like '**********'.
-    actual_headers = HttpStep(
-        url=GET_ENDPOINT,
-        headers={"Authorization": "Bearer token", "Content-Type": "application/json"},
-    ).get_headers()
+@pytest.mark.parametrize(
+    "params",
+    [
+        dict(url=GET_ENDPOINT, headers={"Authorization": "Bearer token", "Content-Type": "application/json"}),
+        dict(url=GET_ENDPOINT, headers={"Content-Type": "application/json"}, bearer_token="token"),
+        dict(url=GET_ENDPOINT, headers={"Content-Type": "application/json"}, token="token"),
+    ],
+)
+def test_get_headers(params):
+    """
+    Authorization headers are being converted into SecretStr under the hood to avoid dumping any
+    sensitive content into logs. However, when calling the `get_headers` method, the SecretStr is being
+    converted back to string, otherwise sensitive info would have looked like '**********'.
+    """
+    # Arrange and Act
+    step = HttpStep(**params)
 
+    # Assert
+    actual_headers = step.get_headers()
     assert actual_headers["Authorization"] != "**********"
     assert actual_headers["Authorization"] == "Bearer token"
     assert actual_headers["Content-Type"] == "application/json"
