@@ -14,6 +14,7 @@ from __future__ import annotations
 from typing import Annotated, Any, Dict, List, Optional, Union
 from abc import ABC
 from functools import cached_property, partial
+import inspect
 from pathlib import Path
 
 # to ensure that koheesio.models is a drop in replacement for pydantic
@@ -28,7 +29,6 @@ from pydantic import (
     PositiveInt,
     PrivateAttr,
     SecretBytes,
-    SecretStr,
     SkipValidation,
     ValidationError,
     conint,
@@ -38,6 +38,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+from pydantic import SecretStr as PydanticSecretStr
 
 # noinspection PyProtectedMember
 from pydantic._internal._generics import PydanticGenericMetadata
@@ -762,3 +763,121 @@ ListOfColumns = Annotated[Union[str, List[str]], BeforeValidator(_list_of_column
 Will ensure that there are no duplicate columns, empty strings, etc.
 In case an individual column is passed, the value will be coerced to a list.
 """
+
+
+class SecretStr(PydanticSecretStr):
+    """A string type that ensures the secrecy of its value, extending Pydantic's SecretStr.
+
+    This class provides additional functionality over Pydantic's SecretStr, including:
+    - Support for concatenation with other strings and SecretStr instances.
+    - Advanced f-string formatting support to ensure the secret value is only revealed in secure contexts.
+
+    For more information on Pydantic's SecretStr, see: https://docs.pydantic.dev/latest/usage/types/#secret-types
+
+    Examples
+    --------
+    ### Basic Usage
+    ```python
+    secret = SecretStr("my_secret")
+    ```
+
+    ### String representations of the secrets are masked
+    ```python
+    str(secret)
+    # '**********'
+    repr(secret)
+    # "SecretStr('**********')"
+    ```
+
+    ### Concatenations are supported with other strings and SecretStr instances
+    ```python
+    secret + "suffix"
+    # SecretStr('my_secretsuffix')
+    "prefix" + secret
+    # SecretStr('prefixmy_secret')
+    ```
+
+    ### f-string formatting is supported
+    If the f-string is called from within a SecretStr, the secret value is returned as we are in a secure context.
+    ```python
+    new_secret = f"{SecretStr(f'prefix{secret}suffix')}"
+    new_secret.get_secret_value()
+    ### 'prefixmy_secretsuffix'
+    ```
+    
+    Otherwise, we consider the context 'unsafe': the SecretStr instance is returned, and the secret value is masked.
+    ```python
+    f"{secret}"
+    '**********'
+    ```
+
+    Parameters
+    ----------
+    secret : str
+        The secret value to be stored.
+
+    Methods
+    -------
+    get_secret_value()
+        Returns the actual secret value.
+    """
+
+    @staticmethod
+    def _ensure_str(v: Any) -> str:
+        """Ensure that the given value is a string"""
+        if isinstance(v, PydanticSecretStr):
+            return v.get_secret_value()
+        try:
+            v = str(v)
+            return str(v)
+        except Exception as e:
+            raise TypeError("Cannot convert to string") from e
+    
+    def _concatenate(self, other: Any, reverse: bool = False) -> "SecretStr":
+        """Helper method to handle concatenation logic"""
+        try:
+            other_str, secret_str = self._ensure_str(other), self.get_secret_value()
+            return SecretStr(other_str + secret_str) if reverse else SecretStr(secret_str + other_str)
+        except Exception as e:
+            raise TypeError(f"Cannot concatenate SecretStr with type {type(other).__name__}") from e
+
+    def __add__(self, other: Any) -> "SecretStr":
+        """Support concatenation when the SecretStr instance is on the right side of the + operator.
+        
+        Raises
+        ------
+        TypeError
+            If concatenation fails.
+        """
+        return self._concatenate(other)
+    
+    def __radd__(self, other: Any) -> "SecretStr":
+        """Support concatenation when the SecretStr instance is on the right side of the + operator.
+
+        Raises
+        ------
+        TypeError
+            If concatenation fails.
+        """
+        return self._concatenate(other, reverse=True)
+
+    def __format__(self, format_spec: str) -> Union[str, 'SecretStr']:
+        """Advanced f-string formatting support.
+        If the f-string is called from within a SecretStr, the secret value is returned as we are in a secure context.
+        Otherwise, we consider the context 'unsafe': the SecretStr instance is returned.
+        """
+        # Inspect the call stack to determine if the string is being passed through SecretStr
+        stack = inspect.stack()
+        try:
+            caller_context = stack[1][4][0]  # type: ignore
+            # Explaining the stack[1][4][0] indexing:
+            # - stack[1]: the frame of the caller of the current function (i.e. what line of code called this function)
+            # - stack[1][4]: information of arguments passed to the caller
+            # - stack[1][4][0]: the string representation of the line of code that called this function
+        except IndexError:
+            caller_context = ""
+
+        if 'SecretStr(f' in caller_context:
+            return self.get_secret_value()
+
+        return str(self)
