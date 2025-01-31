@@ -85,7 +85,7 @@ class Context(Mapping):
             if isinstance(arg, dict):
                 kwargs.update(arg)
             if isinstance(arg, Context):
-                kwargs = kwargs.update(arg.to_dict())
+                kwargs.update(arg.to_dict())
 
         if kwargs:
             for key, value in kwargs.items():
@@ -337,15 +337,20 @@ class Context(Mapping):
         Returns `c`
         """
         try:
-            if "." not in key:
+            # in case key is directly available, or is written in dotted notation
+            try:
                 return self.__dict__[key]
-
-            # handle nested keys
-            nested_keys = key.split(".")
-            value = self  # parent object
-            for k in nested_keys:
-                value = value[k]  # iterate through nested values
-            return value
+            except KeyError:
+                pass
+            if "." in key:
+                # handle nested keys
+                nested_keys = key.split(".")
+                value = self  # parent object
+                for k in nested_keys:
+                    value = value[k]  # iterate through nested values
+                return value
+            
+            raise KeyError
 
         except (AttributeError, KeyError, TypeError) as e:
             if not safe:
