@@ -89,7 +89,7 @@ def check_if_pyspark_connect_is_supported() -> bool:
     Raises
     ------
     ImportError
-        If the required modules for Spark Connect (grpcio and protobuf) are not importable while Spark Connect is being 
+        If the required modules for Spark Connect (grpcio and protobuf) are not importable while Spark Connect is being
         accessed.
     """
     # before pyspark 3.4, connect was not supported
@@ -107,7 +107,7 @@ def check_if_pyspark_connect_is_supported() -> bool:
             raise ImportError(
                 "It looks like the required modules for Spark Connect (e.g. grpcio) are not installed. "
                 "If not, you can install them using `pip install pyspark[connect]` or `koheesio[pyspark_connect]`. "
-            )
+            ) from e
 
     return False
 
