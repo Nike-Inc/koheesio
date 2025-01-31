@@ -321,3 +321,43 @@ class DeltaTableStep(SparkStep):
                 raise e
 
         return result
+
+    def describe_history(self, limit: Optional[int] = None) -> Optional[DataFrame]:
+        """
+        Get the latest `limit` rows from the Delta Log.
+        The information is in reverse chronological order.
+
+        Parameters
+        ----------
+        limit : Optional[int]
+            Number of rows to return.
+        
+        Returns
+        -------
+        Optional[DataFrame]
+            Delta Table's history as a DataFrame or None if the table does not exist.
+        
+        Examples
+        -------
+        ```python
+        DeltaTableStep(...).describe_history()
+        ```
+        Would return the full history from a Delta Log.
+
+        ```python
+        DeltaTableStep(...).describe_history(limit=10)
+        ```
+        Would return the last 10 operations from the Delta Log.
+        """
+        try:
+            history_df = self.spark.sql(f"DESCRIBE HISTORY {self.table_name}")
+            history_df = history_df.orderBy("version", ascending=False)
+            if limit:
+                history_df = history_df.limit(limit)
+            return history_df
+        except AnalysisException as e:
+            err_msg = str(e).lower()
+            if err_msg.startswith("[table_or_view_not_found]"):
+                self.log.warning(f"The table or view {self.table_name} does not exist.")
+            else:
+                raise e

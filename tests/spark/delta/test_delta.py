@@ -5,10 +5,12 @@ from unittest.mock import patch
 
 from conftest import setup_test_data
 import pytest
+from chispa import assert_df_equality
 
 from pydantic import ValidationError
 
 from pyspark.sql.types import LongType
+from pyspark.sql.utils import AnalysisException
 
 from koheesio.logger import LoggingFactory
 from koheesio.spark.delta import DeltaTableStep
@@ -155,3 +157,55 @@ def test_exists(caplog, table, create_if_not_exists, log_level):
         dt.log.setLevel(log_level)
         assert dt.exists is False
         assert f"The `create_if_not_exists` flag is set to {create_if_not_exists}." in caplog.text
+
+
+@pytest.fixture
+def test_history_df(spark):
+    data = [
+        {"version": 0, "timestamp": "2024-12-30 12:00:00", "tableName": "test_table", "operation": "CREATE TABLE"},
+        {"version": 1, "timestamp": "2024-12-31 05:29:30", "tableName": "test_table", "operation": "WRITE"},
+        {"version": 2, "timestamp": "2025-01-01 11:12:19", "tableName": "test_table", "operation": "MERGE"},
+    ]
+    return spark.createDataFrame(data)
+
+
+def test_describe_history__no_limit(mocker, spark, test_history_df):
+    dt = DeltaTableStep(table="test_table")
+    mocker.patch.object(spark, "sql", return_value=test_history_df)
+    result = dt.describe_history()
+    expected_df = spark.createDataFrame(
+        [
+            {"version": 2, "timestamp": "2025-01-01 11:12:19", "tableName": "test_table", "operation": "MERGE"},
+            {"version": 1, "timestamp": "2024-12-31 05:29:30", "tableName": "test_table", "operation": "WRITE"},
+            {"version": 0, "timestamp": "2024-12-30 12:00:00", "tableName": "test_table", "operation": "CREATE TABLE"},
+        ]
+    )
+    assert_df_equality(result, expected_df, ignore_column_order=True)
+
+
+def test_describe_history__with_limit(mocker, spark, test_history_df):
+    dt = DeltaTableStep(table="test_table")
+    mocker.patch.object(spark, "sql", return_value=test_history_df)
+    result = dt.describe_history(limit=1)
+    expected_df = spark.createDataFrame(
+        [
+            {"version": 2, "timestamp": "2025-01-01 11:12:19", "tableName": "test_table", "operation": "MERGE"},
+        ]
+    )
+    assert_df_equality(result, expected_df, ignore_column_order=True)
+
+
+def test_describe_history__no_table(mocker, spark):
+    dt = DeltaTableStep(table="test_table")
+    mocker.patch.object(spark, "sql", side_effect=AnalysisException("[TABLE_OR_VIEW_NOT_FOUND]"))
+    result = dt.describe_history()
+
+    assert result is None
+
+
+def test_describe_history__error(mocker, spark):
+    dt = DeltaTableStep(table="test_table")
+    mocker.patch.object(spark, "sql", side_effect=AnalysisException("Some other error"))
+
+    with pytest.raises(AnalysisException):
+        dt.describe_history()
