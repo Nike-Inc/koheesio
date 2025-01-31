@@ -856,7 +856,7 @@ class SecretStr(PydanticSecretStr):
     def __format__(self, format_spec: str) -> Union[str, 'SecretStr']:
         """Advanced f-string formatting support.
         If the f-string is called from within a SecretStr, the secret value is returned as we are in a secure context.
-        Otherwise, we consider the context 'unsafe': the SecretStr instance is returned.
+        Otherwise, we consider the context 'unsafe' and we let pydantic take care of the formatting.
         """
         # Inspect the call stack to determine if the string is being passed through SecretStr
         stack = inspect.stack()
@@ -873,5 +873,5 @@ class SecretStr(PydanticSecretStr):
         if 'SecretStr(f' in caller_context:
             return self.get_secret_value()
 
-        # unsafe context: the SecretStr instance is returned
+        # unsafe context: we let pydantic handle the formatting
         return super().__format__(format_spec)
