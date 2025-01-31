@@ -307,16 +307,8 @@ class DeltaTableStep(SparkStep):
             result = True
         except AnalysisException as e:
             err_msg = str(e).lower()
-            common_message = (
-                f"Table `{self.table}` doesn't exist. "
-                f"The `create_if_not_exists` flag is set to {self.create_if_not_exists}."
-            )
-
             if err_msg.startswith("[table_or_view_not_found]") or err_msg.startswith("table or view not found"):
-                if self.create_if_not_exists:
-                    self.log.info(" ".join((common_message, "Therefore the table will be created.")))
-                else:
-                    self.log.error(" ".join((common_message, "Therefore the table will not be created.")))
+                self.log.debug(f"Table `{self.table_name}` does not exist.")
             else:
                 raise e
 
@@ -349,15 +341,11 @@ class DeltaTableStep(SparkStep):
         ```
         Would return the last 10 operations from the Delta Log.
         """
-        try:
+        if self.exists:
             history_df = self.spark.sql(f"DESCRIBE HISTORY {self.table_name}")
             history_df = history_df.orderBy("version", ascending=False)
             if limit:
                 history_df = history_df.limit(limit)
             return history_df
-        except AnalysisException as e:
-            err_msg = str(e).lower()
-            if err_msg.startswith("[table_or_view_not_found]"):
-                self.log.warning(f"The table or view {self.table_name} does not exist.")
-            else:
-                raise e
+        else:
+            self.log.warning(f"Table `{self.table_name}` does not exist.")

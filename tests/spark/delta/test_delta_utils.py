@@ -1,10 +1,10 @@
 from datetime import datetime
 
-import pytest
 from freezegun import freeze_time
+import pytest
 
-from koheesio.utils.date_time import DTInterval
 from koheesio.spark.delta.utils import is_data_stale
+from koheesio.utils.date_time import DTInterval
 
 
 @pytest.fixture
