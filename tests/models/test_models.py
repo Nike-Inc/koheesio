@@ -298,18 +298,20 @@ class TestSecretStr:
     suffix = "suffix"
     
     def test_secret_str_str(self) -> None:
-        """check that the integrity of the str method in SecretStr is preserved"""
-        original = str(self.secret)
+        """check that the integrity of the str method in SecretStr is preserved
+        by comparing Pydantic's SecretStr with Koheesio's SecretStr str method output"""
+        pydantic_secret_str = str(self.secret)
         actual = str(SecretStr(self.secret_value))
         expected = "**********"
-        assert original == actual == expected
+        assert pydantic_secret_str == actual == expected
     
     def test_secret_str_repr(self) -> None:
-        """check that the integrity of the repr method in SecretStr is preserved"""
-        original = repr(self.secret)
+        """check that the integrity of the repr method in SecretStr is preserved
+        by comparing Pydantic's SecretStr with Koheesio's SecretStr repr method output"""
+        pydantic_secret_str = repr(self.secret)
         actual = repr(SecretStr(self.secret_value))
         expected = "SecretStr('**********')"
-        assert original == actual == expected
+        assert pydantic_secret_str == actual == expected
 
     def test_concatenate(self) -> None:
         """check that concatenating a SecretStr with a non-str object raises an exception"""
