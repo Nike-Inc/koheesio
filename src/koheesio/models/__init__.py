@@ -830,16 +830,13 @@ class SecretStr(PydanticSecretStr):
         try:
             v = str(v)
             return str(v)
-        except Exception as e:
-            raise TypeError("Cannot convert to string") from e
+        except TypeError as e:
+            raise TypeError(f"Cannot concatenate SecretStr with type {type(v).__name__}") from e
     
     def _concatenate(self, other: Any, reverse: bool = False) -> "SecretStr":
         """Helper method to handle concatenation logic"""
-        try:
-            other_str, secret_str = self._ensure_str(other), self.get_secret_value()
-            return SecretStr(other_str + secret_str) if reverse else SecretStr(secret_str + other_str)
-        except Exception as e:
-            raise TypeError(f"Cannot concatenate SecretStr with type {type(other).__name__}") from e
+        other_str, secret_str = self._ensure_str(other), self.get_secret_value()
+        return SecretStr(other_str + secret_str) if reverse else SecretStr(secret_str + other_str)
 
     def __add__(self, other: Any) -> "SecretStr":
         """Support concatenation when the SecretStr instance is on the right side of the + operator.

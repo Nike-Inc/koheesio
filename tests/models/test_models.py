@@ -316,7 +316,7 @@ class TestSecretStr:
         # arrange: a class that does not implement __str__
         class StrMethodRaisesException:
             def __str__(self):  # type: ignore
-                raise ValueError("Cannot convert to string")
+                raise TypeError("Cannot convert to string")
 
         # act/assert
         secret = SecretStr(self.secret_value)
