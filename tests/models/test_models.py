@@ -1,6 +1,6 @@
 """Test suite for Koheesio's extended BaseModel class"""
 
-from typing import Optional
+from typing import Optional, Any
 import json
 from textwrap import dedent
 
@@ -293,57 +293,55 @@ class TestSecretStr:
     """Test suite for SecretStr class"""
     # reference values
     secret_value = "foobarbazbladibla"
-    secret = PydanticSecretStr(secret_value)
+    pydantic_secret = PydanticSecretStr(secret_value)
+    koheesio_secret = SecretStr(secret_value)
     prefix = "prefix"
     suffix = "suffix"
+
+    class StrMethodRaisesException:
+        """a class that does not implement __str__ raise a TypeError"""
+        def __str__(self):  # type: ignore
+            raise TypeError("Cannot convert to string")
     
     def test_secret_str_str(self) -> None:
         """check that the integrity of the str method in SecretStr is preserved
         by comparing Pydantic's SecretStr with Koheesio's SecretStr str method output"""
-        pydantic_secret_str = str(self.secret)
-        actual = str(SecretStr(self.secret_value))
+        pydantic_secret_str = str(self.pydantic_secret)
+        actual = str(self.koheesio_secret)
         expected = "**********"
         assert pydantic_secret_str == actual == expected
     
     def test_secret_str_repr(self) -> None:
         """check that the integrity of the repr method in SecretStr is preserved
         by comparing Pydantic's SecretStr with Koheesio's SecretStr repr method output"""
-        pydantic_secret_str = repr(self.secret)
-        actual = repr(SecretStr(self.secret_value))
+        pydantic_secret_str = repr(self.pydantic_secret)
+        actual = repr(self.koheesio_secret)
         expected = "SecretStr('**********')"
         assert pydantic_secret_str == actual == expected
 
-    def test_concatenate(self) -> None:
-        """check that concatenating a SecretStr with a non-stringable object raises an exception
-        and check that concatenating various types with a SecretStr does not raise any exceptions"""
-        # arrange: a class that does not implement __str__ raise a TypeError
-        class StrMethodRaisesException:
-            def __str__(self):  # type: ignore
-                raise TypeError("Cannot convert to string")
-
-        # act/assert
-        secret = SecretStr(self.secret_value)
+    @pytest.mark.parametrize("other", [
+        42,  # int
+        3.14,  # float
+        True,  # bool
+        None,  # None
+        [1, 2, 3],  # list
+        {"key": "value"},  # dict
+        (1, 2),  # tuple
+        {1, 2, 3},  # set
+        bytes("byte_string", "utf-8"),  # bytes
+        StrMethodRaisesException()  # custom class that raises TypeError in __str__
+    ])
+    def test_concatenate_unhappy(self, other: Any) -> None:
+        """check that concatenating a SecretStr with a non-stringable objects raises an exception"""
         with pytest.raises(TypeError):
-            _ = secret + StrMethodRaisesException()
-
-        # should not raise any exceptions
-        secret + "test"
-        secret + 42  # int 
-        secret + 3.14  # float
-        secret + True  # bool
-        secret + None  # None
-        secret + [1, 2, 3]  # list
-        secret + {"key": "value"}  # dict
-        secret + (1, 2)  # tuple
-        secret + {1, 2, 3}  # set
-        secret + bytes("byte_string", "utf-8")  # bytes
+            _ = self.koheesio_secret + other
 
     def test_secret_str_with_f_string_secretstr(self) -> None:
         """check that a str and SecretStr can be combined with one another using f-strings
         Test through using f-string with a SecretStr. Here we expect that the secret gets properly processed.
         """
         # arrange
-        secret = SecretStr(self.secret_value)
+        secret = self.koheesio_secret
         # act
         actual_secret = SecretStr(f"{self.prefix}{secret}{self.suffix}")
         # assert
@@ -355,7 +353,7 @@ class TestSecretStr:
         Test through using f-string with a str. Here we expect the secret to remain hidden.
         """
         # arrange
-        secret = SecretStr(self.secret_value)
+        secret = self.koheesio_secret
         # act
         actual_str = f"{self.prefix}{secret}{self.suffix}"
         # assert
@@ -365,7 +363,7 @@ class TestSecretStr:
     def test_secret_str_add(self) -> None:
         """check that a SecretStr and a str can be combined with one another using concatenation"""
         # arrange
-        secret = SecretStr(self.secret_value)
+        secret = self.koheesio_secret
         # act
         actual = secret + self.suffix
         # assert
@@ -375,7 +373,7 @@ class TestSecretStr:
     def test_secret_str_radd(self) -> None:
         """check that a str and SecretStr can be combined with one another using concatenation"""
         # arrange
-        secret = SecretStr(self.secret_value)
+        secret = self.koheesio_secret
         # act
         actual = self.prefix + secret
         # assert
@@ -385,7 +383,7 @@ class TestSecretStr:
     def test_add_two_secret_str(self) -> None:
         """check that two SecretStr can be added together"""
         # arrange
-        secret = SecretStr(self.secret_value)
+        secret = self.koheesio_secret
         # act
         actual = secret + secret
         # assert
