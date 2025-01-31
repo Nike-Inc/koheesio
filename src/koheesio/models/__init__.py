@@ -824,27 +824,23 @@ class SecretStr(PydanticSecretStr):
 
     @staticmethod
     def _ensure_str(v: Any) -> str:
-        """Ensure that the given value is a string"""
+        """Ensure that the given value is stringable"""
         if isinstance(v, PydanticSecretStr):
             return v.get_secret_value()
         elif isinstance(v, str):
             return v
         raise TypeError(f"Cannot concatenate SecretStr with type {type(v).__name__}")
-    
-    def _concatenate(self, other: Any, reverse: bool = False) -> "SecretStr":
-        """Helper method to handle concatenation logic"""
-        other_str, secret_str = self._ensure_str(other), self.get_secret_value()
-        return SecretStr(other_str + secret_str) if reverse else SecretStr(secret_str + other_str)
 
     def __add__(self, other: Union[str, SecretStr]) -> "SecretStr":
-        """Support concatenation when the SecretStr instance is on the right side of the + operator.
+        """Support concatenation when the SecretStr instance is on the left side of the + operator.
         
         Raises
         ------
         TypeError
             If concatenation fails.
         """
-        return self._concatenate(other)
+        right, left = self._ensure_str(other), self.get_secret_value()
+        return SecretStr(left + right) 
     
     def __radd__(self, other: Union[str, SecretStr]) -> "SecretStr":
         """Support concatenation when the SecretStr instance is on the right side of the + operator.
@@ -854,7 +850,8 @@ class SecretStr(PydanticSecretStr):
         TypeError
             If concatenation fails.
         """
-        return self._concatenate(other, reverse=True)
+        left, right = self._ensure_str(other), self.get_secret_value()
+        return SecretStr(left + right) 
 
     def __format__(self, format_spec: str) -> Union[str, 'SecretStr']:
         """Advanced f-string formatting support.
