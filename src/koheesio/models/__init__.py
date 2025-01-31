@@ -869,7 +869,9 @@ class SecretStr(PydanticSecretStr):
         except IndexError:
             caller_context = ""
 
+        # safe context: the secret value is returned
         if 'SecretStr(f' in caller_context:
             return self.get_secret_value()
 
-        return str(self)
+        # unsafe context: the SecretStr instance is returned
+        return super().__format__(format_spec)
