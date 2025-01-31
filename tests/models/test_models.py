@@ -314,8 +314,9 @@ class TestSecretStr:
         assert pydantic_secret_str == actual == expected
 
     def test_concatenate(self) -> None:
-        """check that concatenating a SecretStr with a non-str object raises an exception"""
-        # arrange: a class that does not implement __str__
+        """check that concatenating a SecretStr with a non-stringable object raises an exception
+        and check that concatenating various types with a SecretStr does not raise any exceptions"""
+        # arrange: a class that does not implement __str__ raise a TypeError
         class StrMethodRaisesException:
             def __str__(self):  # type: ignore
                 raise TypeError("Cannot convert to string")
