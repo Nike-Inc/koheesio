@@ -311,6 +311,15 @@ name.".*(pyspark35r).*".env-vars = [
   { key = "SPARK_TESTING", value = "True" },
 ]
 
+[tool.hatch.build.targets.sdist]
+include = [
+  "src/*.py",
+  "/tests",
+]
+exclude = [
+  "*.log",
+]
+
 
 [tool.pytest.ini_options]
 addopts = "-q --color=yes --order-scope=module"
