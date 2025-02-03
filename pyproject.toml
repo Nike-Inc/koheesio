@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling<=1.18.0"]
 build-backend = "hatchling.build"
 
 [project]
@@ -309,15 +309,6 @@ name.".*(pyspark35r).*".env-vars = [
   # spark to start local spark server and enbale remote session
   { key = "SPARK_REMOTE", value = "local" },
   { key = "SPARK_TESTING", value = "True" },
-]
-
-[tool.hatch.build.targets.sdist]
-include = [
-  "src/*.py",
-  "/tests",
-]
-exclude = [
-  "*.log",
 ]
 
 
