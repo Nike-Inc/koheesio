@@ -5,6 +5,8 @@ import pytest
 from koheesio.spark import DataFrame, SparkSession  # type: ignore
 from koheesio.spark.transformations.http_request import HttpRequestTransformation  # type: ignore
 
+from koheesio.spark.transformations.http_request import url_parts
+
 
 @pytest.fixture
 def input_df(spark: SparkSession) -> DataFrame:
@@ -43,6 +45,33 @@ class TestHttpRequestTransformation:
 
     """
 
+    test_data_url_regex = [
+        # url, expected_protocol, expected_base_url, expected_port, expected_rest
+        ("https://example.com:443/some/random/url", "https", "example.com", "443", "/some/random/url"),
+        ("http://something.a.bit.more.complicated:9999/foo/bar", "http", "something.a.bit.more.complicated", "9999", "/foo/bar"),
+        ("https://no-port-example.ext/42/index.jsp?foo=bar&baz=bla", "https", "no-port-example.ext", None, "/42/index.jsp?foo=bar&baz=bla"),
+        ("ftp://ftp.example.com/resource.txt", "ftp", "ftp.example.com", None, "/resource.txt"),
+        ("http://localhost:8080/test", "http", "localhost", "8080", "/test"),
+        ("https://sub.domain.example.com/path/to/resource?query=string&another=value", "https", "sub.domain.example.com", None, "/path/to/resource?query=string&another=value"),
+        ("http://192.168.1.1:8080/admin", "http", "192.168.1.1", "8080", "/admin"),
+        ("https://user:password@example.com:8443/path?query=param#fragment", "https", "user:password@example.com", "8443", "/path?query=param#fragment"),
+        ("http://example.org", "http", "example.org", None, None),
+        ("https://example.net/path/to/resource.html", "https", "example.net", None, "/path/to/resource.html"),
+        ("http://example.com:80/path/to/resource?query=param", "http", "example.com", "80", "/path/to/resource?query=param"),
+        ("custom_protocol://base_url:foo/rest", "custom_protocol", "base_url:foo", None, "/rest"),
+        ("WEBDAV://example.com:8080/path/to/resource", "WEBDAV", "example.com", "8080", "/path/to/resource"),
+    ]
+
+    @pytest.mark.parametrize("url, expected_protocol, expected_base_url, expected_port, expected_path", test_data_url_regex)
+    def test_url_parts(self, url, expected_protocol, expected_base_url, expected_port, expected_path):
+        match = url_parts.match(url)
+
+        assert match is not None, f"Failed to match {url}"
+        assert match.group("protocol") == expected_protocol, f"Failed to match protocol: {match.groupdict()}"
+        assert match.group("port") == expected_port, f"Failed to match port: {match.groupdict()}"
+        assert match.group("base_url") == expected_base_url, f"Failed to match base_url: {match.groupdict()}"
+        assert match.group("path") == expected_path, f"Failed to match rest: : {match.groupdict()}"
+
     def test_downloading_files(self, input_df: DataFrame, download_path: Path) -> None:
         """Test that the files are downloaded and the DataFrame is transformed correctly."""
         # Arrange
@@ -59,8 +88,6 @@ class TestHttpRequestTransformation:
         actual_data = sorted(
             [row.asDict()["content"] for row in transformed_df.select("content").collect()]
         )
-
-        print(actual_data)
 
         # Assert
 

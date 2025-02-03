@@ -17,90 +17,31 @@ from koheesio.spark.transformations import Transformation
 from koheesio.spark.utils.common import get_column_name
 from koheesio.steps.download_file import DownloadFileStep, FileWriteMode
 from pyspark.sql.functions import udf, col, lit
+from koheesio.models import SecretStr, Optional
+import re
 
 import socket
 import ssl
 
-_HttpRequestTransformation_chunk_size_column = "HttpRequestTransformation_chunk_size_column"
-_HttpRequestTransformation_method_column = "HttpRequestTransformation_method_column"
-_HttpRequestTransformation_content_type_column = "HttpRequestTransformation_content_type_column"
-_HttpRequestTransformation_authorization_token_column = "HttpRequestTransformation_authorization_token_column"
-_HttpRequestTransformation_body_column = "HttpRequestTransformation_authorization_body_column"
-
-class HttpRequestTransformation(Transformation):
-
-    column: Union[Column, str] = Field(
-        default="",
-        description="The column that holds the URLs to request data from.",
-    )
-    target_column: str = Field(
-        default=None,
-        alias="target_suffix",
-        description="The column that the http result body is written to.",
-    )
-    chunk_size: int = Field(
-        8192,
-        ge=16,
-        description="The size (in bytes) of the chunks to download the file in, must be greater than or equal to 16.",
-    )
-    method: str = Field(
-        default="GET",
-        description="The HTTP method to use for the request.",
-    )
-    content_type: str = Field(
-        default="application/json",
-        description="The content type of the request.",
-    )
-    authorization_token: Union[str, None] = Field(
-        default=None,
-        description="The authorization token for the request.",
-    )
-    body_column: Union[str, None] = Field(
-        default=None,
-        description="The body_column name to be used in the request. If None, no body is sent with the request. GET requests do not have a body for instance.",
-    )
-
-    def execute(self):
-        """
-        Download files from URLs in the specified column.
-        """
-        # Collect the URLs from the DataFrame and process them
-        source_column_name = self.column
-        if not isinstance(source_column_name, str):
-            source_column_name = get_column_name(source_column_name)
-
-        self.df = self.df.withColumn(
-            self.target_column,
-            execute_http_request(
-                col(source_column_name), 
-                lit(self.method),
-                lit(self.content_type),
-                lit(self.authorization_token),
-                col(self.body_column) if self.body_column else lit(None), 
-                lit(self.chunk_size)
-            )
-        )
-
-        self.output.df = self.df
+url_parts = re.compile(
+    # protocol is a sequence of letters, digits, and characters followed by ://
+    r'^(?P<protocol>[^:]+)://'
+    # base_url is a sequence of characters until encountering a `/` or a `:` followed by 1 to 5 digits
+    r'(?P<base_url>\S+?(?=:\d{1,5}/|/|$))'
+    # port is an optional sequence of digits between 0 and 65535 preceded by a colon
+    r'(?::(?P<port>\d{1,5}))?'
+    # path is the path of the url
+    r'(?P<path>\/.*)?$'
+)
 
 @udf
 def execute_http_request(url: str, method: str, content_type: str, authorization_token: str = None, body: str = None, chunk_size: int = 8196) -> str:
-    
-    protocol, rest = url.split("://")
-    base_url = ""
-    port = 0
-    path = ""
-    # Check if there is a port number in the URL. If not, use the default port number for the protocol. 80 for http and 443 for https
-    if ":" in rest:
-        base_url, rest = rest.split(":", 1)
-        if "/" in rest:
-            port, path = rest.split("/", 1)
-        else:
-            port = rest
-        port = int(port)
-    else:
-        base_url, path = rest.split("/", 1)
-        port = 80 if protocol == "http" else 443
+
+    match = url_parts.match(url)
+    protocol = match.group("protocol")
+    base_url = match.group("base_url") 
+    port = int(match.group("port")) if not match.group("port") is None else 80
+    path = match.group("path") if not match.group("path") is None else "/"
 
     path = "/" + path
 
@@ -142,7 +83,7 @@ def execute_http_request(url: str, method: str, content_type: str, authorization
             chunk = s.recv(chunk_size)
             if len(chunk) == 0:     # No more data received, quitting
                 break
-            response = response + chunk
+            response += chunk
 
         result = response.decode('iso-8859-1')
 
@@ -154,3 +95,59 @@ def execute_http_request(url: str, method: str, content_type: str, authorization
         content = "ERROR - " + status_code
 
     return content
+
+class HttpRequestTransformation(Transformation):
+
+    column: Union[Column, str] = Field(
+        default="",
+        description="The column that holds the URLs to request data from.",
+    )
+    target_column: str = Field(
+        default=None,
+        alias="target_suffix",
+        description="The column that the http result body is written to.",
+    )
+    chunk_size: int = Field(
+        8192,
+        ge=16,
+        description="The size (in bytes) of the chunks to download the file in, must be greater than or equal to 16.",
+    )
+    method: str = Field(
+        default="GET",
+        description="The HTTP method to use for the request.",
+    )
+    content_type: str = Field(
+        default="application/json",
+        description="The content type of the request.",
+    )
+    authorization_token: Optional[SecretStr] = Field(
+        default=None,
+        description="The authorization token for the request.",
+    )
+    body_column: Optional[str] = Field(
+        default=None,
+        description="The body_column name to be used in the request. If None, no body is sent with the request. GET requests do not have a body for instance.",
+    )
+
+    def execute(self):
+        """
+        Download files from URLs in the specified column.
+        """
+        # Collect the URLs from the DataFrame and process them
+        source_column_name = self.column
+        if not isinstance(source_column_name, str):
+            source_column_name = get_column_name(source_column_name)
+
+        self.df = self.df.withColumn(
+            self.target_column,
+            execute_http_request(
+                col(source_column_name), 
+                lit(self.method),
+                lit(self.content_type),
+                lit(self.authorization_token),
+                col(self.body_column) if self.body_column else lit(None), 
+                lit(self.chunk_size)
+            )
+        )
+
+        self.output.df = self.df
