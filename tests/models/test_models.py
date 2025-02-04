@@ -1,16 +1,17 @@
 """Test suite for Koheesio's extended BaseModel class"""
 
-from typing import Optional, Any
+from typing import Any, Optional
 import json
 from textwrap import dedent
 
 import pytest
 import yaml
 
+from pydantic import SecretBytes as PydanticSecretBytes
 from pydantic import SecretStr as PydanticSecretStr
 
 from koheesio.context import Context
-from koheesio.models import BaseModel, ExtraParamsMixin, SecretStr
+from koheesio.models import BaseModel, ExtraParamsMixin, SecretBytes, SecretStr
 
 
 class TestBaseModel:
@@ -389,3 +390,86 @@ class TestSecretStr:
         # assert
         expected = PydanticSecretStr(self.secret_value *2)
         assert actual.get_secret_value() == expected.get_secret_value()
+
+    def test_secret_str_mul_and_rmul(self) -> None:
+        """check that a SecretBytes can be multiplied by an integer"""
+        # arrange
+        secret = self.koheesio_secret
+        # act
+        actual_mul = secret * 3
+        actual_rmul = 3 * secret
+        # assert
+        expected = PydanticSecretStr(self.secret_value * 3)
+        assert actual_mul.get_secret_value() == actual_rmul.get_secret_value() == expected.get_secret_value()
+
+
+class TestSecretBytes:
+    """Test suite for SecretBytes class"""
+    # reference values
+    secret_value = b"foobarbazbladibla"
+    pydantic_secret = PydanticSecretBytes(secret_value)
+    koheesio_secret = SecretBytes(secret_value)
+    prefix = b"prefix"
+    suffix = b"suffix"
+
+    def test_secret_bytes_str(self) -> None:
+        """check that the str method in SecretBytes is preserved"""
+        secret = self.koheesio_secret
+        actual = str(secret)
+        expected = "b'**********'"
+        assert actual == expected
+    
+    def test_secret_bytes_repr(self) -> None:
+        """check that the repr method in SecretBytes is preserve"""
+        secret = self.koheesio_secret
+        actual = repr(secret)
+        expected = "SecretBytes(b'**********')"
+        assert actual == expected
+
+    def test_secret_bytes_add(self) -> None:
+        """check that a SecretBytes and a bytes can be combined with one another using concatenation"""
+        # arrange
+        secret = self.koheesio_secret
+        # act
+        actual = secret + self.suffix
+        # assert
+        expected = PydanticSecretBytes(self.secret_value + self.suffix)
+        assert actual.get_secret_value() == expected.get_secret_value()
+
+    def test_secret_bytes_radd(self) -> None:
+        """check that a bytes and SecretBytes can be combined with one another using concatenation"""
+        # arrange
+        secret = self.koheesio_secret
+        # act
+        actual = self.prefix + secret
+        # assert
+        expected = PydanticSecretBytes(self.prefix + self.secret_value)
+        assert actual.get_secret_value() == expected.get_secret_value()
+
+    def test_add_two_secret_bytes(self) -> None:
+        """check that two SecretBytes can be added together"""
+        # arrange
+        secret = self.koheesio_secret
+        # act
+        actual = secret + secret
+        # assert
+        expected = PydanticSecretBytes(self.secret_value *2)
+        assert actual.get_secret_value() == expected.get_secret_value()
+
+    def test_secret_bytes_mul_and_rmul(self) -> None:
+        """check that a SecretBytes can be multiplied by an integer"""
+        # arrange
+        secret = self.koheesio_secret
+        # act
+        actual_mul = secret * 3
+        actual_rmul = 3 * secret
+        # assert
+        expected = PydanticSecretBytes(self.secret_value * 3)
+        assert actual_mul.get_secret_value() == actual_rmul.get_secret_value() == expected.get_secret_value()
+
+    def test_secret_data_type(self) -> None:
+        """check that the correct type is returned. Pydantic's SecretBytes maintains the data type passed to it"""
+        # arrange
+        secret = SecretBytes([1, 2, 3])
+        # act and assert
+        assert isinstance(secret.get_secret_value(), list)
