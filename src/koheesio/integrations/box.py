@@ -733,6 +733,6 @@ class BoxBufferFileWriter(BoxBaseFileWriter):
     def action(self):
         # Writes the data to the buffer using the provided buffer writer
         self.buffer_writer.write()
-        buffer = self.buffer_writer.output.buffer
+        self.buffer_writer.output.rewind_buffer()
 
-        self.write_file(file_stream=buffer, file_name=self.file_name)
+        self.write_file(file_stream=self.buffer_writer.output.buffer, file_name=self.file_name)
