@@ -214,7 +214,7 @@ class DeltaTableStep(SparkStep):
                 if override:
                     self.log.debug(
                         f"Property `{key}` presents in `{self.table_name}` and has value `{persisted_properties[key]}`."
-                        f"Override is enabled.The value will be changed to `{v_str}`."
+                        f"Override is enabled. The value will be changed to `{v_str}`."
                     )
                     _alter_table()
                 else:

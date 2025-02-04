@@ -91,6 +91,13 @@ def is_data_stale(
     bool
         True if data is considered stale by exceeding the defined time limits or if the current
         day equals to `refresh_day_num`. Returns False if conditions are not met.
+    
+    Raises
+    ------
+    ValueError
+        If neither time components nor `dt_interval` are provided.
+        If `refresh_day_num` is not between 0 and 6.
+        If the total period exceeds 7 days when `refresh_day_num` is set.
     """
 
     if not any((months, weeks, days, hours, minutes, seconds)) and dt_interval is None:

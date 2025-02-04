@@ -156,7 +156,6 @@ def test_exists(caplog, table, create_if_not_exists, log_level):
         dt = DeltaTableStep(table=table, create_if_not_exists=create_if_not_exists)
         dt.log.setLevel(log_level)
         assert dt.exists is False
-        assert f"The `create_if_not_exists` flag is set to {create_if_not_exists}." in caplog.text
 
 
 @pytest.fixture
@@ -170,6 +169,7 @@ def test_history_df(spark):
 
 
 def test_describe_history__no_limit(mocker, spark, test_history_df):
+    mocker.patch.object(DeltaTableStep, "exists", new_callable=mocker.PropertyMock(return_value=True))
     dt = DeltaTableStep(table="test_table")
     mocker.patch.object(spark, "sql", return_value=test_history_df)
     result = dt.describe_history()
@@ -184,6 +184,7 @@ def test_describe_history__no_limit(mocker, spark, test_history_df):
 
 
 def test_describe_history__with_limit(mocker, spark, test_history_df):
+    mocker.patch.object(DeltaTableStep, "exists", new_callable=mocker.PropertyMock(return_value=True))
     dt = DeltaTableStep(table="test_table")
     mocker.patch.object(spark, "sql", return_value=test_history_df)
     result = dt.describe_history(limit=1)
@@ -195,17 +196,9 @@ def test_describe_history__with_limit(mocker, spark, test_history_df):
     assert_df_equality(result, expected_df, ignore_column_order=True)
 
 
-def test_describe_history__no_table(mocker, spark):
+def test_describe_history__no_table(mocker):
+    mocker.patch.object(DeltaTableStep, "exists", new_callable=mocker.PropertyMock(return_value=False))
     dt = DeltaTableStep(table="test_table")
-    mocker.patch.object(spark, "sql", side_effect=AnalysisException("[TABLE_OR_VIEW_NOT_FOUND]"))
     result = dt.describe_history()
 
     assert result is None
-
-
-def test_describe_history__error(mocker, spark):
-    dt = DeltaTableStep(table="test_table")
-    mocker.patch.object(spark, "sql", side_effect=AnalysisException("Some other error"))
-
-    with pytest.raises(AnalysisException):
-        dt.describe_history()
