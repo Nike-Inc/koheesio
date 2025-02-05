@@ -416,10 +416,11 @@ class BoxCsvFileReader(BoxReaderBase):
         """
         df = None
         for f in self.file:
-            self.log.debug(f"Reading contents of file with the ID '{f}' into Spark DataFrame")
+            self.log.debug(f"Currently processing file with ID '{f}'")
             file = self.client.file(file_id=f)
-            data = file.content().decode(self.file_encoding)
 
+            self.log.debug(f"Reading file with ID '{file.object_id}' and name '{file.get().name}' into Spark DataFrame")
+            data = file.content().decode(self.file_encoding)
             temp_df = InMemoryDataReader(data=data, schema=self.schema_, params=self.params, format="csv").read()
             
             # type: ignore
