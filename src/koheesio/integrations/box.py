@@ -11,15 +11,14 @@ Prerequisites
 """
 
 from typing import IO, Any, Dict, Optional, Union
-from abc import ABC
-from io import BytesIO, StringIO
+from abc import ABC, abstractmethod
+from io import BytesIO
 from pathlib import PurePath
 import re
 
 from boxsdk import Client, JWTAuth
 from boxsdk.object.file import File
 from boxsdk.object.folder import Folder
-import pandas as pd
 
 from pyspark.sql.functions import expr, lit
 from pyspark.sql.types import StructType
@@ -610,7 +609,7 @@ class BoxToBoxFileMove(BoxFileBase):
         )
 
 
-class BoxBaseFileWriter(BoxFolderBase):
+class BoxBaseFileWriter(BoxFolderBase, ABC):
     """
         Base class for writing files to Box
     """
@@ -623,6 +622,7 @@ class BoxBaseFileWriter(BoxFolderBase):
         file: File = Field(default=..., description="File object in Box")
         shared_link: str = Field(default=..., description="Shared link for the Box file")
 
+    @abstractmethod
     def action(self):
         raise NotImplementedError("You are not supposed to use this class directly, this serves as a base model for"
                                   " Koheesio Box file writers")
@@ -722,13 +722,35 @@ class BoxFileWriter(BoxBaseFileWriter):
 
 
 class BoxBufferFileWriter(BoxBaseFileWriter):
-    """ TODO: add class description """
+    """
+    Buffer version of the BoxFileWriter. This class relies on BufferWriter implementations class to write
+    the file content into a buffer first, and then it will reuse this to source data to be written to box.
 
-    buffer_writer: BufferWriter = Field(default=...,
+    Examples
+    --------
+    ```python
+    from koheesio.spark.writers.buffer import PandasCsvBufferWriter
+
+    df = spark.createDataFrame([("A", 1), ("B", 2)], ["foo", "bar"])
+    buffer_writer = PandasCsvBufferWriter(df=df)
+
+    auth_params = {...}
+
+    box_buffer_writer = BoxBufferFileWriter(
+        **auth_params,
+        path="/foo",
+        file_name="upload.txt",
+        buffer_writer=buffer_writer
+    )
+
+    f = box_buffer_writer.execute()
+
+    ```
+    """
+
+    buffer_writer: InstanceOf[BufferWriter] = Field(default=...,
                                         description="Koheesio buffer writer that will be used to produce the output")
-    file_name: str = Field(default=..., description="Name to be used for the Box file that is going to be written")
-
-    # TODO: add warning if buffer_writer dataframe is emtpy (or None)?
+    file_name: str = Field(default=..., description="Name to be used for the Box file")
 
     def action(self):
         # Writes the data to the buffer using the provided buffer writer
