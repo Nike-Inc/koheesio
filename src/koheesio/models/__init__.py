@@ -765,10 +765,10 @@ In case an individual column is passed, the value will be coerced to a list.
 """
 
 
-class SecretMixin:
+class _SecretMixin:
     """Mixin class that provides additional functionality to Pydantic's SecretStr and SecretBytes classes."""
 
-    def __add__(self, other: Union[str, bytes, 'SecretMixin']) -> 'SecretMixin':
+    def __add__(self, other: Union[str, bytes, '_SecretMixin']) -> '_SecretMixin':
         """Support concatenation when the SecretMixin instance is on the left side of the + operator.
         
         Raises
@@ -777,10 +777,10 @@ class SecretMixin:
             If concatenation fails.
         """
         left = self.get_secret_value()
-        right = other.get_secret_value() if isinstance(other, SecretMixin) else other
+        right = other.get_secret_value() if isinstance(other, _SecretMixin) else other
         return self.__class__(left + right)  # type: ignore
     
-    def __radd__(self, other: Union[str, bytes, 'SecretMixin']) -> 'SecretMixin':
+    def __radd__(self, other: Union[str, bytes, '_SecretMixin']) -> '_SecretMixin':
         """Support concatenation when the SecretMixin instance is on the right side of the + operator.
 
         Raises
@@ -789,10 +789,10 @@ class SecretMixin:
             If concatenation fails.
         """
         right = self.get_secret_value()
-        left = other.get_secret_value() if isinstance(other, SecretMixin) else other
+        left = other.get_secret_value() if isinstance(other, _SecretMixin) else other
         return self.__class__(left + right)  # type: ignore
     
-    def __mul__(self, n: int) -> 'SecretMixin':
+    def __mul__(self, n: int) -> '_SecretMixin':
         """Support multiplication when the SecretMixin instance is on the left side of the * operator.
 
         Raises
@@ -804,7 +804,7 @@ class SecretMixin:
             return self.__class__(self.get_secret_value() * n)  # type: ignore
         return NotImplemented
     
-    def __rmul__(self, n: int) -> 'SecretMixin':
+    def __rmul__(self, n: int) -> '_SecretMixin':
         """Support multiplication when the SecretMixin instance is on the right side of the * operator.
 
         Raises
@@ -815,7 +815,7 @@ class SecretMixin:
         return self.__mul__(n)
 
 
-class SecretStr(PydanticSecretStr, SecretMixin):
+class SecretStr(PydanticSecretStr, _SecretMixin):
     """A string type that ensures the secrecy of its value, extending Pydantic's SecretStr.
 
     This class provides additional functionality over Pydantic's SecretStr, including:
@@ -896,7 +896,7 @@ class SecretStr(PydanticSecretStr, SecretMixin):
         return super().__format__(format_spec)
     
 
-class SecretBytes(PydanticSecretBytes, SecretMixin):
+class SecretBytes(PydanticSecretBytes, _SecretMixin):
     """A bytes type that ensures the secrecy of its value, extending Pydantic's SecretBytes.
 
     This class provides additional functionality over Pydantic's SecretBytes, including:
