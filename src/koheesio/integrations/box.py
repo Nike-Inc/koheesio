@@ -403,6 +403,16 @@ class BoxCsvFileReader(BoxReaderBase):
 
     file: Union[str, list[str]] = Field(default=..., description="ID or list of IDs for the files to read.")
 
+    @model_validator(mode="after")
+    def _validate_file(self) -> "BoxCsvFileReader":
+        """
+           Validate 'file' parameter
+        """
+        if not isinstance(self.file, list):
+            self.file = [self.file]
+        return self
+
+
     def execute(self) -> BoxReaderBase.Output:
         """
         Loop through the list of provided file identifiers and load data into dataframe.

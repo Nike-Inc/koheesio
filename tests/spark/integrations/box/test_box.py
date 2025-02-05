@@ -253,6 +253,14 @@ class TestBoxCsvReader:
             ("meta_load_timestamp", "timestamp"),
         ]
 
+    def test_file_attribute_validation(self, dummy_box):
+        """" Tests that if one single file id is provided, it will be converted to a list """
+        bcr = BoxCsvFileReader(
+            **COMMON_PARAMS,
+            file="this-is-a-single-file-id"
+        )
+        assert bcr.file == ["this-is-a-single-file-id"]
+
 
 class TestBoxCsvPathReader:
     def test_execute_w_files(self, spark, dummy_box):
