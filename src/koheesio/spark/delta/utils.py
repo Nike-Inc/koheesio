@@ -1,57 +1,34 @@
 """
 Utils for working with Delta tables.
 """
+from typing import Optional, Union
 from datetime import datetime, timedelta
 
 from koheesio.logger import LoggingFactory
+from koheesio.models import Field, field_validator, model_validator
 from koheesio.spark.delta import DeltaTableStep
-from koheesio.utils.date_time import DTInterval
+from koheesio.steps import Step, StepOutput
 
 log = LoggingFactory.get_logger(name=__name__, inherit_from_koheesio=True)
 
 
-def is_data_stale(
-    table: DeltaTableStep,
-    months: int = 0,
-    weeks: int = 0,
-    days: int = 0,
-    hours: int = 0,
-    minutes: int = 0,
-    seconds: int = 0,
-    dt_interval: DTInterval = None,
-    refresh_day_num: int = None,
-) -> bool:
+class StaleDataCheckStep(Step):
     """
-    Determines if the data inside a table is stale based on the elapsed time since 
+    Determines if the data inside the table is stale based on the elapsed time since 
     the last modification and, optionally, based on the current week day.
 
-    The function allows specifying limits in terms of months, weeks, days, hours, minutes, and seconds to determine 
-    how old data can be before it is considered stale. If `refresh_day_num` is provided, it adds an extra condition 
-    to mark data as stale if the current day matches with the specified weekday.
+    The staleness interval is specified as a `timedelta` object.
+    If `refresh_day_num` is provided, it adds an extra condition to mark the data as stale if the current day matches with the specified weekday.
 
-    The last modification date is taken from the Delta Log.
+    The date of the last modification of the table is taken from the Delta Log.
 
     Parameters
     ----------
-    table : str
-        The path to the table to check.
-    months : int, default 0
-        Threshold in months to determine staleness.
-    weeks : int, default 0
-        Threshold in weeks.
-    days : int, default 0
-        Threshold in days.
-    hours : int, default 0
-        Threshold in hours.
-    minutes : int, default 0
-        Threshold in minutes.
-    seconds : int, default 0
-        Threshold in seconds.
-    dt_interval : DTInterval, optional
-        An alternative to directly specifying time components.
-        This should be an instance of DTInterval, which provides
-        the `to_timedelta` method that converts structured time
-        descriptions into a timedelta object.
+    table : Union[DeltaTableStep, str]
+        The table to check for stale data.
+    interval : timedelta
+        The interval to consider data stale. Users can pass a `timedelta` object or an ISO-8601 compliant string representing the interval.
+        For example `P1W3DT2H30M` is equivalent to `timedelta(weeks=1, days=3, hours=2, minutes=30)`.
     refresh_day_num : int, optional
         The weekday number (0=Monday, 6=Sunday) on which
         data should be refreshed if it has not already. Enforces
@@ -64,25 +41,31 @@ def is_data_stale(
 
     Example 1: Last modified on January 28th, 2025, 11:00:00 checking with a 3-day threshold:
     ```
-    is_stale = is_data_stale(table_name, days=3)
+    is_stale = StaleDataCheckStep(table=table, interval=timedelta(days=3)).execute().is_data_stale
     print(is_stale)  # True, as the last modification was 3 days and 1 hour ago which is more than 3 days.
     ```
 
     Example 2: Last modified on January 28th, 2025, 11:00:00 checking with a 3-day and 1-hour threshold:
     ```
-    is_stale = is_data_stale(table_name, days=3, hours=1)
+    is_stale = StaleDataCheckStep(table=table, interval=timedelta(days=3, hours=1)).execute().is_data_stale
     print(is_stale)  # True, as the last modification was 3 days and 1 hour ago which is the same as the threshold.
     ```
 
     Example 3: Last modified on January 28th, 2025, 11:00:00 checking with a 3-day and 2-hour threshold:
     ```
-    is_stale = is_data_stale(table_name, days=3, hours=2)
+    is_stale = StaleDataCheckStep(table=table, interval=timedelta(days=3, hours=2)).execute().is_data_stale
     print(is_stale)  # False, as the last modification was 3 days and 1 hour ago which is less than 3 days and 2 hours.
     ```
 
-    Example 4: Last modified on January 28th, 2025, 11:00:00 checking with a 5-day threshold and refresh_day_num = 5 (Friday):
+    Example 4: Same as example 3 but with the interval defined as an ISO-8601 string:
     ```
-    is_stale = is_data_stale(table_name, days=5, refresh_day_num=5)
+    is_stale = StaleDataCheckStep(table=table, interval="P3DT2H").execute().is_data_stale
+    print(is_stale)  # False, as the last modification was 3 days and 1 hour ago which is less than 3 days and 2 hours.
+    ```
+
+    Example 5: Last modified on January 28th, 2025, 11:00:00 checking with a 5-day threshold and refresh_day_num = 5 (Friday):
+    ```
+    is_stale = StaleDataCheckStep(table=table, interval=timedelta(days=5), refresh_day_num=5).execute().is_data_stale
     print(is_stale)  # True, 3 days and 1 hour is less than 5 days but refresh_day_num is the same as the current day.
     ```
 
@@ -95,78 +78,96 @@ def is_data_stale(
     Raises
     ------
     ValueError
-        If neither time components nor `dt_interval` are provided.
         If `refresh_day_num` is not between 0 and 6.
         If the total period exceeds 7 days when `refresh_day_num` is set.
     """
 
-    if not any((months, weeks, days, hours, minutes, seconds)) and dt_interval is None:
-        raise ValueError(
-            "You must provide either time components (months, weeks, days, hours, minutes, seconds) or dt_interval."
-        )
-
-    if months > 0:  # Convert months to days
-        month_days = int(months * 30.44)  # Average month length
-        days += month_days
-        log.debug(f"Converted {months} months to {month_days} days.")
-
-    staleness_period = (
-        timedelta(weeks=weeks, days=days, hours=hours, minutes=minutes, seconds=seconds)
-        if any((weeks, days, hours, minutes, seconds))
-        else dt_interval.to_timedelta
+    table: Union[DeltaTableStep, str] = Field(
+        ...,
+        description="The table to check for stale data.",
+    )
+    interval: timedelta = Field(
+        ...,
+        description="The interval to consider data stale.",
+    )
+    refresh_day_num: Optional[int] = Field(
+        default=None,
+        description="The weekday number on which data should be refreshed.",
     )
 
-    if refresh_day_num is not None:
-        if not 0 <= refresh_day_num <= 6:
-            raise ValueError("refresh_day_num should be between 0 (Monday) and 6 (Sunday).")
+    class Output(StepOutput):
+        """Output class for StaleDataCheckStep."""
 
-        max_period = timedelta(days=6, hours=23, minutes=59, seconds=59)
-        if staleness_period > max_period:
-            raise ValueError("With refresh_day_num set, the total period must be less than 7 days.")
+        is_data_stale: bool = Field(..., description="Boolean flag indicating whether data in the table is stale or not")
 
-    current_time = datetime.now()
+    @field_validator("table")
+    def _validate_table(cls, table: Union[DeltaTableStep, str]) -> Union[DeltaTableStep, str]:
+        """Validate `table` value"""
+        if isinstance(table, str):
+            return DeltaTableStep(table=table)
+        return table
 
-    # Get the history of the Delta table
-    history_df = DeltaTableStep(table=table).describe_history()
+    @model_validator(mode="after")
+    def _validate_refresh_day_num(self) -> "StaleDataCheckStep":
+        """Validate input when `refresh_day_num` is provided."""
+        if self.refresh_day_num is not None:
+            if not 0 <= self.refresh_day_num <= 6:
+                raise ValueError("refresh_day_num should be between 0 (Monday) and 6 (Sunday).")
 
-    if not history_df:
-        log.debug(f"No history found for `{table}`.")
-        return True  # Consider data stale if the table does not exist
+            max_period = timedelta(days=6, hours=23, minutes=59, seconds=59)
+            if self.interval > max_period:
+                raise ValueError("With refresh_day_num set, the total period must be less than 7 days.")
 
-    modification_operations = [
-        "WRITE",
-        "MERGE",
-        "DELETE",
-        "UPDATE",
-        "REPLACE TABLE AS SELECT",
-        "CREATE TABLE AS SELECT",
-        "TRUNCATE",
-        "RESTORE",
-    ]
+        return self
 
-    # Filter the history to data modification operations only
-    history_df = history_df.filter(history_df["operation"].isin(modification_operations))
+    def execute(self) -> Output:
 
-    # Get the last modification operation's timestamp
-    last_modification = history_df.select("timestamp").first()
+        # Get the history of the Delta table
+        history_df = self.table.describe_history()
 
-    if not last_modification:
-        log.debug(f"No modification operation found in the history for `{table}`.")
-        return True
+        if not history_df:
+            log.debug(f"No history found for `{self.table.table_name}`.")
+            self.output.is_data_stale = True  # Consider data stale if the table does not exist
+            return self.output
 
-    last_modification_timestamp = last_modification["timestamp"]
+        modification_operations = [
+            "WRITE",
+            "MERGE",
+            "DELETE",
+            "UPDATE",
+            "REPLACE TABLE AS SELECT",
+            "CREATE TABLE AS SELECT",
+            "TRUNCATE",
+            "RESTORE",
+        ]
 
-    cut_off_date = current_time - staleness_period
+        # Filter the history to data modification operations only
+        history_df = history_df.filter(history_df["operation"].isin(modification_operations))
 
-    log.debug(f"Last modification timestamp: {last_modification_timestamp}, cut-off date: {cut_off_date}")
+        # Get the last modification operation's timestamp
+        last_modification = history_df.select("timestamp").first()
 
-    is_stale_by_time = last_modification_timestamp <= cut_off_date
+        if not last_modification:
+            log.debug(f"No modification operation found in the history for `{self.table.table_name}`.")
+            self.output.is_data_stale = True
+            return self.output
 
-    if refresh_day_num is not None:
-        current_day_of_week = current_time.weekday()
-        log.debug(f"Current day of the week: {current_day_of_week}, refresh day: {refresh_day_num}")
+        current_time = datetime.now()
+        last_modification_timestamp = last_modification["timestamp"]
 
-        is_appropriate_day_for_refresh = current_day_of_week == refresh_day_num
-        return is_stale_by_time or is_appropriate_day_for_refresh
+        cut_off_date = current_time - self.interval
 
-    return is_stale_by_time
+        log.debug(f"Last modification timestamp: {last_modification_timestamp}, cut-off date: {cut_off_date}")
+
+        is_stale_by_time = last_modification_timestamp <= cut_off_date
+
+        if self.refresh_day_num is not None:
+            current_day_of_week = current_time.weekday()
+            log.debug(f"Current day of the week: {current_day_of_week}, refresh day: {self.refresh_day_num}")
+
+            is_appropriate_day_for_refresh = current_day_of_week == self.refresh_day_num
+            self.output.is_data_stale = is_stale_by_time or is_appropriate_day_for_refresh
+            return self.output
+
+        self.output.is_data_stale = is_stale_by_time
+        return self.output
