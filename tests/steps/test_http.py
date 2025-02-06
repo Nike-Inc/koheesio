@@ -6,6 +6,7 @@ from requests.exceptions import RetryError
 from requests_mock.mocker import Mocker
 from urllib3 import Retry
 
+from koheesio.models import SecretStr
 from koheesio.steps.http import (
     HttpDeleteStep,
     HttpGetStep,
@@ -136,15 +137,33 @@ def test_http_step_request():
             assert response.status_code == 200
 
 
+
+EXAMPLE_DIGEST_AUTH = (
+    'Digest username="Zaphod", realm="galaxy@heartofgold.com", nonce="42answer", uri="/dir/restaurant.html", ' 
+    'response="dontpanic42", opaque="babelfish"'
+)
+
 @pytest.mark.parametrize(
-    "params",
+    "params, expected",
     [
-        dict(url=GET_ENDPOINT, headers={"Authorization": "Bearer token", "Content-Type": "application/json"}),
-        dict(url=GET_ENDPOINT, headers={"Content-Type": "application/json"}, bearer_token="token"),
-        dict(url=GET_ENDPOINT, headers={"Content-Type": "application/json"}, token="token"),
+        pytest.param(
+            dict(url=GET_ENDPOINT, headers={"Authorization": "Bearer token", "Content-Type": "application/json"}), 
+            "Bearer token",
+            id="bearer_token_in_headers"
+        ),
+        pytest.param(
+            dict(url=GET_ENDPOINT, headers={"Content-Type": "application/json"}, auth_header="Bearer token"),
+            "Bearer token",
+            id="bearer_token_through_auth_header",
+        ),
+        pytest.param(
+            dict(url=GET_ENDPOINT, auth_header=EXAMPLE_DIGEST_AUTH),
+            EXAMPLE_DIGEST_AUTH,
+            id="digest_auth_with_nonce",
+        ),
     ],
 )
-def test_get_headers(params):
+def test_get_headers(params: dict, expected: str) -> None:
     """
     Authorization headers are being converted into SecretStr under the hood to avoid dumping any
     sensitive content into logs. However, when calling the `get_headers` method, the SecretStr is being
@@ -155,8 +174,10 @@ def test_get_headers(params):
 
     # Assert
     actual_headers = step.get_headers()
-    assert actual_headers["Authorization"] != "**********"
-    assert actual_headers["Authorization"] == "Bearer token"
+    auth = actual_headers["Authorization"]
+    assert isinstance(auth, SecretStr)
+    assert auth == "**********"
+    assert auth.get_secret_value() == expected
     assert actual_headers["Content-Type"] == "application/json"
 
 
@@ -169,7 +190,7 @@ def test_get_headers(params):
         pytest.param(17, STATUS_404_ENDPOINT, 503, 1, HTTPError, id="max_retries_17_404"),
     ],
 )
-def test_max_retries(max_retries, endpoint, status_code, expected_count, error_type):
+def test_max_retries(max_retries: int, endpoint: str, status_code: int, expected_count: int, error_type: Exception) -> None:
     session = requests.Session()
     retry_logic = Retry(total=max_retries, status_forcelist=[status_code])
     session.mount("https://", HTTPAdapter(max_retries=retry_logic))
@@ -178,7 +199,7 @@ def test_max_retries(max_retries, endpoint, status_code, expected_count, error_t
 
     step = HttpGetStep(url=endpoint, session=session)
 
-    with pytest.raises(error_type):
+    with pytest.raises(error_type):  # type: ignore
         step.execute()
 
     first_pool = [v for _, v in session.adapters["https://"].poolmanager.pools._container.items()][0]
@@ -195,7 +216,7 @@ def test_max_retries(max_retries, endpoint, status_code, expected_count, error_t
         pytest.param(1, [0, 2, 4], id="backoff_1"),
     ],
 )
-def test_initial_delay_and_backoff(monkeypatch, backoff, expected):
+def test_initial_delay_and_backoff(monkeypatch: pytest.FixtureRequest, backoff: int, expected: list) -> None:
     session = requests.Session()
     retry_logic = Retry(total=3, backoff_factor=backoff, status_forcelist=[503])
     session.mount("https://", HTTPAdapter(max_retries=retry_logic))
