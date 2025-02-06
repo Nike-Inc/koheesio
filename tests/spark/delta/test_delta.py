@@ -1,19 +1,19 @@
-import logging
+from datetime import datetime, timedelta
 import os
 from pathlib import Path
 from unittest.mock import patch
 
-from conftest import setup_test_data
-import pytest
 from chispa import assert_df_equality
+from conftest import setup_test_data
+from freezegun import freeze_time
+import pytest
 
 from pydantic import ValidationError
 
 from pyspark.sql.types import LongType
-from pyspark.sql.utils import AnalysisException
 
 from koheesio.logger import LoggingFactory
-from koheesio.spark.delta import DeltaTableStep
+from koheesio.spark.delta import DeltaTableStep, StaleDataCheckStep
 
 pytestmark = pytest.mark.spark
 
@@ -159,7 +159,7 @@ def test_exists(caplog, table, create_if_not_exists, log_level):
 
 
 @pytest.fixture
-def test_history_df(spark):
+def test_describe_history_df(spark):
     data = [
         {"version": 0, "timestamp": "2024-12-30 12:00:00", "tableName": "test_table", "operation": "CREATE TABLE"},
         {"version": 1, "timestamp": "2024-12-31 05:29:30", "tableName": "test_table", "operation": "WRITE"},
@@ -168,10 +168,10 @@ def test_history_df(spark):
     return spark.createDataFrame(data)
 
 
-def test_describe_history__no_limit(mocker, spark, test_history_df):
+def test_describe_history__no_limit(mocker, spark, test_describe_history_df):
     mocker.patch.object(DeltaTableStep, "exists", new_callable=mocker.PropertyMock(return_value=True))
     dt = DeltaTableStep(table="test_table")
-    mocker.patch.object(spark, "sql", return_value=test_history_df)
+    mocker.patch.object(spark, "sql", return_value=test_describe_history_df)
     result = dt.describe_history()
     expected_df = spark.createDataFrame(
         [
@@ -183,10 +183,10 @@ def test_describe_history__no_limit(mocker, spark, test_history_df):
     assert_df_equality(result, expected_df, ignore_column_order=True)
 
 
-def test_describe_history__with_limit(mocker, spark, test_history_df):
+def test_describe_history__with_limit(mocker, spark, test_describe_history_df):
     mocker.patch.object(DeltaTableStep, "exists", new_callable=mocker.PropertyMock(return_value=True))
     dt = DeltaTableStep(table="test_table")
-    mocker.patch.object(spark, "sql", return_value=test_history_df)
+    mocker.patch.object(spark, "sql", return_value=test_describe_history_df)
     result = dt.describe_history(limit=1)
     expected_df = spark.createDataFrame(
         [
@@ -202,3 +202,115 @@ def test_describe_history__no_table(mocker):
     result = dt.describe_history()
 
     assert result is None
+
+
+@pytest.fixture
+def test_stale_data_check_history_df(spark):
+    return spark.createDataFrame(
+        [
+            {
+                "timestamp": datetime(year=2024, month=12, day=30, hour=5, minute=29, second=30),
+                "operation": "WRITE",
+                "version": 1
+            },
+            {
+                "timestamp": datetime(year=2024, month=12, day=30, hour=5, minute=28, second=30),
+                "operation": "CREATE TABLE",
+                "version": 0
+            },
+        ]
+    )
+
+
+@pytest.mark.parametrize(
+    "interval, expected",
+    [
+        (timedelta(weeks=1), False),  # Not stale, since 1 week > 1 day and some hours ago
+        (timedelta(days=2), False),  # Not stale, since 2 days > 1 day and some hours ago
+        (timedelta(days=1, hours=7), False),  # Not stale, since 1 day and 7 hours > 1 day, 6 hours, 30 minutes
+        (timedelta(days=1, hours=6, minutes=31), False),  # Not stale, since 1 minute more than the timestamp age
+        (timedelta(days=1, hours=6, minutes=30, seconds=31), False),  # Not stale, since 1 second more than the timestamp age
+        (timedelta(days=1, hours=6, minutes=30, seconds=30), True),  # Exactly equal to the age, should be considered stale
+        (timedelta(days=1, hours=6, minutes=30, seconds=29), True),  # Stale, falls 1 second short
+        (timedelta(days=1), True),  # Stale, falls several hours and minutes short
+        (timedelta(hours=18), True)  # Stale, despite being more than half a day, but less than the full duration since the timestamp
+    ],
+)
+@freeze_time("2024-12-31 12:00:00")
+def test_stale_data_check_step__no_refresh_day_num_with_time_components(
+    interval, expected, test_stale_data_check_history_df, mocker
+):
+    mocker.patch("koheesio.spark.delta.DeltaTableStep.describe_history", return_value=test_stale_data_check_history_df)
+    assert (
+        StaleDataCheckStep(table="dummy_table", interval=interval).execute().is_data_stale
+        == expected
+    )
+
+
+def test_stale_data_check_step__no_table(mocker):
+    mocker.patch("koheesio.spark.delta.DeltaTableStep.describe_history", return_value=None)
+    assert StaleDataCheckStep(table="dummy_table", interval=timedelta(days=1)).execute().is_data_stale
+
+
+def test_stale_data_check_step__no_modification_history(mocker, spark):
+    history_df = spark.createDataFrame(
+        [
+            {
+                "timestamp": datetime(year=2024, month=12, day=30, hour=5, minute=28, second=30),
+                "operation": "CREATE TABLE",
+            }
+        ]
+    )
+    mocker.patch("koheesio.spark.delta.DeltaTableStep.describe_history", return_value=history_df)
+    assert StaleDataCheckStep(table="dummy_table", interval=timedelta(days=1)).execute().is_data_stale
+
+
+@pytest.mark.parametrize(
+    "interval, refresh_day_num, expected",
+    [
+        (
+            timedelta(days=2, hours=6, minutes=30, seconds=30),
+            2,
+            False,
+        ),  # Data is not stale and it's before the refresh day
+        (
+            timedelta(days=2, hours=6, minutes=30, seconds=30),
+            1,
+            True,
+        ),  # Data is not stale but it is the refresh day
+        (
+            timedelta(days=2, hours=6, minutes=30, seconds=30),
+            0,
+            False,
+        ),  # Data is not stale and it is past the refresh day
+        (
+            timedelta(hours=6, minutes=30, seconds=30),
+            2,
+            True,
+        ),  # Data is stale and it's before the refresh day
+        (
+            timedelta(hours=6, minutes=30, seconds=30),
+            1,
+            True
+        ),  # Data is stale and it is the refresh day
+        (
+            timedelta(hours=6, minutes=30, seconds=30),
+            0,
+            True,
+        ),  # Data is stale and it is past the refresh day
+    ],
+)
+@freeze_time("2024-12-31 12:00:00")  # Tuesday
+def test_stale_data_check_step__with_refresh_day(interval, refresh_day_num, expected, test_stale_data_check_history_df, mocker):
+    mocker.patch("koheesio.spark.delta.DeltaTableStep.describe_history", return_value=test_stale_data_check_history_df)
+    assert StaleDataCheckStep(table="dummy_table", interval=interval, refresh_day_num=refresh_day_num).execute().is_data_stale == expected
+
+
+def test_stale_data_check_step__invalid_refresh_day():
+    with pytest.raises(ValueError):
+        StaleDataCheckStep(table="dummy_table", interval=timedelta(days=1), refresh_day_num=7).execute()
+
+
+def test_stale_data_check_step__invalid_staleness_period_with_refresh_day():
+    with pytest.raises(ValueError):
+        StaleDataCheckStep(table="dummy_table", interval=timedelta(days=10), refresh_day_num=5).execute()
