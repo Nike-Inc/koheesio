@@ -385,7 +385,11 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
 
         if self.table.create_if_not_exists and not self.table.exists:
             _writer = _writer.options(**self.table.default_create_properties)
-
+            message = (
+                f"Table `{self.table}` doesn't exist. The `create_if_not_exists` flag is set to True. "
+                "Therefore the table will be created."
+            )
+            self.log.info(message)
         if isinstance(_writer, DeltaMergeBuilder) or type(_writer).__name__ == "DeltaMergeBuilder":
             _writer.execute()
         else:
