@@ -254,11 +254,8 @@ class TestBoxCsvReader:
         ]
 
     def test_file_attribute_validation(self, dummy_box):
-        """" Tests that if one single file id is provided, it will be converted to a list """
-        bcr = BoxCsvFileReader(
-            **COMMON_PARAMS,
-            file="this-is-a-single-file-id"
-        )
+        """Tests that if one single file id is provided, it will be converted to a list"""
+        bcr = BoxCsvFileReader(**COMMON_PARAMS, file="this-is-a-single-file-id")
         assert bcr.file == ["this-is-a-single-file-id"]
 
 
