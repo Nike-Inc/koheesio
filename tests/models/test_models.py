@@ -8,7 +8,7 @@ import pytest
 import yaml
 
 from koheesio.context import Context
-from koheesio.models import BaseModel, ExtraParamsMixin
+from koheesio.models import BaseModel, ExtraParamsMixin, ListOfStrings
 
 
 class TestBaseModel:
@@ -90,7 +90,7 @@ class TestBaseModel:
         for key, value in context_data.items():
             assert getattr(model, key) == value
 
-    def test_from_dict(self, context_data: pytest.FixtureRequest) ->  None:
+    def test_from_dict(self, context_data: pytest.FixtureRequest) -> None:
         model = self.FooModel.from_dict(context_data)
         assert isinstance(model, BaseModel)
         for key, value in context_data.items():
@@ -205,7 +205,9 @@ class TestBaseModel:
             ),
         ],
     )
-    def test_name_and_multiline_description(self, model_class: type[BaseModel], instance_arg: dict, expected: dict) -> None:
+    def test_name_and_multiline_description(
+        self, model_class: type[BaseModel], instance_arg: dict, expected: dict
+    ) -> None:
         instance = model_class(**instance_arg)
         assert instance.model_dump() == expected
 
@@ -224,7 +226,9 @@ class TestBaseModel:
             (ModelWithLongDescriptionAndNoSpaces, 120, "ThisIsAVeryLongDescription" * 4 + "ThisIsAVeryLo..."),
         ],
     )
-    def test_extremely_long_description(self, model_class: type[BaseModel], expected_length: int, expected_description: str) -> None:
+    def test_extremely_long_description(
+        self, model_class: type[BaseModel], expected_length: int, expected_description: str
+    ) -> None:
         model = model_class()
         assert len(model.description) == expected_length
         assert model.description == expected_description
@@ -247,3 +251,21 @@ class TestExtraParamsMixin:
             "params": {"c": 3},
             "name": "SimpleModelWithExtraParams",
         }
+
+
+class TestAnnotatedTypes:
+    class SomeModelWithListOfStrings(BaseModel):
+        a: ListOfStrings
+
+    @pytest.mark.parametrize(
+        "list_of_strings,expected_list_of_strings",
+        [
+            ("single_string", ["single_string"]),
+            (["foo", "bar"], ["foo", "bar"]),
+            (["some_strings_with_a", None, "in_between"], ["some_strings_with_a", "in_between"]),
+            (["some_strings_with_an_empty", "", "in_between"], ["some_strings_with_an_empty", "in_between"]),
+        ],
+    )
+    def test_list_of_strings(self, list_of_strings, expected_list_of_strings) -> None:
+        model_with = TestAnnotatedTypes.SomeModelWithListOfStrings(a=list_of_strings)
+        assert model_with.a == expected_list_of_strings
