@@ -55,13 +55,13 @@ class DTInterval(BaseModel):
     --------
     Creating an instance with time components:
 
-    ```
+    ```python
     print(DTInterval(years=2, weeks=3, hours=12).to_timedelta)
     ```
     751 days, 12:00:00
 
     Creating an instance from a string:
-    ```
+    ```python
     print(DTInterval(interval="1 year 2 months 3 weeks 4 days 5 hours 100 minutes 200 seconds 300 milliseconds 400 microseconds").to_timedelta)
     ```
     451 days, 6:43:20.300400

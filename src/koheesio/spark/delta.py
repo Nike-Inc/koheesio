@@ -384,31 +384,31 @@ class StaleDataCheckStep(Step):
     in the history are shown alongside the examples.
 
     Example 1: Last modified on January 28th, 2025, 11:00:00 checking with a 3-day threshold:
-    ```
+    ```python
     is_stale = StaleDataCheckStep(table=table, interval=timedelta(days=3)).execute().is_data_stale
     print(is_stale)  # True, as the last modification was 3 days and 1 hour ago which is more than 3 days.
     ```
 
     Example 2: Last modified on January 28th, 2025, 11:00:00 checking with a 3-day and 1-hour threshold:
-    ```
+    ```python
     is_stale = StaleDataCheckStep(table=table, interval=timedelta(days=3, hours=1)).execute().is_data_stale
     print(is_stale)  # True, as the last modification was 3 days and 1 hour ago which is the same as the threshold.
     ```
 
     Example 3: Last modified on January 28th, 2025, 11:00:00 checking with a 3-day and 2-hour threshold:
-    ```
+    ```python
     is_stale = StaleDataCheckStep(table=table, interval=timedelta(days=3, hours=2)).execute().is_data_stale
     print(is_stale)  # False, as the last modification was 3 days and 1 hour ago which is less than 3 days and 2 hours.
     ```
 
     Example 4: Same as example 3 but with the interval defined as an ISO-8601 string:
-    ```
+    ```python
     is_stale = StaleDataCheckStep(table=table, interval="P3DT2H").execute().is_data_stale
     print(is_stale)  # False, as the last modification was 3 days and 1 hour ago which is less than 3 days and 2 hours.
     ```
 
     Example 5: Last modified on January 28th, 2025, 11:00:00 checking with a 5-day threshold and refresh_day_num = 5 (Friday):
-    ```
+    ```python
     is_stale = StaleDataCheckStep(table=table, interval=timedelta(days=5), refresh_day_num=5).execute().is_data_stale
     print(is_stale)  # True, 3 days and 1 hour is less than 5 days but refresh_day_num is the same as the current day.
     ```
