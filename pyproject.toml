@@ -80,6 +80,7 @@ test = [
   "pytest-xdist",
   "requests_mock",
   "time_machine",
+  "freezegun",
 ]
 docs = [
   "markdown>=3.5.2",
