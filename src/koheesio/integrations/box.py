@@ -402,7 +402,7 @@ class BoxCsvFileReader(BoxReaderBase):
     ```
     """
 
-    file: ListOfStrings = Field(default=..., description="ID or list of IDs for the files to read.")
+    files: ListOfStrings = Field(default=..., alias="file", description="ID or list of IDs for the files to read.")
 
     def execute(self) -> BoxReaderBase.Output:
         """
@@ -416,7 +416,7 @@ class BoxCsvFileReader(BoxReaderBase):
         DataFrame
         """
         df = None
-        for f in self.file:
+        for f in self.files:
             self.log.debug(f"Currently processing file with ID '{f}'")
             file = self.client.file(file_id=f)
 
