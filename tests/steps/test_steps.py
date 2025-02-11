@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import os
 from copy import deepcopy
 from functools import wraps
 import io
+from logging import Logger
+from typing import Any
 from unittest import mock
 from unittest.mock import call, patch
 import warnings
@@ -260,7 +263,7 @@ class TestStep:
 
         super_call_first_output = MyCustomChildStepSuperCallFirst(foo="foo", bar="bar", qux="qux")
         assert super_call_first_output.execute() is not None
-
+    
     def test_execute_wrapper_only_called_once_when_nested(self):
         """
         Tests that _execute_wrapper is only called once when nested multiple times
@@ -309,6 +312,14 @@ class TestStep:
 
     class YourClass3(YourClass2):
         def execute(self):
+            self.log.info(f"This is from the execute method of {self.__class__.__name__}")
+
+    class YourClassNoExecute(YourClass):
+        ...
+
+    class YourClass4(YourClassNoExecute):
+        def execute(self):
+            super().execute()
             self.log.info(f"This is from the execute method of {self.__class__.__name__}")
 
     class MyMetaClass(StepMetaClass):
@@ -421,7 +432,7 @@ class TestStep:
 
             assert obj.output.dummy_value == "dummy"
 
-    @pytest.mark.parametrize("test_class", [YourClass, YourClass2, YourClass3])
+    @pytest.mark.parametrize("test_class", [YourClass, YourClass2, YourClass3, YourClass4])
     def test_log_called_once(self, test_class):
         with mock.patch.object(test_class, "log", autospec=True) as mock_log:
             obj = test_class()
@@ -457,3 +468,61 @@ class TestStep:
             step.execute()
 
             mock_validator.assert_called_once()
+
+
+class TestStepMetaClass:
+    """Tests that target the StepMetaClass specifically"""
+
+
+    def test_with_deeply_nested_super_call(self) -> None:
+        """
+        Test to ensure that logs are not duplicated for a step with a deeply nested super() call in the execute method.
+
+        Only one instance of each log is expected where logs are called in the StepMetaClass.
+
+        See [issue #167](https://github.com/Nike-Inc/koheesio/issues/167) for more details.
+        """
+        os.environ["KOHEESIO_LOGGING_LEVEL"] = "DEBUG"
+
+        # Arrange
+
+
+        class ParentStep(Step):
+            """Parent step class"""
+
+            foo: str = "bar"
+            # log: Any = mock_log
+
+            def execute(self) -> Step.Output:
+                self.log.info("ParentStep execute called")
+                self.log.info(f"ParentStep foo: {self.foo}")
+
+        class ChildStep(ParentStep):
+            """Child step class"""
+
+            bar: str = "baz"
+            ...
+
+        class GrandChildStep(ChildStep):
+            """Grandchild step class"""
+
+            def execute(self) -> Step.Output:
+                super().execute()
+                self.log.info("GrandChildStep execute called")
+
+        with (patch.object(ParentStep, "log", autospec=True) as mock_log,):
+            # Act
+            obj = GrandChildStep(foo="42", bar="Thanks for all the fish")
+            obj.execute()
+
+            # Assert: Check that logs were called once (and only once) with the correct messages, and in the correct order
+            calls = [
+                call.info("Start running step"),
+                call.debug(f"Step Input: name='{obj.name}' description='{obj.description}' foo='42' bar='Thanks for all the fish'"),
+                call.info("ParentStep execute called"),
+                call.info("ParentStep foo: 42"),
+                call.info("GrandChildStep execute called"),
+                call.debug(f"Step Output: name='{obj.name}.Output' description='Output for {obj.description}'"),
+                call.info("Finished running step"),
+            ]
+            mock_log.assert_has_calls(calls, any_order=False)
