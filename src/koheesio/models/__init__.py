@@ -14,6 +14,7 @@ from __future__ import annotations
 from typing import Annotated, Any, Dict, List, Optional, Union
 from abc import ABC
 from functools import cached_property, partial
+import inspect
 from pathlib import Path
 
 # to ensure that koheesio.models is a drop in replacement for pydantic
@@ -27,8 +28,6 @@ from pydantic import (
     InstanceOf,
     PositiveInt,
     PrivateAttr,
-    SecretBytes,
-    SecretStr,
     SkipValidation,
     ValidationError,
     conint,
@@ -38,6 +37,8 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+from pydantic import SecretBytes as PydanticSecretBytes
+from pydantic import SecretStr as PydanticSecretStr
 
 # noinspection PyProtectedMember
 from pydantic._internal._generics import PydanticGenericMetadata
@@ -762,3 +763,211 @@ ListOfColumns = Annotated[Union[str, List[str]], BeforeValidator(_list_of_column
 Will ensure that there are no duplicate columns, empty strings, etc.
 In case an individual column is passed, the value will be coerced to a list.
 """
+
+
+class _SecretMixin:
+    """Mixin class that provides additional functionality to Pydantic's SecretStr and SecretBytes classes."""
+
+    def __add__(self, other: Union[str, bytes, '_SecretMixin']) -> '_SecretMixin':
+        """Support concatenation when the SecretMixin instance is on the left side of the + operator.
+        
+        Raises
+        ------
+        TypeError
+            If concatenation fails.
+        """
+        left = self.get_secret_value()
+        right = other.get_secret_value() if isinstance(other, _SecretMixin) else other
+        return self.__class__(left + right)  # type: ignore
+    
+    def __radd__(self, other: Union[str, bytes, '_SecretMixin']) -> '_SecretMixin':
+        """Support concatenation when the SecretMixin instance is on the right side of the + operator.
+
+        Raises
+        ------
+        TypeError
+            If concatenation fails.
+        """
+        right = self.get_secret_value()
+        left = other.get_secret_value() if isinstance(other, _SecretMixin) else other
+        return self.__class__(left + right)  # type: ignore
+    
+    def __mul__(self, n: int) -> '_SecretMixin':
+        """Support multiplication when the SecretMixin instance is on the left side of the * operator.
+
+        Raises
+        ------
+        TypeError
+            If multiplication fails.
+        """
+        if isinstance(n, int):
+            return self.__class__(self.get_secret_value() * n)  # type: ignore
+        return NotImplemented
+    
+    def __rmul__(self, n: int) -> '_SecretMixin':
+        """Support multiplication when the SecretMixin instance is on the right side of the * operator.
+
+        Raises
+        ------
+        TypeError
+            If multiplication fails.
+        """
+        return self.__mul__(n)
+
+
+class SecretStr(PydanticSecretStr, _SecretMixin):
+    """A string type that ensures the secrecy of its value, extending Pydantic's SecretStr.
+
+    This class provides additional functionality over Pydantic's SecretStr, including:
+    - Support for concatenation with other strings and SecretStr instances.
+    - Advanced f-string formatting support to ensure the secret value is only revealed in secure contexts.
+
+    For more information on Pydantic's SecretStr, see: https://docs.pydantic.dev/latest/usage/types/#secret-types
+
+    Examples
+    --------
+    ### Basic Usage
+    ```python
+    secret = SecretStr("my_secret")
+    ```
+
+    ### String representations of the secrets are masked
+    ```python
+    str(secret)
+    # '**********'
+    repr(secret)
+    # "SecretStr('**********')"
+    ```
+
+    ### Concatenations are supported with other strings and SecretStr instances
+    ```python
+    secret + "suffix"
+    # SecretStr('my_secretsuffix')
+    "prefix" + secret
+    # SecretStr('prefixmy_secret')
+    ```
+
+    ### f-string formatting is supported
+    If the f-string is called from within a SecretStr, the secret value is returned as we are in a secure context.
+    ```python
+    new_secret = f"{SecretStr(f'prefix{secret}suffix')}"
+    new_secret.get_secret_value()
+    ### 'prefixmy_secretsuffix'
+    ```
+    
+    Otherwise, we consider the context 'unsafe': the SecretStr instance is returned, and the secret value is masked.
+    ```python
+    f"{secret}"
+    '**********'
+    ```
+
+    Parameters
+    ----------
+    secret : str
+        The secret value to be stored.
+
+    Methods
+    -------
+    get_secret_value()
+        Returns the actual secret value.
+    """
+
+    def __format__(self, format_spec: str) -> Union[str, 'SecretStr']:
+        """Advanced f-string formatting support.
+        If the f-string is called from within a SecretStr, the secret value is returned as we are in a secure context.
+        Otherwise, we consider the context 'unsafe' and we let pydantic take care of the formatting.
+        """
+        # Inspect the call stack to determine if the string is being passed through SecretStr
+        stack = inspect.stack()
+        try:
+            caller_context = stack[1][4][0]  # type: ignore
+            # Explaining the stack[1][4][0] indexing:
+            # - stack[1]: the frame of the caller of the current function (i.e. what line of code called this function)
+            # - stack[1][4]: information of arguments passed to the caller
+            # - stack[1][4][0]: the string representation of the line of code that called this function
+        except IndexError:
+            caller_context = ""
+
+        # safe context: the secret value is returned
+        if 'SecretStr(f' in caller_context:
+            return self.get_secret_value()
+
+        # unsafe context: we let pydantic handle the formatting
+        return super().__format__(format_spec)
+    
+
+class SecretBytes(PydanticSecretBytes, _SecretMixin):
+    """A bytes type that ensures the secrecy of its value, extending Pydantic's SecretBytes.
+
+    This class provides additional functionality over Pydantic's SecretBytes, including:
+    - Support for concatenation with other bytes and SecretBytes instances.
+    - Advanced f-string formatting support to ensure the secret value is only revealed in secure contexts.
+
+    For more information on Pydantic's SecretBytes, see: https://docs.pydantic.dev/latest/usage/types/#secret-types
+
+    Examples
+    --------
+    ### Basic Usage
+    ```python
+    secret = SecretBytes(b"my_secret")
+    ```
+
+    ### String representations of the secrets are masked
+    ```python
+    str(secret)
+    # '**********'
+    repr(secret)
+    # "SecretBytes('**********')"
+    ```
+
+    ### Concatenations are supported with other bytes and SecretBytes instances
+    ```python
+    secret + b"suffix"
+    # SecretBytes(b'my_secretsuffix')
+    b"prefix" + secret
+    # SecretBytes(b'prefixmy_secret')
+    ```
+
+    ### Multiplications are supported with integers
+    ```python
+    SecretBytes(b"foo") * 2
+    # SecretBytes(b'foofoo')
+    ```
+
+    Note
+    ----
+    The pydantic `SecretBytes` class is quite permissive with the types of data it accepts. Hence, you have to ensure 
+    that the data you pass to the `SecretBytes` '+' operator is of the right type to be concatenated - the `bytes` type
+    of the data is not guaranteed.
+
+    For example, python can 'add' two lists together like this:
+    
+    ```python
+    [1, 2] + [3, 4]  # [1, 2, 3, 4]
+    ```
+
+    If one of the list is wrapped in a SecretBytes instance, the '+' operator will work, just like the example above:
+    
+    ```python
+    list1 = SecretBytes([1,2,3])
+    list2 = [4,5,6]
+    list1 + list2  # SecretBytes([1, 2, 3, 4, 5, 6])
+    ```
+
+    If however you try to add any other type of data to the `list1` from the example above, you will get a `TypeError`.
+    You can use the `secret_data_type` method to check the type of the secret data stored in the `SecretBytes` instance.
+
+    Parameters
+    ----------
+    secret : bytes
+        The secret value to be stored.
+
+    Methods
+    -------
+    get_secret_value()
+        Returns the actual secret value.
+    """
+    
+    def secret_data_type(self) -> type:
+        """Return the type of the secret data."""
+        return type(self.get_secret_value())
