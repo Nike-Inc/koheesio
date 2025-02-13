@@ -505,17 +505,23 @@ class TestStepMetaClass:
         """
         os.environ["KOHEESIO_LOGGING_LEVEL"] = "DEBUG"
 
-        # Arrange
+        # Arrange: simulate a deeply nested inheritance structure
 
-        class ParentStep(Step):
+        class GrandParentStep(Step):
+            """GrandParent step class"""
+
+            def execute(self):
+                self.log.info("GrandParentStep execute called")
+
+        class ParentStep(GrandParentStep):
             """Parent step class"""
 
             foo: str = "bar"
-            # log: Any = mock_log
 
             def execute(self) -> Step.Output:
                 self.log.info("ParentStep execute called")
                 self.log.info(f"ParentStep foo: {self.foo}")
+                super().execute()
 
         class ChildStep(ParentStep):
             """Child step class"""
@@ -529,12 +535,16 @@ class TestStepMetaClass:
             def execute(self) -> Step.Output:
                 super().execute()
                 self.log.info("GrandChildStep execute called")
+        
+        class GreatGrandChildStep(GrandChildStep):
+            """Great grandchild step class"""
+            ...
 
         with (
             patch.object(ParentStep, "log", autospec=True) as mock_log,
         ):
             # Act
-            obj = GrandChildStep(foo="42", bar="Thanks for all the fish")
+            obj = GreatGrandChildStep(foo="42", bar="Thanks for all the fish")
             obj.execute()
 
             # Assert: Check that logs were called once (and only once) with the correct messages, and in the correct order
@@ -545,6 +555,7 @@ class TestStepMetaClass:
                 ),
                 call.info("ParentStep execute called"),
                 call.info("ParentStep foo: 42"),
+                call.info("GrandParentStep execute called"),
                 call.info("GrandChildStep execute called"),
                 call.debug(f"Step Output: name='{obj.name}.Output' description='Output for {obj.name}'"),
                 call.info("Finished running step"),

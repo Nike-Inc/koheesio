@@ -275,15 +275,7 @@ class StepMetaClass(ModelMetaclass):
         """
 
         # check if the method is called through super() in the immediate parent class
-        # Find the closest 'execute' method after '_execute_wrapper'
-        caller_name = None
-        found_execute_wrapper = False
-        for frame in inspect.stack():
-            if frame.function == "_execute_wrapper":
-                found_execute_wrapper = True
-            elif found_execute_wrapper and frame.function == "execute":
-                caller_name = frame.function
-                break
+        caller_name = inspect.currentframe().f_back.f_back.f_code.co_name
 
         is_called_through_super_ = cls._is_called_through_super(step, caller_name)
 
