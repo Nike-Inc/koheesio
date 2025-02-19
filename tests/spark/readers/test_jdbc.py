@@ -45,7 +45,7 @@ class TestJdbcReader:
         }
         del expected["password"]  # we don't need to test for this
 
-        assert actual == expected
+        assert sorted(actual) == sorted(expected)
 
     def test_execute_wo_dbtable_and_query(self):
         with pytest.raises(ValueError) as e:

@@ -114,14 +114,14 @@ def test_http_step_with_valid_http_method():
     Above parameters are for the success and failed GET API calls
     """
 
-    with Mocker() as rm:
+    with requests_mock.Mocker() as rm:
         rm.get(GET_ENDPOINT, status_code=int(200))
         response = HttpStep(method="get", url=GET_ENDPOINT).execute()
         assert response.status_code == 200
 
 
 def test_http_step_with_invalid_http_method():
-    with Mocker() as rm:
+    with requests_mock.Mocker() as rm:
         rm.get(GET_ENDPOINT, status_code=int(200))
         # Will be raised during class instantiation
         with pytest.raises(AttributeError):
@@ -129,7 +129,7 @@ def test_http_step_with_invalid_http_method():
 
 
 def test_http_step_request():
-    with Mocker() as rm:
+    with requests_mock.Mocker() as rm:
         rm.put(PUT_ENDPOINT, status_code=int(200))
         # The default method for HttpStep class is GET, however the method specified in `request` options is PUT and
         # it will override the default
