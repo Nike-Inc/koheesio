@@ -3,7 +3,7 @@ import requests
 from requests import HTTPError
 from requests.adapters import HTTPAdapter
 from requests.exceptions import RetryError
-from requests_mock.mocker import Mocker
+import requests_mock
 from urllib3 import Retry
 
 from koheesio.steps.http import (
@@ -86,7 +86,7 @@ def test_http_step(endpoint: str, step: HttpStep, method: str, return_value: dic
     Above parameters are for the success and failed GET API calls
     """
 
-    with Mocker() as rm:
+    with requests_mock.Mocker() as rm:
         rm.request(method=method, url=endpoint, json=return_value, status_code=int(expected_status_code))
         step = step(
             url=endpoint,
