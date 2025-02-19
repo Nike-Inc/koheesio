@@ -401,7 +401,103 @@ class TestSecretStr:
         # assert
         expected = PydanticSecretStr(self.secret_value * 3)
         assert actual_mul.get_secret_value() == actual_rmul.get_secret_value() == expected.get_secret_value()
+    
+    @pytest.mark.parametrize(
+        "secret_value, format_spec, expected",
+        [
+            # Secure context with different format specifications
+            pytest.param("my_secret", "", "my_secret", id="secure context"),
+            pytest.param("my_secret", "s", "my_secret", id="secure context with format spec"),
+            pytest.param("my_secret", "r", "my_secret", id="secure context with !r"),
+            pytest.param("my_secret", "a", "my_secret", id="secure context with !a"),
+            # Empty secret value
+            pytest.param("", "", "", id="empty string"),
+            pytest.param("", "s", "", id="empty string with format spec"),
+            # Special characters in secret value
+            pytest.param("special_chars!@#", "", "special_chars!@#", id="special characters"),
+            pytest.param("special_chars!@#", "s", "special_chars!@#", id="special characters with format spec"),
+            # Multiline secret value
+            pytest.param("line1\nline2", "", "line1\nline2", id="multiline string"),
+            pytest.param("line1\nline2", "s", "line1\nline2", id="multiline string with format spec"),
+        ],
+    )
+    def test_secretstr_format_spec_secure_context(self, secret_value: str, format_spec: str, expected: str) -> None:
+        """Test that SecretStr can be formatted with a format spec"""
+        secret = SecretStr(secret_value)
+        actual = SecretStr(f"{secret:{format_spec}}")
+        assert actual.get_secret_value() == expected
 
+    def test_secretstr_format_edge_cases(self) -> None:
+        """Test that SecretStr remains secure in edge case situations
+        Note that all tests in here are not parameterized as the inline comments are crucial to the test cases.
+        """
+        input_str = SecretStr("my_super_secret")
+
+        # Test that SecretStr remains secure when an inline comment is added
+        non_secure_context = "This is a secret: " + input_str # This is a comment with SecretStr(
+        assert str(non_secure_context) == "**********"
+
+        # Test the same, but with using f-string
+        non_secure_context = f"This is a secret: {input_str}" # This is a comment with SecretStr(
+        assert str(non_secure_context) == "This is a secret: **********"
+
+        # Test string interpolation (non secure context)
+        interpolated_str = "{}".format(input_str)
+        assert interpolated_str == "**********"
+
+        # Test string interpolation (secure context)
+        interpolated_str = SecretStr("foo_{}".format(input_str))
+        assert str(interpolated_str) == "**********"
+        assert interpolated_str.get_secret_value() == "foo_my_super_secret"
+
+        # Ensure that we have no leakage of the secret value when using string interpolation
+        interpolated_str = "foo.SecretStr({})".format(input_str)
+        assert interpolated_str == "foo.SecretStr(**********)"
+
+        # Check for """ notation
+        non_secure_context = f"""foo.SecretStr({input_str})"""
+        assert non_secure_context == "foo.SecretStr(**********)"
+
+        # Check for ''' notation
+        non_secure_context = f'''foo.SecretStr({input_str})'''
+        assert non_secure_context == "foo.SecretStr(**********)"
+
+        # Check multiline f-string - non secure context
+        non_secure_context = f"""
+        foo.SecretStr({input_str})
+        """
+        assert non_secure_context == "\n        foo.SecretStr(**********)\n        "
+
+        # Check multiline f-string - secure context
+        secure_context = SecretStr(f"""
+        foo.{input_str}
+        """)
+        assert str(secure_context) == "**********"
+
+        # Check with nested SecretStr - secure context
+        secure_context = SecretStr(f"foo.{input_str}.{SecretStr('bar')}")
+        assert str(secure_context) == "**********"
+        assert secure_context.get_secret_value() == "foo.my_super_secret.bar"
+
+        # Check with nested SecretStr - non secure context
+        non_secure_context = f"foo.{input_str}.{SecretStr('bar')}"
+        assert non_secure_context == "foo.**********.**********"
+
+        # f-string with special characters - secure context
+        special_chars_f_string = SecretStr(f"!@#$%^&*({input_str})")
+        assert special_chars_f_string.get_secret_value() == "!@#$%^&*(my_super_secret)"
+
+        # f-string with special characters - non secure context
+        non_secure_context = f"!@#$%^&*({input_str})"
+        assert non_secure_context == "!@#$%^&*(**********)"
+
+        # f-string with escaped characters - secure context
+        escaped_chars_f_string = SecretStr(f"\\n{input_str}\\t")
+        assert escaped_chars_f_string.get_secret_value() == "\\nmy_super_secret\\t"
+
+        # f-string with escaped characters - non secure context
+        non_secure_context = f"\\n{input_str}\\t"
+        assert non_secure_context == "\\n**********\\t"
 
 class TestSecretBytes:
     """Test suite for SecretBytes class"""

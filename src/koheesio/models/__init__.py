@@ -16,6 +16,7 @@ from abc import ABC
 from functools import cached_property, partial
 import inspect
 from pathlib import Path
+import re
 
 # to ensure that koheesio.models is a drop in replacement for pydantic
 from pydantic import BaseModel as PydanticBaseModel
@@ -888,8 +889,15 @@ class SecretStr(PydanticSecretStr, _SecretMixin):
         except IndexError:
             caller_context = ""
 
+        # Remove comments from the caller context
+        caller_context = re.sub(r'#.*', '', caller_context).strip()
+
+        # Remove the entire string that the format method was called on
+        caller_context = re.sub(r'["\'].*?format\(.*?\)["\']', "", caller_context).strip()
+        caller_context = re.sub(r'f?["\'].*?["\']', "", caller_context).strip()
+
         # safe context: the secret value is returned
-        if 'SecretStr(f' in caller_context:
+        if 'SecretStr(' in caller_context:
             return self.get_secret_value()
 
         # unsafe context: we let pydantic handle the formatting
