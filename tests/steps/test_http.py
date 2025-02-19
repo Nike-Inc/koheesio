@@ -80,7 +80,7 @@ STATUS_503_ENDPOINT = f"{BASE_URL}/status/503"
         ),
     ],
 )
-def test_http_step(endpoint, step, method, return_value, expected_status_code):
+def test_http_step(endpoint: str, step: HttpStep, method: str, return_value: dict, expected_status_code: int) -> None:
     """
     Unit Testing the GET functions.
     Above parameters are for the success and failed GET API calls
@@ -95,11 +95,13 @@ def test_http_step(endpoint, step, method, return_value, expected_status_code):
                 "Content-Type": "application/json",
             },
         )
+        # Unhappy path
         if expected_status_code not in (200, 202, 204):
             with pytest.raises(HTTPError) as excinfo:
                 step.execute()
 
             assert excinfo.value.response.status_code == expected_status_code
+        # Happy path
         else:
             step.execute()
             assert step.output.status_code == expected_status_code  # type: ignore
