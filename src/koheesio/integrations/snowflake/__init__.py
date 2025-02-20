@@ -46,6 +46,7 @@ from __future__ import annotations
 from typing import Any, Dict, Generator, List, Optional, Set, Union
 from abc import ABC
 from contextlib import contextmanager
+from functools import partial
 import os
 import tempfile
 from types import ModuleType
@@ -145,6 +146,7 @@ def safe_import_snowflake_connector() -> Optional[ModuleType]:
         )
         return None
 
+SF_DEFAULT_PARAMS = {"sfCompress": "on", "continue_on_error": "off"}
 
 class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc]
     """
@@ -215,10 +217,18 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
     sfSchema: Optional[str] = Field(
         default=..., alias="schema", description="The schema to use for the session after connecting"
     )
-    options: Optional[Dict[str, Any]] = Field(
-        default={"sfCompress": "on", "continue_on_error": "off"},
-        description="Extra options to pass to the Snowflake connector",
+    params: Optional[Dict[str, Any]] = Field(
+        default_factory=partial(dict, **SF_DEFAULT_PARAMS),
+        description="Extra options to pass to the Snowflake connector, by default it includes "
+                    "'sfCompress': 'on' and  'continue_on_error': 'off'",
+        alias="options",
+        examples=[{"sfCompress": "on", "continue_on_error": "off"}]
     )
+
+    @property
+    def options(self) -> Dict[str, Any]:
+        """Shorthand for accessing self.params provided for backwards compatibility"""
+        return self
 
     def get_options(self, by_alias: bool = True, include: Optional[Set[str]] = None) -> Dict[str, Any]:
         """Get the sfOptions as a dictionary.
@@ -242,7 +252,7 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
             # Exclude koheesio specific fields
             "name",
             "description",
-            # options and params are separately implemented
+            # params are separately implemented
             "params",
             "options",
             # schema and password have to be handled separately
@@ -270,11 +280,11 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
             fields = {key: value for key, value in fields.items() if key in include}
         else:
             # default filter
-            include = {"options", "params"}
+            include = {"params"}
 
         # handle options
         if "options" in include:
-            options = fields.pop("options", self.options)
+            options = fields.pop("params", self.params)
             fields.update(**options)
 
         # handle params

@@ -52,9 +52,10 @@ def sha2_hash(columns: List[str], delimiter: Optional[str] = "|", num_bits: Opti
     else:
         column = _columns[0]
 
-    return sha2(column, num_bits)  # type: ignore
+    return sha2(col=column, numBits=num_bits)  # type: ignore
 
 
+# TODO: convert this class to a ColumnsTransformationWithTarget
 class Sha2Hash(ColumnsTransformation):
     """
     hash the value of 1 or more columns using SHA-2 family of hash functions
@@ -92,12 +93,19 @@ class Sha2Hash(ColumnsTransformation):
         default=..., description="The generated hash will be written to the column name specified here"
     )
 
-    def execute(self) -> ColumnsTransformation.Output:
-        columns = list(self.get_columns())
+    def execute(self) -> "Sha2Hash.Output":
+        if not (columns := list(self.get_columns())):
+            self.output.df = self.df
+            return self.output
+
+        # check if columns exist in the dataframe
+        missing_columns = set(columns) - set(self.df.columns)
+        if missing_columns:
+            raise ValueError(f"Columns {missing_columns} not found in dataframe")
+
         self.output.df = (
             self.df.withColumn(
                 self.target_column, sha2_hash(columns=columns, delimiter=self.delimiter, num_bits=self.num_bits)
             )
-            if columns
-            else self.df
         )
+

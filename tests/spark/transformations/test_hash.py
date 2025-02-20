@@ -13,8 +13,7 @@ log = LoggingFactory.get_logger(name="test_hash")
 @pytest.mark.parametrize(
     "input_values,input_data,expected",
     [
-        (
-            # description: base test
+        pytest.param(
             # input values,
             dict(target_column="hash", column="id"),
             None,
@@ -24,9 +23,9 @@ log = LoggingFactory.get_logger(name="test_hash")
                 dict(id=2, string="world", hash="d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35"),
                 dict(id=3, string="", hash="4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"),
             ],
+            id="base test",
         ),
-        (
-            # description: multiple column input
+        pytest.param(
             # input values,
             dict(target_column="hash", columns=["id", "string"]),
             None,
@@ -36,9 +35,9 @@ log = LoggingFactory.get_logger(name="test_hash")
                 dict(id=2, string="world", hash="939ac689cbc0affd630000575a8edb83583130ca570ab6000124c25f985603cf"),
                 dict(id=3, string="", hash="626938c3fd46f4155cc77ec411626ef8188af25ad6829f2ad4c068ebc5d92fbf"),
             ],
+            id="multiple column input",
         ),
-        (
-            # description: null column input
+        pytest.param(
             # input values,
             dict(target_column="hash", column="string"),
             ([["hello"], ["world"], [None]], ["string"]),
@@ -48,9 +47,9 @@ log = LoggingFactory.get_logger(name="test_hash")
                 dict(string="world", hash="486ea46224d1bb4fb680f34f7c9ad96a8f24ec88be73ea8e5a6c65260e9cb8a7"),
                 dict(string=None, hash=None),
             ],
+            id="null column input",
         ),
-        (
-            # description: null column input along with other columns
+        pytest.param(
             # input values,
             dict(target_column="hash", columns=["id", "string"]),
             ([[1, "hello"], [2, "world"], [3, None]], ["id", "string"]),
@@ -60,6 +59,7 @@ log = LoggingFactory.get_logger(name="test_hash")
                 dict(id=2, string="world", hash="939ac689cbc0affd630000575a8edb83583130ca570ab6000124c25f985603cf"),
                 dict(id=3, string=None, hash="4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"),
             ],
+            id="null column input along with other columns",
         ),
     ],
 )
@@ -92,24 +92,15 @@ def test_with_same_data_as_from_spark_docs(spark):
 @pytest.mark.parametrize(
     "input_values,error",
     [
-        (
-            # description: non-existent column
+        pytest.param(
             # input values,
             dict(target_column="hash", columns="column_does_not_exist"),
             # expected error
-            Exception,
+            ValueError,
+            id="non-existent column",
         ),
     ],
 )
 def test_unhappy_flow(input_values, error, sample_df_with_strings):
-    log.info(
-        dedent(
-            f"""
-            input values: {input_values}
-            expected error: {error}
-            """
-        )
-    )
-
     with pytest.raises(error):
         Sha2Hash(**input_values).transform(sample_df_with_strings)
