@@ -178,7 +178,7 @@ class StepMetaClass(ModelMetaclass):
     @staticmethod
     def _is_called_through_super(caller_self: Any, caller_name: str, *_args, **_kwargs) -> bool:  # type: ignore[no-untyped-def]
         """
-        Check if the method is called through super() in the immediate parent class.
+        Check if the method is called through super() using MRO (Method Resolution Order).
 
         Parameters
         ----------
