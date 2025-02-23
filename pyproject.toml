@@ -409,7 +409,7 @@ Available scripts:
 - `coverage` or `cov` - run the test suite with coverage.
 """
 path = ".venv"
-python = "3.11"
+python = "3.12"
 template = "default"
 features = [
   "async",
