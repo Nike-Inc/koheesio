@@ -17,6 +17,7 @@ from functools import cached_property, partial
 import inspect
 from pathlib import Path
 import re
+import sys
 
 # to ensure that koheesio.models is a drop in replacement for pydantic
 from pydantic import BaseModel as PydanticBaseModel
@@ -878,23 +879,60 @@ class SecretStr(PydanticSecretStr, _SecretMixin):
         If the f-string is called from within a SecretStr, the secret value is returned as we are in a secure context.
         Otherwise, we consider the context 'unsafe' and we let pydantic take care of the formatting.
         """
-        # Inspect the call stack to determine if the string is being passed through SecretStr
-        stack = inspect.stack()
-        try:
-            caller_context = stack[1][4][0]  # type: ignore
-            # Explaining the stack[1][4][0] indexing:
-            # - stack[1]: the frame of the caller of the current function (i.e. what line of code called this function)
-            # - stack[1][4]: information of arguments passed to the caller
-            # - stack[1][4][0]: the string representation of the line of code that called this function
-        except IndexError:
-            caller_context = ""
+        # f-string behavior is different in Python 3.12 and higher, so we need to handle it separately
+        if sys.version_info >= (3, 12):
+            stack = inspect.stack(context=1)
+            current_frame = inspect.currentframe()
+            caller_frame = current_frame.f_back
+            positions = stack[1].positions
+            lineno = positions.lineno  # the line of code that called this function
+            filename = stack[1].frame.f_code.co_filename
+            source_lines = inspect.getsourcelines(caller_frame)[0]
+            code_context = stack[1].code_context[0]
+
+            # Check if we are in a multiline f-string
+            if not ("f'" in code_context or 'f"' in code_context or '.format' in code_context):
+                # Find the start of the multiline string f""" or f'''
+                starting_index = lineno
+                for i, line in enumerate(reversed(source_lines[:lineno])):
+                    if 'f"""' in line or "f'''" in line:
+                        starting_index = lineno - i - 1
+                        break
+
+                # Find the end of the multiline string """
+                ending_index = lineno
+                for i, line in enumerate(source_lines[lineno:]):
+                    if '"""' in line or "'''" in line:
+                        ending_index = lineno + i + 1
+                        break
+
+                # Extract the multiline string
+                multiline_string = "".join(source_lines[starting_index : ending_index])
+
+                # Remove the code_context from the multiline string
+                multiline_string_simplified = multiline_string.replace(code_context, "")
+                code_context = multiline_string_simplified.strip()
+            ...
+            caller_context = code_context
+
+        else:  # Python 3.11 and lower
+            # Inspect the call stack to determine if the string is being passed through SecretStr
+            stack = inspect.stack()  # context needs a non-negative value so that Python 3.12 doesn't complain
+            try:
+                caller_context = stack[1][4][0]  # type: ignore
+                # Explaining the stack[1][4][0] indexing:
+                # - stack[1]: the frame of the caller of the current function (i.e. what line of code called this function)
+                # - stack[1][4]: information of arguments passed to the caller
+                # - stack[1][4][0]: the string representation of the line of code that called this function
+            except IndexError:
+                caller_context = ""
 
         # Remove comments from the caller context
         caller_context = re.sub(r'#.*', '', caller_context).strip()
 
         # Remove the entire string that the format method was called on
-        caller_context = re.sub(r'["\'].*?format\(.*?\)["\']', "", caller_context).strip()
-        caller_context = re.sub(r'f?["\'].*?["\']', "", caller_context).strip()
+        caller_context = re.sub(r'["\'].*?format\(.*?\)["\']', "", caller_context, flags=re.DOTALL).strip()
+        caller_context = re.sub(r'f?["\'].*?["\']', "", caller_context, flags=re.DOTALL).strip()
 
         # safe context: the secret value is returned
         if 'SecretStr(' in caller_context:
