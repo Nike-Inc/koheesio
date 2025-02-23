@@ -874,64 +874,48 @@ class SecretStr(PydanticSecretStr, _SecretMixin):
         Returns the actual secret value.
     """
 
-    def __format__(self, format_spec: str) -> Union[str, 'SecretStr']:
+    def __format__(self, format_spec: str) -> str:
         """Advanced f-string formatting support.
         If the f-string is called from within a SecretStr, the secret value is returned as we are in a secure context.
         Otherwise, we consider the context 'unsafe' and we let pydantic take care of the formatting.
         """
-        # f-string behavior is different in Python 3.12 and higher, so we need to handle it separately
+        # Inspect the call stack to determine if the string is being passed through SecretStr
+        stack = inspect.stack(context=1)
+        caller_context = stack[1].code_context[0]
+
+        # f-string behavior is different from Python 3.12 onwards, so we need to handle it separately
         if sys.version_info >= (3, 12):
-            stack = inspect.stack(context=1)
-            current_frame = inspect.currentframe()
-            caller_frame = current_frame.f_back
-            positions = stack[1].positions
-            lineno = positions.lineno  # the line of code that called this function
-            filename = stack[1].frame.f_code.co_filename
-            source_lines = inspect.getsourcelines(caller_frame)[0]
-            code_context = stack[1].code_context[0]
+            caller_frame = stack[1].frame
 
             # Check if we are in a multiline f-string
-            if not ("f'" in code_context or 'f"' in code_context or '.format' in code_context):
-                # Find the start of the multiline string f""" or f'''
-                starting_index = lineno
-                for i, line in enumerate(reversed(source_lines[:lineno])):
-                    if 'f"""' in line or "f'''" in line:
-                        starting_index = lineno - i - 1
-                        break
+            if not any(substring in caller_context for substring in ("f'", 'f"', '.format')):
+                # Multiline f-strings do not show the outer code context, we'll need to extract it from the source code
+                source_lines = inspect.getsourcelines(caller_frame)[0]
+                lineno = stack[1].positions.lineno  # the line of code that called this function
 
-                # Find the end of the multiline string """
-                ending_index = lineno
-                for i, line in enumerate(source_lines[lineno:]):
-                    if '"""' in line or "'''" in line:
-                        ending_index = lineno + i + 1
-                        break
+                # Find the start of the multiline string f""" or f'''
+                starting_index = next(
+                    (
+                        lineno - i - 1
+                        for i, line in enumerate(reversed(source_lines[:lineno]))
+                        if any(marker in line for marker in ('f"""', "f'''"))
+                    ),
+                    None
+                )
 
                 # Extract the multiline string
-                multiline_string = "".join(source_lines[starting_index : ending_index])
+                multiline_string = "".join(source_lines[starting_index : lineno])
 
-                # Remove the code_context from the multiline string
-                multiline_string_simplified = multiline_string.replace(code_context, "")
-                code_context = multiline_string_simplified.strip()
-            ...
-            caller_context = code_context
-
-        else:  # Python 3.11 and lower
-            # Inspect the call stack to determine if the string is being passed through SecretStr
-            stack = inspect.stack()  # context needs a non-negative value so that Python 3.12 doesn't complain
-            try:
-                caller_context = stack[1][4][0]  # type: ignore
-                # Explaining the stack[1][4][0] indexing:
-                # - stack[1]: the frame of the caller of the current function (i.e. what line of code called this function)
-                # - stack[1][4]: information of arguments passed to the caller
-                # - stack[1][4][0]: the string representation of the line of code that called this function
-            except IndexError:
-                caller_context = ""
+                # Remove the code context from the multiline string
+                caller_context = multiline_string.replace(caller_context, "").strip()
 
         # Remove comments from the caller context
         caller_context = re.sub(r'#.*', '', caller_context).strip()
 
-        # Remove the entire string that the format method was called on
+        # Remove the entire string that the format method was called on: 
+        # 1. matches any string enclosed in single or double quotes that contains 'format('.
         caller_context = re.sub(r'["\'].*?format\(.*?\)["\']', "", caller_context, flags=re.DOTALL).strip()
+        # 2. matches any string enclosed in single or double quotes, optionally prefixed with 'f' for f-strings.
         caller_context = re.sub(r'f?["\'].*?["\']', "", caller_context, flags=re.DOTALL).strip()
 
         # safe context: the secret value is returned
