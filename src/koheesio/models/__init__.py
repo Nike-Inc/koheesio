@@ -881,7 +881,7 @@ class SecretStr(PydanticSecretStr, _SecretMixin):
         """
         # Inspect the call stack to determine if the string is being passed through SecretStr
         stack = inspect.stack(context=1)
-        caller_context = stack[1].code_context[0]
+        caller_context = stack[1].code_context[0]  # type: ignore
 
         # f-string behavior is different from Python 3.12 onwards, so we need to handle it separately
         if sys.version_info >= (3, 12):
