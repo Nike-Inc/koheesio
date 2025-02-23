@@ -450,6 +450,18 @@ class TestSecretStr:
         assert str(interpolated_str) == "**********"
         assert interpolated_str.get_secret_value() == "foo_my_super_secret"
 
+        # Test multiline interpolation (non secure context)
+        non_secure_context = """
+        foo.SecretStr({input_str})
+        """.format(input_str=input_str)
+        assert non_secure_context == "\n        foo.SecretStr(**********)\n        "
+
+        # Test multiline interpolation (secure context)
+        secure_context = SecretStr("""
+        foo.SecretStr({input_str})
+        """.format(input_str=input_str))
+        assert str(secure_context) == "**********"
+
         # Ensure that we have no leakage of the secret value when using string interpolation
         interpolated_str = "foo.SecretStr({})".format(input_str)
         assert interpolated_str == "foo.SecretStr(**********)"
