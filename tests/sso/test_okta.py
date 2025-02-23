@@ -4,8 +4,7 @@ import logging
 import pytest
 from requests_mock.mocker import Mocker
 
-from pydantic import SecretStr
-
+from koheesio.models import SecretStr
 from koheesio.sso import okta as o
 
 
