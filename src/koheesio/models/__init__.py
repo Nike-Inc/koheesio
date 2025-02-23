@@ -1001,3 +1001,19 @@ class SecretBytes(PydanticSecretBytes, _SecretMixin):
     def secret_data_type(self) -> type:
         """Return the type of the secret data."""
         return type(self.get_secret_value())
+
+      
+def _list_of_strings_validation(strings_value: Union[str, list]) -> list:
+    """
+    Performs validation for ListOfStrings type. Will ensure that whether one string is provided or a list of strings,
+    a list is returned.
+    """
+    strings = [strings_value] if isinstance(strings_value, str) else [*strings_value]
+    strings = [string for string in strings if string]  # remove empty strings, None, etc.
+
+    return strings
+
+
+ListOfStrings = Annotated[Union[str, List[str]], BeforeValidator(_list_of_strings_validation)]
+""" Annotated type for a list of strings. Ensures that there are no empty strings, None etc.
+In case an individual string is passed, the value will be coerced to a list. """

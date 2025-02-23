@@ -11,7 +11,7 @@ from pydantic import SecretBytes as PydanticSecretBytes
 from pydantic import SecretStr as PydanticSecretStr
 
 from koheesio.context import Context
-from koheesio.models import BaseModel, ExtraParamsMixin, SecretBytes, SecretStr
+from koheesio.models import BaseModel, ExtraParamsMixin, SecretBytes, SecretStr, ListOfStrings
 
 
 class TestBaseModel:
@@ -242,6 +242,7 @@ class TestBaseModel:
             ),
         ],
     )
+
     def test_name_and_multiline_description(self, model_class: type[BaseModel], instance_arg: dict, expected: dict) -> None:
         """Test that the name and description are correctly set."""
         instance = model_class(**instance_arg)
@@ -262,6 +263,7 @@ class TestBaseModel:
             (ModelWithLongDescriptionAndNoSpaces, 120, "ThisIsAVeryLongDescription" * 4 + "ThisIsAVeryLo..."),
         ],
     )
+
     def test_extremely_long_description(self, model_class: type[BaseModel], expected_length: int, expected_description: str) -> None:
         """Test that the description is truncated if it is too long."""
         model = model_class()
@@ -581,3 +583,22 @@ class TestSecretBytes:
         secret = SecretBytes([1, 2, 3])
         # act and assert
         assert isinstance(secret.get_secret_value(), list)
+
+
+class TestAnnotatedTypes:
+    class SomeModelWithListOfStrings(BaseModel):
+        a: ListOfStrings
+
+    @pytest.mark.parametrize(
+        "list_of_strings,expected_list_of_strings",
+        [
+            ("single_string", ["single_string"]),
+            (["foo", "bar"], ["foo", "bar"]),
+            (["some_strings_with_a", None, "in_between"], ["some_strings_with_a", "in_between"]),
+            (["some_strings_with_an_empty", "", "in_between"], ["some_strings_with_an_empty", "in_between"]),
+        ],
+    )
+    def test_list_of_strings(self, list_of_strings, expected_list_of_strings) -> None:
+        model_with = TestAnnotatedTypes.SomeModelWithListOfStrings(a=list_of_strings)
+        assert model_with.a == expected_list_of_strings
+
