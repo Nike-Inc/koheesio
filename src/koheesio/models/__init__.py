@@ -16,6 +16,8 @@ from abc import ABC
 from functools import cached_property, partial
 import inspect
 from pathlib import Path
+import re
+import sys
 
 # to ensure that koheesio.models is a drop in replacement for pydantic
 from pydantic import BaseModel as PydanticBaseModel
@@ -872,24 +874,52 @@ class SecretStr(PydanticSecretStr, _SecretMixin):
         Returns the actual secret value.
     """
 
-    def __format__(self, format_spec: str) -> Union[str, 'SecretStr']:
+    def __format__(self, format_spec: str) -> str:
         """Advanced f-string formatting support.
         If the f-string is called from within a SecretStr, the secret value is returned as we are in a secure context.
         Otherwise, we consider the context 'unsafe' and we let pydantic take care of the formatting.
         """
         # Inspect the call stack to determine if the string is being passed through SecretStr
-        stack = inspect.stack()
-        try:
-            caller_context = stack[1][4][0]  # type: ignore
-            # Explaining the stack[1][4][0] indexing:
-            # - stack[1]: the frame of the caller of the current function (i.e. what line of code called this function)
-            # - stack[1][4]: information of arguments passed to the caller
-            # - stack[1][4][0]: the string representation of the line of code that called this function
-        except IndexError:
-            caller_context = ""
+        stack = inspect.stack(context=1)
+        caller_context = stack[1].code_context[0]  # type: ignore
+
+        # f-string behavior is different from Python 3.12 onwards, so we need to handle it separately
+        if sys.version_info >= (3, 12):
+            caller_frame = stack[1].frame
+
+            # Check if we are in a multiline f-string
+            if not any(substring in caller_context for substring in ("f'", 'f"', '.format')):
+                # Multiline f-strings do not show the outer code context, we'll need to extract it from the source code
+                source_lines = inspect.getsourcelines(caller_frame)[0]
+                lineno = stack[1].positions.lineno  # the line of code that called this function
+
+                # Find the start of the multiline string f""" or f'''
+                starting_index = next(
+                    (
+                        lineno - i - 1
+                        for i, line in enumerate(reversed(source_lines[:lineno]))
+                        if any(marker in line for marker in ('f"""', "f'''"))
+                    ),
+                    None
+                )
+
+                # Extract the multiline string
+                multiline_string = "".join(source_lines[starting_index : lineno])
+
+                # Remove the code context from the multiline string
+                caller_context = multiline_string.replace(caller_context, "").strip()
+
+        # Remove comments from the caller context
+        caller_context = re.sub(r'#.*', '', caller_context).strip()
+
+        # Remove the entire string that the format method was called on: 
+        # 1. matches any string enclosed in single or double quotes that contains 'format('.
+        caller_context = re.sub(r'["\'].*?format\(.*?\)["\']', "", caller_context, flags=re.DOTALL).strip()
+        # 2. matches any string enclosed in single or double quotes, optionally prefixed with 'f' for f-strings.
+        caller_context = re.sub(r'f?["\'].*?["\']', "", caller_context, flags=re.DOTALL).strip()
 
         # safe context: the secret value is returned
-        if 'SecretStr(f' in caller_context:
+        if 'SecretStr(' in caller_context:
             return self.get_secret_value()
 
         # unsafe context: we let pydantic handle the formatting
@@ -971,3 +1001,19 @@ class SecretBytes(PydanticSecretBytes, _SecretMixin):
     def secret_data_type(self) -> type:
         """Return the type of the secret data."""
         return type(self.get_secret_value())
+
+      
+def _list_of_strings_validation(strings_value: Union[str, list]) -> list:
+    """
+    Performs validation for ListOfStrings type. Will ensure that whether one string is provided or a list of strings,
+    a list is returned.
+    """
+    strings = [strings_value] if isinstance(strings_value, str) else [*strings_value]
+    strings = [string for string in strings if string]  # remove empty strings, None, etc.
+
+    return strings
+
+
+ListOfStrings = Annotated[Union[str, List[str]], BeforeValidator(_list_of_strings_validation)]
+""" Annotated type for a list of strings. Ensures that there are no empty strings, None etc.
+In case an individual string is passed, the value will be coerced to a list. """

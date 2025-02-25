@@ -80,6 +80,7 @@ test = [
   "pytest-xdist",
   "requests_mock",
   "time_machine",
+  "freezegun",
 ]
 docs = [
   "markdown>=3.5.2",
@@ -409,7 +410,7 @@ Available scripts:
 - `coverage` or `cov` - run the test suite with coverage.
 """
 path = ".venv"
-python = "3.11"
+python = "3.12"
 template = "default"
 features = [
   "async",
