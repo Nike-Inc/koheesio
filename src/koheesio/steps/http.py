@@ -304,9 +304,8 @@ class HttpStep(Step, ExtraParamsMixin):
             The last exception that was caught if `requests.request()` fails after `self.max_retries` attempts.
         """
         _method = (method or self.method).value.upper()
+        self.log.debug(f"Making {_method} request to {self.url} with headers {self.headers}")
         options = self.get_options()
-
-        self.log.debug(f"Making {_method} request to {options['url']} with headers {options['headers']}")
 
         with self.session.request(method=_method, **options, stream=stream) as response:
             response.raise_for_status()

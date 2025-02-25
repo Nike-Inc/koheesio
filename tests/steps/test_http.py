@@ -6,6 +6,7 @@ from requests.exceptions import RetryError
 import requests_mock
 from urllib3 import Retry
 
+from koheesio.logger import LoggingFactory
 from koheesio.models import SecretStr
 from koheesio.steps.http import (
     HttpDeleteStep,
@@ -25,6 +26,8 @@ STATUS_404_ENDPOINT = f"{BASE_URL}/status/404"
 STATUS_500_ENDPOINT = f"{BASE_URL}/status/500"
 STATUS_503_ENDPOINT = f"{BASE_URL}/status/503"
 
+
+log = LoggingFactory.get_logger(name="test_delta", inherit_from_koheesio=True)
 
 @pytest.mark.parametrize(
     "endpoint,step,method,return_value,expected_status_code",
@@ -165,22 +168,35 @@ EXAMPLE_DIGEST_AUTH = (
         ),
     ],
 )
-def test_get_headers(params: dict, expected: str) -> None:
+def test_get_headers(params: dict, expected: str, caplog: pytest.LogCaptureFixture) -> None:
     """
     Authorization headers are being converted into SecretStr under the hood to avoid dumping any
     sensitive content into logs. However, when calling the `get_headers` method, the SecretStr is being
     converted back to string, otherwise sensitive info would have looked like '**********'.
     """
     # Arrange and Act
-    step = HttpStep(**params)
+    with requests_mock.Mocker() as rm:
+        rm.get(params["url"], status_code=int(200))  # Mock the request to be always successful
+        step = HttpStep(**params)
+        caplog.set_level("DEBUG", logger=step.log.name)
+        auth = step.headers.get("Authorization")
+        step.execute()
 
-    # Assert
-    actual_headers = step.get_headers()
-    auth = actual_headers["Authorization"]
+    # Check that the token doesn't accidentally leak in the logs
+    assert len(caplog.records) > 1, "No logs were generated"
+    for record in caplog.records:
+        assert expected not in record.message
+
+    # Ensure that the Authorization header is properly parsed to a SecretStr
+    assert auth is not None, "Authorization header is missing"
     assert isinstance(auth, SecretStr)
-    assert auth == "**********"
+    assert str(auth) == "**********"
     assert auth.get_secret_value() == expected
-    assert actual_headers["Content-Type"] == "application/json"
+
+    # Ensure that the Content-Type header is properly parsed while not being a SecretStr
+    assert step.headers["Content-Type"] == "application/json"
+
+
 
 
 @pytest.mark.parametrize(
