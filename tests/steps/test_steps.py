@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from typing import Any
 from copy import deepcopy
 from functools import wraps
 import io
+from logging import Logger
+import os
 from unittest import mock
 from unittest.mock import call, patch
 import warnings
@@ -301,15 +304,22 @@ class TestStep:
 
     class YourClass(Step):
         def execute(self):
-            self.log.info(f"This is from the execute method of {self.__class__.__name__}")
+            self.log.info("This is from the execute method of YourClass")
 
     class YourClass2(YourClass):
         def execute(self):
-            self.log.info(f"This is from the execute method of {self.__class__.__name__}")
+            self.log.info("This is from the execute method of YourClass2")
 
     class YourClass3(YourClass2):
         def execute(self):
-            self.log.info(f"This is from the execute method of {self.__class__.__name__}")
+            self.log.info("This is from the execute method of YourClass3")
+
+    class YourClassNoExecute(YourClass): ...
+
+    class YourClass4(YourClassNoExecute):
+        def execute(self):
+            super().execute()
+            self.log.info("This is from the execute method of YourClass4")
 
     class MyMetaClass(StepMetaClass):
         @classmethod
@@ -421,19 +431,42 @@ class TestStep:
 
             assert obj.output.dummy_value == "dummy"
 
-    @pytest.mark.parametrize("test_class", [YourClass, YourClass2, YourClass3])
-    def test_log_called_once(self, test_class):
+    @pytest.mark.parametrize(
+        "test_class, log_entry",
+        [
+            pytest.param(YourClass, [call.info("This is from the execute method of YourClass")], id="No inheritance"),
+            pytest.param(
+                YourClass2, [call.info("This is from the execute method of YourClass2")], id="1 level of inheritance"
+            ),
+            pytest.param(
+                YourClass3, [call.info("This is from the execute method of YourClass3")], id="2 levels of inheritance"
+            ),
+            pytest.param(
+                YourClass4,
+                [
+                    call.info("This is from the execute method of YourClass"),
+                    call.info("This is from the execute method of YourClass4"),
+                ],
+                id="Multiple levels of inheritance with super call",
+            ),
+        ],
+    )
+    def test_log_called_once(self, test_class: Step, log_entry: list) -> None:
+        """
+        Test that logs are correctly generated when a step is inherited multiple times.
+        """
+        # Arrange
         with mock.patch.object(test_class, "log", autospec=True) as mock_log:
+            # Act
             obj = test_class()
             obj.execute()
 
+            # Assert: Check that logs were called once (and only once) with the correct messages, and in the correct order
             name = test_class.__name__
-
-            # Check that logs were called once (and only once) with the correct messages, and in the correct order
             calls = [
                 call.info("Start running step"),
                 call.debug(f"Step Input: name='{name}' description='{name}'"),
-                call.info(f"This is from the execute method of {name}"),
+                *log_entry,
                 call.debug(f"Step Output: name='{name}.Output' description='Output for {name}'"),
                 call.info("Finished running step"),
             ]
@@ -457,3 +490,74 @@ class TestStep:
             step.execute()
 
             mock_validator.assert_called_once()
+
+
+class TestStepMetaClass:
+    """Tests that target the StepMetaClass specifically"""
+
+    def test_with_deeply_nested_super_call(self) -> None:
+        """
+        Test to ensure that logs are not duplicated for a step with a deeply nested super() call in the execute method.
+
+        Only one instance of each log is expected where logs are called in the StepMetaClass.
+
+        See [issue #167](https://github.com/Nike-Inc/koheesio/issues/167) for more details.
+        """
+        os.environ["KOHEESIO_LOGGING_LEVEL"] = "DEBUG"
+
+        # Arrange: simulate a deeply nested inheritance structure
+
+        class GrandParentStep(Step):
+            """GrandParent step class"""
+
+            def execute(self):
+                self.log.info("GrandParentStep execute called")
+
+        class ParentStep(GrandParentStep):
+            """Parent step class"""
+
+            foo: str = "bar"
+
+            def execute(self) -> Step.Output:
+                self.log.info("ParentStep execute called")
+                self.log.info(f"ParentStep foo: {self.foo}")
+                super().execute()
+
+        class ChildStep(ParentStep):
+            """Child step class"""
+
+            bar: str = "baz"
+            ...
+
+        class GrandChildStep(ChildStep):
+            """Grandchild step class"""
+
+            def execute(self) -> Step.Output:
+                super().execute()
+                self.log.info("GrandChildStep execute called")
+        
+        class GreatGrandChildStep(GrandChildStep):
+            """Great grandchild step class"""
+            ...
+
+        with (
+            patch.object(ParentStep, "log", autospec=True) as mock_log,
+        ):
+            # Act
+            obj = GreatGrandChildStep(foo="42", bar="Thanks for all the fish")
+            obj.execute()
+
+            # Assert: Check that logs were called once (and only once) with the correct messages, and in the correct order
+            calls = [
+                call.info("Start running step"),
+                call.debug(
+                    f"Step Input: name='{obj.name}' description='{obj.description}' foo='42' bar='Thanks for all the fish'"
+                ),
+                call.info("ParentStep execute called"),
+                call.info("ParentStep foo: 42"),
+                call.info("GrandParentStep execute called"),
+                call.info("GrandChildStep execute called"),
+                call.debug(f"Step Output: name='{obj.name}.Output' description='Output for {obj.name}'"),
+                call.info("Finished running step"),
+            ]
+            mock_log.assert_has_calls(calls, any_order=False)

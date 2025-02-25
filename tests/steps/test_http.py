@@ -3,7 +3,7 @@ import requests
 from requests import HTTPError
 from requests.adapters import HTTPAdapter
 from requests.exceptions import RetryError
-from requests_mock.mocker import Mocker
+import requests_mock
 from urllib3 import Retry
 
 from koheesio.models import SecretStr
@@ -81,13 +81,13 @@ STATUS_503_ENDPOINT = f"{BASE_URL}/status/503"
         ),
     ],
 )
-def test_http_step(endpoint, step, method, return_value, expected_status_code):
+def test_http_step(endpoint: str, step: HttpStep, method: str, return_value: dict, expected_status_code: int) -> None:
     """
     Unit Testing the GET functions.
     Above parameters are for the success and failed GET API calls
     """
 
-    with Mocker() as rm:
+    with requests_mock.Mocker() as rm:
         rm.request(method=method, url=endpoint, json=return_value, status_code=int(expected_status_code))
         step = step(
             url=endpoint,
@@ -96,11 +96,13 @@ def test_http_step(endpoint, step, method, return_value, expected_status_code):
                 "Content-Type": "application/json",
             },
         )
+        # Unhappy path
         if expected_status_code not in (200, 202, 204):
             with pytest.raises(HTTPError) as excinfo:
                 step.execute()
 
             assert excinfo.value.response.status_code == expected_status_code
+        # Happy path
         else:
             step.execute()
             assert step.output.status_code == expected_status_code  # type: ignore
@@ -113,14 +115,14 @@ def test_http_step_with_valid_http_method():
     Above parameters are for the success and failed GET API calls
     """
 
-    with Mocker() as rm:
+    with requests_mock.Mocker() as rm:
         rm.get(GET_ENDPOINT, status_code=int(200))
         response = HttpStep(method="get", url=GET_ENDPOINT).execute()
         assert response.status_code == 200
 
 
 def test_http_step_with_invalid_http_method():
-    with Mocker() as rm:
+    with requests_mock.Mocker() as rm:
         rm.get(GET_ENDPOINT, status_code=int(200))
         # Will be raised during class instantiation
         with pytest.raises(AttributeError):
@@ -128,7 +130,7 @@ def test_http_step_with_invalid_http_method():
 
 
 def test_http_step_request():
-    with Mocker() as rm:
+    with requests_mock.Mocker() as rm:
         rm.put(PUT_ENDPOINT, status_code=int(200))
         # The default method for HttpStep class is GET, however the method specified in `request` options is PUT and
         # it will override the default
