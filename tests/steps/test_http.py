@@ -6,6 +6,8 @@ from requests.exceptions import RetryError
 import requests_mock
 from urllib3 import Retry
 
+from koheesio.logger import LoggingFactory
+from koheesio.models import SecretStr
 from koheesio.steps.http import (
     HttpDeleteStep,
     HttpGetStep,
@@ -24,6 +26,8 @@ STATUS_404_ENDPOINT = f"{BASE_URL}/status/404"
 STATUS_500_ENDPOINT = f"{BASE_URL}/status/500"
 STATUS_503_ENDPOINT = f"{BASE_URL}/status/503"
 
+
+log = LoggingFactory.get_logger(name="test_delta", inherit_from_koheesio=True)
 
 @pytest.mark.parametrize(
     "endpoint,step,method,return_value,expected_status_code",
@@ -138,28 +142,61 @@ def test_http_step_request():
             assert response.status_code == 200
 
 
+
+EXAMPLE_DIGEST_AUTH = (
+    'Digest username="Zaphod", realm="galaxy@heartofgold.com", nonce="42answer", uri="/dir/restaurant.html", ' 
+    'response="dontpanic42", opaque="babelfish"'
+)
+
 @pytest.mark.parametrize(
-    "params",
+    "params, expected",
     [
-        dict(url=GET_ENDPOINT, headers={"Authorization": "Bearer token", "Content-Type": "application/json"}),
-        dict(url=GET_ENDPOINT, headers={"Content-Type": "application/json"}, bearer_token="token"),
-        dict(url=GET_ENDPOINT, headers={"Content-Type": "application/json"}, token="token"),
+        pytest.param(
+            dict(url=GET_ENDPOINT, headers={"Authorization": "Bearer token", "Content-Type": "application/json"}), 
+            "Bearer token",
+            id="bearer_token_in_headers"
+        ),
+        pytest.param(
+            dict(url=GET_ENDPOINT, headers={"Content-Type": "application/json"}, auth_header="Bearer token"),
+            "Bearer token",
+            id="bearer_token_through_auth_header",
+        ),
+        pytest.param(
+            dict(url=GET_ENDPOINT, auth_header=EXAMPLE_DIGEST_AUTH),
+            EXAMPLE_DIGEST_AUTH,
+            id="digest_auth_with_nonce",
+        ),
     ],
 )
-def test_get_headers(params):
+def test_get_headers(params: dict, expected: str, caplog: pytest.LogCaptureFixture) -> None:
     """
     Authorization headers are being converted into SecretStr under the hood to avoid dumping any
     sensitive content into logs. However, when calling the `get_headers` method, the SecretStr is being
     converted back to string, otherwise sensitive info would have looked like '**********'.
     """
     # Arrange and Act
-    step = HttpStep(**params)
+    with requests_mock.Mocker() as rm:
+        rm.get(params["url"], status_code=int(200))  # Mock the request to be always successful
+        step = HttpStep(**params)
+        caplog.set_level("DEBUG", logger=step.log.name)
+        auth = step.headers.get("Authorization")
+        step.execute()
 
-    # Assert
-    actual_headers = step.get_headers()
-    assert actual_headers["Authorization"] != "**********"
-    assert actual_headers["Authorization"] == "Bearer token"
-    assert actual_headers["Content-Type"] == "application/json"
+    # Check that the token doesn't accidentally leak in the logs
+    assert len(caplog.records) > 1, "No logs were generated"
+    for record in caplog.records:
+        assert expected not in record.message
+
+    # Ensure that the Authorization header is properly parsed to a SecretStr
+    assert auth is not None, "Authorization header is missing"
+    assert isinstance(auth, SecretStr)
+    assert str(auth) == "**********"
+    assert auth.get_secret_value() == expected
+
+    # Ensure that the Content-Type header is properly parsed while not being a SecretStr
+    assert step.headers["Content-Type"] == "application/json"
+
+
 
 
 @pytest.mark.parametrize(
@@ -171,7 +208,7 @@ def test_get_headers(params):
         pytest.param(17, STATUS_404_ENDPOINT, 503, 1, HTTPError, id="max_retries_17_404"),
     ],
 )
-def test_max_retries(max_retries, endpoint, status_code, expected_count, error_type):
+def test_max_retries(max_retries: int, endpoint: str, status_code: int, expected_count: int, error_type: Exception) -> None:
     session = requests.Session()
     retry_logic = Retry(total=max_retries, status_forcelist=[status_code])
     session.mount("https://", HTTPAdapter(max_retries=retry_logic))
@@ -180,7 +217,7 @@ def test_max_retries(max_retries, endpoint, status_code, expected_count, error_t
 
     step = HttpGetStep(url=endpoint, session=session)
 
-    with pytest.raises(error_type):
+    with pytest.raises(error_type):  # type: ignore
         step.execute()
 
     first_pool = [v for _, v in session.adapters["https://"].poolmanager.pools._container.items()][0]
@@ -197,7 +234,7 @@ def test_max_retries(max_retries, endpoint, status_code, expected_count, error_t
         pytest.param(1, [0, 2, 4], id="backoff_1"),
     ],
 )
-def test_initial_delay_and_backoff(monkeypatch, backoff, expected):
+def test_initial_delay_and_backoff(monkeypatch: pytest.FixtureRequest, backoff: int, expected: list) -> None:
     session = requests.Session()
     retry_logic = Retry(total=3, backoff_factor=backoff, status_forcelist=[503])
     session.mount("https://", HTTPAdapter(max_retries=retry_logic))

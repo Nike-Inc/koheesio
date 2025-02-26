@@ -1,5 +1,5 @@
 """
-This module contains a few simple HTTP Steps that can be used to perform API Calls to HTTP endpoints
+This module contains several HTTP Steps that can be used to perform API Calls to HTTP endpoints
 
 Example
 -------
@@ -64,9 +64,34 @@ class HttpStep(Step, ExtraParamsMixin):
     """
     Can be used to perform API Calls to HTTP endpoints
 
+    Authorization
+    -------------
+    The optional `auth_header` parameter in HttpStep allows you to pass an authorization header, such as a bearer token. 
+    For example: `auth_header = "Bearer <token>"`.
+
+    The `auth_header` value is stored as a `SecretStr` object to prevent sensitive information from being displayed in logs.
+
+    Of course, authorization can also just be passed as part of the regular `headers` parameter. 
+    
+    For example, either one of these parameters would semantically be the same:
+    ```python
+    headers = {
+        "Authorization": "Bearer <token>",
+        "Content-Type": "application/json"
+    }
+    ```
+    # or
+    auth_header = "Bearer <token>"
+    ```
+
+    The `auth_header` parameter is useful when you want to keep the authorization separate from the other headers, for 
+    example when your implementation requires you to pass some custom headers in addition to the authorization header.
+
+    > Note: The `auth_header` parameter can accept any authorization header value, including basic authentication 
+        tokens, digest authentication strings, NTLM, etc.
+
     Understanding Retries
     ----------------------
-
     This class includes a built-in retry mechanism for handling temporary issues, such as network errors or server
     downtime, that might cause the HTTP request to fail. The retry mechanism is controlled by three parameters:
     `max_retries`, `initial_delay`, and `backoff`.
@@ -91,6 +116,38 @@ class HttpStep(Step, ExtraParamsMixin):
     `6 seconds`, and `12 seconds`. If you set `initial_delay=2` and `backoff=3`, the delays before the retries would be
     `2 seconds`, `6 seconds`, and `18 seconds`. If you set `initial_delay=2` and `backoff=1`, the delays before the
     retries would be `2 seconds`, `2 seconds`, and `2 seconds`.
+
+    Parameters
+    ----------
+    url : str, required
+        API endpoint URL.
+    headers : Dict[str, Union[str, SecretStr]], optional, default={"Content-Type": "application/json"}
+        Request headers.
+    auth_header : Optional[SecretStr], optional, default=None
+        Authorization header. An optional parameter that can be used to pass an authorization, such as a bearer token.
+    data : Union[Dict[str, str], str], optional, default={}
+        Data to be sent along with the request.
+    timeout : int, optional, default=3
+        Request timeout. Defaults to 3 seconds.
+    method : Union[str, HttpMethod], required, default='get'
+        What type of Http call to perform. One of 'get', 'post', 'put', 'delete'. Defaults to 'get'.
+    session : requests.Session, optional, default=requests.Session()
+        Existing requests session object to be used for making HTTP requests. If not provided, a new session object
+        will be created.
+    params : Optional[Dict[str, Any]]
+        Set of extra parameters that should be passed to the HTTP request. Note: any kwargs passed to the class will be
+        added to this dictionary.
+
+    Output
+    ------
+    response_raw : Optional[requests.Response]
+        The raw requests.Response object returned by the appropriate requests.request() call.
+    response_json : Optional[Union[Dict, List]]
+        The JSON response for the request.
+    raw_payload : Optional[str]
+        The raw response for the request.
+    status_code : Optional[int]
+        The status return code of the request.
     """
 
     url: str = Field(
@@ -103,27 +160,30 @@ class HttpStep(Step, ExtraParamsMixin):
         description="Request headers",
         alias="header",
     )
-    bearer_token: Optional[SecretStr] = Field(
+    auth_header: Optional[SecretStr] = Field(
         default=None,
-        description="Bearer token for authorization",
-        alias="token",
-        repr=False,
+        description="[Optional] Authorization header",
+        alias="authorization_header",
+        examples=["Bearer <token>"],
     )
-    data: Optional[Union[Dict[str, str], str]] = Field(
+    data: Union[Dict[str, str], str] = Field(
         default_factory=dict, description="[Optional] Data to be sent along with the request", alias="body"
     )
     params: Optional[Dict[str, Any]] = Field(  # type: ignore[assignment]
         default_factory=dict,
         description="[Optional] Set of extra parameters that should be passed to HTTP request",
     )
-    timeout: Optional[int] = Field(default=3, description="[Optional] Request timeout")
+    timeout: int = Field(default=3, description="[Optional] Request timeout")
     method: Union[str, HttpMethod] = Field(
         default=HttpMethod.GET,
         description="What type of Http call to perform. One of 'get', 'post', 'put', 'delete'. Defaults to 'get'.",
     )
     session: requests.Session = Field(
         default_factory=requests.Session,
-        description="Requests session object to be used for making HTTP requests",
+        description=(
+            "Existing requests session object to be used for making HTTP requests. If not provided, a new session "
+            "object will be created."
+        ),
         exclude=True,
         repr=False,
     )
@@ -164,18 +224,15 @@ class HttpStep(Step, ExtraParamsMixin):
         return method_value
 
     @model_validator(mode="after")
-    def encode_sensitive_headers(self) -> dict:
+    def encode_sensitive_headers(self) -> "HttpStep":
         """
         Encode potentially sensitive data into pydantic.SecretStr class to prevent them
         being displayed as plain text in logs.
         """
-        if token := self.bearer_token:
-            _secret_token = token.get_secret_value()
+        if auth_header := self.auth_header:
             # ensure the token is preceded with the word 'Bearer'
-            self.headers["Authorization"] = (
-                _secret_token if _secret_token.startswith("Bearer") else f"Bearer {_secret_token}"
-            )
-            del self.bearer_token
+            self.headers["Authorization"] = auth_header
+            del self.auth_header
         if auth := self.headers.get("Authorization"):
             self.headers["Authorization"] = auth if isinstance(auth, SecretStr) else SecretStr(auth)
         return self
@@ -263,9 +320,8 @@ class HttpStep(Step, ExtraParamsMixin):
             The last exception that was caught if `requests.request()` fails after `self.max_retries` attempts.
         """
         _method = (method or self.method).value.upper()
+        self.log.debug(f"Making {_method} request to {self.url} with headers {self.headers}")
         options = self.get_options()
-
-        self.log.debug(f"Making {_method} request to {options['url']} with headers {options['headers']}")
 
         with self.session.request(method=_method, **options, stream=stream) as response:
             response.raise_for_status()
