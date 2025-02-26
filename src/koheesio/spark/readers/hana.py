@@ -61,7 +61,8 @@ class HanaReader(JdbcReader):
         default="com.sap.db.jdbc.Driver",
         description="Make sure that the necessary JARs are available in the cluster: ngdbc-2-x.x.x.x",
     )
-    options: Optional[Dict[str, Any]] = Field(
+    params: Optional[Dict[str, Any]] = Field(
         default={"fetchsize": 2000, "numPartitions": 10},
         description="Extra options to pass to the SAP HANA JDBC driver",
+        alias="options",
     )

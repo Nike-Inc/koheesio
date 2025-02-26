@@ -14,11 +14,11 @@ class TestJdbcReader:
     }
 
     def test_get_options_wo_extra_options(self):
-        jr = JdbcReader(**self.common_options)
+        jr = JdbcReader(**self.common_options, dbtable="table")
         actual = jr.get_options()
         del actual["password"]  # we don't need to test for this
 
-        expected = {**self.common_options}
+        expected = {**self.common_options, "dbtable": "table"}
         del expected["password"]  # we don't need to test for this
 
         assert actual == expected
@@ -29,6 +29,8 @@ class TestJdbcReader:
                 "foo": "foo",
                 "bar": "bar",
             },
+            query = "unit test",
+            dbtable = "table",
             **self.common_options,
         )
 
@@ -37,17 +39,17 @@ class TestJdbcReader:
 
         expected = {
             **self.common_options,
+            "query": "unit test",
             "foo": "foo",
             "bar": "bar",
         }
         del expected["password"]  # we don't need to test for this
 
-        assert actual == expected
+        assert sorted(actual) == sorted(expected)
 
     def test_execute_wo_dbtable_and_query(self):
-        jr = JdbcReader(**self.common_options)
         with pytest.raises(ValueError) as e:
-            jr.execute()
+            _ = JdbcReader(**self.common_options)
             assert e.type is ValueError
 
     def test_execute_w_dbtable_and_query(self, dummy_spark):

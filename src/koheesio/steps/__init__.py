@@ -178,7 +178,7 @@ class StepMetaClass(ModelMetaclass):
     @staticmethod
     def _is_called_through_super(caller_self: Any, caller_name: str, *_args, **_kwargs) -> bool:  # type: ignore[no-untyped-def]
         """
-        Check if the method is called through super() in the immediate parent class.
+        Check if the method is called through super() using MRO (Method Resolution Order).
 
         Parameters
         ----------
@@ -197,9 +197,10 @@ class StepMetaClass(ModelMetaclass):
             True if the method is called through super(), False otherwise.
 
         """
-
-        base_class = caller_self.__class__.__bases__[0]
-        return caller_name in base_class.__dict__
+        for base_class in caller_self.__class__.__mro__:
+            if caller_name in base_class.__dict__:
+                return True
+        return False
 
     @classmethod
     def _partialmethod_impl(mcs, cls: type, execute_method: Callable) -> partialmethod:
@@ -273,8 +274,14 @@ class StepMetaClass(ModelMetaclass):
 
         """
 
-        # check if the method is called through super() in the immediate parent class
-        caller_name = inspect.currentframe().f_back.f_back.f_code.co_name
+        # Check if the method is called through super() in the immediate parent class
+        caller_name = (
+            inspect.currentframe()  # Current stack frame
+            .f_back  # Previous stack frame (caller of the current function)
+            .f_back  # Parent stack frame (caller of the caller function)
+            .f_code  # Code object of that frame
+            .co_name  # Name of the function from the code object
+        )
         is_called_through_super_ = cls._is_called_through_super(step, caller_name)
 
         cls._log_start_message(step=step, skip_logging=is_called_through_super_)
