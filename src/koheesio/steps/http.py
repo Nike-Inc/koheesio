@@ -1,5 +1,5 @@
 """
-This module contains a several HTTP Steps that can be used to perform API Calls to HTTP endpoints
+This module contains several HTTP Steps that can be used to perform API Calls to HTTP endpoints
 
 Example
 -------
@@ -71,6 +71,22 @@ class HttpStep(Step, ExtraParamsMixin):
 
     The `auth_header` value is stored as a `SecretStr` object to prevent sensitive information from being displayed in logs.
 
+    Of course, authorization can also just be passed as part of the regular `headers` parameter. 
+    
+    For example, either one of these parameters would semantically be the same:
+    ```python
+    headers = {
+        "Authorization": "Bearer <token>",
+        "Content-Type": "application/json"
+    }
+    ```
+    # or
+    auth_header = "Bearer <token>"
+    ```
+
+    The `auth_header` parameter is useful when you want to keep the authorization separate from the other headers, for 
+    example when your implementation requires you to pass some custom headers in addition to the authorization header.
+
     > Note: The `auth_header` parameter can accept any authorization header value, including basic authentication 
         tokens, digest authentication strings, NTLM, etc.
 
@@ -108,7 +124,7 @@ class HttpStep(Step, ExtraParamsMixin):
     headers : Dict[str, Union[str, SecretStr]], optional, default={"Content-Type": "application/json"}
         Request headers.
     auth_header : Optional[SecretStr], optional, default=None
-        Authorization header. An optional parameter that can be used to pass an authorization, suck as a bearer token.
+        Authorization header. An optional parameter that can be used to pass an authorization, such as a bearer token.
     data : Union[Dict[str, str], str], optional, default={}
         Data to be sent along with the request.
     timeout : int, optional, default=3
