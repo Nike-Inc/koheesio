@@ -314,7 +314,7 @@ name.".*(pyspark35r).*".env-vars = [
 
 
 [tool.pytest.ini_options]
-addopts = "-q --color=yes --order-scope=module"
+addopts = "-vv --color=yes --order-scope=module"
 log_level = "CRITICAL"
 testpaths = ["tests"]
 asyncio_default_fixture_loop_scope = "scope"
@@ -428,6 +428,14 @@ features = [
   "test",
   "docs",
 ]
+extra-dependencies = [
+  "pyspark[connect]==3.5.4",
+]
+
+# Enable this if you want Spark Connect in your dev environment
+[tool.hatch.envs.dev.env-vars]
+SPARK_REMOTE = "local"
+SPARK_TESTING = "True"
 
 
 ###  ~~~~~~~~~~~~~~~~~~  ###

@@ -9,11 +9,12 @@ JdbcReader
 
 from typing import Any, Dict, Optional
 
-from koheesio.models import Field, SecretStr
+from koheesio import ExtraParamsMixin
+from koheesio.models import Field, SecretStr, model_validator
 from koheesio.spark.readers import Reader
 
 
-class JdbcReader(Reader):
+class JdbcReader(Reader, ExtraParamsMixin):
     """
     Reader for JDBC tables.
 
@@ -49,10 +50,16 @@ class JdbcReader(Reader):
         user="YOUR_USERNAME",
         password="***",
         dbtable="schema_name.table_name",
-        options={"fetchsize": 100},
+        options={"fetchsize": 100},  # you can also use 'params' instead of 'options'
     )
     df = jdbc_mssql.read()
     ```
+
+    ### ExtraParamsMixin
+
+    The `ExtraParamsMixin` is a mixin class that provides a way to pass extra parameters to the reader. The extra
+    parameters are stored in the `params` (or `options`) attribute. Any key-value pairs passed to the reader will be
+    stored in the `params` attribute.
     """
 
     format: str = Field(default="jdbc", description="The type of format to load. Defaults to 'jdbc'.")
@@ -71,7 +78,7 @@ class JdbcReader(Reader):
         default=None, description="Database table name, also include schema name", alias="table"
     )
     query: Optional[str] = Field(default=None, description="Query")
-    options: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Extra options to pass to spark reader")
+    params: Dict[str, Any] = Field(default_factory=dict, description="Extra options to pass to spark reader", alias="options")
 
     def get_options(self) -> Dict[str, Any]:
         """
@@ -79,33 +86,46 @@ class JdbcReader(Reader):
 
         Note: override this method if driver requires custom names, e.g. Snowflake: `sfUrl`, `sfUser`, etc.
         """
-        return {
+        _options = {
             "driver": self.driver,
             "url": self.url,
             "user": self.user,
             "password": self.password,
-            **self.options,  # type: ignore
+            **self.params,
         }
+        if query := self.query:
+            _options["query"] = query
 
-    def execute(self) -> Reader.Output:
-        """Wrapper around Spark's jdbc read format"""
+        # Check that only one of them is filled in
+        if query and self.dbtable:
+            self.log.warning("Query is filled in, dbtable will be ignored!")
+        else:
+            _options["dbtable"] = self.dbtable
 
-        # Can't have both dbtable and query empty
+        return _options
+
+    @model_validator(mode="after")
+    def check_dbtable_or_query(self) -> "JdbcReader":
+        """Check that dbtable or query is filled in and that only one of them is filled in (query has precedence)"""
+        # Check that dbtable or query is filled in
         if not self.dbtable and not self.query:
             raise ValueError("Please do not leave dbtable and query both empty!")
 
-        if self.query and self.dbtable:
-            self.log.info("Both 'query' and 'dbtable' are filled in, 'dbtable' will be ignored!")
+        return self
 
+    @property
+    def options(self) -> Dict[str, Any]:
+        """Shorthand for accessing self.params provided for backwards compatibility"""
+        return self.params
+
+    def execute(self) -> "JdbcReader.Output":
+        """Wrapper around Spark's jdbc read format"""
         options = self.get_options()
 
         if pw := self.password:
             options["password"] = pw.get_secret_value()
 
         if query := self.query:
-            options["query"] = query
-            self.log.info(f"Executing query: {self.query}")
-        else:
-            options["dbtable"] = self.dbtable
+            self.log.info(f"Executing query: {query}")
 
         self.output.df = self.spark.read.format(self.format).options(**options).load()
