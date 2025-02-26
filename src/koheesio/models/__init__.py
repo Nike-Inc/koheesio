@@ -14,7 +14,10 @@ from __future__ import annotations
 from typing import Annotated, Any, Dict, List, Optional, Union
 from abc import ABC
 from functools import cached_property, partial
+import inspect
 from pathlib import Path
+import re
+import sys
 
 # to ensure that koheesio.models is a drop in replacement for pydantic
 from pydantic import BaseModel as PydanticBaseModel
@@ -27,8 +30,6 @@ from pydantic import (
     InstanceOf,
     PositiveInt,
     PrivateAttr,
-    SecretBytes,
-    SecretStr,
     SkipValidation,
     ValidationError,
     conint,
@@ -38,6 +39,8 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+from pydantic import SecretBytes as PydanticSecretBytes
+from pydantic import SecretStr as PydanticSecretStr
 
 # noinspection PyProtectedMember
 from pydantic._internal._generics import PydanticGenericMetadata
@@ -764,6 +767,242 @@ In case an individual column is passed, the value will be coerced to a list.
 """
 
 
+class _SecretMixin:
+    """Mixin class that provides additional functionality to Pydantic's SecretStr and SecretBytes classes."""
+
+    def __add__(self, other: Union[str, bytes, '_SecretMixin']) -> '_SecretMixin':
+        """Support concatenation when the SecretMixin instance is on the left side of the + operator.
+        
+        Raises
+        ------
+        TypeError
+            If concatenation fails.
+        """
+        left = self.get_secret_value()
+        right = other.get_secret_value() if isinstance(other, _SecretMixin) else other
+        return self.__class__(left + right)  # type: ignore
+    
+    def __radd__(self, other: Union[str, bytes, '_SecretMixin']) -> '_SecretMixin':
+        """Support concatenation when the SecretMixin instance is on the right side of the + operator.
+
+        Raises
+        ------
+        TypeError
+            If concatenation fails.
+        """
+        right = self.get_secret_value()
+        left = other.get_secret_value() if isinstance(other, _SecretMixin) else other
+        return self.__class__(left + right)  # type: ignore
+    
+    def __mul__(self, n: int) -> '_SecretMixin':
+        """Support multiplication when the SecretMixin instance is on the left side of the * operator.
+
+        Raises
+        ------
+        TypeError
+            If multiplication fails.
+        """
+        if isinstance(n, int):
+            return self.__class__(self.get_secret_value() * n)  # type: ignore
+        return NotImplemented
+    
+    def __rmul__(self, n: int) -> '_SecretMixin':
+        """Support multiplication when the SecretMixin instance is on the right side of the * operator.
+
+        Raises
+        ------
+        TypeError
+            If multiplication fails.
+        """
+        return self.__mul__(n)
+
+
+class SecretStr(PydanticSecretStr, _SecretMixin):
+    """A string type that ensures the secrecy of its value, extending Pydantic's SecretStr.
+
+    This class provides additional functionality over Pydantic's SecretStr, including:
+    - Support for concatenation with other strings and SecretStr instances.
+    - Advanced f-string formatting support to ensure the secret value is only revealed in secure contexts.
+
+    For more information on Pydantic's SecretStr, see: https://docs.pydantic.dev/latest/usage/types/#secret-types
+
+    Examples
+    --------
+    ### Basic Usage
+    ```python
+    secret = SecretStr("my_secret")
+    ```
+
+    ### String representations of the secrets are masked
+    ```python
+    str(secret)
+    # '**********'
+    repr(secret)
+    # "SecretStr('**********')"
+    ```
+
+    ### Concatenations are supported with other strings and SecretStr instances
+    ```python
+    secret + "suffix"
+    # SecretStr('my_secretsuffix')
+    "prefix" + secret
+    # SecretStr('prefixmy_secret')
+    ```
+
+    ### f-string formatting is supported
+    If the f-string is called from within a SecretStr, the secret value is returned as we are in a secure context.
+    ```python
+    new_secret = f"{SecretStr(f'prefix{secret}suffix')}"
+    new_secret.get_secret_value()
+    ### 'prefixmy_secretsuffix'
+    ```
+    
+    Otherwise, we consider the context 'unsafe': the SecretStr instance is returned, and the secret value is masked.
+    ```python
+    f"{secret}"
+    '**********'
+    ```
+
+    Parameters
+    ----------
+    secret : str
+        The secret value to be stored.
+
+    Methods
+    -------
+    get_secret_value()
+        Returns the actual secret value.
+    """
+
+    def __format__(self, format_spec: str) -> str:
+        """Advanced f-string formatting support.
+        If the f-string is called from within a SecretStr, the secret value is returned as we are in a secure context.
+        Otherwise, we consider the context 'unsafe' and we let pydantic take care of the formatting.
+        """
+        # Inspect the call stack to determine if the string is being passed through SecretStr
+        stack = inspect.stack(context=1)
+        caller_context = stack[1].code_context[0]  # type: ignore
+
+        # f-string behavior is different from Python 3.12 onwards, so we need to handle it separately
+        if sys.version_info >= (3, 12):
+            caller_frame = stack[1].frame
+
+            # Check if we are in a multiline f-string
+            if not any(substring in caller_context for substring in ("f'", 'f"', '.format')):
+                # Multiline f-strings do not show the outer code context, we'll need to extract it from the source code
+                source_lines = inspect.getsourcelines(caller_frame)[0]
+                lineno = stack[1].positions.lineno  # the line of code that called this function
+
+                # Find the start of the multiline string f""" or f'''
+                starting_index = next(
+                    (
+                        lineno - i - 1
+                        for i, line in enumerate(reversed(source_lines[:lineno]))
+                        if any(marker in line for marker in ('f"""', "f'''"))
+                    ),
+                    None
+                )
+
+                # Extract the multiline string
+                multiline_string = "".join(source_lines[starting_index : lineno])
+
+                # Remove the code context from the multiline string
+                caller_context = multiline_string.replace(caller_context, "").strip()
+
+        # Remove comments from the caller context
+        caller_context = re.sub(r'#.*', '', caller_context).strip()
+
+        # Remove the entire string that the format method was called on: 
+        # 1. matches any string enclosed in single or double quotes that contains 'format('.
+        caller_context = re.sub(r'["\'].*?format\(.*?\)["\']', "", caller_context, flags=re.DOTALL).strip()
+        # 2. matches any string enclosed in single or double quotes, optionally prefixed with 'f' for f-strings.
+        caller_context = re.sub(r'f?["\'].*?["\']', "", caller_context, flags=re.DOTALL).strip()
+
+        # safe context: the secret value is returned
+        if 'SecretStr(' in caller_context:
+            return self.get_secret_value()
+
+        # unsafe context: we let pydantic handle the formatting
+        return super().__format__(format_spec)
+    
+
+class SecretBytes(PydanticSecretBytes, _SecretMixin):
+    """A bytes type that ensures the secrecy of its value, extending Pydantic's SecretBytes.
+
+    This class provides additional functionality over Pydantic's SecretBytes, including:
+    - Support for concatenation with other bytes and SecretBytes instances.
+    - Advanced f-string formatting support to ensure the secret value is only revealed in secure contexts.
+
+    For more information on Pydantic's SecretBytes, see: https://docs.pydantic.dev/latest/usage/types/#secret-types
+
+    Examples
+    --------
+    ### Basic Usage
+    ```python
+    secret = SecretBytes(b"my_secret")
+    ```
+
+    ### String representations of the secrets are masked
+    ```python
+    str(secret)
+    # '**********'
+    repr(secret)
+    # "SecretBytes('**********')"
+    ```
+
+    ### Concatenations are supported with other bytes and SecretBytes instances
+    ```python
+    secret + b"suffix"
+    # SecretBytes(b'my_secretsuffix')
+    b"prefix" + secret
+    # SecretBytes(b'prefixmy_secret')
+    ```
+
+    ### Multiplications are supported with integers
+    ```python
+    SecretBytes(b"foo") * 2
+    # SecretBytes(b'foofoo')
+    ```
+
+    Note
+    ----
+    The pydantic `SecretBytes` class is quite permissive with the types of data it accepts. Hence, you have to ensure 
+    that the data you pass to the `SecretBytes` '+' operator is of the right type to be concatenated - the `bytes` type
+    of the data is not guaranteed.
+
+    For example, python can 'add' two lists together like this:
+    
+    ```python
+    [1, 2] + [3, 4]  # [1, 2, 3, 4]
+    ```
+
+    If one of the list is wrapped in a SecretBytes instance, the '+' operator will work, just like the example above:
+    
+    ```python
+    list1 = SecretBytes([1,2,3])
+    list2 = [4,5,6]
+    list1 + list2  # SecretBytes([1, 2, 3, 4, 5, 6])
+    ```
+
+    If however you try to add any other type of data to the `list1` from the example above, you will get a `TypeError`.
+    You can use the `secret_data_type` method to check the type of the secret data stored in the `SecretBytes` instance.
+
+    Parameters
+    ----------
+    secret : bytes
+        The secret value to be stored.
+
+    Methods
+    -------
+    get_secret_value()
+        Returns the actual secret value.
+    """
+    
+    def secret_data_type(self) -> type:
+        """Return the type of the secret data."""
+        return type(self.get_secret_value())
+
+      
 def _list_of_strings_validation(strings_value: Union[str, list]) -> list:
     """
     Performs validation for ListOfStrings type. Will ensure that whether one string is provided or a list of strings,
