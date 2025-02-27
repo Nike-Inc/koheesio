@@ -95,6 +95,8 @@ class InMemoryDataReader(Reader, ExtraParamsMixin):
         elif isinstance(self.data, list):
             if all(isinstance(x, str) for x in self.data):
                 json_data = [json.loads(x) for x in self.data]
+            else:
+                json_data = self.data
         else:
             json_data = [self.data]
 
