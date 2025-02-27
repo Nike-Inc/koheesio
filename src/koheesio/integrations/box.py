@@ -26,14 +26,14 @@ from pyspark.sql.types import StructType
 from koheesio import Step, StepOutput
 from koheesio.models import (
     Field,
+    InstanceOf,
+    ListOfStrings,
     SecretBytes,
     SecretStr,
     SkipValidation,
     conlist,
     field_validator,
     model_validator,
-    InstanceOf,
-    ListOfStrings,
 )
 from koheesio.spark.readers import Reader
 from koheesio.spark.readers.memory import InMemoryDataReader

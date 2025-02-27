@@ -11,7 +11,7 @@ from pydantic import SecretBytes as PydanticSecretBytes
 from pydantic import SecretStr as PydanticSecretStr
 
 from koheesio.context import Context
-from koheesio.models import BaseModel, ExtraParamsMixin, SecretBytes, SecretStr, ListOfStrings
+from koheesio.models import BaseModel, ExtraParamsMixin, ListOfStrings, SecretBytes, SecretStr
 
 
 class TestBaseModel:
