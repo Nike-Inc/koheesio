@@ -228,7 +228,7 @@ class TestStep:
     def test_repr_str_dunder(self):
         # using .strip() to avoid the test failing on leading or trailing whitespaces
         actual = str(DummyStep(a="foo", b=2)).strip()
-        expected = "DummyStep\n" "=========\n" "input:\n" "  a: foo\n" "  b: 2"
+        expected = "DummyStep\n=========\ninput:\n  a: foo\n  b: 2"
         assert actual == expected
 
     def test_step_with_super_call(self):
@@ -535,9 +535,10 @@ class TestStepMetaClass:
             def execute(self) -> Step.Output:
                 super().execute()
                 self.log.info("GrandChildStep execute called")
-        
+
         class GreatGrandChildStep(GrandChildStep):
             """Great grandchild step class"""
+
             ...
 
         with (

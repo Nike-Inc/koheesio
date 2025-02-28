@@ -1,12 +1,12 @@
 """
-This module provides functionality to download files from URLs specified in a Spark DataFrame column and store the 
-downloaded file paths in a new column. It leverages the `DownloadFileStep` class to handle the file download process 
+This module provides functionality to download files from URLs specified in a Spark DataFrame column and store the
+downloaded file paths in a new column. It leverages the `DownloadFileStep` class to handle the file download process
 and supports various write modes to manage existing files.
 
 Classes
 -------
 DownloadFileFromUrlTransformation
-    A transformation class that downloads content from URLs in the specified column 
+    A transformation class that downloads content from URLs in the specified column
     and stores the downloaded file paths in a new column.
 
 Write Modes
@@ -83,6 +83,7 @@ Write Modes
 
     <br>
 """
+
 from typing import Union
 
 from koheesio.models import DirectoryPath, Field
@@ -102,17 +103,27 @@ class DownloadFileFromUrlTransformation(ColumnsTransformationWithTarget):
 
     ```python
     from pyspark.sql import SparkSession
-    from koheesio.spark.transformations.download_files import DownloadFileFromUrlTransformation
+    from koheesio.spark.transformations.download_files import (
+        DownloadFileFromUrlTransformation,
+    )
     from koheesio.steps.download_file import FileWriteMode
 
-    spark = SparkSession.builder.appName("DownloadFilesExample").getOrCreate()
-    df = spark.createDataFrame([("http://example.com/file1.txt",), ("http://example.com/file2.txt",)], ["url"])
+    spark = SparkSession.builder.appName(
+        "DownloadFilesExample"
+    ).getOrCreate()
+    df = spark.createDataFrame(
+        [
+            ("http://example.com/file1.txt",),
+            ("http://example.com/file2.txt",),
+        ],
+        ["url"],
+    )
 
     transformation = DownloadFileFromUrlTransformation(
         column="url",
         target_column="downloaded_file_path",
         mode=FileWriteMode.OVERWRITE,
-        download_path="/path/to/download"
+        download_path="/path/to/download",
     )
 
     transformed_df = transformation.transform(df)
@@ -147,7 +158,9 @@ class DownloadFileFromUrlTransformation(ColumnsTransformationWithTarget):
     # Using the transform method
     transformed_df = transformation.transform(df)
     # Using the execute method
-    transformed_df = transformation.execute().df  # note: while doing this, df needs to be passed in the constructor
+    transformed_df = (
+        transformation.execute().df
+    )  # note: while doing this, df needs to be passed in the constructor
     # Using the df.transform() method
     transformed_df = df.transform(transformation)
     ```
@@ -222,7 +235,7 @@ class DownloadFileFromUrlTransformation(ColumnsTransformationWithTarget):
         source_column_name = self.column
         if not isinstance(source_column_name, str):
             source_column_name = get_column_name(source_column_name)
-       
+
         partition = {row.asDict()[source_column_name] for row in self.df.select(self.column).collect()}  # type: ignore
         self.func(partition)
 

@@ -328,12 +328,12 @@ class DeltaTableStep(SparkStep):
         ----------
         limit : Optional[int]
             Number of rows to return.
-        
+
         Returns
         -------
         Optional[DataFrame]
             Delta Table's history as a DataFrame or None if the table does not exist.
-        
+
         Examples
         -------
         ```python
@@ -358,7 +358,7 @@ class DeltaTableStep(SparkStep):
 
 class StaleDataCheckStep(Step):
     """
-    Determines if the data inside the Delta table is stale based on the elapsed time since 
+    Determines if the data inside the Delta table is stale based on the elapsed time since
     the last modification and, optionally, based on the current week day.
 
     The staleness interval is specified as a `timedelta` object.
@@ -385,32 +385,68 @@ class StaleDataCheckStep(Step):
 
     Example 1: Last modified on January 28th, 2025, 11:00:00 checking with a 3-day threshold:
     ```python
-    is_stale = StaleDataCheckStep(table=table, interval=timedelta(days=3)).execute().is_data_stale
-    print(is_stale)  # True, as the last modification was 3 days and 1 hour ago which is more than 3 days.
+    is_stale = (
+        StaleDataCheckStep(table=table, interval=timedelta(days=3))
+        .execute()
+        .is_data_stale
+    )
+    print(
+        is_stale
+    )  # True, as the last modification was 3 days and 1 hour ago which is more than 3 days.
     ```
 
     Example 2: Last modified on January 28th, 2025, 11:00:00 checking with a 3-day and 1-hour threshold:
     ```python
-    is_stale = StaleDataCheckStep(table=table, interval=timedelta(days=3, hours=1)).execute().is_data_stale
-    print(is_stale)  # True, as the last modification was 3 days and 1 hour ago which is the same as the threshold.
+    is_stale = (
+        StaleDataCheckStep(
+            table=table, interval=timedelta(days=3, hours=1)
+        )
+        .execute()
+        .is_data_stale
+    )
+    print(
+        is_stale
+    )  # True, as the last modification was 3 days and 1 hour ago which is the same as the threshold.
     ```
 
     Example 3: Last modified on January 28th, 2025, 11:00:00 checking with a 3-day and 2-hour threshold:
     ```python
-    is_stale = StaleDataCheckStep(table=table, interval=timedelta(days=3, hours=2)).execute().is_data_stale
-    print(is_stale)  # False, as the last modification was 3 days and 1 hour ago which is less than 3 days and 2 hours.
+    is_stale = (
+        StaleDataCheckStep(
+            table=table, interval=timedelta(days=3, hours=2)
+        )
+        .execute()
+        .is_data_stale
+    )
+    print(
+        is_stale
+    )  # False, as the last modification was 3 days and 1 hour ago which is less than 3 days and 2 hours.
     ```
 
     Example 4: Same as example 3 but with the interval defined as an ISO-8601 string:
     ```python
-    is_stale = StaleDataCheckStep(table=table, interval="P3DT2H").execute().is_data_stale
-    print(is_stale)  # False, as the last modification was 3 days and 1 hour ago which is less than 3 days and 2 hours.
+    is_stale = (
+        StaleDataCheckStep(table=table, interval="P3DT2H")
+        .execute()
+        .is_data_stale
+    )
+    print(
+        is_stale
+    )  # False, as the last modification was 3 days and 1 hour ago which is less than 3 days and 2 hours.
     ```
 
     Example 5: Last modified on January 28th, 2025, 11:00:00 checking with a 5-day threshold and refresh_day_num = 5 (Friday):
     ```python
-    is_stale = StaleDataCheckStep(table=table, interval=timedelta(days=5), refresh_day_num=5).execute().is_data_stale
-    print(is_stale)  # True, 3 days and 1 hour is less than 5 days but refresh_day_num is the same as the current day.
+    is_stale = (
+        StaleDataCheckStep(
+            table=table, interval=timedelta(days=5), refresh_day_num=5
+        )
+        .execute()
+        .is_data_stale
+    )
+    print(
+        is_stale
+    )  # True, 3 days and 1 hour is less than 5 days but refresh_day_num is the same as the current day.
     ```
 
     Returns
@@ -418,7 +454,7 @@ class StaleDataCheckStep(Step):
     bool
         True if data is considered stale by exceeding the defined time limits or if the current
         day equals to `refresh_day_num`. Returns False if conditions are not met.
-    
+
     Raises
     ------
     ValueError
@@ -436,16 +472,15 @@ class StaleDataCheckStep(Step):
         description="The interval to consider data stale.",
     )
     refresh_day_num: Optional[int] = Field(
-        default=None,
-        description="The weekday number on which data should be refreshed.",
-        ge=0,
-        le=6
+        default=None, description="The weekday number on which data should be refreshed.", ge=0, le=6
     )
 
     class Output(StepOutput):
         """Output class for StaleDataCheckStep."""
 
-        is_data_stale: bool = Field(..., description="Boolean flag indicating whether data in the table is stale or not")
+        is_data_stale: bool = Field(
+            ..., description="Boolean flag indicating whether data in the table is stale or not"
+        )
 
     @field_validator("table")
     def _validate_table(cls, table: Union[DeltaTableStep, str]) -> Union[DeltaTableStep, str]:
@@ -465,7 +500,6 @@ class StaleDataCheckStep(Step):
         return self
 
     def execute(self) -> Output:
-
         # Get the history of the Delta table
         history_df = self.table.describe_history()
 
