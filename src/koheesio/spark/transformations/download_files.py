@@ -85,8 +85,6 @@ Write Modes
 """
 from typing import Union
 
-from pyspark.sql.types import Row
-
 from koheesio.models import DirectoryPath, Field
 from koheesio.spark import Column
 from koheesio.spark.transformations import ColumnsTransformationWithTarget
