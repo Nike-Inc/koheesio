@@ -65,7 +65,7 @@ The following new features are included with 0.10:
 
 ### (0.10) Bug fixes
 
-The following bugfixes are included with 0.9.0:
+The following bugfixes are included with 0.10:
 
 * [bugfix] **Core > Context** Fix Context initialization with another Context object and dotted notation by @dannymeijer in https://github.com/Nike-Inc/koheesio/pull/160 (#159)
   * The __init__ method of the Context class incorrectly updated the `kwargs` making it return `None`. Calls to Context containing another Context object, would previously fail.
