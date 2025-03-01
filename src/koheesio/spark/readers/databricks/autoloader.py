@@ -58,7 +58,10 @@ class AutoLoader(Reader):
     Example
     -------
     ```python
-    from koheesio.steps.readers.databricks import AutoLoader, AutoLoaderFormat
+    from koheesio.steps.readers.databricks import (
+        AutoLoader,
+        AutoLoaderFormat,
+    )
 
     result_df = AutoLoader(
         format=AutoLoaderFormat.JSON,

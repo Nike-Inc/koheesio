@@ -67,7 +67,9 @@ class AsyncStepOutput(Step.Output):
         --------
         ```python
         step_output = StepOutput(foo="bar")
-        step_output.merge({"lorem": "ipsum"})  # step_output will now contain {'foo': 'bar', 'lorem': 'ipsum'}
+        step_output.merge(
+            {"lorem": "ipsum"}
+        )  # step_output will now contain {'foo': 'bar', 'lorem': 'ipsum'}
         ```
 
         Functionally similar to adding two dicts together; like running `{**dict_a, **dict_b}`.

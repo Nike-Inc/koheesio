@@ -294,7 +294,7 @@ class BaseModel(PydanticBaseModel, ABC):  # type: ignore[no-redef]
         """
         Create a partial function of the BaseModel.
 
-        Partial allows you to alter or set defaults on an existing BaseModel without needing to create another class to 
+        Partial allows you to alter or set defaults on an existing BaseModel without needing to create another class to
         use it. Newly provided defaults can always be overridden in a subsequent call.
 
         Examples
@@ -303,6 +303,7 @@ class BaseModel(PydanticBaseModel, ABC):  # type: ignore[no-redef]
         class SomeStep(BaseModel):
             foo: str
             bar: int
+
 
         # Create a partial BaseModel with a default value for 'foo'
         partial_step = SomeStep.partial(foo="default_foo")
@@ -318,8 +319,8 @@ class BaseModel(PydanticBaseModel, ABC):  # type: ignore[no-redef]
         print(another_step.bar)  # prints 100
         ```
 
-        This is advantageous because it allows you to create variations of a model with preset values without having to 
-        redefine the entire model. It simplifies the instantiation process when you have common default values that 
+        This is advantageous because it allows you to create variations of a model with preset values without having to
+        redefine the entire model. It simplifies the instantiation process when you have common default values that
         need to be reused across different instances.
 
         Parameters
@@ -770,9 +771,9 @@ In case an individual column is passed, the value will be coerced to a list.
 class _SecretMixin:
     """Mixin class that provides additional functionality to Pydantic's SecretStr and SecretBytes classes."""
 
-    def __add__(self, other: Union[str, bytes, '_SecretMixin']) -> '_SecretMixin':
+    def __add__(self, other: Union[str, bytes, "_SecretMixin"]) -> "_SecretMixin":
         """Support concatenation when the SecretMixin instance is on the left side of the + operator.
-        
+
         Raises
         ------
         TypeError
@@ -781,8 +782,8 @@ class _SecretMixin:
         left = self.get_secret_value()
         right = other.get_secret_value() if isinstance(other, _SecretMixin) else other
         return self.__class__(left + right)  # type: ignore
-    
-    def __radd__(self, other: Union[str, bytes, '_SecretMixin']) -> '_SecretMixin':
+
+    def __radd__(self, other: Union[str, bytes, "_SecretMixin"]) -> "_SecretMixin":
         """Support concatenation when the SecretMixin instance is on the right side of the + operator.
 
         Raises
@@ -793,8 +794,8 @@ class _SecretMixin:
         right = self.get_secret_value()
         left = other.get_secret_value() if isinstance(other, _SecretMixin) else other
         return self.__class__(left + right)  # type: ignore
-    
-    def __mul__(self, n: int) -> '_SecretMixin':
+
+    def __mul__(self, n: int) -> "_SecretMixin":
         """Support multiplication when the SecretMixin instance is on the left side of the * operator.
 
         Raises
@@ -805,8 +806,8 @@ class _SecretMixin:
         if isinstance(n, int):
             return self.__class__(self.get_secret_value() * n)  # type: ignore
         return NotImplemented
-    
-    def __rmul__(self, n: int) -> '_SecretMixin':
+
+    def __rmul__(self, n: int) -> "_SecretMixin":
         """Support multiplication when the SecretMixin instance is on the right side of the * operator.
 
         Raises
@@ -856,11 +857,11 @@ class SecretStr(PydanticSecretStr, _SecretMixin):
     new_secret.get_secret_value()
     ### 'prefixmy_secretsuffix'
     ```
-    
+
     Otherwise, we consider the context 'unsafe': the SecretStr instance is returned, and the secret value is masked.
     ```python
     f"{secret}"
-    '**********'
+    "**********"
     ```
 
     Parameters
@@ -888,7 +889,7 @@ class SecretStr(PydanticSecretStr, _SecretMixin):
             caller_frame = stack[1].frame
 
             # Check if we are in a multiline f-string
-            if not any(substring in caller_context for substring in ("f'", 'f"', '.format')):
+            if not any(substring in caller_context for substring in ("f'", 'f"', ".format")):
                 # Multiline f-strings do not show the outer code context, we'll need to extract it from the source code
                 source_lines = inspect.getsourcelines(caller_frame)[0]
                 lineno = stack[1].positions.lineno  # the line of code that called this function
@@ -900,31 +901,31 @@ class SecretStr(PydanticSecretStr, _SecretMixin):
                         for i, line in enumerate(reversed(source_lines[:lineno]))
                         if any(marker in line for marker in ('f"""', "f'''"))
                     ),
-                    None
+                    None,
                 )
 
                 # Extract the multiline string
-                multiline_string = "".join(source_lines[starting_index : lineno])
+                multiline_string = "".join(source_lines[starting_index:lineno])
 
                 # Remove the code context from the multiline string
                 caller_context = multiline_string.replace(caller_context, "").strip()
 
         # Remove comments from the caller context
-        caller_context = re.sub(r'#.*', '', caller_context).strip()
+        caller_context = re.sub(r"#.*", "", caller_context).strip()
 
-        # Remove the entire string that the format method was called on: 
+        # Remove the entire string that the format method was called on:
         # 1. matches any string enclosed in single or double quotes that contains 'format('.
         caller_context = re.sub(r'["\'].*?format\(.*?\)["\']', "", caller_context, flags=re.DOTALL).strip()
         # 2. matches any string enclosed in single or double quotes, optionally prefixed with 'f' for f-strings.
         caller_context = re.sub(r'f?["\'].*?["\']', "", caller_context, flags=re.DOTALL).strip()
 
         # safe context: the secret value is returned
-        if 'SecretStr(' in caller_context:
+        if "SecretStr(" in caller_context:
             return self.get_secret_value()
 
         # unsafe context: we let pydantic handle the formatting
         return super().__format__(format_spec)
-    
+
 
 class SecretBytes(PydanticSecretBytes, _SecretMixin):
     """A bytes type that ensures the secrecy of its value, extending Pydantic's SecretBytes.
@@ -966,21 +967,21 @@ class SecretBytes(PydanticSecretBytes, _SecretMixin):
 
     Note
     ----
-    The pydantic `SecretBytes` class is quite permissive with the types of data it accepts. Hence, you have to ensure 
+    The pydantic `SecretBytes` class is quite permissive with the types of data it accepts. Hence, you have to ensure
     that the data you pass to the `SecretBytes` '+' operator is of the right type to be concatenated - the `bytes` type
     of the data is not guaranteed.
 
     For example, python can 'add' two lists together like this:
-    
+
     ```python
     [1, 2] + [3, 4]  # [1, 2, 3, 4]
     ```
 
     If one of the list is wrapped in a SecretBytes instance, the '+' operator will work, just like the example above:
-    
+
     ```python
-    list1 = SecretBytes([1,2,3])
-    list2 = [4,5,6]
+    list1 = SecretBytes([1, 2, 3])
+    list2 = [4, 5, 6]
     list1 + list2  # SecretBytes([1, 2, 3, 4, 5, 6])
     ```
 
@@ -997,12 +998,12 @@ class SecretBytes(PydanticSecretBytes, _SecretMixin):
     get_secret_value()
         Returns the actual secret value.
     """
-    
+
     def secret_data_type(self) -> type:
         """Return the type of the secret data."""
         return type(self.get_secret_value())
 
-      
+
 def _list_of_strings_validation(strings_value: Union[str, list]) -> list:
     """
     Performs validation for ListOfStrings type. Will ensure that whether one string is provided or a list of strings,

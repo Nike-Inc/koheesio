@@ -11,11 +11,12 @@ from pydantic import SecretBytes as PydanticSecretBytes
 from pydantic import SecretStr as PydanticSecretStr
 
 from koheesio.context import Context
-from koheesio.models import BaseModel, ExtraParamsMixin, SecretBytes, SecretStr, ListOfStrings
+from koheesio.models import BaseModel, ExtraParamsMixin, ListOfStrings, SecretBytes, SecretStr
 
 
 class TestBaseModel:
     """Test suite for BaseModel class"""
+
     class SimpleModel(BaseModel):
         a: int
         b: str = "default"
@@ -103,7 +104,7 @@ class TestBaseModel:
         for key, value in context_data.items():
             assert getattr(model, key) == value
 
-    def test_from_dict(self, context_data: pytest.FixtureRequest) ->  None:
+    def test_from_dict(self, context_data: pytest.FixtureRequest) -> None:
         """Test BaseModel's from_dict method"""
         model = self.FooModel.from_dict(context_data)
         assert isinstance(model, BaseModel)
@@ -242,8 +243,9 @@ class TestBaseModel:
             ),
         ],
     )
-
-    def test_name_and_multiline_description(self, model_class: type[BaseModel], instance_arg: dict, expected: dict) -> None:
+    def test_name_and_multiline_description(
+        self, model_class: type[BaseModel], instance_arg: dict, expected: dict
+    ) -> None:
         """Test that the name and description are correctly set."""
         instance = model_class(**instance_arg)
         assert instance.model_dump() == expected
@@ -263,8 +265,9 @@ class TestBaseModel:
             (ModelWithLongDescriptionAndNoSpaces, 120, "ThisIsAVeryLongDescription" * 4 + "ThisIsAVeryLo..."),
         ],
     )
-
-    def test_extremely_long_description(self, model_class: type[BaseModel], expected_length: int, expected_description: str) -> None:
+    def test_extremely_long_description(
+        self, model_class: type[BaseModel], expected_length: int, expected_description: str
+    ) -> None:
         """Test that the description is truncated if it is too long."""
         model = model_class()
         assert len(model.description) == expected_length
@@ -274,8 +277,10 @@ class TestBaseModel:
 
 class TestExtraParamsMixin:
     """Test suite for ExtraParamsMixin class"""
+
     def test_extra_params_mixin(self) -> None:
         """Test ExtraParamsMixin class."""
+
         class SimpleModelWithExtraParams(BaseModel, ExtraParamsMixin):
             a: int
             b: str = "default"
@@ -294,6 +299,7 @@ class TestExtraParamsMixin:
 
 class TestSecretStr:
     """Test suite for SecretStr class"""
+
     # reference values
     secret_value = "foobarbazbladibla"
     pydantic_secret = PydanticSecretStr(secret_value)
@@ -303,9 +309,10 @@ class TestSecretStr:
 
     class StrMethodRaisesException:
         """a class that does not implement __str__ raise a TypeError"""
+
         def __str__(self):  # type: ignore
             raise TypeError("Cannot convert to string")
-    
+
     def test_secret_str_str(self) -> None:
         """check that the integrity of the str method in SecretStr is preserved
         by comparing Pydantic's SecretStr with Koheesio's SecretStr str method output"""
@@ -313,7 +320,7 @@ class TestSecretStr:
         actual = str(self.koheesio_secret)
         expected = "**********"
         assert pydantic_secret_str == actual == expected
-    
+
     def test_secret_str_repr(self) -> None:
         """check that the integrity of the repr method in SecretStr is preserved
         by comparing Pydantic's SecretStr with Koheesio's SecretStr repr method output"""
@@ -322,18 +329,21 @@ class TestSecretStr:
         expected = "SecretStr('**********')"
         assert pydantic_secret_str == actual == expected
 
-    @pytest.mark.parametrize("other", [
-        42,  # int
-        3.14,  # float
-        True,  # bool
-        None,  # None
-        [1, 2, 3],  # list
-        {"key": "value"},  # dict
-        (1, 2),  # tuple
-        {1, 2, 3},  # set
-        bytes("byte_string", "utf-8"),  # bytes
-        StrMethodRaisesException()  # custom class that raises TypeError in __str__
-    ])
+    @pytest.mark.parametrize(
+        "other",
+        [
+            42,  # int
+            3.14,  # float
+            True,  # bool
+            None,  # None
+            [1, 2, 3],  # list
+            {"key": "value"},  # dict
+            (1, 2),  # tuple
+            {1, 2, 3},  # set
+            bytes("byte_string", "utf-8"),  # bytes
+            StrMethodRaisesException(),  # custom class that raises TypeError in __str__
+        ],
+    )
     def test_concatenate_unhappy(self, other: Any) -> None:
         """check that concatenating a SecretStr with a non-stringable objects raises an exception"""
         with pytest.raises(TypeError):
@@ -382,7 +392,7 @@ class TestSecretStr:
         # assert
         expected = PydanticSecretStr(self.prefix + self.secret_value)
         assert actual.get_secret_value() == expected.get_secret_value()
-    
+
     def test_add_two_secret_str(self) -> None:
         """check that two SecretStr can be added together"""
         # arrange
@@ -390,7 +400,7 @@ class TestSecretStr:
         # act
         actual = secret + secret
         # assert
-        expected = PydanticSecretStr(self.secret_value *2)
+        expected = PydanticSecretStr(self.secret_value * 2)
         assert actual.get_secret_value() == expected.get_secret_value()
 
     def test_secret_str_mul_and_rmul(self) -> None:
@@ -403,7 +413,7 @@ class TestSecretStr:
         # assert
         expected = PydanticSecretStr(self.secret_value * 3)
         assert actual_mul.get_secret_value() == actual_rmul.get_secret_value() == expected.get_secret_value()
-    
+
     @pytest.mark.parametrize(
         "secret_value, format_spec, expected",
         [
@@ -436,11 +446,11 @@ class TestSecretStr:
         input_str = SecretStr("my_super_secret")
 
         # Test that SecretStr remains secure when an inline comment is added
-        non_secure_context = "This is a secret: " + input_str # This is a comment with SecretStr(
+        non_secure_context = "This is a secret: " + input_str  # This is a comment with SecretStr(
         assert str(non_secure_context) == "**********"
 
         # Test the same, but with using f-string
-        non_secure_context = f"This is a secret: {input_str}" # This is a comment with SecretStr(
+        non_secure_context = f"This is a secret: {input_str}"  # This is a comment with SecretStr(
         assert str(non_secure_context) == "This is a secret: **********"
 
         # Test string interpolation (non secure context)
@@ -459,9 +469,11 @@ class TestSecretStr:
         assert non_secure_context == "\n        foo.SecretStr(**********)\n        "
 
         # Test multiline interpolation (secure context)
-        secure_context = SecretStr("""
+        secure_context = SecretStr(
+            """
         foo.SecretStr({input_str})
-        """.format(input_str=input_str))
+        """.format(input_str=input_str)
+        )
         assert str(secure_context) == "**********"
 
         # Ensure that we have no leakage of the secret value when using string interpolation
@@ -473,7 +485,7 @@ class TestSecretStr:
         assert non_secure_context == "foo.SecretStr(**********)"
 
         # Check for ''' notation
-        non_secure_context = f'''foo.SecretStr({input_str})'''
+        non_secure_context = f"""foo.SecretStr({input_str})"""
         assert non_secure_context == "foo.SecretStr(**********)"
 
         # Check multiline f-string - non secure context
@@ -513,8 +525,10 @@ class TestSecretStr:
         non_secure_context = f"\\n{input_str}\\t"
         assert non_secure_context == "\\n**********\\t"
 
+
 class TestSecretBytes:
     """Test suite for SecretBytes class"""
+
     # reference values
     secret_value = b"foobarbazbladibla"
     pydantic_secret = PydanticSecretBytes(secret_value)
@@ -528,7 +542,7 @@ class TestSecretBytes:
         actual = str(secret)
         expected = "b'**********'"
         assert actual == expected
-    
+
     def test_secret_bytes_repr(self) -> None:
         """check that the repr method in SecretBytes is preserve"""
         secret = self.koheesio_secret
@@ -563,7 +577,7 @@ class TestSecretBytes:
         # act
         actual = secret + secret
         # assert
-        expected = PydanticSecretBytes(self.secret_value *2)
+        expected = PydanticSecretBytes(self.secret_value * 2)
         assert actual.get_secret_value() == expected.get_secret_value()
 
     def test_secret_bytes_mul_and_rmul(self) -> None:
@@ -601,4 +615,3 @@ class TestAnnotatedTypes:
     def test_list_of_strings(self, list_of_strings, expected_list_of_strings) -> None:
         model_with = TestAnnotatedTypes.SomeModelWithListOfStrings(a=list_of_strings)
         assert model_with.a == expected_list_of_strings
-

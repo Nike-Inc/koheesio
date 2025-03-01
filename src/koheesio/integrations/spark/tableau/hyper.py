@@ -319,7 +319,7 @@ class HyperFileParquetWriter(HyperFileWriter):
             ) as connection:
                 connection.catalog.create_schema(schema=self.table_definition.table_name.schema_name)
                 connection.catalog.create_table(table_definition=self.table_definition)
-                sql = f'copy "{self.schema_}"."{self.table}" ' f"from array [{array_files}] " f"with (format parquet)"
+                sql = f'copy "{self.schema_}"."{self.table}" from array [{array_files}] with (format parquet)'
                 self.log.debug(f"Executing SQL: {sql}")
                 connection.execute_command(sql)
 

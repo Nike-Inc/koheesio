@@ -64,7 +64,7 @@ class TestGetActiveSession:
 
 class TestCheckIfPysparkConnectIsSupported:
     def test_if_pyspark_connect_is_not_supported(self, mocker):
-        """Test that check_if_pyspark_connect_is_supported returns False or raises an ImportError when pyspark connect 
+        """Test that check_if_pyspark_connect_is_supported returns False or raises an ImportError when pyspark connect
         is not supported irregardless of the pyspark version used."""
         mocker.patch.dict(
             "sys.modules",
@@ -73,9 +73,12 @@ class TestCheckIfPysparkConnectIsSupported:
                 "grpc": None,
             },
         )
-        mocker.patch.dict(os.environ, {
+        mocker.patch.dict(
+            os.environ,
+            {
                 "SPARK_CONNECT_MODE_ENABLED": "0",
-            }, clear=True
+            },
+            clear=True,
         )
         assert check_if_pyspark_connect_is_supported() is False
 

@@ -29,6 +29,7 @@ STATUS_503_ENDPOINT = f"{BASE_URL}/status/503"
 
 log = LoggingFactory.get_logger(name="test_delta", inherit_from_koheesio=True)
 
+
 @pytest.mark.parametrize(
     "endpoint,step,method,return_value,expected_status_code",
     [
@@ -142,19 +143,19 @@ def test_http_step_request():
             assert response.status_code == 200
 
 
-
 EXAMPLE_DIGEST_AUTH = (
-    'Digest username="Zaphod", realm="galaxy@heartofgold.com", nonce="42answer", uri="/dir/restaurant.html", ' 
+    'Digest username="Zaphod", realm="galaxy@heartofgold.com", nonce="42answer", uri="/dir/restaurant.html", '
     'response="dontpanic42", opaque="babelfish"'
 )
+
 
 @pytest.mark.parametrize(
     "params, expected",
     [
         pytest.param(
-            dict(url=GET_ENDPOINT, headers={"Authorization": "Bearer token", "Content-Type": "application/json"}), 
+            dict(url=GET_ENDPOINT, headers={"Authorization": "Bearer token", "Content-Type": "application/json"}),
             "Bearer token",
-            id="bearer_token_in_headers"
+            id="bearer_token_in_headers",
         ),
         pytest.param(
             dict(url=GET_ENDPOINT, headers={"Content-Type": "application/json"}, auth_header="Bearer token"),
@@ -197,8 +198,6 @@ def test_get_headers(params: dict, expected: str, caplog: pytest.LogCaptureFixtu
     assert step.headers["Content-Type"] == "application/json"
 
 
-
-
 @pytest.mark.parametrize(
     "max_retries, endpoint, status_code, expected_count, error_type",
     [
@@ -208,7 +207,9 @@ def test_get_headers(params: dict, expected: str, caplog: pytest.LogCaptureFixtu
         pytest.param(17, STATUS_404_ENDPOINT, 503, 1, HTTPError, id="max_retries_17_404"),
     ],
 )
-def test_max_retries(max_retries: int, endpoint: str, status_code: int, expected_count: int, error_type: Exception) -> None:
+def test_max_retries(
+    max_retries: int, endpoint: str, status_code: int, expected_count: int, error_type: Exception
+) -> None:
     session = requests.Session()
     retry_logic = Retry(total=max_retries, status_forcelist=[status_code])
     session.mount("https://", HTTPAdapter(max_retries=retry_logic))

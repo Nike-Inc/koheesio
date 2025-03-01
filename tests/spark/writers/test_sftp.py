@@ -494,7 +494,7 @@ def test_send_json_to_sftp(sftp_fixture, prepare_sftp, spark):
     )
 
     _df = spark.createDataFrame(test_data, test_schema)
-    _expected_data = "{" '"columns":["name","value"],' '"index":[0,1,2],' '"data":[["foo",1],["bar",2],["baz",3]]' "}"
+    _expected_data = '{"columns":["name","value"],"index":[0,1,2],"data":[["foo",1],["bar",2],["baz",3]]}'
 
     # Act
     writer.write(_df)

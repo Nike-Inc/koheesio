@@ -30,7 +30,9 @@ class Repartition(ColumnsTransformation):
     Example
     -------
     ```python
-    Repartition(column=["c1", "c2"], num_partitions=3)  # results in 3 partitions
+    Repartition(
+        column=["c1", "c2"], num_partitions=3
+    )  # results in 3 partitions
     Repartition(column="c1", num_partitions=2)  # results in 2 partitions
     Repartition(column=["c1", "c2"])  # results in <= 200 partitions
     Repartition(num_partitions=5)  # results in 5 partitions

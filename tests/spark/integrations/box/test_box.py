@@ -8,6 +8,7 @@ from pydantic import ValidationError
 
 from koheesio.integrations.box import (
     Box,
+    BoxBufferFileWriter,
     BoxCsvFileReader,
     BoxCsvPathReader,
     BoxFileBase,
@@ -23,7 +24,6 @@ from koheesio.integrations.box import (
     JWTAuth,
     SecretStr,
     StructType,
-    BoxBufferFileWriter,
 )
 from koheesio.spark.writers.buffer import PandasCsvBufferWriter
 

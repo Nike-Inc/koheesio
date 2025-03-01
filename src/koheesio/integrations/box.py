@@ -26,14 +26,14 @@ from pyspark.sql.types import StructType
 from koheesio import Step, StepOutput
 from koheesio.models import (
     Field,
+    InstanceOf,
+    ListOfStrings,
     SecretBytes,
     SecretStr,
     SkipValidation,
     conlist,
     field_validator,
     model_validator,
-    InstanceOf,
-    ListOfStrings,
 )
 from koheesio.spark.readers import Reader
 from koheesio.spark.readers.memory import InMemoryDataReader
@@ -423,7 +423,7 @@ class BoxCsvFileReader(BoxReaderBase):
             self.log.debug(f"Reading file with ID '{file.object_id}' and name '{file.get().name}' into Spark DataFrame")
             data = file.content().decode(self.file_encoding)
             temp_df = InMemoryDataReader(data=data, schema=self.schema_, params=self.params, format="csv").read()
-            
+
             # type: ignore
             # noinspection PyUnresolvedReferences
             temp_df = (
@@ -625,6 +625,7 @@ class BoxBaseFileWriter(BoxFolderBase, ABC):
     """
     Base class for writing files to Box
     """
+
     overwrite: bool = Field(default=False, description="Overwrite the file if it exists on box")
     description: Optional[str] = Field(None, description="Optional description to add to the file in Box")
 
@@ -637,8 +638,7 @@ class BoxBaseFileWriter(BoxFolderBase, ABC):
     @abstractmethod
     def action(self):
         raise NotImplementedError(
-            "You are not supposed to use this class directly, this serves as a base model for"
-            " Koheesio Box file writers"
+            "You are not supposed to use this class directly, this serves as a base model for Koheesio Box file writers"
         )
 
     def execute(self) -> Output:
@@ -763,7 +763,6 @@ class BoxBufferFileWriter(BoxBaseFileWriter):
     )
 
     f = box_buffer_writer.execute()
-
     ```
     """
 

@@ -281,7 +281,7 @@ class TestTagSnowflakeQuery:
         query_tag_preaction = (
             """ALTER SESSION SET QUERY_TAG = '{"pipeline_name": "test-pipeline-2","task_name": "test_task_2"}';"""
         )
-        expected_preactions = f"SET TEST_VAR = 'ABC';{query_tag_preaction}" ""
+        expected_preactions = f"SET TEST_VAR = 'ABC';{query_tag_preaction}"
 
         tagged_options = (
             TagSnowflakeQuery(task_name="test_task_2", pipeline_name="test-pipeline-2", options=options)

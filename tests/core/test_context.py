@@ -238,7 +238,7 @@ def test_from_dict():
             # Test with dotted keys
             Context({"a.b.c": 1}),
             {"a.b.c": 1},
-        )
+        ),
     ],
 )
 def test_to_dict(context, expected):

@@ -110,7 +110,9 @@ class HashUUID5(Transformation):
 
     In code:
     ```python
-    HashUUID5(source_columns=["id", "string"], target_column="uuid5").transform(input_df)
+    HashUUID5(
+        source_columns=["id", "string"], target_column="uuid5"
+    ).transform(input_df)
     ```
 
     In this example, the `id` and `string` columns are concatenated and hashed using the UUID5 algorithm. The result is

@@ -264,9 +264,9 @@ class TestSnowflakeStep:
         # Assert
         assert kls.name == "SnowflakeStep"
         assert kls.description == "Expands the SnowflakeBaseModel so that it can be used as a Step"
-        assert (
-            "name" not in options and "description" not in options
-        ), "koheesio options should not be present in get_options"
+        assert "name" not in options and "description" not in options, (
+            "koheesio options should not be present in get_options"
+        )
 
 
 class TestSnowflakeTableStep:

@@ -227,8 +227,7 @@ class DeltaTableReader(Reader):
         if any(streaming_options) and not streaming_toggled_on:
             log = LoggingFactory.get_logger(name=cls.__name__, inherit_from_koheesio=True)
             log.warning(
-                f"Streaming options were provided, but streaming was not toggled on. Was this intended?\n"
-                f"{options = }"
+                f"Streaming options were provided, but streaming was not toggled on. Was this intended?\n{options = }"
             )
 
         return options

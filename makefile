@@ -47,6 +47,7 @@ sync:
 update: sync
 
 #  Code Quality
+# TODO: hatch fmt enviroment is needed to allow `hatch run fmt: ...` OR fix hatch-fmt env to allow doing it theretype commands
 .PHONY: black black-fmt ## code quality - Use black to (re)format the codebase
 black-fmt:
 	@echo "\033[1mRunning black-fmt\033[0m:\n\033[35m Use black to (re)format the codebase\033[0m"

@@ -29,8 +29,8 @@ class TestJdbcReader:
                 "foo": "foo",
                 "bar": "bar",
             },
-            query = "unit test",
-            dbtable = "table",
+            query="unit test",
+            dbtable="table",
             **self.common_options,
         )
 

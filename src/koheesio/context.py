@@ -349,7 +349,7 @@ class Context(Mapping):
                 for k in nested_keys:
                     value = value[k]  # iterate through nested values
                 return value
-            
+
             raise KeyError
 
         except (AttributeError, KeyError, TypeError) as e:

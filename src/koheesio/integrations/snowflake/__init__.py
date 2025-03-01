@@ -146,7 +146,9 @@ def safe_import_snowflake_connector() -> Optional[ModuleType]:
         )
         return None
 
+
 SF_DEFAULT_PARAMS = {"sfCompress": "on", "continue_on_error": "off"}
+
 
 class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc]
     """
@@ -220,9 +222,9 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
     params: Optional[Dict[str, Any]] = Field(
         default_factory=partial(dict, **SF_DEFAULT_PARAMS),
         description="Extra options to pass to the Snowflake connector, by default it includes "
-                    "'sfCompress': 'on' and  'continue_on_error': 'off'",
+        "'sfCompress': 'on' and  'continue_on_error': 'off'",
         alias="options",
-        examples=[{"sfCompress": "on", "continue_on_error": "off"}]
+        examples=[{"sfCompress": "on", "continue_on_error": "off"}],
     )
 
     @property

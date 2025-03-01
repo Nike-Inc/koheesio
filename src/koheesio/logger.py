@@ -180,8 +180,7 @@ class LoggingFactory:
     LOGGER_LEVEL: str = os.environ.get("KOHEESIO_LOGGING_LEVEL", "WARNING")
     LOGGER_ENV: str = "local"
     LOGGER_FORMAT: str = (
-        "[%(logger_id)s] [%(asctime)s] [%(levelname)s] [%(name)s] "
-        "{%(module)s.py:%(funcName)s:%(lineno)d} - %(message)s"
+        "[%(logger_id)s] [%(asctime)s] [%(levelname)s] [%(name)s] {%(module)s.py:%(funcName)s:%(lineno)d} - %(message)s"
     )
     LOGGER_FORMATTER: Formatter = Formatter(LOGGER_FORMAT)
     CONSOLE_HANDLER: Optional[logging.Handler] = None

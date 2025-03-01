@@ -50,7 +50,9 @@ class JdbcReader(Reader, ExtraParamsMixin):
         user="YOUR_USERNAME",
         password="***",
         dbtable="schema_name.table_name",
-        options={"fetchsize": 100},  # you can also use 'params' instead of 'options'
+        options={
+            "fetchsize": 100
+        },  # you can also use 'params' instead of 'options'
     )
     df = jdbc_mssql.read()
     ```
@@ -78,7 +80,9 @@ class JdbcReader(Reader, ExtraParamsMixin):
         default=None, description="Database table name, also include schema name", alias="table"
     )
     query: Optional[str] = Field(default=None, description="Query")
-    params: Dict[str, Any] = Field(default_factory=dict, description="Extra options to pass to spark reader", alias="options")
+    params: Dict[str, Any] = Field(
+        default_factory=dict, description="Extra options to pass to spark reader", alias="options"
+    )
 
     def get_options(self) -> Dict[str, Any]:
         """

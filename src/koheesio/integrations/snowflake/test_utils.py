@@ -25,7 +25,9 @@ def mock_query() -> Generator:
         mock_query.expected_data = [("row1",), ("row2",)]
 
         # Act
-        instance = SnowflakeRunQueryPython(**COMMON_OPTIONS, query=query, account="42")
+        instance = SnowflakeRunQueryPython(
+            **COMMON_OPTIONS, query=query, account="42"
+        )
         instance.execute()
 
         # Assert
