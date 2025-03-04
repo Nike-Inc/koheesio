@@ -1,6 +1,7 @@
 """
 Utility functions related to date and time operations
 """
+
 from typing import Optional
 from datetime import timedelta
 import re
@@ -26,7 +27,7 @@ extract_dt_interval = re.compile(
 class DTInterval(BaseModel):
     """
     A class to define date and time intervals using human-readable strings or individual time components.
-    
+
     Parameters
     ----------
     interval : str, optional
@@ -50,7 +51,7 @@ class DTInterval(BaseModel):
         Number of milliseconds in the interval.
     microseconds : int, optional, default 0
         Number of microseconds in the interval.
-    
+
     Examples
     --------
     Creating an instance with time components:
@@ -62,7 +63,11 @@ class DTInterval(BaseModel):
 
     Creating an instance from a string:
     ```python
-    print(DTInterval(interval="1 year 2 months 3 weeks 4 days 5 hours 100 minutes 200 seconds 300 milliseconds 400 microseconds").to_timedelta)
+    print(
+        DTInterval(
+            interval="1 year 2 months 3 weeks 4 days 5 hours 100 minutes 200 seconds 300 milliseconds 400 microseconds"
+        ).to_timedelta
+    )
     ```
     451 days, 6:43:20.300400
 

@@ -99,13 +99,13 @@ def test_all_data_types(input_values, df_with_all_types):
         input_values["to_value"] = input_values.get("to_value", "happy")
         expected = input_values["to_value"]
         df = Replace(**input_values).transform(df_with_all_types)
-        log.info(f"show df: \n{show_string(df,20, 20, False)}")
+        log.info(f"show df: \n{show_string(df, 20, 20, False)}")
         actual = df.head().asDict()[column]
         assert actual == expected
     else:
         input_values["to_value"] = "unhappy"
         expected = df_with_all_types.head().asDict()[column]  # stay the same
         df = Replace(**input_values).transform(df_with_all_types)
-        log.info(f"show df: \n{show_string(df,20, 20, False)}")
+        log.info(f"show df: \n{show_string(df, 20, 20, False)}")
         actual = df.head().asDict()[column]
         assert actual == expected

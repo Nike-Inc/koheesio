@@ -66,28 +66,28 @@ class HttpStep(Step, ExtraParamsMixin):
 
     Authorization
     -------------
-    The optional `auth_header` parameter in HttpStep allows you to pass an authorization header, such as a bearer token. 
+    The optional `auth_header` parameter in HttpStep allows you to pass an authorization header, such as a bearer token.
     For example: `auth_header = "Bearer <token>"`.
 
     The `auth_header` value is stored as a `SecretStr` object to prevent sensitive information from being displayed in logs.
 
-    Of course, authorization can also just be passed as part of the regular `headers` parameter. 
-    
+    Of course, authorization can also just be passed as part of the regular `headers` parameter.
+
     For example, either one of these parameters would semantically be the same:
     ```python
     headers = {
         "Authorization": "Bearer <token>",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
     }
     ```
     # or
     auth_header = "Bearer <token>"
     ```
 
-    The `auth_header` parameter is useful when you want to keep the authorization separate from the other headers, for 
+    The `auth_header` parameter is useful when you want to keep the authorization separate from the other headers, for
     example when your implementation requires you to pass some custom headers in addition to the authorization header.
 
-    > Note: The `auth_header` parameter can accept any authorization header value, including basic authentication 
+    > Note: The `auth_header` parameter can accept any authorization header value, including basic authentication
         tokens, digest authentication strings, NTLM, etc.
 
     Understanding Retries

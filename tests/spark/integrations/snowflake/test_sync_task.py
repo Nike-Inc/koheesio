@@ -125,13 +125,7 @@ class TestSnowflakeSyncTask:
         task.execute()
         chispa.assert_df_equality(task.output.target_df, df)
 
-    def test_merge(
-        self,
-        spark,
-        foreach_batch_stream_local,
-        snowflake_staging_file,
-        mocker
-    ):
+    def test_merge(self, spark, foreach_batch_stream_local, snowflake_staging_file, mocker):
         # Arrange - Prepare Delta requirements
         mocker.patch("koheesio.integrations.spark.snowflake.SnowflakeRunQueryPython.execute")
         source_table = DeltaTableStep(database="klettern", table="test_merge")

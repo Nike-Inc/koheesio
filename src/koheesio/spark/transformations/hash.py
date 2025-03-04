@@ -103,9 +103,6 @@ class Sha2Hash(ColumnsTransformation):
         if missing_columns:
             raise ValueError(f"Columns {missing_columns} not found in dataframe")
 
-        self.output.df = (
-            self.df.withColumn(
-                self.target_column, sha2_hash(columns=columns, delimiter=self.delimiter, num_bits=self.num_bits)
-            )
+        self.output.df = self.df.withColumn(
+            self.target_column, sha2_hash(columns=columns, delimiter=self.delimiter, num_bits=self.num_bits)
         )
-
