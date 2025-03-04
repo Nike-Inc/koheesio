@@ -55,6 +55,11 @@ nav:
   - Community:  # community folder
     - Contribute: community/contribute.md
     - Approach to Documentation: community/approach-documentation.md
+  - Release Notes: 
+    - Release 0.10 (latest): releases/0.10.md
+    - Release 0.9: releases/0.9.md
+    # - Release 0.8: releases/0.8.md
+    # - Release 0.7: releases/0.7.md
 
 theme:
   name: material
