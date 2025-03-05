@@ -21,7 +21,7 @@ class Okta(HttpPostStep):
 
     client_id: str = Field(default=..., alias="okta_id", description="Okta account ID")
     client_secret: SecretStr = Field(default=..., alias="okta_secret", description="Okta account secret", repr=False)
-    data: Optional[Union[Dict[str, str], str]] = Field(
+    data: Dict[str, str] = Field(
         default={"grant_type": "client_credentials"}, description="Data to be sent along with the token request"
     )
 
