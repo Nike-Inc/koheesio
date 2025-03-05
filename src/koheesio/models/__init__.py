@@ -18,6 +18,7 @@ import inspect
 from pathlib import Path
 import re
 import sys
+import warnings
 
 # to ensure that koheesio.models is a drop in replacement for pydantic
 from pydantic import BaseModel as PydanticBaseModel
@@ -876,12 +877,24 @@ class SecretStr(PydanticSecretStr, _SecretMixin):
         Returns the actual secret value.
     """
 
-    @experimental
     def __format__(self, format_spec: str) -> str:
         """Advanced f-string formatting support.
         If the f-string is called from within a SecretStr, the secret value is returned as we are in a secure context.
         Otherwise, we consider the context 'unsafe' and we let pydantic take care of the formatting.
+
+        !!! warning "Experimental Feature"\n'
+            This method is experimental and may change or be removed in future versions if deemed unstable. 
+            Use with caution!
         """
+
+        warnings.warn(
+            "`SecretStr.__format__`: "
+            "This method is experimental and may change or be removed in future versions if deemed unstable. "
+            "Use with caution!",
+            category=UserWarning,
+            stacklevel=2,
+        )
+
         # Inspect the call stack to determine if the string is being passed through SecretStr
         stack = inspect.stack(context=1)
         caller_context = stack[1].code_context[0]  # type: ignore

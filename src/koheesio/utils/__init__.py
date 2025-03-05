@@ -113,25 +113,3 @@ def utc_now() -> datetime.datetime:
     if PYTHON_MINOR_VERSION < 3.11:
         return datetime.datetime.utcnow()
     return datetime.datetime.now(datetime.timezone.utc)
-
-
-def experimental(func: Callable) -> Callable:
-    """Decorator to mark functions as experimental."""
-    @wraps(func)
-    def wrapper(*args: Any, **kwargs: Any) -> Callable:
-        warnings.warn(
-            f"{func.__name__} is experimental and might be removed in a future minor release if deemed unstable.",
-            category=UserWarning,
-            stacklevel=2,
-        )
-        return func(*args, **kwargs)
-    
-    # Add experimental warning to the docstring
-    original_doc = func.__doc__ or ""
-    func.__doc__ = original_doc + (
-        '\n'
-        '!!! warning "Experimental Feature"\n'
-        '    This method is experimental and may change in future versions if deemed unstable. Use with caution!'
-    )
-
-    return wrapper
