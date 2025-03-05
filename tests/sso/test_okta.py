@@ -5,9 +5,11 @@ import logging
 import pytest
 from requests_mock.mocker import Mocker
 
+from koheesio.logger import LoggingFactory
 from koheesio.models import SecretStr
 from koheesio.sso import okta as o
 
+log = LoggingFactory.get_logger(name="test_download_file", inherit_from_koheesio=True)
 
 @pytest.fixture(scope="function")
 def requests_mocker() -> Generator[Mocker, None, None]:
@@ -60,16 +62,14 @@ class TestOktaToken:
 
     def test_log_extra_params_secret(self, caplog: pytest.FixtureRequest) -> None:
         """Test that secret values are masked in logs"""
-        log_capture_string = StringIO()
-        ch = logging.StreamHandler(log_capture_string)
-        ch.setLevel(logging.DEBUG)
-        logger = logging.getLogger("tests")
-        logger.addHandler(ch)
-        secret_val = "secret_value"
-        oat = o.OktaAccessToken(
-            url="url", client_id="client", client_secret=SecretStr(secret_val), params={"foo": "bar"}
-        )
-        logger.warning(f"{oat.params = }")
-        log_contents = log_capture_string.getvalue()
-        assert "secret" not in log_contents
-        assert "*" * len(secret_val) + "(Masked)" in log_contents
+        # Arrange
+        with caplog.at_level("DEBUG"):
+            secret_val = "secret_value"
+            # Act
+            oat = o.OktaAccessToken(
+                url="url", client_id="client", client_secret=SecretStr(secret_val), params={"foo": "bar"}
+            )
+            log.warning(f"{oat.params = }")
+            # Assert
+            assert "secret" not in caplog.text
+            assert "*" * len(secret_val) + "(Masked)" in caplog.text
