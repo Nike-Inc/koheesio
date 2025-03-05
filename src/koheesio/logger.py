@@ -90,7 +90,10 @@ class Masked(Generic[T]):
             line
             for f in inspect.stack()
             for line in (f.code_context or [])
-            if any(e in line.strip() for e in [".debug(", ".info(", ".log(", ".warning(", "print("])
+            if any(
+                e in line.strip()
+                for e in [".debug(", ".info(", ".log(", ".warning(", ".error(", ".critical(", "print("]
+            )
         ]
         return repr(self._value if not used_as_output else "*" * len(str(self._value)) + "(Masked)")
 
