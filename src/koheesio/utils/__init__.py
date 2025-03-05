@@ -4,12 +4,13 @@ Utility functions
 
 from typing import Any, Callable, Dict, Optional, Tuple
 import datetime
-from functools import partial
+from functools import partial, wraps
 from importlib import import_module
 import inspect
 from pathlib import Path
 from sys import version_info as PYTHON_VERSION
 import uuid
+import warnings
 
 __all__ = [
     "get_args_for_func",
@@ -112,3 +113,25 @@ def utc_now() -> datetime.datetime:
     if PYTHON_MINOR_VERSION < 3.11:
         return datetime.datetime.utcnow()
     return datetime.datetime.now(datetime.timezone.utc)
+
+
+def experimental(func: Callable) -> Callable:
+    """Decorator to mark functions as experimental."""
+    @wraps(func)
+    def wrapper(*args: Any, **kwargs: Any) -> Callable:
+        warnings.warn(
+            f"{func.__name__} is experimental and might be removed in a future minor release if deemed unstable.",
+            category=UserWarning,
+            stacklevel=2,
+        )
+        return func(*args, **kwargs)
+    
+    # Add experimental warning to the docstring
+    original_doc = func.__doc__ or ""
+    func.__doc__ = original_doc + (
+        '\n'
+        '!!! warning "Experimental Feature"\n'
+        '    This method is experimental and may change in future versions if deemed unstable. Use with caution!'
+    )
+
+    return wrapper

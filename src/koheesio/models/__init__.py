@@ -50,6 +50,7 @@ from pydantic._internal._model_construction import ModelMetaclass
 
 from koheesio.context import Context
 from koheesio.logger import Logger, LoggingFactory
+from koheesio.utils import experimental
 
 __all__ = [
     "BaseModel",
@@ -875,6 +876,7 @@ class SecretStr(PydanticSecretStr, _SecretMixin):
         Returns the actual secret value.
     """
 
+    @experimental
     def __format__(self, format_spec: str) -> str:
         """Advanced f-string formatting support.
         If the f-string is called from within a SecretStr, the secret value is returned as we are in a secure context.
