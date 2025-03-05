@@ -51,7 +51,6 @@ from pydantic._internal._model_construction import ModelMetaclass
 
 from koheesio.context import Context
 from koheesio.logger import Logger, LoggingFactory
-from koheesio.utils import experimental
 
 __all__ = [
     "BaseModel",
