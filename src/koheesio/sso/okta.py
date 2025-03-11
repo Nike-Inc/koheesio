@@ -4,13 +4,13 @@ This module contains Okta integration steps.
 
 from __future__ import annotations
 
-from typing import Dict, Optional, Union
+from typing import Dict, Optional
 from logging import Filter, LogRecord
 
 from requests import HTTPError
 
 from koheesio.logger import LoggingFactory, MaskedString
-from koheesio.models import Field, SecretStr, model_validator
+from koheesio.models import Field, SecretStr
 from koheesio.steps.http import HttpPostStep
 
 
@@ -21,19 +21,18 @@ class Okta(HttpPostStep):
 
     client_id: str = Field(default=..., alias="okta_id", description="Okta account ID")
     client_secret: SecretStr = Field(default=..., alias="okta_secret", description="Okta account secret", repr=False)
-    data: Optional[Union[Dict[str, str], str]] = Field(
+    data: Dict[str, str] = Field(
         default={"grant_type": "client_credentials"}, description="Data to be sent along with the token request"
     )
 
-    @model_validator(mode="before")
-    def _set_auth_param(cls, v: dict) -> dict:
-        """
-        Assign auth parameter with Okta client and secret to the params dictionary.
-        If auth parameter already exists, it will be overwritten.
-        """
-        auth = (v["client_id"], MaskedString(v["client_secret"].get_secret_value()))
-        v["params"] = {"auth": auth} if not v.get("params") else {**v["params"], "auth": auth}
-        return v
+    # headers are not used in this class
+    headers: dict = {}
+
+    def get_options(self) -> dict:
+        """options to be passed to requests.request()"""
+        _options = super().get_options()
+        _options["auth"] = (self.client_id, MaskedString(self.client_secret.get_secret_value()))
+        return _options
 
 
 class LoggerOktaTokenFilter(Filter):
@@ -56,7 +55,8 @@ class OktaAccessToken(Okta):
     """
     Get Okta authorization token
 
-    Example:
+    Examples
+    --------
     ```python
     token = (
         OktaAccessToken(
@@ -89,7 +89,7 @@ class OktaAccessToken(Okta):
         """
         Execute an HTTP Post call to Okta service and retrieve the access token.
         """
-        HttpPostStep.execute(self)
+        super().execute()
 
         # noinspection PyUnresolvedReferences
         status_code = self.output.status_code
