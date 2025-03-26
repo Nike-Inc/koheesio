@@ -206,7 +206,6 @@ class HyperFileWriter(HyperFile):
         """
         ...
 
-    @abstractmethod
     def execute(self) -> Output:
         self._execute()
 
