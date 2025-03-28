@@ -1,8 +1,10 @@
 from typing import Any, List, Optional, Union
 from abc import ABC, abstractmethod
+from functools import cached_property
 import os
 from pathlib import PurePath
-from tempfile import TemporaryDirectory
+from shutil import move
+from tempfile import TemporaryDirectory, mkdtemp
 
 from tableauhyperapi import (
     NOT_NULLABLE,
@@ -173,7 +175,7 @@ class HyperFileWriter(HyperFile):
 
         hyper_path: PurePath = Field(default=..., description="Path to created Hyper file")
 
-    @property
+    @cached_property
     def hyper_path(self) -> PurePath:
         """
         Return full path to the Hyper file.
@@ -185,12 +187,35 @@ class HyperFileWriter(HyperFile):
         self.log.info(f"Destination file: {hyper_path}")
         return hyper_path
 
+    @cached_property
+    def _hyper_path(self) -> PurePath:
+        """
+        Return temporary path to the Hyper file on the local file system.
+        """
+        _path = PurePath(mkdtemp()).joinpath(self.hyper_path.name)
+        self.log.warning(f"Temporary Hyper file location on a local file system: {_path}")
+        return _path
+
     def write(self) -> Output:
         self.execute()
 
     @abstractmethod
+    def _execute(self):
+        """
+        Implement this method to generate the Hyper file on the local file system, using the `_hyper_path` property.
+        """
+        ...
+
     def execute(self) -> Output:
-        pass
+        self._execute()
+
+        # Hyper file should always be created in a temporary location on local file system due to the limitations of the
+        # Tableau Hyper API while accessing the DBFS and potentially other storage types. It will be moved to the path
+        # returned by the `hyper_path` property after the file is created and the Hyper process is finished.
+        move(self._hyper_path, self.hyper_path)
+        self.log.debug(f"File moved from {self._hyper_path} to {self.hyper_path}")
+
+        self.output.hyper_path = self.hyper_path
 
 
 class HyperFileListWriter(HyperFileWriter):
@@ -238,20 +263,18 @@ class HyperFileListWriter(HyperFileWriter):
 
     data: conlist(List[Any], min_length=1) = Field(default=..., description="List of rows to write to the Hyper file")
 
-    def execute(self):
+    def _execute(self):
         with HyperProcess(
             telemetry=Telemetry.DO_NOT_SEND_USAGE_DATA_TO_TABLEAU, parameters=self.hyper_process_parameters
         ) as hp:
             with Connection(
-                endpoint=hp.endpoint, database=self.hyper_path, create_mode=CreateMode.CREATE_AND_REPLACE
+                endpoint=hp.endpoint, database=self._hyper_path, create_mode=CreateMode.CREATE_AND_REPLACE
             ) as connection:
                 connection.catalog.create_schema(schema=self.table_definition.table_name.schema_name)
                 connection.catalog.create_table(table_definition=self.table_definition)
                 with Inserter(connection, self.table_definition) as inserter:
                     inserter.add_rows(rows=self.data)
                     inserter.execute()
-
-        self.output.hyper_path = self.hyper_path
 
 
 class HyperFileParquetWriter(HyperFileWriter):
@@ -307,7 +330,7 @@ class HyperFileParquetWriter(HyperFileWriter):
         default=..., alias="files", description="One or multiple parquet files to write to the Hyper file"
     )
 
-    def execute(self) -> HyperFileWriter.Output:
+    def _execute(self) -> HyperFileWriter.Output:
         _file = [str(f) for f in self.file]
         array_files = "'" + "','".join(_file) + "'"
 
@@ -315,15 +338,13 @@ class HyperFileParquetWriter(HyperFileWriter):
             telemetry=Telemetry.DO_NOT_SEND_USAGE_DATA_TO_TABLEAU, parameters=self.hyper_process_parameters
         ) as hp:
             with Connection(
-                endpoint=hp.endpoint, database=self.hyper_path, create_mode=CreateMode.CREATE_AND_REPLACE
+                endpoint=hp.endpoint, database=self._hyper_path, create_mode=CreateMode.CREATE_AND_REPLACE
             ) as connection:
                 connection.catalog.create_schema(schema=self.table_definition.table_name.schema_name)
                 connection.catalog.create_table(table_definition=self.table_definition)
                 sql = f'copy "{self.schema_}"."{self.table}" from array [{array_files}] with (format parquet)'
                 self.log.debug(f"Executing SQL: {sql}")
                 connection.execute_command(sql)
-
-        self.output.hyper_path = self.hyper_path
 
 
 class HyperFileDataFrameWriter(HyperFileWriter):
@@ -491,9 +512,11 @@ class HyperFileDataFrameWriter(HyperFileWriter):
                     self.log.info("Parquet file created: %s", fp)
                     return [fp]
 
-    def execute(self) -> HyperFileWriter.Output:
+    def _execute(self) -> HyperFileWriter.Output:
         w = HyperFileParquetWriter(
             path=self.path, name=self.name, table_definition=self._table_definition, files=self.write_parquet()
         )
-        w.execute()
-        self.output.hyper_path = w.output.hyper_path
+        w._execute()  # noqa: E261
+        # Overriding the cached_property value of HyperFileDataFrameWriter class with the value from
+        # HyperFileParquetWriter to ensure that file move operation is done on the correct path
+        self._hyper_path = w._hyper_path  # noqa: E261
