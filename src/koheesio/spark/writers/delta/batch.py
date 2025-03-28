@@ -328,11 +328,11 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
                     clause = merge_conf.get("clause")
                     if clause not in valid_clauses:
                         raise ValueError(f"Invalid merge clause '{clause}' provided")
-            elif (
-                not isinstance(merge_builder, DeltaMergeBuilder)
-                or not type(merge_builder).__name__ == "DeltaMergeBuilder"
+            elif not (
+                isinstance(merge_builder, DeltaMergeBuilder)
+                or type(merge_builder).__name__ == "DeltaMergeBuilder"
             ):
-                raise ValueError("merge_builder must be a list or merge clauses or a DeltaMergeBuilder instance")
+                raise ValueError("merge_builder must be a list of merge clauses or a DeltaMergeBuilder instance")
 
         return params
 
