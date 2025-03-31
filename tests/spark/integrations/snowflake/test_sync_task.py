@@ -495,7 +495,7 @@ class TestMergeQuery:
             """
             MERGE INTO target_table target
             USING tmp_table temp ON target.Country = temp.Country
-            WHEN MATCHED AND temp._change_type = 'update_postimage'
+            WHEN MATCHED AND (temp._change_type = 'update_postimage' OR temp._change_type = 'insert')
                 THEN UPDATE SET NumVaccinated = temp.NumVaccinated, AvailableDoses = temp.AvailableDoses
             WHEN NOT MATCHED AND temp._change_type != 'delete'
                 THEN INSERT (Country, NumVaccinated, AvailableDoses)
