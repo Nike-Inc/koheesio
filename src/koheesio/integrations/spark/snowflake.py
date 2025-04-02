@@ -970,7 +970,7 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeSparkStep):
             f"""
             MERGE INTO {target_table} target
             USING {stage_table} temp ON {key_join_string}
-            WHEN MATCHED AND temp._change_type = 'update_postimage'
+            WHEN MATCHED AND (temp._change_type = 'update_postimage' OR temp._change_type = 'insert')
                 THEN UPDATE SET {assignment_string}
             WHEN NOT MATCHED AND temp._change_type != 'delete'
                 THEN INSERT ({columns_string})
