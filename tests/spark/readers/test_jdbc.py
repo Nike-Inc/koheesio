@@ -46,6 +46,10 @@ class TestJdbcReader:
         del expected["password"]  # we don't need to test for this
 
         assert sorted(actual) == sorted(expected)
+        
+        with pytest.raises(KeyError) as e:
+            actual["dbtable"]
+            assert e.type is KeyError
 
     def test_execute_wo_dbtable_and_query(self):
         with pytest.raises(ValueError) as e:
