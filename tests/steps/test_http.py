@@ -207,6 +207,7 @@ def test_get_headers(params: dict, expected: str, caplog: pytest.LogCaptureFixtu
         pytest.param(17, STATUS_404_ENDPOINT, 503, 1, HTTPError, id="max_retries_17_404"),
     ],
 )
+@pytest.mark.flaky(max_runs=3)  # We seldom experience 502 errors on httbin, so we try again
 def test_max_retries(
     max_retries: int, endpoint: str, status_code: int, expected_count: int, error_type: Exception
 ) -> None:
@@ -235,6 +236,7 @@ def test_max_retries(
         pytest.param(1, [0, 2, 4], id="backoff_1"),
     ],
 )
+@pytest.mark.flaky(max_runs=3)  # We seldom experience 502 errors on httbin, so we try again
 def test_initial_delay_and_backoff(monkeypatch: pytest.FixtureRequest, backoff: int, expected: list) -> None:
     session = requests.Session()
     retry_logic = Retry(total=3, backoff_factor=backoff, status_forcelist=[503])
