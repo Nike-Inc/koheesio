@@ -132,7 +132,8 @@ from pyspark.sql.functions import col, expr
 from koheesio.models import Field, field_validator
 from koheesio.spark import Column, ParseException
 from koheesio.spark.transformations import ColumnsTransformationWithTarget
-from koheesio.spark.utils import check_if_pyspark_connect_is_supported, get_column_name
+from koheesio.spark.utils import check_if_pyspark_connect_module_is_available, get_column_name
+from koheesio.spark.utils.connect import is_remote_session
 
 # create a literal constraining the operations to 'add' and 'subtract'
 Operations = Literal["add", "subtract"]
@@ -169,7 +170,7 @@ class DateTimeColumn(SparkColumn):
 
 
 # if spark version is 3.5 or higher, we have to account for the connect mode
-if check_if_pyspark_connect_is_supported():
+if check_if_pyspark_connect_module_is_available():
     from pyspark.sql.connect.column import Column as ConnectColumn
 
     class DateTimeColumnConnect(ConnectColumn):
@@ -198,7 +199,6 @@ def validate_interval(interval: str) -> str:
         If the interval string is invalid
     """
     from koheesio.spark.utils.common import get_active_session
-    from koheesio.spark.utils.connect import is_remote_session
 
     try:
         if is_remote_session():
