@@ -78,6 +78,7 @@ test = [
   "pytest-randomly",
   "pytest-sftpserver",
   "pytest-xdist",
+  "flaky",
   "requests_mock",
   "time_machine",
   "freezegun",
