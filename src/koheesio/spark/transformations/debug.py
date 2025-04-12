@@ -113,6 +113,10 @@ class Peek(Transformation):
     def _on_debug(self) -> bool:
         """
         Check if the logger level is set to DEBUG or lower.
-        :return: True if the logger level is set to DEBUG or lower, False otherwise.
+
+        Returns
+        --------
+        bool
+            True if the logger level is set to DEBUG or lower, False otherwise.
         """
         return self.log.isEnabledFor(DEBUG)
