@@ -72,24 +72,8 @@ class HttpStep(Step, ExtraParamsMixin):
 
     The `auth_header` value is stored as a `SecretStr` object to prevent sensitive information from being displayed in logs.
 
-    Of course, authorization can also just be passed as part of the regular `headers` parameter.
-
-    For example, either one of these parameters would semantically be the same:
-    ```python
-    headers = {
-        "Authorization": "Bearer <token>",
-        "Content-Type": "application/json",
-    }
-    ```
-    # or
-    auth_header = "Bearer <token>"
-    ```
-
     The `auth_header` parameter is useful when you want to keep the authorization separate from the other headers, for
     example when your implementation requires you to pass some custom headers in addition to the authorization header.
-
-    > Note: The `auth_header` parameter can accept any authorization header value, including basic authentication
-        tokens, digest authentication strings, NTLM, etc.
 
     Understanding Retries
     ----------------------
@@ -108,42 +92,6 @@ class HttpStep(Step, ExtraParamsMixin):
     Given the default values of `max_retries=3` and `backoff=2`, the delays between retries would be 2 seconds,
     4 seconds, and 8 seconds, respectively. This results in a total delay of 14 seconds before all retries are
     exhausted.
-
-    Parameters
-    ----------
-    url : str, required
-        API endpoint URL.
-    headers : Dict[str, Union[str, SecretStr]], optional, default={"Content-Type": "application/json"}
-        Request headers.
-    auth_header : Optional[SecretStr], optional, default=None
-        Authorization header. An optional parameter that can be used to pass an authorization, such as a bearer token.
-    data : Union[Dict[str, str], str], optional, default={}
-        Data to be sent along with the request.
-    timeout : int, optional, default=3
-        Request timeout. Defaults to 3 seconds.
-    method : Union[str, HttpMethod], required, default='get'
-        What type of Http call to perform. One of 'get', 'post', 'put', 'delete'. Defaults to 'get'.
-    session : requests.Session, optional, default=requests.Session()
-        Existing requests session object to be used for making HTTP requests. If not provided, a new session object
-        will be created.
-    params : Optional[Dict[str, Any]]
-        Set of extra parameters that should be passed to the HTTP request. Note: any kwargs passed to the class will be
-        added to this dictionary.
-    max_retries : int, optional, default=3
-        Maximum number of retries before giving up. Defaults to 3.
-    backoff_factor : float, optional, default=2
-        Backoff factor for retries. Defaults to 2.
-
-    Output
-    ------
-    response_raw : Optional[requests.Response]
-        The raw requests.Response object returned by the appropriate requests.request() call.
-    response_json : Optional[Union[Dict, List]]
-        The JSON response for the request.
-    raw_payload : Optional[str]
-        The raw response for the request.
-    status_code : Optional[int]
-        The status return code of the request.
     """
 
     url: str = Field(
@@ -256,6 +204,18 @@ class HttpStep(Step, ExtraParamsMixin):
             headers[k] = v.get_secret_value() if isinstance(v, SecretStr) else v
         return headers
 
+    def __init__(self, **data: Any):
+        super().__init__(**data)
+        # Set up retry configuration during initialization
+        retries = Retry(
+            total=self.max_retries,
+            backoff_factor=self.backoff_factor,
+            status_forcelist=[502, 503, 504],  # Bad Gateway, Service Unavailable, Gateway Timeout
+            allowed_methods={'POST', 'GET', 'PUT', 'DELETE'}
+        )
+        self.session.mount("https://", requests.adapters.HTTPAdapter(max_retries=retries))
+        self.session.mount("http://", requests.adapters.HTTPAdapter(max_retries=retries))
+
     def get_headers(self) -> dict:
         """
         Dump headers into JSON without SecretStr masking.
@@ -279,14 +239,36 @@ class HttpStep(Step, ExtraParamsMixin):
                 self.log.error(f"An error occurred while processing the JSON payload. Error message:\n{e.msg}")
 
     def get_options(self) -> dict:
-        """options to be passed to requests.request()"""
-        return {
+        """Get request options."""
+        options = {
             "url": self.url,
             "headers": self.get_headers(),
-            "data": self.data,
-            "timeout": self.timeout,
-            **self.params,  # type: ignore
+            "timeout": self.timeout
         }
+
+        if self.params and isinstance(self.params, dict):
+            options.update(self.params)
+
+        if self.data:
+            # If data is dict, assume it's application/json and convert to str
+            if isinstance(self.data, dict) and self.headers.get("Content-Type") == "application/json":
+                options["data"] = json.dumps(self.data)
+            else:
+                # Otherwise, pass it as is
+                options["data"] = self.data
+
+        # Configure retry settings
+        retries = Retry(
+            total=self.max_retries,
+            backoff_factor=self.backoff_factor,
+            status_forcelist=[502, 503, 504],  # Bad Gateway, Service Unavailable, Gateway Timeout
+            allowed_methods={'POST', 'GET', 'PUT', 'DELETE'}
+        )
+        options["max_retries"] = retries
+
+        # Verify SSL certificates by default
+        options["verify"] = options.get("verify", True)
+        return options
 
     @contextlib.contextmanager
     def _request(
@@ -306,10 +288,6 @@ class HttpStep(Step, ExtraParamsMixin):
         If `self.request()` still fails after `self.max_retries` attempts, it logs an error message and re-raises the
         last exception that was caught.
 
-        This is a good way to handle temporary issues that might cause `self.request()` to fail, such as network errors
-        or server downtime. The exponential backoff ensures that you're not constantly bombarding a server with
-        requests if it's struggling to respond.
-
         Parameters
         ----------
         method : HttpMethod
@@ -327,24 +305,41 @@ class HttpStep(Step, ExtraParamsMixin):
         self.log.debug(f"Making {_method} request to {self.url} with headers {self.headers}")
         options = self.get_options()
 
+        # Configure retry settings just before the request
         retries = Retry(
             total=self.max_retries,
             backoff_factor=self.backoff_factor,
-            status_forcelist=[502, 503, 504],   # Bad Gateway, Service Unavailable, Gateway Timeout
-            allowed_methods={'POST', 'GET', 'PUT', 'DELETE'}
+            status_forcelist=[502, 503, 504],  # Bad Gateway, Service Unavailable, Gateway Timeout
+            allowed_methods=frozenset(['GET', 'POST', 'PUT', 'DELETE']),
+            raise_on_status=True,
+            respect_retry_after_header=True
         )
-        self.session.mount("https://", requests.adapters.HTTPAdapter(max_retries=retries))
-        # noinspection HttpUrlsUsage
-        self.session.mount("http://", requests.adapters.HTTPAdapter(max_retries=retries))
 
-        with self.session.request(method=_method, **options, stream=stream) as response:
-            response.raise_for_status()
-            self.log.debug(f"Received response with status code {response.status_code} and body {response.text}")
-
-            try:
-                yield response
-            finally:
-                self.log.debug("Request context manager exiting")
+        # Create a new adapter with our retry configuration
+        adapter = requests.adapters.HTTPAdapter(max_retries=retries)
+        
+        # Get the current adapter to restore later
+        old_adapter = self.session.get_adapter(self.url)
+        
+        try:
+            # Mount our retry-enabled adapter
+            self.session.mount(self.url, adapter)
+            
+            # Make the request with retries
+            with self.session.request(method=_method, **options, stream=stream) as response:
+                try:
+                    response.raise_for_status()
+                    self.log.debug(f"Received response with status code {response.status_code} and body {response.text}")
+                    yield response
+                except requests.exceptions.HTTPError as e:
+                    if response.status_code in [502, 503, 504] and response.history:
+                        # If we got here, it means we exhausted retries
+                        raise RetryError(f"Max retries ({self.max_retries}) exceeded with url: {self.url}") from e
+                    raise
+        finally:
+            # Restore the original adapter
+            self.session.mount(self.url, old_adapter)
+            self.log.debug("Request context manager exiting")
 
     # noinspection PyMethodOverriding
     def get(self) -> requests.Response:

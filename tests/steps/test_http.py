@@ -1,9 +1,11 @@
+from typing import Any, Dict, Type
+
 import pytest
-import requests
 from requests import HTTPError
-from requests.adapters import HTTPAdapter
 from requests.exceptions import RetryError
 import requests_mock
+from requests_mock.request import _RequestObjectProxy
+from requests_mock.response import _Context
 from urllib3 import Retry
 
 from koheesio.logger import LoggingFactory
@@ -17,7 +19,8 @@ from koheesio.steps.http import (
     HttpStep,
 )
 
-BASE_URL = "https://httpbin.org"
+# Mock URLs instead of real endpoints
+BASE_URL = "http://mock-api.test"
 GET_ENDPOINT = f"{BASE_URL}/get"
 POST_ENDPOINT = f"{BASE_URL}/post"
 PUT_ENDPOINT = f"{BASE_URL}/put"
@@ -26,8 +29,7 @@ STATUS_404_ENDPOINT = f"{BASE_URL}/status/404"
 STATUS_500_ENDPOINT = f"{BASE_URL}/status/500"
 STATUS_503_ENDPOINT = f"{BASE_URL}/status/503"
 
-
-log = LoggingFactory.get_logger(name="test_delta", inherit_from_koheesio=True)
+log = LoggingFactory.get_logger(name="test_http", inherit_from_koheesio=True)
 
 
 @pytest.mark.parametrize(
@@ -108,21 +110,18 @@ def test_http_step(endpoint: str, step: HttpStep, method: str, return_value: dic
             assert excinfo.value.response.status_code == expected_status_code
         # Happy path
         else:
-            step.execute()
-            assert step.output.status_code == expected_status_code  # type: ignore
-            assert step.output.response_json == return_value  # type: ignore
+            response = step.execute()
+            assert response.status_code == expected_status_code  # type: ignore
+            assert response.response_json == return_value  # type: ignore
 
 
-def test_http_step_with_valid_http_method():
-    """
-    Unit Testing the GET functions.
-    Above parameters are for the success and failed GET API calls
-    """
-
+def test_http_step_with_valid_http_method() -> None:
+    """Unit Testing the GET functions with valid method."""
     with requests_mock.Mocker() as rm:
         rm.get(GET_ENDPOINT, status_code=int(200))
-        response = HttpStep(method="get", url=GET_ENDPOINT).execute()
-        assert response.status_code == 200
+        step = HttpStep(method="get", url=GET_ENDPOINT)
+        step.execute()
+        assert step.output.status_code == 200  # type: ignore
 
 
 def test_http_step_with_invalid_http_method():
@@ -202,19 +201,34 @@ def test_get_headers(params: dict, expected: str, caplog: pytest.LogCaptureFixtu
     "max_retries, endpoint, status_code, expected_count, error_type",
     [
         pytest.param(1, STATUS_503_ENDPOINT, 503, 2, RetryError, id="max_retries_2_503"),
-        # Only 501, 502, 503 are included in the retry list
+        # Only 502, 503, 504 are included in the retry list
         pytest.param(3, STATUS_404_ENDPOINT, 404, 1, HTTPError, id="max_retries_1_404"),
     ],
 )
-@pytest.mark.flaky(max_runs=3)  # We occasionally experience 502 errors on httbin, so we try again
 def test_max_retries(
-    max_retries: int, endpoint: str, status_code: int, expected_count: int, error_type: Exception
+    max_retries: int, endpoint: str, status_code: int, expected_count: int, error_type: Type[Exception]
 ) -> None:
-    step = HttpGetStep(url=endpoint, max_retries=max_retries, verify=False)
-    with pytest.raises(error_type):  # type: ignore
-        step.execute()
-    first_pool = [v for _, v in step.session.adapters["https://"].poolmanager.pools._container.items()][0]
-    assert first_pool.num_requests == expected_count
+    """Test retry behavior for different status codes"""
+    request_count = 0
+    
+    def count_callback(_request: _RequestObjectProxy, context: _Context) -> Dict[str, str]:
+        nonlocal request_count
+        request_count += 1
+        context.status_code = status_code
+        # Set up response history to properly simulate retries
+        context.reason = 'Server Error' if status_code >= 500 else 'Not Found'
+        return {'error': f'Status {status_code}'}
+
+    with requests_mock.Mocker() as rm:
+        rm.get(endpoint, json=count_callback)
+        step = HttpGetStep(url=endpoint, max_retries=max_retries)
+        
+        with pytest.raises(error_type):
+            step.execute()
+            
+        # For 503, we expect initial request + retries
+        # For 404, we expect only one attempt since it's not in retry list
+        assert request_count == expected_count
 
 
 @pytest.mark.parametrize(
@@ -223,25 +237,22 @@ def test_max_retries(
         pytest.param(0.5, [0, 1, 2], id="backoff_0.5"),
     ],
 )
-@pytest.mark.flaky(max_runs=3)  # We occasionally experience 502 errors on httbin, so we try again
-def test_backoff_factor(monkeypatch: pytest.FixtureRequest, backoff_factor: int, expected: list) -> None:
-    step = HttpGetStep(
-        url=STATUS_503_ENDPOINT,
-        headers={
-            "Authorization": "Bearer token",
-            "Content-Type": "application/json",
-        },
-        backoff_factor=backoff_factor,
-        verify=False,
-    )
+def test_backoff_factor(monkeypatch: pytest.FixtureRequest, backoff_factor: float, expected: list) -> None:
+    """Test exponential backoff behavior"""
+    request_count = 0
+    
+    def count_callback(_request: _RequestObjectProxy, context: _Context) -> Dict[str, str]:
+        nonlocal request_count
+        request_count += 1
+        context.status_code = 503
+        context.reason = 'Server Error'
+        return {'error': 'Status 503'}
 
     # Save the original get_backoff_time method
     original_get_backoff_time = Retry.get_backoff_time
-
     backoff_values = []
 
-    # Define a new function to replace get_backoff_time
-    def mock_get_backoff_time(self, *args, **kwargs):
+    def mock_get_backoff_time(self: Any, *args: Any, **kwargs: Any) -> float:
         result = original_get_backoff_time(self, *args, **kwargs)
         backoff_values.append(result)
         return result
@@ -249,10 +260,19 @@ def test_backoff_factor(monkeypatch: pytest.FixtureRequest, backoff_factor: int,
     # Use monkeypatch to replace get_backoff_time
     monkeypatch.setattr(Retry, "get_backoff_time", mock_get_backoff_time)
 
-    with pytest.raises(RetryError):
-        step.execute()
-
-    # Restore the original get_backoff_time method
-    monkeypatch.undo()
+    with requests_mock.Mocker() as rm:
+        rm.get(STATUS_503_ENDPOINT, json=count_callback)
+        step = HttpGetStep(
+            url=STATUS_503_ENDPOINT,
+            headers={
+                "Authorization": "Bearer token",
+                "Content-Type": "application/json",
+            },
+            backoff_factor=backoff_factor,
+        )
+        
+        with pytest.raises(RetryError):
+            step.execute()
 
     assert backoff_values == expected
+    assert request_count == len(expected) + 1  # Initial request + retries
