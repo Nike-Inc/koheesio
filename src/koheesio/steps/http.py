@@ -18,6 +18,7 @@ from typing import Any, Dict, Generator, List, Optional, Union
 import contextlib
 from enum import Enum
 import json
+from urllib3.util import Retry
 
 import requests  # type: ignore[import-untyped]
 
@@ -93,29 +94,20 @@ class HttpStep(Step, ExtraParamsMixin):
     Understanding Retries
     ----------------------
     This class includes a built-in retry mechanism for handling temporary issues, such as network errors or server
-    downtime, that might cause the HTTP request to fail. The retry mechanism is controlled by three parameters:
-    `max_retries`, `initial_delay`, and `backoff`.
+    downtime, that might cause the HTTP request to fail. The retry mechanism is controlled by two parameters:
+    `max_retries` and `backoff_factor`, and will only be triggered for error codes 502,503 and 504.
 
     - `max_retries` determines the number of retries after the initial request. For example, if `max_retries` is set to
         4, the request will be attempted a total of 5 times (1 initial attempt + 4 retries). If `max_retries` is set to
         0, no retries will be attempted, and the request will be tried only once.
 
-    - `initial_delay` sets the waiting period before the first retry. If `initial_delay` is set to 3, the delay before
-        the first retry will be 3 seconds. Changing the `initial_delay` value directly affects the amount of delay
-        before each retry.
+    - `backoff_factor` controls the rate at which the delay increases for each subsequent retry. If `backoff_factor` is
+        set to 2 (the default), the delay will double with each retry. If `backoff` is set to 1, the delay between
+        retries will remain constant. Changing the `backoff_factor` value affects how quickly the delay increases.
 
-    - `backoff` controls the rate at which the delay increases for each subsequent retry. If `backoff` is set to 2 (the
-        default), the delay will double with each retry. If `backoff` is set to 1, the delay between retries will
-        remain constant. Changing the `backoff` value affects how quickly the delay increases.
-
-    Given the default values of `max_retries=3`, `initial_delay=2`, and `backoff=2`, the delays between retries would
-    be 2 seconds, 4 seconds, and 8 seconds, respectively. This results in a total delay of 14 seconds before all
-    retries are exhausted.
-
-    For example, if you set `initial_delay=3` and `backoff=2`, the delays before the retries would be `3 seconds`,
-    `6 seconds`, and `12 seconds`. If you set `initial_delay=2` and `backoff=3`, the delays before the retries would be
-    `2 seconds`, `6 seconds`, and `18 seconds`. If you set `initial_delay=2` and `backoff=1`, the delays before the
-    retries would be `2 seconds`, `2 seconds`, and `2 seconds`.
+    Given the default values of `max_retries=3` and `backoff=2`, the delays between retries would be 2 seconds,
+    4 seconds, and 8 seconds, respectively. This results in a total delay of 14 seconds before all retries are
+    exhausted.
 
     Parameters
     ----------
@@ -137,6 +129,10 @@ class HttpStep(Step, ExtraParamsMixin):
     params : Optional[Dict[str, Any]]
         Set of extra parameters that should be passed to the HTTP request. Note: any kwargs passed to the class will be
         added to this dictionary.
+    max_retries : int, optional, default=3
+        Maximum number of retries before giving up. Defaults to 3.
+    backoff_factor : float, optional, default=2
+        Backoff factor for retries. Defaults to 2.
 
     Output
     ------
@@ -186,6 +182,14 @@ class HttpStep(Step, ExtraParamsMixin):
         ),
         exclude=True,
         repr=False,
+    )
+    max_retries: int = Field(
+        default=3,
+        description="Maximum number of retries before giving up. Defaults to 3.",
+    )
+    backoff_factor: float = Field(
+        default=2,
+        description="Backoff factor for retries. Defaults to 2.",
     )
 
     class Output(Step.Output):
@@ -295,9 +299,9 @@ class HttpStep(Step, ExtraParamsMixin):
         This is to avoid unnecessary code duplication. Allows to centrally log, set outputs, and validated.
 
         This method will try to execute `requests.request` up to `self.max_retries` times. If `self.request()` raises
-        an exception, it logs a warning message and the error message, then waits for
-        `self.initial_delay * (self.backoff ** i)` seconds before retrying. The delay increases exponentially
-        after each failed attempt due to the `self.backoff ** i` term.
+        an exception with error code 502,503 or 504, it logs a warning message and the error message, then waits for
+        `(self.backoff_factor ** i)` seconds before retrying, where the delay increases exponentially after each failed
+        attempt.
 
         If `self.request()` still fails after `self.max_retries` attempts, it logs an error message and re-raises the
         last exception that was caught.
@@ -322,6 +326,16 @@ class HttpStep(Step, ExtraParamsMixin):
         _method = (method or self.method).value.upper()
         self.log.debug(f"Making {_method} request to {self.url} with headers {self.headers}")
         options = self.get_options()
+
+        retries = Retry(
+            total=self.max_retries,
+            backoff_factor=self.backoff_factor,
+            status_forcelist=[502, 503, 504],   # Bad Gateway, Service Unavailable, Gateway Timeout
+            allowed_methods={'POST', 'GET', 'PUT', 'DELETE'}
+        )
+        self.session.mount("https://", requests.adapters.HTTPAdapter(max_retries=retries))
+        # noinspection HttpUrlsUsage
+        self.session.mount("http://", requests.adapters.HTTPAdapter(max_retries=retries))
 
         with self.session.request(method=_method, **options, stream=stream) as response:
             response.raise_for_status()

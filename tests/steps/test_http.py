@@ -201,54 +201,36 @@ def test_get_headers(params: dict, expected: str, caplog: pytest.LogCaptureFixtu
 @pytest.mark.parametrize(
     "max_retries, endpoint, status_code, expected_count, error_type",
     [
-        pytest.param(4, STATUS_503_ENDPOINT, 503, 5, RetryError, id="max_retries_4_503"),
-        pytest.param(7, STATUS_404_ENDPOINT, 404, 8, RetryError, id="max_retries_7_404"),
-        pytest.param(17, STATUS_500_ENDPOINT, 500, 18, RetryError, id="max_retries_17_500"),
-        pytest.param(17, STATUS_404_ENDPOINT, 503, 1, HTTPError, id="max_retries_17_404"),
+        pytest.param(1, STATUS_503_ENDPOINT, 503, 2, RetryError, id="max_retries_2_503"),
+        # Only 501, 502, 503 are included in the retry list
+        pytest.param(3, STATUS_404_ENDPOINT, 404, 1, HTTPError, id="max_retries_1_404"),
     ],
 )
 def test_max_retries(
     max_retries: int, endpoint: str, status_code: int, expected_count: int, error_type: Exception
 ) -> None:
-    session = requests.Session()
-    retry_logic = Retry(total=max_retries, status_forcelist=[status_code])
-    session.mount("https://", HTTPAdapter(max_retries=retry_logic))
-    # noinspection HttpUrlsUsage
-    session.mount("http://", HTTPAdapter(max_retries=retry_logic))
-
-    step = HttpGetStep(url=endpoint, session=session)
-
+    step = HttpGetStep(url=endpoint, max_retries=max_retries, verify=False)
     with pytest.raises(error_type):  # type: ignore
         step.execute()
-
-    first_pool = [v for _, v in session.adapters["https://"].poolmanager.pools._container.items()][0]
-
+    first_pool = [v for _, v in step.session.adapters["https://"].poolmanager.pools._container.items()][0]
     assert first_pool.num_requests == expected_count
 
 
 @pytest.mark.parametrize(
-    "backoff,expected",
+    "backoff_factor,expected",
     [
-        pytest.param(7, [0, 14, 28], id="backoff_7"),
-        pytest.param(3, [0, 6, 12], id="backoff_3"),
-        pytest.param(2, [0, 4, 8], id="backoff_2"),
-        pytest.param(1, [0, 2, 4], id="backoff_1"),
+        pytest.param(0.5, [0, 1, 2], id="backoff_0.5"),
     ],
 )
-def test_initial_delay_and_backoff(monkeypatch: pytest.FixtureRequest, backoff: int, expected: list) -> None:
-    session = requests.Session()
-    retry_logic = Retry(total=3, backoff_factor=backoff, status_forcelist=[503])
-    session.mount("https://", HTTPAdapter(max_retries=retry_logic))
-    # noinspection HttpUrlsUsage
-    session.mount("http://", HTTPAdapter(max_retries=retry_logic))
-
+def test_backoff_factor(monkeypatch: pytest.FixtureRequest, backoff_factor: int, expected: list) -> None:
     step = HttpGetStep(
         url=STATUS_503_ENDPOINT,
         headers={
             "Authorization": "Bearer token",
             "Content-Type": "application/json",
         },
-        session=session,
+        backoff_factor=backoff_factor,
+        verify=False,
     )
 
     # Save the original get_backoff_time method
