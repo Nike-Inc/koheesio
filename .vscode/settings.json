@@ -1,7 +1,7 @@
 {
     "python.testing.pytestArgs": [
         ".",
-        "-n 3",                     // Run tests in parallel with 2 workers
+        "-n 3",                     // Run tests in parallel with 3 workers
         "--durations=10",           // Show the 10 slowest tests
         "-vv",                      // Verbose output
         "--cache-clear",            // Clear cache before running to prevent stale cache issues
