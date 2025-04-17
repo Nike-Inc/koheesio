@@ -5,6 +5,7 @@ from unittest import mock
 from unittest.mock import Mock
 
 import pytest
+
 from pyspark.sql import types as t
 
 from koheesio.integrations.snowflake.test_utils import mock_query  # noqa: F401
