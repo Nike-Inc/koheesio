@@ -747,7 +747,15 @@ class ExtraParamsMixin(PydanticBaseModel):
     @model_validator(mode="after")
     def _move_extra_params_to_params(self):  # type: ignore[no-untyped-def]
         """Move extra_params to params dict"""
-        self.params = {**self.params, **self.extra_params}  # type: ignore[assignment]
+        # Ensure we have a dict for params
+        if self.params is None:
+            self.params = {}
+            
+        # Get extra params, defaulting to empty dict if None
+        extra = self.extra_params or {}
+        
+        # Merge the dicts
+        self.params = {**self.params, **extra}
         return self
 
 
