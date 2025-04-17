@@ -220,7 +220,7 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
         default=..., alias="schema", description="The schema to use for the session after connecting"
     )
     params: Optional[Dict[str, Any]] = Field(
-        default_factory=partial(dict, **SF_DEFAULT_PARAMS),
+        default=SF_DEFAULT_PARAMS,  # type: ignore
         description="Extra options to pass to the Snowflake connector, by default it includes "
         "'sfCompress': 'on' and  'continue_on_error': 'off'",
         alias="options",
@@ -385,6 +385,7 @@ class SnowflakeRunQueryPython(SnowflakeStep):
     @property
     @contextmanager
     def conn(self) -> Generator:
+        """Context manager for the Snowflake connection"""
         if not self._snowflake_connector:
             raise RuntimeError("Snowflake connector is not installed. Please install `snowflake-connector-python`.")
 
@@ -392,8 +393,9 @@ class SnowflakeRunQueryPython(SnowflakeStep):
         _conn = self._snowflake_connector.connect(**sf_options)
         self.log.info(f"Connected to Snowflake account: {sf_options['account']}")
 
+        _preserve_snowflake_logger, snowflake_logger = None, None
         try:
-            from snowflake.connector.connection import logger as snowflake_logger
+            from snowflake.connector.connection import logger as snowflake_logger  # type: ignore
 
             _preserve_snowflake_logger = snowflake_logger
             snowflake_logger = self.log

@@ -8,13 +8,99 @@ JdbcReader
 """
 
 from typing import Any, Dict, Optional
+from abc import ABC
 
 from koheesio import ExtraParamsMixin
 from koheesio.models import Field, SecretStr, model_validator
 from koheesio.spark.readers import Reader
 
 
-class JdbcReader(Reader, ExtraParamsMixin):
+class BaseJdbcReader(Reader, ExtraParamsMixin, ABC):
+    format: str = Field(default="jdbc", description="The type of format to load. Defaults to 'jdbc'.")
+    driver: str = Field(
+        default=...,
+        description="Driver name. Be aware that the driver jar needs to be passed to the task",
+    )
+    url: str = Field(
+        default=...,
+        description="URL for the JDBC driver. Note, in some environments you need to use the IP Address instead of "
+        "the hostname of the server.",
+    )
+    user: str = Field(default=..., description="User to authenticate to the server")
+    password: SecretStr = Field(default=..., description="Password belonging to the username")
+    dbtable: Optional[str] = Field(
+        default=None, description="Database table name, also include schema name", alias="table"
+    )
+    query: Optional[str] = Field(default=None, description="Query")
+    params: Dict[str, Any] = Field(
+        default_factory=dict, description="Extra options to pass to spark reader", alias="options"
+    )
+
+    def get_options(self) -> Dict[str, Any]:
+        """Dictionary of options required for the specific JDBC driver.
+
+        This method handles table specification and query parameters according to precedence
+        rules and merges them with connection options.
+
+        Returns
+        -------
+        Dict[str, Any]
+            Dictionary containing all JDBC options including connection parameters,
+            table specification, and any additional driver-specific options.
+            
+        Notes
+        -----
+        The method handles table specification with the following precedence:
+        1. If query is present, it takes precedence (dbtable is ignored completely)
+        2. If dbtable is directly specified, it is used
+        3. If dbtable is in params/options, it is used
+        
+        Note: override this method if driver requires custom names, e.g. Snowflake: `sfUrl`, `sfUser`, etc.
+        """
+        # Start with base connection options
+        _options = {
+            "driver": self.driver,
+            "url": self.url,
+            "user": self.user,
+            "password": self.password,
+        }
+
+        # Handle table/query specification with proper precedence
+        if self.query:
+            _options["query"] = self.query
+            self.log.info(f"Using query: {self.query}")
+            # When query is present, dbtable should be completely ignored
+            if "dbtable" in self.params:
+                self.params.pop("dbtable")
+            self.dbtable = None  # Ensure dbtable is None when query is present
+            
+        elif self.dbtable:
+            _options["dbtable"] = self.dbtable
+            self.log.info(f"Using dbtable: {self.dbtable}")
+        
+        # Add any remaining params, but don't override existing options
+        for k, v in self.params.items():
+            if k not in _options:
+                _options[k] = v
+
+        return _options
+
+    @property
+    def options(self) -> Dict[str, Any]:
+        """Shorthand for accessing self.params provided for backwards compatibility"""
+        return self.params
+    
+    def execute(self) -> "JdbcReader.Output":
+        """Wrapper around Spark's jdbc read format"""
+        options = self.get_options()
+
+        if pw := self.password:
+            options["password"] = pw.get_secret_value()
+
+        self.output.df = self.spark.read.format(self.format).options(**options).load()
+
+
+class JdbcReader(BaseJdbcReader):
     """
     Reader for JDBC tables.
 
@@ -64,43 +150,6 @@ class JdbcReader(Reader, ExtraParamsMixin):
     stored in the `params` attribute.
     """
 
-    format: str = Field(default="jdbc", description="The type of format to load. Defaults to 'jdbc'.")
-    driver: str = Field(
-        default=...,
-        description="Driver name. Be aware that the driver jar needs to be passed to the task",
-    )
-    url: str = Field(
-        default=...,
-        description="URL for the JDBC driver. Note, in some environments you need to use the IP Address instead of "
-        "the hostname of the server.",
-    )
-    user: str = Field(default=..., description="User to authenticate to the server")
-    password: SecretStr = Field(default=..., description="Password belonging to the username")
-    dbtable: Optional[str] = Field(
-        default=None, description="Database table name, also include schema name", alias="table"
-    )
-    query: Optional[str] = Field(default=None, description="Query")
-    params: Dict[str, Any] = Field(
-        default_factory=dict, description="Extra options to pass to spark reader", alias="options"
-    )
-
-    def get_options(self) -> Dict[str, Any]:
-        """
-        Dictionary of options required for the specific JDBC driver.
-
-        Note: override this method if driver requires custom names, e.g. Snowflake: `sfUrl`, `sfUser`, etc.
-        """
-        _options = {"driver": self.driver, "url": self.url, "user": self.user, "password": self.password, **self.params}
-
-        if query := self.query:
-            _options["query"] = query
-            self.log.info(f"Using query: {query}")
-        elif dbtable := self.dbtable:
-            _options["dbtable"] = dbtable
-            self.log.info(f"Using DBTable: {dbtable}")
-
-        return _options
-
     @model_validator(mode="after")
     def check_dbtable_or_query(self) -> "JdbcReader":
         """Check that dbtable or query is filled in and that only one of them is filled in (query has precedence)"""
@@ -110,19 +159,6 @@ class JdbcReader(Reader, ExtraParamsMixin):
 
         if self.query and self.dbtable:
             self.log.warning("Query is filled in, dbtable will be ignored!")
+            self.dbtable = None
 
         return self
-
-    @property
-    def options(self) -> Dict[str, Any]:
-        """Shorthand for accessing self.params provided for backwards compatibility"""
-        return self.params
-
-    def execute(self) -> "JdbcReader.Output":
-        """Wrapper around Spark's jdbc read format"""
-        options = self.get_options()
-
-        if pw := self.password:
-            options["password"] = pw.get_secret_value()
-
-        self.output.df = self.spark.read.format(self.format).options(**options).load()
