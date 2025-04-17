@@ -63,6 +63,17 @@ class TestSnowflakeReader:
         k = SnowflakeReader(**self.reader_options).execute()
         assert k.df.count() == 3
 
+    def test_execute_with_dbtable(self, dummy_spark: Mock) -> None:  # pylint: disable=unused-argument
+        """Test that SnowflakeReader works correctly when given a dbtable argument"""
+        reader = SnowflakeReader(**COMMON_OPTIONS, dbtable="my_table")
+        result = reader.execute()  # Save result to avoid unused-variable warning
+
+        options = reader.get_options()
+        assert options["dbtable"] == "my_table", "dbtable should be preserved in options"
+        assert reader.dbtable == "my_table", "dbtable should be preserved on the instance"
+        assert "query" not in options, "query should not be present in options"
+        assert result.df.count() == 3, "DataFrame should be read correctly"
+
 
 class TestRunQuery:
     def test_deprecation(self):
