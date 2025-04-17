@@ -19,10 +19,10 @@ import contextlib
 from enum import Enum
 import json
 import time
-from urllib3.util import Retry
 
 import requests  # type: ignore[import-untyped]
 from requests.exceptions import RetryError
+from urllib3.util import Retry
 
 from koheesio import Step
 from koheesio.models import (
@@ -63,32 +63,6 @@ class HttpMethod(str, Enum):
         return getattr(cls, value.upper())
 
 
-class RetryHistoryResponse:
-    """Wrapper for requests.Response to make it compatible with urllib3's Retry history"""
-    def __init__(self, response: Optional[requests.Response] = None):
-        self.response = response
-        # urllib3 retry mechanism looks for these attributes
-        self.redirect_location = None
-        self.status = response.status_code if response else None
-        self.retries = None
-
-    @classmethod
-    def from_int(cls, status_code: int) -> "RetryHistoryResponse":
-        """Create a response wrapper from just a status code"""
-        wrapper = cls()
-        wrapper.status = status_code
-        return wrapper
-
-    @property
-    def is_redirect(self) -> bool:
-        """Required by urllib3's Retry"""
-        return False
-
-    def get(self, key: str, default: Any = None) -> Any:
-        """Required by urllib3's Retry"""
-        return default
-
-
 class HttpStep(Step, ExtraParamsMixin):
     """
     Can be used to perform API Calls to HTTP endpoints
@@ -105,9 +79,9 @@ class HttpStep(Step, ExtraParamsMixin):
 
     Understanding Retries
     ----------------------
-    This class includes a built-in retry mechanism for handling temporary issues, such as network errors or server
-    downtime, that might cause the HTTP request to fail. The retry mechanism is controlled by two parameters:
-    `max_retries` and `backoff_factor`, and will only be triggered for error codes 502,503 and 504.
+    This class includes a built-in retry mechanism using urllib3.util.Retry for handling temporary issues, such as 
+    network errors or server downtime, that might cause the HTTP request to fail. The retry mechanism is controlled by 
+    two parameters: `max_retries` and `backoff_factor`, and will only be triggered for error codes 502, 503 and 504.
 
     - `max_retries` determines the number of retries after the initial request. For example, if `max_retries` is set to
         4, the request will be attempted a total of 5 times (1 initial attempt + 4 retries). If `max_retries` is set to
@@ -155,8 +129,8 @@ class HttpStep(Step, ExtraParamsMixin):
         "session object will be created.",
         exclude=True,
     )
-    params: Optional[Dict[str, Any]] = Field(
-        default=None,
+    params: Dict[str, Any] = Field(
+        default_factory=dict,
         description="Set of extra parameters that should be passed to the HTTP request. Note: any kwargs passed to "
         "the class will be added to this dictionary.",
         exclude=True,
@@ -171,9 +145,9 @@ class HttpStep(Step, ExtraParamsMixin):
         description="Backoff factor for retries. Defaults to 2.",
     )
 
-    def _create_retry_configuration(self) -> Retry:
-        """Create retry configuration based on current settings"""
-        return Retry(
+    def _configure_session(self) -> None:
+        """Configure session with current retry settings"""
+        retries = Retry(
             total=self.max_retries,
             connect=None,  # Only retry on status codes
             read=None,     # Only retry on status codes
@@ -184,15 +158,9 @@ class HttpStep(Step, ExtraParamsMixin):
             allowed_methods=frozenset(['GET', 'POST', 'PUT', 'DELETE']),
             respect_retry_after_header=True
         )
-
-    @model_validator(mode="after")
-    def _configure_session(self) -> "HttpStep":
-        """Configure session with current retry settings"""
-        retries = self._create_retry_configuration()
         adapter = requests.adapters.HTTPAdapter(max_retries=retries)
         self.session.mount("https://", adapter)
         self.session.mount("http://", adapter)
-        return self
 
     class Output(Step.Output):
         """Output class for HttpStep"""
@@ -299,8 +267,6 @@ class HttpStep(Step, ExtraParamsMixin):
                 # Otherwise, pass it as is
                 options["data"] = self.data
 
-        # Verify SSL certificates by default
-        options["verify"] = options.get("verify", True)
         return options
 
     @contextlib.contextmanager
@@ -308,18 +274,7 @@ class HttpStep(Step, ExtraParamsMixin):
         self, method: Optional[HttpMethod] = None, stream: bool = False
     ) -> Generator[requests.Response, None, None]:
         """
-        Executes the HTTP request with retry logic.
-
-        Actual http_method execution is abstracted into this method.
-        This is to avoid unnecessary code duplication. Allows to centrally log, set outputs, and validated.
-
-        This method will try to execute `requests.request` up to `self.max_retries` times. If `self.request()` raises
-        an exception with error code 502,503 or 504, it logs a warning message and the error message, then waits for
-        `(self.backoff_factor ** i)` seconds before retrying, where the delay increases exponentially after each failed
-        attempt.
-
-        If `self.request()` still fails after `self.max_retries` attempts, it logs an error message and re-raises the
-        last exception that was caught.
+        Executes the HTTP request using requests' built-in retry mechanism.
 
         Parameters
         ----------
@@ -329,122 +284,64 @@ class HttpStep(Step, ExtraParamsMixin):
         stream : bool
             Whether to stream the response content. Defaults to False.
 
+        Yields
+        ------
+        requests.Response
+            The response from the HTTP request
+
         Raises
         ------
-        requests.RequestException, requests.HTTPError
-            The last exception that was caught if `requests.request()` fails after `self.max_retries` attempts.
-        RetryError
-            If the maximum number of retries is exceeded for a retryable status code (502, 503, 504).
+        requests.RequestException
+            If the request fails after all retries
         """
         _method = (method or self.method).value.upper()
         self.log.debug(f"Making {_method} request to {self.url} with headers {self.headers}")
         options = self.get_options()
 
-        # Create retry strategy that will accumulate history
-        retry = self._create_retry_configuration()
-        attempts = 0
-        last_response = None
-        history = []  # Track retry history for backoff calculation
-        retry_status_codes = [502, 503, 504]
-
-        while True:
-            try:
-                response = self.session.request(method=_method, **options, stream=stream)
-                last_response = response
-
-                # For non-retry status codes, either succeed or fail immediately
-                if response.status_code not in retry_status_codes:
-                    response.raise_for_status()  # This will raise HTTPError for 4xx/5xx
-                    self.log.debug(f"Request succeeded with status code {response.status_code}")
-                    yield response
-                    return
-
-                # For retry status codes, use urllib3's retry logic
-                if attempts >= self.max_retries:
-                    raise RetryError(f"Max retries ({self.max_retries}) exceeded with url: {self.url}")
-
-                # Update retry state and calculate backoff using wrapped response
-                history.append(RetryHistoryResponse(response))
-                retry = retry.new(
-                    total=self.max_retries - attempts - 1,  # -1 because we've already used one try
-                    history=tuple(history)
-                )
-                sleep = retry.get_backoff_time()
-
-                if sleep:
-                    self.log.warning(f"Request failed with status {response.status_code}, retrying after {sleep} seconds")
-                    time.sleep(sleep)
-
-                attempts += 1
-
-            except requests.exceptions.RequestException as e:
-                if isinstance(e, RetryError):
-                    raise
-                if isinstance(e, requests.exceptions.HTTPError) and not (
-                    last_response and last_response.status_code in retry_status_codes
-                ):
-                    raise  # Don't retry non-retry status codes
-                if attempts >= self.max_retries:
-                    raise
-                
-                # Update retry state and calculate backoff for exceptions
-                history.append(RetryHistoryResponse.from_int(503))  # Use 503 for connection errors
-                retry = retry.new(
-                    total=self.max_retries - attempts - 1,
-                    history=tuple(history)
-                )
-                sleep = retry.get_backoff_time()
-                
-                if sleep:
-                    self.log.warning(f"Request failed with error {str(e)}, retrying after {sleep} seconds")
-                    time.sleep(sleep)
-                
-                attempts += 1
-
-            finally:
-                if last_response is not None and not stream:
-                    last_response.close()
-
-    # noinspection PyMethodOverriding
-    def get(self) -> requests.Response:
-        """Execute an HTTP GET call"""
-        self.method = HttpMethod.GET
-        with self._request() as response:
-            return response
-
-    def post(self) -> requests.Response:
-        """Execute an HTTP POST call"""
-        self.method = HttpMethod.POST
-        with self._request() as response:
-            return response
-
-    def put(self) -> requests.Response:
-        """Execute an HTTP PUT call"""
-        self.method = HttpMethod.PUT
-        with self._request() as response:
-            return response
-
-    def delete(self) -> requests.Response:
-        """Execute an HTTP DELETE call"""
-        self.method = HttpMethod.DELETE
-        with self._request() as response:
-            return response
+        response = None
+        try:
+            # Configure session before each request to ensure fresh retry state
+            self._configure_session()
+            response = self.session.request(method=_method, **options, stream=stream)
+            yield response
+        except requests.exceptions.RequestException as e:
+            self.log.error(f"Request failed: {str(e)}")
+            raise
+        finally:
+            if response and not stream:
+                response.close()
+            self.session.close()  # Always close the session to prevent resource leaks
 
     def execute(self) -> None:
         """
         Executes the HTTP request.
 
-        This method simply calls `self.request()`, which includes the retry logic. If `self.request()` raises an
-        exception, it will be propagated to the caller of this method.
+        The retry logic is handled by the session's HTTPAdapter, which is configured with
+        the retry settings from max_retries and backoff_factor.
 
         Raises
         ------
-        requests.RequestException, requests.HTTPError
-            The last exception that was caught if `self.request()` fails after `self.max_retries` attempts.
+        requests.RequestException
+            If all retries fail or if a non-retryable error occurs
+        RetryError
+            If max retries are exceeded for a retryable status code
         """
-        with self._request() as response:
-            self.log.info(f"HTTP request to {self.url}, status code {response.status_code}")
-            self.set_outputs(response)
+        try:
+            with self._request() as response:
+                response.raise_for_status()
+                self.log.info(f"HTTP request to {self.url}, status code {response.status_code}")
+                self.set_outputs(response)
+        except requests.exceptions.RequestException as e:
+            # If we got here with a server error, it means we exhausted all retries
+            if (
+                isinstance(e, requests.exceptions.HTTPError)
+                and hasattr(e, "response")
+                and e.response is not None
+                and 500 <= e.response.status_code < 600
+                and e.response.status_code in [502, 503, 504]
+            ):
+                raise RetryError(f"Max retries exceeded with url: {self.url}") from e
+            raise
 
 
 class HttpGetStep(HttpStep):

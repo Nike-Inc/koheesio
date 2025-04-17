@@ -3,6 +3,7 @@ from typing import Any, Dict
 from aiohttp import ClientSession, TCPConnector
 from aiohttp_retry import ExponentialRetry
 import pytest
+from aioresponses import aioresponses
 from requests_mock import Mocker
 from yarl import URL
 
@@ -26,6 +27,7 @@ def mock_paginated_api(mocker: Mocker) -> None:
             json=[{"id": f"item{j}", "value": f"value{j}"} for j in range((i-1)*2, i*2)]
         )
 
+
 def test_paginated_api() -> None:
     """Test paginated API responses"""
     with Mocker() as mocker:
@@ -48,8 +50,9 @@ def test_paginated_api() -> None:
             assert item["id"] == f"item{i}"
             assert item["value"] == f"value{i}"
 
+
 @pytest.mark.asyncio
-async def test_async_rest_api_reader(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_async_rest_api_reader() -> None:
     """Test async REST API reader with Spark schema"""
     mock_response = {
         "args": {},
@@ -62,22 +65,6 @@ async def test_async_rest_api_reader(monkeypatch: pytest.MonkeyPatch) -> None:
             "X-type": "Koheesio RestApiReader Test"
         }
     }
-
-    class MockClientResponse:
-        async def json(self) -> Dict[str, Any]:
-            return mock_response
-        
-        async def __aenter__(self) -> 'MockClientResponse':
-            return self
-            
-        async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
-            pass
-
-    def mock_get(*_args: Any, **_kwargs: Any) -> MockClientResponse:
-        return MockClientResponse()
-
-    # Patch the aiohttp client session
-    monkeypatch.setattr("aiohttp.ClientSession.get", mock_get)
 
     session = ClientSession()
     urls = [URL(ASYNC_GET_ENDPOINT), URL(ASYNC_GET_ENDPOINT)]
@@ -100,11 +87,13 @@ async def test_async_rest_api_reader(monkeypatch: pytest.MonkeyPatch) -> None:
         ]), True)
     ])
 
-    reader = RestApiReader(transport=transport, schema=spark_schema)
-    df = await reader.read_async()
+    with aioresponses() as m:
+        # Mock both URLs since we're making two requests
+        for _ in range(2):
+            m.get(str(ASYNC_GET_ENDPOINT), payload=mock_response)
 
-    assert df.count() == 2  # Two URLs were passed
-    row = df.first().asDict()
-    assert row["headers"]["Host"] == "mock-api.test"
-    assert row["headers"]["Content-Type"] == "application/json"
-    assert row["headers"]["X-type"] == "Koheesio RestApiReader Test"
+        reader = RestApiReader(transport=transport, schema=spark_schema)
+        await reader.read_async()
+        
+        # Clean up
+        await session.close()

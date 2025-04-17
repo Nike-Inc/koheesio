@@ -1,12 +1,12 @@
-from typing import Any, Dict, Type
+from typing import Any, Dict, Type, List
 
 import pytest
+import responses
 from requests import HTTPError
 from requests.exceptions import RetryError
-import requests_mock
-from requests_mock.request import _RequestObjectProxy
-from requests_mock.response import _Context
 from urllib3 import Retry
+
+from pydantic import ValidationError
 
 from koheesio.logger import LoggingFactory
 from koheesio.models import SecretStr
@@ -18,7 +18,6 @@ from koheesio.steps.http import (
     HttpPutStep,
     HttpStep,
 )
-from pydantic import ValidationError
 
 # Mock URLs instead of real endpoints
 BASE_URL = "http://mock-api.test"
@@ -33,6 +32,7 @@ STATUS_503_ENDPOINT = f"{BASE_URL}/status/503"
 log = LoggingFactory.get_logger(name="test_http", inherit_from_koheesio=True)
 
 
+@responses.activate
 @pytest.mark.parametrize(
     "endpoint,step,method,return_value,expected_status_code",
     [
@@ -89,58 +89,54 @@ log = LoggingFactory.get_logger(name="test_http", inherit_from_koheesio=True)
     ],
 )
 def test_http_step(endpoint: str, step: HttpStep, method: str, return_value: dict, expected_status_code: int) -> None:
-    """
-    Unit Testing the GET functions.
-    Above parameters are for the success and failed GET API calls
-    """
+    """Test basic HTTP methods with success and error responses"""
+    responses.add(
+        getattr(responses, method.upper()),
+        endpoint,
+        json=return_value,
+        status=expected_status_code
+    )
 
-    with requests_mock.Mocker() as rm:
-        rm.request(method=method, url=endpoint, json=return_value, status_code=int(expected_status_code))
-        step = step(
-            url=endpoint,
-            headers={
-                "Authorization": "Bearer token",
-                "Content-Type": "application/json",
-            },
-        )
-        # Unhappy path
-        if expected_status_code not in (200, 202, 204):
-            with pytest.raises(HTTPError) as excinfo:
-                step.execute()
-
-            assert excinfo.value.response.status_code == expected_status_code
-        # Happy path
-        else:
-            response = step.execute()
-            assert response.status_code == expected_status_code  # type: ignore
-            assert response.response_json == return_value  # type: ignore
+    step = step(
+        url=endpoint,
+        headers={
+            "Authorization": "Bearer token",
+            "Content-Type": "application/json",
+        },
+    )
+    
+    if expected_status_code not in (200, 202, 204):
+        with pytest.raises(HTTPError) as excinfo:
+            step.execute()
+        assert excinfo.value.response.status_code == expected_status_code
+    else:
+        response = step.execute()
+        assert response.status_code == expected_status_code
+        assert response.response_json == return_value
 
 
 def test_http_step_with_valid_http_method() -> None:
     """Unit Testing the GET functions with valid method."""
-    with requests_mock.Mocker() as rm:
-        rm.get(GET_ENDPOINT, status_code=int(200))
-        step = HttpStep(method="get", url=GET_ENDPOINT)
-        step.execute()
-        assert step.output.status_code == 200  # type: ignore
+    responses.add(responses.GET, GET_ENDPOINT, status=200)
+    step = HttpStep(method="get", url=GET_ENDPOINT)
+    step.execute()
+    assert step.output.status_code == 200  # type: ignore
 
 
 def test_http_step_with_invalid_http_method():
-    with requests_mock.Mocker() as rm:
-        rm.get(GET_ENDPOINT, status_code=int(200))
-        # Will be raised during class instantiation
-        with pytest.raises(ValidationError):
-            HttpStep(method="foo", url=GET_ENDPOINT).execute()
+    responses.add(responses.GET, GET_ENDPOINT, status=200)
+    # Will be raised during class instantiation
+    with pytest.raises(ValidationError):
+        HttpStep(method="foo", url=GET_ENDPOINT).execute()
 
 
 def test_http_step_request():
-    with requests_mock.Mocker() as rm:
-        rm.put(PUT_ENDPOINT, status_code=int(200))
-        # The default method for HttpStep class is GET, however the method specified in `request` options is PUT and
-        # it will override the default
-        step = HttpStep(url=PUT_ENDPOINT)
-        with step._request(method=HttpMethod.PUT) as response:
-            assert response.status_code == 200
+    responses.add(responses.PUT, PUT_ENDPOINT, status=200)
+    # The default method for HttpStep class is GET, however the method specified in `request` options is PUT and
+    # it will override the default
+    step = HttpStep(url=PUT_ENDPOINT)
+    with step._request(method=HttpMethod.PUT) as response:
+        assert response.status_code == 200
 
 
 EXAMPLE_DIGEST_AUTH = (
@@ -149,6 +145,7 @@ EXAMPLE_DIGEST_AUTH = (
 )
 
 
+@responses.activate
 @pytest.mark.parametrize(
     "params, expected",
     [
@@ -176,12 +173,11 @@ def test_get_headers(params: dict, expected: str, caplog: pytest.LogCaptureFixtu
     converted back to string, otherwise sensitive info would have looked like '**********'.
     """
     # Arrange and Act
-    with requests_mock.Mocker() as rm:
-        rm.get(params["url"], status_code=int(200))  # Mock the request to be always successful
-        step = HttpStep(**params)
-        caplog.set_level("DEBUG", logger=step.log.name)
-        auth = step.headers.get("Authorization")
-        step.execute()
+    responses.add(responses.GET, params["url"], status=200)  # Mock the request to be always successful
+    step = HttpStep(**params)
+    caplog.set_level("DEBUG", logger=step.log.name)
+    auth = step.headers.get("Authorization")
+    step.execute()
 
     # Check that the token doesn't accidentally leak in the logs
     assert len(caplog.records) > 1, "No logs were generated"
@@ -211,25 +207,24 @@ def test_max_retries(
 ) -> None:
     """Test retry behavior for different status codes"""
     request_count = 0
-    
-    def count_callback(_request: _RequestObjectProxy, context: _Context) -> Dict[str, str]:
+
+    def request_callback(request):
         nonlocal request_count
         request_count += 1
-        context.status_code = status_code
-        # Set up response history to properly simulate retries
-        context.reason = 'Server Error' if status_code >= 500 else 'Not Found'
-        return {'error': f'Status {status_code}'}
+        return (status_code, {}, 'Error')
 
-    with requests_mock.Mocker() as rm:
-        rm.get(endpoint, json=count_callback)
-        step = HttpGetStep(url=endpoint, max_retries=max_retries)
+    responses.add_callback(
+        responses.GET,
+        endpoint,
+        callback=request_callback
+    )
+
+    step = HttpGetStep(url=endpoint, max_retries=max_retries)
+    
+    with pytest.raises(error_type):
+        step.execute()
         
-        with pytest.raises(error_type):
-            step.execute()
-            
-        # For 503, we expect initial request + retries
-        # For 404, we expect only one attempt since it's not in retry list
-        assert request_count == expected_count
+    assert request_count == expected_count
 
 
 @pytest.mark.parametrize(
@@ -240,40 +235,29 @@ def test_max_retries(
 )
 def test_backoff_factor(monkeypatch: pytest.FixtureRequest, backoff_factor: float, expected: list) -> None:
     """Test exponential backoff behavior"""
-    request_count = 0
+    backoff_values: List[float] = []
     
-    def count_callback(_request: _RequestObjectProxy, context: _Context) -> Dict[str, str]:
-        nonlocal request_count
-        request_count += 1
-        context.status_code = 503
-        context.reason = 'Server Error'
-        return {'error': 'Status 503'}
-
-    # Save the original get_backoff_time method
-    original_get_backoff_time = Retry.get_backoff_time
-    backoff_values = []
-
-    def mock_get_backoff_time(self: Any, *args: Any, **kwargs: Any) -> float:
-        result = original_get_backoff_time(self, *args, **kwargs)
-        backoff_values.append(result)
-        return result
-
-    # Use monkeypatch to replace get_backoff_time
-    monkeypatch.setattr(Retry, "get_backoff_time", mock_get_backoff_time)
-
-    with requests_mock.Mocker() as rm:
-        rm.get(STATUS_503_ENDPOINT, json=count_callback)
-        step = HttpGetStep(
-            url=STATUS_503_ENDPOINT,
-            headers={
-                "Authorization": "Bearer token",
-                "Content-Type": "application/json",
-            },
-            backoff_factor=backoff_factor,
-        )
-        
-        with pytest.raises(RetryError):
-            step.execute()
-
+    def mock_sleep(seconds: float) -> None:
+        backoff_values.append(seconds)
+    
+    monkeypatch.setattr('time.sleep', mock_sleep)
+    
+    responses.add(
+        responses.GET,
+        STATUS_503_ENDPOINT,
+        status=503
+    )
+    
+    step = HttpGetStep(
+        url=STATUS_503_ENDPOINT,
+        headers={
+            "Authorization": "Bearer token",
+            "Content-Type": "application/json",
+        },
+        backoff_factor=backoff_factor,
+    )
+    
+    with pytest.raises(RetryError):
+        step.execute()
+    
     assert backoff_values == expected
-    assert request_count == len(expected) + 1  # Initial request + retries

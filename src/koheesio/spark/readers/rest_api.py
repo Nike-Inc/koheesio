@@ -112,8 +112,29 @@ class RestApiReader(Reader):
         ..., description="HTTP transport step", exclude=True
     )
     spark_schema: Union[str, StructType, List[str], Tuple[str, ...], AtomicType] = Field(
-        ..., description="The pyspark schema of the response"
+        ..., 
+        description="The pyspark schema of the response",
+        alias="schema"  # Allow 'schema' as an alias for spark_schema
     )
+
+    async def read_async(self) -> Reader.Output:
+        """
+        Executes the API call asynchronously and stores the response in a DataFrame.
+
+        Returns
+        -------
+        Reader.Output
+            The output of the reader, which includes the DataFrame.
+        """
+        if not isinstance(self.transport, AsyncHttpGetStep):
+            raise TypeError("read_async can only be used with AsyncHttpGetStep transport")
+
+        responses_urls = await self.transport.get()
+        data = [d for d, _ in responses_urls]
+
+        if data:
+            self.output.df = self.spark.createDataFrame(data=data, schema=self.spark_schema)
+        return self.output
 
     def execute(self) -> Reader.Output:
         """
@@ -134,3 +155,4 @@ class RestApiReader(Reader):
 
         if data:
             self.output.df = self.spark.createDataFrame(data=data, schema=self.spark_schema)  # type: ignore
+        return self.output
