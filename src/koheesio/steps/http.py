@@ -18,9 +18,11 @@ from typing import Any, Dict, Generator, List, Optional, Union
 import contextlib
 from enum import Enum
 import json
+import time
 from urllib3.util import Retry
 
 import requests  # type: ignore[import-untyped]
+from requests.exceptions import RetryError
 
 from koheesio import Step
 from koheesio.models import (
@@ -59,6 +61,32 @@ class HttpMethod(str, Enum):
         This method is not case-sensitive
         """
         return getattr(cls, value.upper())
+
+
+class RetryHistoryResponse:
+    """Wrapper for requests.Response to make it compatible with urllib3's Retry history"""
+    def __init__(self, response: Optional[requests.Response] = None):
+        self.response = response
+        # urllib3 retry mechanism looks for these attributes
+        self.redirect_location = None
+        self.status = response.status_code if response else None
+        self.retries = None
+
+    @classmethod
+    def from_int(cls, status_code: int) -> "RetryHistoryResponse":
+        """Create a response wrapper from just a status code"""
+        wrapper = cls()
+        wrapper.status = status_code
+        return wrapper
+
+    @property
+    def is_redirect(self) -> bool:
+        """Required by urllib3's Retry"""
+        return False
+
+    def get(self, key: str, default: Any = None) -> Any:
+        """Required by urllib3's Retry"""
+        return default
 
 
 class HttpStep(Step, ExtraParamsMixin):
@@ -108,26 +136,29 @@ class HttpStep(Step, ExtraParamsMixin):
         default=None,
         description="[Optional] Authorization header",
         alias="authorization_header",
-        examples=["Bearer <token>"],
     )
     data: Union[Dict[str, str], str] = Field(
-        default_factory=dict, description="[Optional] Data to be sent along with the request", alias="body"
-    )
-    params: Optional[Dict[str, Any]] = Field(  # type: ignore[assignment]
         default_factory=dict,
-        description="[Optional] Set of extra parameters that should be passed to HTTP request",
+        description="Data to be sent along with the request",
     )
-    timeout: int = Field(default=3, description="[Optional] Request timeout")
-    method: Union[str, HttpMethod] = Field(
+    timeout: int = Field(
+        default=3,
+        description="Request timeout. Defaults to 3 seconds.",
+    )
+    method: HttpMethod = Field(
         default=HttpMethod.GET,
         description="What type of Http call to perform. One of 'get', 'post', 'put', 'delete'. Defaults to 'get'.",
     )
     session: requests.Session = Field(
         default_factory=requests.Session,
-        description=(
-            "Existing requests session object to be used for making HTTP requests. If not provided, a new session "
-            "object will be created."
-        ),
+        description="Existing requests session object to be used for making HTTP requests. If not provided, a new "
+        "session object will be created.",
+        exclude=True,
+    )
+    params: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Set of extra parameters that should be passed to the HTTP request. Note: any kwargs passed to "
+        "the class will be added to this dictionary.",
         exclude=True,
         repr=False,
     )
@@ -136,9 +167,32 @@ class HttpStep(Step, ExtraParamsMixin):
         description="Maximum number of retries before giving up. Defaults to 3.",
     )
     backoff_factor: float = Field(
-        default=2,
+        default=2.0,
         description="Backoff factor for retries. Defaults to 2.",
     )
+
+    def _create_retry_configuration(self) -> Retry:
+        """Create retry configuration based on current settings"""
+        return Retry(
+            total=self.max_retries,
+            connect=None,  # Only retry on status codes
+            read=None,     # Only retry on status codes
+            redirect=0,    # No redirect retries
+            status=self.max_retries,
+            backoff_factor=self.backoff_factor,
+            status_forcelist=[502, 503, 504],
+            allowed_methods=frozenset(['GET', 'POST', 'PUT', 'DELETE']),
+            respect_retry_after_header=True
+        )
+
+    @model_validator(mode="after")
+    def _configure_session(self) -> "HttpStep":
+        """Configure session with current retry settings"""
+        retries = self._create_retry_configuration()
+        adapter = requests.adapters.HTTPAdapter(max_retries=retries)
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
+        return self
 
     class Output(Step.Output):
         """Output class for HttpStep"""
@@ -204,18 +258,6 @@ class HttpStep(Step, ExtraParamsMixin):
             headers[k] = v.get_secret_value() if isinstance(v, SecretStr) else v
         return headers
 
-    def __init__(self, **data: Any):
-        super().__init__(**data)
-        # Set up retry configuration during initialization
-        retries = Retry(
-            total=self.max_retries,
-            backoff_factor=self.backoff_factor,
-            status_forcelist=[502, 503, 504],  # Bad Gateway, Service Unavailable, Gateway Timeout
-            allowed_methods={'POST', 'GET', 'PUT', 'DELETE'}
-        )
-        self.session.mount("https://", requests.adapters.HTTPAdapter(max_retries=retries))
-        self.session.mount("http://", requests.adapters.HTTPAdapter(max_retries=retries))
-
     def get_headers(self) -> dict:
         """
         Dump headers into JSON without SecretStr masking.
@@ -257,15 +299,6 @@ class HttpStep(Step, ExtraParamsMixin):
                 # Otherwise, pass it as is
                 options["data"] = self.data
 
-        # Configure retry settings
-        retries = Retry(
-            total=self.max_retries,
-            backoff_factor=self.backoff_factor,
-            status_forcelist=[502, 503, 504],  # Bad Gateway, Service Unavailable, Gateway Timeout
-            allowed_methods={'POST', 'GET', 'PUT', 'DELETE'}
-        )
-        options["max_retries"] = retries
-
         # Verify SSL certificates by default
         options["verify"] = options.get("verify", True)
         return options
@@ -300,70 +333,96 @@ class HttpStep(Step, ExtraParamsMixin):
         ------
         requests.RequestException, requests.HTTPError
             The last exception that was caught if `requests.request()` fails after `self.max_retries` attempts.
+        RetryError
+            If the maximum number of retries is exceeded for a retryable status code (502, 503, 504).
         """
         _method = (method or self.method).value.upper()
         self.log.debug(f"Making {_method} request to {self.url} with headers {self.headers}")
         options = self.get_options()
 
-        # Configure retry settings just before the request
-        retries = Retry(
-            total=self.max_retries,
-            backoff_factor=self.backoff_factor,
-            status_forcelist=[502, 503, 504],  # Bad Gateway, Service Unavailable, Gateway Timeout
-            allowed_methods=frozenset(['GET', 'POST', 'PUT', 'DELETE']),
-            raise_on_status=True,
-            respect_retry_after_header=True
-        )
+        # Create retry strategy that will accumulate history
+        retry = self._create_retry_configuration()
+        attempts = 0
+        last_response = None
+        history = []  # Track retry history for backoff calculation
 
-        # Create a new adapter with our retry configuration
-        adapter = requests.adapters.HTTPAdapter(max_retries=retries)
-        
-        # Get the current adapter to restore later
-        old_adapter = self.session.get_adapter(self.url)
-        
-        try:
-            # Mount our retry-enabled adapter
-            self.session.mount(self.url, adapter)
-            
-            # Make the request with retries
-            with self.session.request(method=_method, **options, stream=stream) as response:
-                try:
+        while True:
+            try:
+                response = self.session.request(method=_method, **options, stream=stream)
+                last_response = response
+
+                # For non-retry status codes, either succeed or fail immediately
+                if response.status_code not in [502, 503, 504]:
                     response.raise_for_status()
-                    self.log.debug(f"Received response with status code {response.status_code} and body {response.text}")
+                    self.log.debug(f"Request succeeded with status code {response.status_code}")
                     yield response
-                except requests.exceptions.HTTPError as e:
-                    if response.status_code in [502, 503, 504] and response.history:
-                        # If we got here, it means we exhausted retries
-                        raise RetryError(f"Max retries ({self.max_retries}) exceeded with url: {self.url}") from e
+                    return
+
+                # For retry status codes, use urllib3's retry logic
+                if attempts >= self.max_retries:
+                    raise RetryError(f"Max retries ({self.max_retries}) exceeded with url: {self.url}")
+
+                # Update retry state and calculate backoff using wrapped response
+                history.append(RetryHistoryResponse(response))
+                retry = retry.new(
+                    total=self.max_retries - attempts - 1,  # -1 because we've already used one try
+                    history=tuple(history)
+                )
+                sleep = retry.get_backoff_time()
+
+                if sleep:
+                    self.log.warning(f"Request failed with status {response.status_code}, retrying after {sleep} seconds")
+                    time.sleep(sleep)
+
+                attempts += 1
+
+            except requests.exceptions.RequestException as e:
+                if isinstance(e, RetryError):
                     raise
-        finally:
-            # Restore the original adapter
-            self.session.mount(self.url, old_adapter)
-            self.log.debug("Request context manager exiting")
+                if attempts >= self.max_retries:
+                    raise
+                
+                # Update retry state and calculate backoff for exceptions
+                history.append(RetryHistoryResponse.from_int(503))  # Use 503 for connection errors
+                retry = retry.new(
+                    total=self.max_retries - attempts - 1,
+                    history=tuple(history)
+                )
+                sleep = retry.get_backoff_time()
+                
+                if sleep:
+                    self.log.warning(f"Request failed with error {str(e)}, retrying after {sleep} seconds")
+                    time.sleep(sleep)
+                
+                attempts += 1
+
+            finally:
+                if last_response is not None and not stream:
+                    last_response.close()
 
     # noinspection PyMethodOverriding
     def get(self) -> requests.Response:
         """Execute an HTTP GET call"""
         self.method = HttpMethod.GET
-        with self.request() as response:
+        with self._request() as response:
             return response
 
     def post(self) -> requests.Response:
         """Execute an HTTP POST call"""
         self.method = HttpMethod.POST
-        with self.request() as response:
+        with self._request() as response:
             return response
 
     def put(self) -> requests.Response:
         """Execute an HTTP PUT call"""
         self.method = HttpMethod.PUT
-        with self.request() as response:
+        with self._request() as response:
             return response
 
     def delete(self) -> requests.Response:
         """Execute an HTTP DELETE call"""
         self.method = HttpMethod.DELETE
-        with self.request() as response:
+        with self._request() as response:
             return response
 
     def execute(self) -> None:

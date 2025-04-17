@@ -18,6 +18,7 @@ from koheesio.steps.http import (
     HttpPutStep,
     HttpStep,
 )
+from pydantic import ValidationError
 
 # Mock URLs instead of real endpoints
 BASE_URL = "http://mock-api.test"
@@ -128,7 +129,7 @@ def test_http_step_with_invalid_http_method():
     with requests_mock.Mocker() as rm:
         rm.get(GET_ENDPOINT, status_code=int(200))
         # Will be raised during class instantiation
-        with pytest.raises(AttributeError):
+        with pytest.raises(ValidationError):
             HttpStep(method="foo", url=GET_ENDPOINT).execute()
 
 
