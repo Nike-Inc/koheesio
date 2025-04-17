@@ -75,7 +75,7 @@ test = [
   "pytest-cov",
   "pytest-mock",
   "pytest-order",
-  "pytest-randomly",
+  "pytest-random-order",
   "pytest-sftpserver",
   "pytest-xdist",
   "flaky",

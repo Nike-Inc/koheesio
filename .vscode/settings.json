@@ -1,0 +1,19 @@
+{
+    "python.testing.pytestArgs": [
+        ".",
+        "-n 3",                     // Run tests in parallel with 2 workers
+        "--durations=10",           // Show the 10 slowest tests
+        "-vv",                      // Verbose output
+        "--cache-clear",            // Clear cache before running to prevent stale cache issues
+        "--random-order",           // Randomize test execution order
+        "--random-order-bucket=global", // Randomization scope. Possible values: global, module, or class
+        "--random-order-seed=time", // Use 'time' as seed for reproducibility
+        "--maxfail=3",              // Stop after 3 failures
+        "--last-failed",            // Run previously failed tests first
+        "--tb=short",               // Shorter tracebacks
+        "--showlocals",             // Show local variables in tracebacks
+        "--strict-markers"          // Ensure markers are registered
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
+}
