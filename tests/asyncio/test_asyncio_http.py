@@ -30,7 +30,7 @@ DEFAULT_ASYNC_STEP_PARAMS = {
     "headers": {"Content-Type": "application/json"}
 }
 
-
+@pytest.mark.asyncio
 def test_async_http_get_step_positive(mock_aiohttp):
     """
     Testing the GET function with a positive scenario.
@@ -61,6 +61,7 @@ def test_async_http_get_step_positive(mock_aiohttp):
     assert response["url"] == str(ASYNC_GET_ENDPOINT)
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "http_method, status_endpoint, expected_status",
     [
