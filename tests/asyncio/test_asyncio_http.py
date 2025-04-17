@@ -26,7 +26,6 @@ def mock_aiohttp():
 DEFAULT_ASYNC_STEP_PARAMS = {
     "urls": [URL(ASYNC_GET_ENDPOINT), URL(ASYNC_GET_ENDPOINT)],
     "retry_options": ExponentialRetry(),
-    "connector": TCPConnector(limit=10),
     "headers": {"Content-Type": "application/json"}
 }
 
@@ -103,7 +102,7 @@ async def test_async_http_step(mock_aiohttp):
     mock_aiohttp.get(ASYNC_GET_ENDPOINT, status=200, repeat=True)
 
     step = AsyncHttpStep(
-        client_session=ClientSession(), **DEFAULT_ASYNC_STEP_PARAMS
+        client_session=ClientSession(), connector=TCPConnector(limit=10), **DEFAULT_ASYNC_STEP_PARAMS
     )
 
     # Execute the step
@@ -121,7 +120,9 @@ async def test_async_http_step_with_timeout(mock_aiohttp):
     """
     # Assert the warning
     with pytest.raises(ValidationError):
-        AsyncHttpStep(client_session=ClientSession(), timeout=10, **DEFAULT_ASYNC_STEP_PARAMS)
+        AsyncHttpStep(
+            client_session=ClientSession(), connector=TCPConnector(limit=10), timeout=10, **DEFAULT_ASYNC_STEP_PARAMS
+        )
 
 
 def test_async_http_step_with_invalid_http_method():
@@ -143,7 +144,7 @@ async def test_async_http_step_set_outputs_warning():
     Testing the AsyncHttpStep class's set_outputs method for warning.
     """
     # Initialize the AsyncHttpStep
-    step = AsyncHttpStep(client_session=ClientSession(),**DEFAULT_ASYNC_STEP_PARAMS)
+    step = AsyncHttpStep(client_session=ClientSession(), connector=TCPConnector(limit=10), **DEFAULT_ASYNC_STEP_PARAMS)
 
     # Assert the warning
     with warnings.catch_warnings(record=True) as w:
@@ -164,7 +165,7 @@ async def test_async_http_step_get_options_warning():
     """
     # Initialize the AsyncHttpStep
 
-    step = AsyncHttpStep(client_session=ClientSession(),**DEFAULT_ASYNC_STEP_PARAMS)
+    step = AsyncHttpStep(client_session=ClientSession(), connector=TCPConnector(limit=10), **DEFAULT_ASYNC_STEP_PARAMS)
 
     # Assert the warning
     with warnings.catch_warnings(record=True) as w:
