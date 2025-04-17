@@ -241,6 +241,7 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
         - `sfSchema` and `password` are handled separately.
         - The values from both 'options' and 'params' (kwargs / extra params) are included as is.
         - Koheesio specific fields are excluded by default (i.e. `name`, `description`, `format`).
+        - 'table' parameter is excluded to prevent conflicts when passed as separate parameter.
 
         Parameters
         ----------
@@ -260,6 +261,8 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
             # schema and password have to be handled separately
             "sfSchema",
             "password",
+            # Exclude table to prevent conflicts when passed as separate parameter
+            "table",
         } - (include or set())
 
         fields = self.model_dump(
@@ -284,15 +287,19 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
             # default filter
             include = {"params"}
 
-        # handle options
+        # handle options and extra params, excluding 'table'
+        extra_params = {}
         if "options" in include:
             options = fields.pop("params", self.params)
-            fields.update(**options)
+            if isinstance(options, dict):
+                extra_params.update({k: v for k, v in options.items() if k != "table"})
 
-        # handle params
         if "params" in include:
             params = fields.pop("params", self.params)
-            fields.update(**params)
+            if isinstance(params, dict):
+                extra_params.update({k: v for k, v in params.items() if k != "table"})
+
+        fields.update(**extra_params)
 
         return {key: value for key, value in fields.items() if value}
 
