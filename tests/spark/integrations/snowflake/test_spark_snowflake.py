@@ -128,13 +128,13 @@ class TestTableQuery:
 class TestCreateOrReplaceTableFromDataFrame:
     options = {"table": "table", "account": "bar", **COMMON_OPTIONS}
 
-    def test_execute(self, dummy_spark: Mock, dummy_df: Mock, mock_query_local: Mock) -> None:  # pylint: disable=unused-argument
+    def test_execute(self, dummy_spark: Mock, dummy_df: Mock, mock_query: Mock) -> None:  # pylint: disable=unused-argument
         """Test table creation from DataFrame"""
         k = CreateOrReplaceTableFromDataFrame(**self.options, df=dummy_df).execute()  # type: ignore[func-returns-value]
         assert k.snowflake_schema == "id BIGINT"
         assert k.query == "CREATE OR REPLACE TABLE db.schema.table (id BIGINT)"
         assert len(k.input_schema) > 0
-        mock_query_local.assert_called_with(k.query)
+        mock_query.assert_called_with(k.query)
 
 
 class TestGetTableSchema:
@@ -149,11 +149,11 @@ class TestGetTableSchema:
 class TestAddColumn:
     options = {"table": "foo", "column": "bar", "type": t.DateType(), "account": "foo", **COMMON_OPTIONS}
 
-    def test_execute(self, dummy_spark: Mock, mock_query_local: Mock) -> None:  # pylint: disable=unused-argument
+    def test_execute(self, dummy_spark: Mock, mock_query: Mock) -> None:  # pylint: disable=unused-argument
         """Test column addition to table"""
         k = AddColumn(**self.options).execute()  # type: ignore[func-returns-value]
         assert k.query == "ALTER TABLE FOO ADD COLUMN BAR DATE"
-        mock_query_local.assert_called_with(k.query)
+        mock_query.assert_called_with(k.query)
 
 
 class TestSnowflakeWriter:
