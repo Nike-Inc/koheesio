@@ -127,7 +127,6 @@ out/**
 *.iml
 
 /tests/integration/**/task_definition/*.yaml
-/.vscode/settings.json
 /.vscode/launch.json
 
 .databricks

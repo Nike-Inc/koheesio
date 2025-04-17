@@ -54,13 +54,22 @@ from pyspark.sql import functions as f
 from pyspark.sql import types as t
 
 from koheesio import Step, StepOutput
-from koheesio.integrations.snowflake import *
+from koheesio.integrations.snowflake import (
+    GrantPrivilegesOnFullyQualifiedObject,
+    GrantPrivilegesOnObject,
+    GrantPrivilegesOnTable,
+    GrantPrivilegesOnView,
+    SnowflakeBaseModel,
+    SnowflakeRunQueryPython,
+    SnowflakeStep,
+    SnowflakeTableStep,
+)
 from koheesio.logger import LoggingFactory, warn
 from koheesio.models import ExtraParamsMixin, Field, field_validator, model_validator
 from koheesio.spark import DataFrame, DataType, SparkStep
 from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.readers.delta import DeltaTableReader, DeltaTableStreamReader
-from koheesio.spark.readers.jdbc import JdbcReader
+from koheesio.spark.readers.jdbc import BaseJdbcReader
 from koheesio.spark.transformations import Transformation
 from koheesio.spark.writers import BatchOutputMode, Writer
 from koheesio.spark.writers.stream import (
@@ -76,11 +85,12 @@ __all__ = [
     "GrantPrivilegesOnFullyQualifiedObject",
     "GrantPrivilegesOnObject",
     "GrantPrivilegesOnTable",
-    "GrantPrivilegesOnView",
+    "GrantPrivilegesOnView", 
     "Query",
     "RunQuery",
     "SnowflakeBaseModel",
     "SnowflakeReader",
+    "SnowflakeRunQueryPython",
     "SnowflakeStep",
     "SnowflakeTableStep",
     "SnowflakeTransformation",
@@ -194,7 +204,7 @@ class SnowflakeSparkStep(SparkStep, SnowflakeBaseModel, ABC):
     """Expands the SnowflakeBaseModel so that it can be used as a SparkStep"""
 
 
-class SnowflakeReader(SnowflakeBaseModel, JdbcReader, SparkStep):
+class SnowflakeReader(SnowflakeBaseModel, BaseJdbcReader, SparkStep):
     """
     Wrapper around JdbcReader for Snowflake.
 
@@ -224,6 +234,44 @@ class SnowflakeReader(SnowflakeBaseModel, JdbcReader, SparkStep):
     format: str = Field(default="snowflake", description="The format to use when writing to Snowflake")
     # overriding `driver` property of JdbcReader, because it is not required by Snowflake
     driver: Optional[str] = None  # type: ignore
+
+    def get_options(self, by_alias: bool = True, include: Optional[Set[str]] = None) -> Dict[str, Any]:
+        """Get options for the Snowflake connector.
+        
+        This method combines options from SnowflakeBaseModel with JDBC-specific parameters
+        like dbtable and query. It ensures proper handling of table names and queries
+        according to Snowflake's requirements.
+
+        Parameters
+        ----------
+        by_alias : bool, optional
+            Whether to use alias names for options (e.g. sfURL vs url), by default True
+        include : Set[str], optional
+            Set of keys to include in output dictionary, by default None
+            If None, all fields will be included
+
+        Returns
+        -------
+        Dict[str, Any]
+            Dictionary of options required for the Snowflake connector
+
+        Notes
+        -----
+        The method handles the table specification priority as follows:
+        1. If query is present, it takes precedence
+        2. If dbtable is directly specified, it is used
+        3. If dbtable is in params/options, it is used
+        """
+        # Get options from BaseJdbcReader
+        jdbc_options = BaseJdbcReader.get_options(self)
+
+        # Get base options from SnowflakeBaseModel
+        basemodel_options = super().get_options(by_alias=by_alias, include=include)
+
+        # Merge options
+        options = {**jdbc_options, **basemodel_options}
+            
+        return options
 
     def execute(self) -> SparkStep.Output:
         """Read from Snowflake"""
@@ -389,7 +437,7 @@ class TableExists(SnowflakeTableStep):
 
         self.log.debug(f"Query that was executed to check if the table exists:\n{query}")
 
-        df = Query(**self.get_options(), query=query).read()
+        df: DataFrame = Query(**self.get_options(), query=query).read()
 
         exists = df.count() > 0
         self.log.info(
@@ -690,7 +738,7 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeSparkStep):
     staging_table_name: Optional[str] = Field(
         default=None, alias="staging_table", description="Optional snowflake staging name", validate_default=False
     )
-    key_columns: Optional[List[str]] = Field(
+    key_columns: List[str] = Field(
         default_factory=list,
         description="Key columns on which merge statements will be MERGE statement will be applied.",
     )
@@ -826,13 +874,13 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeSparkStep):
                 table=self.target_table, insert_type=BatchOutputMode.APPEND, **self.get_options()
             ),
             (BatchOutputMode.APPEND, True): lambda: ForEachBatchStreamWriter(
-                checkpointLocation=self.checkpoint_location,
+                checkpoint_location=self.checkpoint_location, 
                 batch_function=writer_to_foreachbatch(
                     SnowflakeWriter(table=self.target_table, insert_type=BatchOutputMode.APPEND, **self.get_options())
                 ),
             ),
             (BatchOutputMode.MERGE, True): lambda: ForEachBatchStreamWriter(
-                checkpointLocation=self.checkpoint_location,
+                checkpoint_location=self.checkpoint_location,
                 batch_function=self._merge_batch_write_fn(
                     key_columns=self.key_columns,  # type: ignore
                     non_key_columns=self.non_key_columns,
@@ -992,7 +1040,7 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeSparkStep):
                     f"Current properties = {self.source_table.get_persisted_properties()}"
                 )
 
-        df = self.reader.read()
+        df: DataFrame = self.reader.read()
         self.output.source_df = df
         return df
 
@@ -1007,7 +1055,7 @@ class SynchronizeDeltaToSnowflakeTask(SnowflakeSparkStep):
 
     def execute(self) -> SynchronizeDeltaToSnowflakeTask.Output:
         # extract
-        df = self.extract()
+        df: DataFrame = self.extract()
         self.output.source_df = df
 
         # synchronize
