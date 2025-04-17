@@ -162,6 +162,8 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
         https://docs.snowflake.com/en/user-guide/spark-connector-install
     * Refer to Snowflake docs for connection options:
         https://docs.snowflake.com/en/user-guide/spark-connector-use#setting-configuration-options-for-the-connector
+    * Table parameter handling is delegated to the JDBC layer in derived classes like SnowflakeReader.
+      This ensures proper precedence between query and table parameters across all database operations.
 
     Parameters
     ----------
