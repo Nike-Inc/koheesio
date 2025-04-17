@@ -45,17 +45,20 @@ def test_snowflake_module_import():
 
 
 class TestSnowflakeReader:
+    """Test the Snowflake reader class"""
     reader_options = {"dbtable": "table", **COMMON_OPTIONS}
 
-    def test_get_options(self):
+    def test_get_options(self) -> None:
+        """Test that options are properly handled"""
         sf = SnowflakeReader(**(self.reader_options | {"authenticator": None}))
         o = sf.get_options()
-        assert sf.format == "snowflake"
-        assert o["sfUser"] == "user"
-        assert o["sfCompress"] == "on"
-        assert "authenticator" not in o
+        assert sf.format == "snowflake", "format should be set to snowflake by default"
+        assert o["sfUser"] == "user", "sfUser should be set by SnowflakeBaseModel"
+        assert o["sfCompress"] == "on", "sfCompress should be set by SnowflakeBaseModel"
+        assert "authenticator" not in o, "authenticator should not be passed to the Snowflake reader"
+        assert o["dbtable"] == "table", "dbtable parameter should be preserved in options"
 
-    def test_execute(self, dummy_spark):
+    def test_execute(self, dummy_spark: Mock) -> None:  # pylint: disable=unused-argument
         """Method should be callable from parent class"""
         k = SnowflakeReader(**self.reader_options).execute()
         assert k.df.count() == 3
