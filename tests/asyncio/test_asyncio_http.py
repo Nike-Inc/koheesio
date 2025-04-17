@@ -1,6 +1,4 @@
 import warnings
-from itertools import repeat
-from unittest.mock import DEFAULT
 
 from aiohttp import ClientResponseError, ClientSession, TCPConnector
 from aiohttp_retry import ExponentialRetry
@@ -19,7 +17,7 @@ ASYNC_STATUS_503_ENDPOINT = URL(f"{ASYNC_BASE_URL}/status/503")
 ASYNC_STATUS_404_ENDPOINT = URL(f"{ASYNC_BASE_URL}/status/404")
 
 
-@pytest.fixture(scope="session", name="mock_aiohttp")
+@pytest.fixture(scope="function", name="mock_aiohttp")
 def mock_aiohttp():
     with aioresponses() as m:
         yield m
@@ -37,7 +35,7 @@ def test_async_http_get_step_positive(mock_aiohttp):
     """
     Testing the GET function with a positive scenario.
     """
-    mock_aiohttp.get(ASYNC_GET_ENDPOINT, status=200, repeat=True, payload={"url": str(ASYNC_GET_ENDPOINT)})
+    mock_aiohttp.get(str(ASYNC_GET_ENDPOINT), status=200, repeat=True, payload={"url": str(ASYNC_GET_ENDPOINT)})
 
     step = AsyncHttpStep(
         method=HttpMethod.GET,
@@ -101,16 +99,10 @@ async def test_async_http_step(mock_aiohttp):
     """
     Testing the AsyncHttpStep class.
     """
-    # Initialize the AsyncHttpStep
     mock_aiohttp.get(ASYNC_GET_ENDPOINT, status=200, repeat=True)
 
-    session = ClientSession()
-    urls = [URL(ASYNC_GET_ENDPOINT), URL(ASYNC_GET_ENDPOINT)]
-    retry_options = ExponentialRetry()
-    connector = TCPConnector(limit=10)
-    headers = {"Content-Type": "application/json"}
     step = AsyncHttpStep(
-        client_session=session, url=urls, retry_options=retry_options, connector=connector, headers=headers
+        client_session=ClientSession(), **DEFAULT_ASYNC_STEP_PARAMS
     )
 
     # Execute the step
