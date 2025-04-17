@@ -2,8 +2,8 @@ from typing import Any, Dict
 
 from aiohttp import ClientSession, TCPConnector
 from aiohttp_retry import ExponentialRetry
-import pytest
 from aioresponses import aioresponses
+import pytest
 from requests_mock import Mocker
 from yarl import URL
 

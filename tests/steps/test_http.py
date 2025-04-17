@@ -1,9 +1,9 @@
-from typing import Any, Dict, Type, List
+from typing import Any, Dict, List, Type
 
 import pytest
-import responses
 from requests import HTTPError
 from requests.exceptions import RetryError
+import responses
 from urllib3 import Retry
 
 from pydantic import ValidationError
