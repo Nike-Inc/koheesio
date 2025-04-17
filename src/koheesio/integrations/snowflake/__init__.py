@@ -235,14 +235,6 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
     def get_options(self, by_alias: bool = True, include: Optional[Set[str]] = None) -> Dict[str, Any]:
         """Get the sfOptions as a dictionary.
 
-        Note
-        ----
-        - Any parameters that are `None` are excluded from the output dictionary.
-        - `sfSchema` and `password` are handled separately.
-        - The values from both 'options' and 'params' (kwargs / extra params) are included as is.
-        - Koheesio specific fields are excluded by default (i.e. `name`, `description`, `format`).
-        - 'table' parameter is excluded to prevent conflicts when passed as separate parameter.
-
         Parameters
         ----------
         by_alias : bool, optional, default=True
@@ -250,58 +242,56 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
         include : Optional[Set[str]], optional, default=None
             Set of keys to include in the output dictionary. When None is provided, all fields will be returned.
             Note: be sure to include all the keys you need.
-        """
-        exclude_set = {
-            # Exclude koheesio specific fields
-            "name",
-            "description",
-            # params are separately implemented
-            "params",
-            "options",
-            # schema and password have to be handled separately
-            "sfSchema",
-            "password",
-            # Exclude table to prevent conflicts when passed as separate parameter
-            "table",
-        } - (include or set())
 
+        Returns
+        -------
+        Dict[str, Any]
+            Dictionary of options with the following precedence:
+            1. Base fields (url, user, etc.)
+            2. Special fields (schema, password)
+            3. Extra parameters (params/options)
+
+        Notes
+        -----
+        - Any parameters that are `None` are excluded from the output
+        - Koheesio specific fields are excluded by default (name, description, format)
+        - 'table' parameter is excluded to prevent conflicts
+        """
+        # Always exclude these fields unless explicitly included
+        base_exclude = {
+            "name", "description",  # Koheesio specific
+            "params", "options",    # Handled separately
+            "table",               # Prevent conflicts
+        }
+        exclude_set = base_exclude - (include or set())
+
+        # Get base fields from model, excluding None values and specified fields
         fields = self.model_dump(
             by_alias=by_alias,
             exclude_none=True,
-            exclude=exclude_set,
+            exclude=exclude_set
         )
 
-        # handle schema and password
-        fields.update(
-            {
-                "sfSchema" if by_alias else "schema": self.sfSchema,
-                "sfPassword" if by_alias else "password": self.password.get_secret_value(),
-            }
-        )
+        # Add schema and password with proper aliases
+        schema_key = "sfSchema" if by_alias else "schema"
+        password_key = "sfPassword" if by_alias else "password"
+        if self.sfSchema:
+            fields[schema_key] = self.sfSchema
+        if self.password:
+            fields[password_key] = self.password.get_secret_value()
 
-        # handle include
+        # If include is specified, filter fields to only included keys
         if include:
-            # user specified filter
-            fields = {key: value for key, value in fields.items() if key in include}
-        else:
-            # default filter
-            include = {"params"}
+            fields = {k: v for k, v in fields.items() if k in include}
 
-        # handle options and extra params, excluding 'table'
-        extra_params = {}
-        if "options" in include:
-            options = fields.pop("params", self.params)
-            if isinstance(options, dict):
-                extra_params.update({k: v for k, v in options.items() if k != "table"})
+        # Add extra parameters from params/options if requested
+        if not include or {"params", "options"} & include:
+            if params := self.params:
+                # Exclude 'table' from extra params to prevent conflicts
+                extra = {k: v for k, v in params.items() if k != "table"}
+                fields.update(extra)
 
-        if "params" in include:
-            params = fields.pop("params", self.params)
-            if isinstance(params, dict):
-                extra_params.update({k: v for k, v in params.items() if k != "table"})
-
-        fields.update(**extra_params)
-
-        return {key: value for key, value in fields.items() if value}
+        return fields
 
 
 class SnowflakeStep(SnowflakeBaseModel, Step, ABC):
