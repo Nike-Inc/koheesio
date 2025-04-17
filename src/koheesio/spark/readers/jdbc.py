@@ -110,6 +110,7 @@ class JdbcReader(Reader, ExtraParamsMixin):
 
         if self.query and self.dbtable:
             self.log.warning("Query is filled in, dbtable will be ignored!")
+            self.dbtable = None  # Set dbtable to None since query takes precedence
 
         return self
 
