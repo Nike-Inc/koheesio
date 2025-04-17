@@ -82,6 +82,7 @@ test = [
   "requests_mock",
   "time_machine",
   "freezegun",
+  "aioresponses",
 ]
 docs = [
   "markdown>=3.5.2",
