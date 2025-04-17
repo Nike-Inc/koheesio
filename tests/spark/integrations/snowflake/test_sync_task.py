@@ -58,23 +58,6 @@ def foreach_batch_stream_local(checkpoint_folder, snowflake_staging_file):
     )
 
 
-@pytest.fixture(scope="session")
-def merge_test_table(spark):
-    """Create test table once per session instead of for each test"""
-    table = DeltaTableStep(database="klettern", table="test_merge")
-    spark.sql(
-        dedent(
-            f"""
-            CREATE OR REPLACE TABLE {table.table_name}
-            (Country STRING, NumVaccinated LONG, AvailableDoses LONG)
-            USING DELTA
-            TBLPROPERTIES ('delta.enableChangeDataFeed' = true);
-            """
-        )
-    )
-    return table
-
-
 class TestSnowflakeSyncTask:
     @mock.patch.object(SynchronizeDeltaToSnowflakeTask, "writer")
     def test_overwrite(self, mock_writer, spark):
@@ -142,80 +125,77 @@ class TestSnowflakeSyncTask:
         task.execute()
         chispa.assert_df_equality(task.output.target_df, df)
 
-    def test_merge(self, spark, foreach_batch_stream_local, snowflake_staging_file, mocker, merge_test_table):
-        """Test merging data from Delta to Snowflake"""
-        # Patch SnowflakeRunQueryPython.execute
+    def test_merge(self, spark, foreach_batch_stream_local, snowflake_staging_file, mocker):
+        # Arrange - Prepare Delta requirements
         mocker.patch("koheesio.integrations.spark.snowflake.SnowflakeRunQueryPython.execute")
-        
-        # Create task with cached table
+        source_table = DeltaTableStep(database="klettern", table="test_merge")
+        spark.sql(
+            dedent(
+                f"""
+                CREATE OR REPLACE TABLE {source_table.table_name}
+                (Country STRING, NumVaccinated LONG, AvailableDoses LONG)
+                USING DELTA
+                TBLPROPERTIES ('delta.enableChangeDataFeed' = true);
+                """
+            )
+        )
+
+        # Arrange - Prepare local representation of snowflake
         task = SynchronizeDeltaToSnowflakeTask(
             streaming=True,
             synchronisation_mode=BatchOutputMode.MERGE,
-            **{**COMMON_OPTIONS, "source_table": merge_test_table, "account": "sf_account"},
+            **{**COMMON_OPTIONS, "source_table": source_table, "account": "sf_account"},
         )
 
-        # Add initial data using batch insert
-        initial_data = [
-            ("Australia", 100, 3000),
-            ("USA", 10000, 20000),
-            ("UK", 7000, 10000)
-        ]
-        spark.createDataFrame(initial_data, ["Country", "NumVaccinated", "AvailableDoses"]) \
-            .write.format("delta").mode("append").saveAsTable(merge_test_table.table_name)
+        # Arrange - Add data to previously empty Delta table
+        spark.sql(
+            dedent(
+                f"""
+                INSERT INTO {source_table.table_name} VALUES
+                ("Australia", 100, 3000),
+                ("USA", 10000, 20000),
+                ("UK", 7000, 10000);
+                """
+            )
+        )
 
-        # Run initial sync
+        # Act - Run code
+        # Note: We are using the foreach_batch_stream_local fixture to simulate writing to a live environment
         mocker.patch.object(SynchronizeDeltaToSnowflakeTask, "writer", new=foreach_batch_stream_local)
         task.execute()
         task.writer.await_termination()
 
-        # Validate initial sync
-        results_df = spark.read.parquet(snowflake_staging_file).select("Country", "NumVaccinated", "AvailableDoses")
-        source_df = spark.sql(f"SELECT * FROM {merge_test_table.table_name}")
-        
+        # Assert - Validate result
+        df = spark.read.parquet(snowflake_staging_file).select("Country", "NumVaccinated", "AvailableDoses")
         chispa.assert_df_equality(
-            results_df,
-            source_df,
+            df,
+            spark.sql(f"SELECT * FROM {source_table.table_name}"),
             ignore_row_order=True,
             ignore_column_order=True,
         )
-        assert results_df.count() == 3
+        assert df.count() == 3
 
-        # Perform updates in a single batch
-        update_data = [("BELGIUM", 10, 100)]
-        spark.createDataFrame(update_data, ["Country", "NumVaccinated", "AvailableDoses"]) \
-            .write.format("delta").mode("append").saveAsTable(merge_test_table.table_name)
-        
-        spark.sql(f"""
-            UPDATE {merge_test_table.table_name} 
-            SET NumVaccinated = 20 
-            WHERE Country = 'BELGIUM'
-        """)
+        # Perform update
+        spark.sql(f"""INSERT INTO {source_table.table_name} VALUES ("BELGIUM", 10, 100)""")
+        spark.sql(f"UPDATE {source_table.table_name} SET NumVaccinated = 20 WHERE Country = 'Belgium'")
 
-        # Run sync after updates
+        # Run code
         with mock.patch.object(SynchronizeDeltaToSnowflakeTask, "writer", new=foreach_batch_stream_local):
-            task.execute()
-            # More specific await that checks for completion of specific operations
-            await_job_completion(spark, timeout=60)  # Reduced timeout since we're being more efficient
+            # Test that this call doesn't raise exception after all queries were completed
             task.writer.await_termination()
+            task.execute()
+            await_job_completion(spark)
 
-        # Cache the final read operations
-        results_df = spark.read.parquet(snowflake_staging_file) \
-            .select("Country", "NumVaccinated", "AvailableDoses") \
-            .cache()
-        source_df = spark.sql(f"SELECT * FROM {merge_test_table.table_name}").cache()
+        # Validate result
+        df = spark.read.parquet(snowflake_staging_file).select("Country", "NumVaccinated", "AvailableDoses")
 
-        # Validate final state
         chispa.assert_df_equality(
-            results_df,
-            source_df,
+            df,
+            spark.sql(f"SELECT * FROM {source_table.table_name}"),
             ignore_row_order=True,
             ignore_column_order=True,
         )
-        assert results_df.count() == 4
-
-        # Unpersist cached DataFrames
-        results_df.unpersist()
-        source_df.unpersist()
+        assert df.count() == 4
 
     def test_writer(self, spark):
         source_table = DeltaTableStep(datbase="klettern", table="test_overwrite")
