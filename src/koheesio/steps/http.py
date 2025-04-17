@@ -345,6 +345,7 @@ class HttpStep(Step, ExtraParamsMixin):
         attempts = 0
         last_response = None
         history = []  # Track retry history for backoff calculation
+        retry_status_codes = [502, 503, 504]
 
         while True:
             try:
@@ -352,8 +353,8 @@ class HttpStep(Step, ExtraParamsMixin):
                 last_response = response
 
                 # For non-retry status codes, either succeed or fail immediately
-                if response.status_code not in [502, 503, 504]:
-                    response.raise_for_status()
+                if response.status_code not in retry_status_codes:
+                    response.raise_for_status()  # This will raise HTTPError for 4xx/5xx
                     self.log.debug(f"Request succeeded with status code {response.status_code}")
                     yield response
                     return
@@ -379,6 +380,10 @@ class HttpStep(Step, ExtraParamsMixin):
             except requests.exceptions.RequestException as e:
                 if isinstance(e, RetryError):
                     raise
+                if isinstance(e, requests.exceptions.HTTPError) and not (
+                    last_response and last_response.status_code in retry_status_codes
+                ):
+                    raise  # Don't retry non-retry status codes
                 if attempts >= self.max_retries:
                     raise
                 
