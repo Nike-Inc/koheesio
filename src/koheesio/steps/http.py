@@ -288,6 +288,23 @@ class HttpStep(Step, ExtraParamsMixin):
             **self.params,  # type: ignore
         }
 
+    def _configure_session(self) -> None:
+        """Configure session with current retry settings"""
+        retries = Retry(
+            total=self.max_retries,
+            connect=None,  # Only retry on status codes
+            read=None,     # Only retry on status codes
+            redirect=0,    # No redirect retries
+            status=self.max_retries,
+            backoff_factor=self.backoff_factor,
+            status_forcelist=[502, 503, 504],
+            allowed_methods=frozenset(['GET', 'POST', 'PUT', 'DELETE']),
+            respect_retry_after_header=True
+        )
+        adapter = requests.adapters.HTTPAdapter(max_retries=retries)
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
+
     @contextlib.contextmanager
     def _request(
         self, method: Optional[HttpMethod] = None, stream: bool = False
@@ -327,15 +344,7 @@ class HttpStep(Step, ExtraParamsMixin):
         self.log.debug(f"Making {_method} request to {self.url} with headers {self.headers}")
         options = self.get_options()
 
-        retries = Retry(
-            total=self.max_retries,
-            backoff_factor=self.backoff_factor,
-            status_forcelist=[502, 503, 504],   # Bad Gateway, Service Unavailable, Gateway Timeout
-            allowed_methods={'POST', 'GET', 'PUT', 'DELETE'}
-        )
-        self.session.mount("https://", requests.adapters.HTTPAdapter(max_retries=retries))
-        # noinspection HttpUrlsUsage
-        self.session.mount("http://", requests.adapters.HTTPAdapter(max_retries=retries))
+        self._configure_session()
 
         with self.session.request(method=_method, **options, stream=stream) as response:
             response.raise_for_status()
