@@ -90,16 +90,28 @@ class JdbcReader(Reader, ExtraParamsMixin):
 
         Note: override this method if driver requires custom names, e.g. Snowflake: `sfUrl`, `sfUser`, etc.
         """
-        _options = {"driver": self.driver, "url": self.url, "user": self.user, "password": self.password, **self.params}
+        # Build base connection parameters
+        options = {
+            "driver": self.driver,
+            "url": self.url,
+            "user": self.user,
+            "password": self.password
+        }
 
-        if query := self.query:
-            _options["query"] = query
-            self.log.info(f"Using query: {query}")
-        elif dbtable := self.dbtable:
-            _options["dbtable"] = dbtable
-            self.log.info(f"Using DBTable: {dbtable}")
+        # Add extra params from params/options
+        if self.params:
+            options.update(self.params)
 
-        return _options
+        # Handle query/dbtable parameters
+        # When query is present, dbtable is ignored as per documentation
+        if self.query:
+            options["query"] = self.query
+            self.log.info(f"Using query: {self.query}")
+        elif self.dbtable:
+            options["dbtable"] = self.dbtable
+            self.log.info(f"Using DBTable: {self.dbtable}")
+
+        return options
 
     @model_validator(mode="after")
     def check_dbtable_or_query(self) -> "JdbcReader":
@@ -122,7 +134,9 @@ class JdbcReader(Reader, ExtraParamsMixin):
         """Wrapper around Spark's jdbc read format"""
         options = self.get_options()
 
+        # Update password with secret value
         if pw := self.password:
             options["password"] = pw.get_secret_value()
 
+        # Read the data
         self.output.df = self.spark.read.format(self.format).options(**options).load()
