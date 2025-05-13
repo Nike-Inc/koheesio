@@ -441,6 +441,9 @@ extra-dependencies = ["pyspark[connect]==3.5.4"]
 SPARK_REMOTE = "local"
 SPARK_TESTING = "True"
 
+[tool.hatch.envs.test.env-vars]
+SPARK_TESTING = "True"
+
 
 ###  ~~~~~~~~~~~~~~~~~~  ###
 #  Code Quality and Style  #
