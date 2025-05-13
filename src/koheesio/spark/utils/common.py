@@ -8,6 +8,7 @@ import importlib
 import inspect
 import os
 from types import ModuleType
+import warnings
 
 from pyspark import sql
 from pyspark.sql.types import (
@@ -77,6 +78,17 @@ def get_spark_minor_version() -> float:
 SPARK_MINOR_VERSION: float = get_spark_minor_version()
 
 
+class PysparkConnectModuleNotAvailableWarning(Warning):
+    """Warning to be raised when the pyspark connect module is not available"""
+
+    def __init__(self):
+        message = (
+            "It looks like the required modules for Spark Connect (e.g. grpcio) are not installed. "
+            "If not, you can install them using `pip install pyspark[connect]` or `koheesio[pyspark_connect]`. "
+        )
+        super().__init__(message)
+
+
 def check_if_pyspark_connect_module_is_available() -> bool:
     """Check if the pyspark connect module is available
 
@@ -94,9 +106,13 @@ def check_if_pyspark_connect_module_is_available() -> bool:
     try:
         importlib.import_module("pyspark.sql.connect")
         # check extras: grpcio package is needed for pyspark[connect] to work
-        importlib.import_module("grpc")
+        try:
+            importlib.import_module("grpc")
+        except (ImportError, ModuleNotFoundError) as e_import:
+            raise e_import
         return True
     except (ImportError, ModuleNotFoundError):
+        warnings.warn(PysparkConnectModuleNotAvailableWarning())
         return False
 
 
