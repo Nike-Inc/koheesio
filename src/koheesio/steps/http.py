@@ -18,9 +18,9 @@ from typing import Any, Dict, Generator, List, Optional, Union
 import contextlib
 from enum import Enum
 import json
-from urllib3.util import Retry
 
 import requests  # type: ignore[import-untyped]
+from urllib3.util import Retry
 
 from koheesio import Step
 from koheesio.models import (
@@ -293,13 +293,13 @@ class HttpStep(Step, ExtraParamsMixin):
         retries = Retry(
             total=self.max_retries,
             connect=None,  # Only retry on status codes
-            read=None,     # Only retry on status codes
-            redirect=0,    # No redirect retries
+            read=None,  # Only retry on status codes
+            redirect=0,  # No redirect retries
             status=self.max_retries,
             backoff_factor=self.backoff_factor,
             status_forcelist=[502, 503, 504],
-            allowed_methods=frozenset(['GET', 'POST', 'PUT', 'DELETE']),
-            respect_retry_after_header=True
+            allowed_methods=frozenset(["GET", "POST", "PUT", "DELETE"]),
+            respect_retry_after_header=True,
         )
         adapter = requests.adapters.HTTPAdapter(max_retries=retries)
         self.session.mount("https://", adapter)
