@@ -434,14 +434,14 @@ features = [
   "test",
   "docs",
 ]
-#extra-dependencies = [
-#  "pyspark[connect]==3.5.4",
-#]
-#
-## Enable this if you want Spark Connect in your dev environment
-#[tool.hatch.envs.dev.env-vars]
-#SPARK_REMOTE = "local"
-#SPARK_TESTING = "True"
+extra-dependencies = [
+  "pyspark[connect]==3.5.4",
+]
+
+# Enable this if you want Spark Connect in your dev environment
+[tool.hatch.envs.dev.env-vars]
+SPARK_REMOTE = "local"
+SPARK_TESTING = "True"
 
 
 ###  ~~~~~~~~~~~~~~~~~~  ###
