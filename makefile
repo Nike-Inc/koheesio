@@ -19,6 +19,7 @@ help:
 .PHONY: dev  ## setup - Install the environment and dependencies for local development
 dev: hatch-version
 	@echo "\033[1mSetting up development environment for\033[0;32m local development\033[0m\033[1m, using: \033[0;36m"
+	@hatch env create dev
 	@hatch run dev:python --version
 	@hatch run dev:uv pip freeze | grep pyspark
 	@echo "\033[0m"
@@ -112,16 +113,16 @@ coverage: cov
 all-tests:
 	@echo "\033[1mRunning all tests:\033[0m\n\033[35m This will run the full test suite\033[0m"
 	@echo "\033[1;31mWARNING:\033[0;33m This may take upward of 20-30 minutes to complete!\033[0m"
-	@hatch test --no-header
+	@hatch test --all --no-header
 .PHONY: spark-tests  ## testing - Run SPARK tests in ALL environments
 spark-tests:
 	@echo "\033[1mRunning Spark tests:\033[0m\n\033[35m This will run the Spark test suite against all specified environments\033[0m"
 	@echo "\033[1;31mWARNING:\033[0;33m This may take upward of 20-30 minutes to complete!\033[0m"
-	@hatch test -m spark --no-header
+	@hatch test --all -m spark --no-header
 .PHONY: non-spark-tests  ## testing - Run non-spark tests in ALL environments
 non-spark-tests:
 	@echo "\033[1mRunning non-Spark tests:\033[0m\n\033[35m This will run the non-Spark test suite against all specified environments\033[0m"
-	@hatch test -m "not spark" --no-header
+	@hatch test --all -m "not spark" --no-header
 
 .PHONY: dev-test ## testing - Run pytest, with all tests in the dev environment
 dev-test:
