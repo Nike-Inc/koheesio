@@ -1,6 +1,10 @@
 from datetime import datetime
 from pathlib import Path, PurePath
 
+import pytest
+
+from pyspark.sql.functions import lit
+
 from koheesio.integrations.spark.tableau.hyper import (
     NOT_NULLABLE,
     NULLABLE,
@@ -12,9 +16,6 @@ from koheesio.integrations.spark.tableau.hyper import (
     TableDefinition,
     TableName,
 )
-import pytest
-
-from pyspark.sql.functions import lit
 
 pytestmark = pytest.mark.spark
 

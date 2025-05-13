@@ -77,7 +77,10 @@ class JdbcReader(Reader, ExtraParamsMixin):
     user: str = Field(default=..., description="User to authenticate to the server")
     password: SecretStr = Field(default=..., description="Password belonging to the username")
     dbtable: Optional[str] = Field(
-        default=None, description="Database table name, also include schema name", alias="table"
+        default=None,
+        description="Database table name, also include schema name",
+        alias="table",
+        serialization_alias="dbtable",
     )
     query: Optional[str] = Field(default=None, description="Query")
     params: Dict[str, Any] = Field(
