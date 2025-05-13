@@ -26,10 +26,10 @@ def mock_aiohttp():
 DEFAULT_ASYNC_STEP_PARAMS = {
     "urls": [URL(ASYNC_GET_ENDPOINT), URL(ASYNC_GET_ENDPOINT)],
     "retry_options": ExponentialRetry(),
-    "headers": {"Content-Type": "application/json"}
+    "headers": {"Content-Type": "application/json"},
 }
 
-@pytest.mark.asyncio
+
 def test_async_http_get_step_positive(mock_aiohttp):
     """
     Testing the GET function with a positive scenario.
@@ -60,7 +60,6 @@ def test_async_http_get_step_positive(mock_aiohttp):
     assert response["url"] == str(ASYNC_GET_ENDPOINT)
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "http_method, status_endpoint, expected_status",
     [
@@ -101,9 +100,7 @@ async def test_async_http_step(mock_aiohttp):
     """
     mock_aiohttp.get(ASYNC_GET_ENDPOINT, status=200, repeat=True)
 
-    step = AsyncHttpStep(
-        client_session=ClientSession(), connector=TCPConnector(limit=10), **DEFAULT_ASYNC_STEP_PARAMS
-    )
+    step = AsyncHttpStep(client_session=ClientSession(), connector=TCPConnector(limit=10), **DEFAULT_ASYNC_STEP_PARAMS)
 
     # Execute the step
     responses_urls = await step.get()
