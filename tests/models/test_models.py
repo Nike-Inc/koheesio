@@ -349,17 +349,17 @@ class TestSecretStr:
         with pytest.raises(TypeError):
             _ = self.koheesio_secret + other
 
-    # def test_secret_str_with_f_string_secretstr(self) -> None:
-    #     """check that a str and SecretStr can be combined with one another using f-strings
-    #     Test through using f-string with a SecretStr. Here we expect that the secret gets properly processed.
-    #     """
-    #     # arrange
-    #     secret = self.koheesio_secret
-    #     # act
-    #     actual_secret = SecretStr(f"{self.prefix}{secret}{self.suffix}")
-    #     # assert
-    #     expected = PydanticSecretStr(f"{self.prefix}{self.secret_value}{self.suffix}")
-    #     assert actual_secret.get_secret_value() == expected.get_secret_value()
+    def test_secret_str_with_f_string_secretstr(self) -> None:
+        """check that a str and SecretStr can be combined with one another using f-strings
+        Test through using f-string with a SecretStr. Here we expect that the secret gets properly processed.
+        """
+        # arrange
+        secret = self.koheesio_secret
+        # act
+        actual_secret = SecretStr(f"{self.prefix}{secret}{self.suffix}")
+        # assert
+        expected = PydanticSecretStr(f"{self.prefix}{self.secret_value}{self.suffix}")
+        assert actual_secret.get_secret_value() == expected.get_secret_value()
 
     def test_secret_str_with_f_string_str(self) -> None:
         """check that a str and SecretStr can be combined with one another using f-strings
