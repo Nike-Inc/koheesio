@@ -103,6 +103,10 @@ def check_if_pyspark_connect_module_is_available() -> bool:
         If the required modules for Spark Connect are not importable.
     """
 
+    # before pyspark 3.4, connect was not supported
+    if SPARK_MINOR_VERSION < 3.4:
+        return False
+
     try:
         importlib.import_module("pyspark.sql.connect")
         # check extras: grpcio package is needed for pyspark[connect] to work
