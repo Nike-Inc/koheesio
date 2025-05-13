@@ -30,7 +30,7 @@ env:
 
 jobs:
   check_changes:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     outputs:
       python_changed: ${{ steps.check.outputs.python_changed }}
       toml_changed: ${{ steps.check.outputs.toml_changed }}
@@ -67,10 +67,9 @@ jobs:
 
     strategy:
       fail-fast: false
-      max-parallel: 3
       matrix:
 #        os: [ubuntu-latest, windows-latest, macos-latest]  # FIXME: Add Windows and macOS
-        os: [ubuntu-latest]
+        os: [ubuntu-22.04]
         python-version: ['3.9', '3.10', '3.11', '3.12']
         pyspark-version: ['33', '34', '35', '35r']
         exclude:
