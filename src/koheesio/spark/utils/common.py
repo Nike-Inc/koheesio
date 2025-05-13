@@ -52,6 +52,8 @@ __all__ = [
     "DataFrameWriter",
     "DataStreamWriter",
     "StreamingQuery",
+    "Window",
+    "WindowSpec",
     "get_active_session",
     "check_if_pyspark_connect_module_is_available",
     "get_column_name",
