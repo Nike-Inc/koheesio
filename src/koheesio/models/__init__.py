@@ -882,7 +882,7 @@ class SecretStr(PydanticSecretStr, _SecretMixin):
         Otherwise, we consider the context 'unsafe' and we let pydantic take care of the formatting.
 
         !!! warning "Experimental Feature"\n'
-            This method is experimental and may change or be removed in future versions if deemed unstable. 
+            This method is experimental and may change or be removed in future versions if deemed unstable.
             Use with caution!
         """
 

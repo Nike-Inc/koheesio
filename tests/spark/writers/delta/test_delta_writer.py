@@ -25,9 +25,7 @@ pytestmark = pytest.mark.spark
 
 def test_delta_table_writer(dummy_df, spark):
     table_name = "test_table"
-    writer = DeltaTableWriter(
-        table=table_name, output_mode=BatchOutputMode.APPEND, df=dummy_df
-    )
+    writer = DeltaTableWriter(table=table_name, output_mode=BatchOutputMode.APPEND, df=dummy_df)
     writer.execute()
     actual_count = spark.read.table(table_name).count()
     assert actual_count == 1
@@ -83,9 +81,7 @@ def test_delta_table_merge_all(spark):
         # No merge as old value is greater
         5: "xxxx",
     }
-    DeltaTableWriter(
-        table=table_name, output_mode=BatchOutputMode.APPEND, df=target_df
-    ).execute()
+    DeltaTableWriter(table=table_name, output_mode=BatchOutputMode.APPEND, df=target_df).execute()
     merge_writer = DeltaTableWriter(
         table=table_name,
         output_mode=BatchOutputMode.MERGEALL,
@@ -101,9 +97,7 @@ def test_delta_table_merge_all(spark):
         with pytest.raises(SparkConnectDeltaTableException) as exc_info:
             merge_writer.execute()
 
-        assert str(exc_info.value).startswith(
-            "`DeltaTable.forName` is not supported due to delta calling _sc"
-        )
+        assert str(exc_info.value).startswith("`DeltaTable.forName` is not supported due to delta calling _sc")
     else:
         merge_writer.execute()
         result = {
@@ -121,18 +115,12 @@ def test_deltatablewriter_with_invalid_conditions(spark, dummy_df):
 
     if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
         with pytest.raises(SparkConnectDeltaTableException) as exc_info:
-            builder = get_delta_table_for_name(
-                spark_session=spark, table_name=table_name
-            )
+            builder = get_delta_table_for_name(spark_session=spark, table_name=table_name)
 
-        assert str(exc_info.value).startswith(
-            "`DeltaTable.forName` is not supported due to delta calling _sc"
-        )
+        assert str(exc_info.value).startswith("`DeltaTable.forName` is not supported due to delta calling _sc")
     else:
         with pytest.raises(AnalysisException):
-            builder = get_delta_table_for_name(
-                spark_session=spark, table_name=table_name
-            )
+            builder = get_delta_table_for_name(spark_session=spark, table_name=table_name)
             merge_builder = builder.alias("target").merge(
                 condition="invalid_condition", source=dummy_df.alias("source")
             )
@@ -177,8 +165,7 @@ def test_delta_new_table_merge(spark):
         df=source_df,
     ).execute()
     result = {
-        list(row.asDict().values())[0]: list(row.asDict().values())[1]
-        for row in spark.read.table(table_name).collect()
+        list(row.asDict().values())[0]: list(row.asDict().values())[1] for row in spark.read.table(table_name).collect()
     }
     assert result == expected
 
@@ -294,9 +281,7 @@ def test_delta_with_options(spark):
     """
     sample_df = spark.createDataFrame([{"id": 1, "value": "test_value"}])
 
-    with patch(
-        "koheesio.spark.writers.delta.DeltaTableWriter.writer", new_callable=MagicMock
-    ) as mock_writer:
+    with patch("koheesio.spark.writers.delta.DeltaTableWriter.writer", new_callable=MagicMock) as mock_writer:
         delta_writer = DeltaTableWriter(
             table="test_table",
             output_mode=BatchOutputMode.APPEND,
@@ -305,13 +290,9 @@ def test_delta_with_options(spark):
             df=sample_df,
         )
         delta_writer.execute()
-        mock_writer.options.assert_called_once_with(
-            testParam1="testValue1", testParam2="testValue2"
-        )
+        mock_writer.options.assert_called_once_with(testParam1="testValue1", testParam2="testValue2")
 
-    with patch(
-        "koheesio.spark.writers.delta.DeltaTableWriter.writer", new_callable=MagicMock
-    ) as mock_writer:
+    with patch("koheesio.spark.writers.delta.DeltaTableWriter.writer", new_callable=MagicMock) as mock_writer:
         delta_writer = DeltaTableWriter(
             table="test_table",
             output_mode=BatchOutputMode.OVERWRITE,
@@ -320,9 +301,7 @@ def test_delta_with_options(spark):
             df=sample_df,
         )
         delta_writer.execute()
-        mock_writer.options.assert_called_once_with(
-            testParam1="testValue1", testParam2="testValue2"
-        )
+        mock_writer.options.assert_called_once_with(testParam1="testValue1", testParam2="testValue2")
 
 
 def test_merge_from_args(spark, dummy_df):
@@ -364,9 +343,7 @@ def test_merge_from_args(spark, dummy_df):
             with pytest.raises(SparkConnectDeltaTableException) as exc_info:
                 writer._merge_builder_from_args()
 
-            assert str(exc_info.value).startswith(
-                "`DeltaTable.forName` is not supported due to delta calling _sc"
-            )
+            assert str(exc_info.value).startswith("`DeltaTable.forName` is not supported due to delta calling _sc")
         else:
             writer._merge_builder_from_args()
             mock_delta_builder.whenMatchedUpdate.assert_called_once_with(
@@ -375,9 +352,9 @@ def test_merge_from_args(spark, dummy_df):
             mock_delta_builder.whenNotMatchedInsert.assert_called_once_with(
                 values={"id": "source.id"}, condition="source.id IS NOT NULL"
             )
-            assert ["clause" in c for c in writer.params["merge_builder"]] == [
-                True
-            ] * len(writer.params["merge_builder"])
+            assert ["clause" in c for c in writer.params["merge_builder"]] == [True] * len(
+                writer.params["merge_builder"]
+            )
 
 
 @pytest.mark.parametrize(
@@ -465,9 +442,7 @@ def test_merge_no_table(spark):
         with pytest.raises(SparkConnectDeltaTableException) as exc_info:
             writer2.execute()
 
-        assert str(exc_info.value).startswith(
-            "`DeltaTable.forName` is not supported due to delta calling _sc"
-        )
+        assert str(exc_info.value).startswith("`DeltaTable.forName` is not supported due to delta calling _sc")
     else:
         writer1.execute()
         writer2.execute()
@@ -489,14 +464,10 @@ def test_log_clauses(mocker):
 
     mock_clause = mocker.MagicMock()
     mock_clause.clauseType.return_value = "test"
-    mock_clause.actions.return_value.toList.return_value.apply.return_value.toString.return_value = (
-        "test_column"
-    )
+    mock_clause.actions.return_value.toList.return_value.apply.return_value.toString.return_value = "test_column"
 
     mock_condition = mocker.MagicMock()
-    mock_condition.value.return_value.toString.return_value = (
-        "source_alias == target_alias"
-    )
+    mock_condition.value.return_value.toString.return_value = "source_alias == target_alias"
     mock_condition.toString.return_value = "None"
     mock_clause.condition.return_value = mock_condition
 
@@ -506,10 +477,7 @@ def test_log_clauses(mocker):
     result = log_clauses(mock_clauses, "source_alias", "target_alias")
 
     # Assert the result
-    assert (
-        result
-        == "Test will perform action:Test columns (test_column) if `source_alias == target_alias`"
-    )
+    assert result == "Test will perform action:Test columns (test_column) if `source_alias == target_alias`"
 
 
 def test_merge_builder_type__list_of_merge_builders(mocker, spark):
@@ -555,9 +523,7 @@ def test_merge_builder_type__connect_delta_merge_builder(mocker, spark):
 def test_merge_builder_type__invalid_merge_builder(mocker, spark):
     table_name = "test_merge_builder_type"
     df = spark.createDataFrame([{"id": 1, "value": "test"}])
-    merge_builder = mocker.MagicMock(
-        spec=str
-    )  # Not a DeltaMergeBuilder instance nor a list
+    merge_builder = mocker.MagicMock(spec=str)  # Not a DeltaMergeBuilder instance nor a list
     with pytest.raises(ValueError):
         DeltaTableWriter(
             df=df,

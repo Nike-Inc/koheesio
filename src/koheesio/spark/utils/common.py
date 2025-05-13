@@ -306,7 +306,9 @@ class SparkDatatype(Enum):
 def on_databricks() -> bool:
     """Retrieve if we're running on databricks or elsewhere"""
     dbr_version = os.getenv("DATABRICKS_RUNTIME_VERSION", None)
-    return dbr_version is not None and dbr_version != ""
+    spark = get_active_session()
+    dbr_spark_version = spark.conf.get("spark.databricks.clusterUsageTags.effectiveSparkVersion", None)
+    return (dbr_version is not None and dbr_version != "") or (dbr_spark_version is not None)
 
 
 def spark_data_type_is_array(data_type: DataType) -> bool:  # type: ignore
