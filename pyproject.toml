@@ -78,9 +78,12 @@ test = [
   "pytest-randomly",
   "pytest-sftpserver",
   "pytest-xdist",
+  "flaky",
   "requests_mock",
   "time_machine",
   "freezegun",
+  "aioresponses",
+  "responses",
 ]
 docs = [
   "markdown>=3.5.2",
