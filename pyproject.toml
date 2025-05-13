@@ -17,8 +17,8 @@ authors = [
   { name = "Danny Meijer", git = "https://github.com/dannymeijer" },
   { name = "Mikita Sakalouski", git = "https://github.com/mikita-sakalouski" },
   { name = "Maxim Mityutko", git = "https://github.com/maxim-mityutko" },
-  { name = "Tone Vanden Bergh", git = "https://github.com/ToneVDB"},
-  { name = "Pariksheet Barapatre", git = "https://github.com/pariksheet"},
+  { name = "Tone Vanden Bergh", git = "https://github.com/ToneVDB" },
+  { name = "Pariksheet Barapatre", git = "https://github.com/pariksheet" },
   { name = "Riccardo Iacomini", git = "https://github.com/riccamini" },
 
 ]
@@ -63,7 +63,7 @@ async_http = [
 box = ["boxsdk[jwt]==3.8.1"]
 pandas = ["pandas>=1.3", "setuptools", "numpy<2.0.0", "pandas-stubs"]
 pyspark = ["pyspark>=3.2.0", "pyarrow>13"]
-pyspark_connect = ["pyspark[connect]>=3.5"]
+pyspark_connect = ["pyspark[connect]>=3.5.4"]
 sftp = ["paramiko>=2.6.0"]
 delta = ["delta-spark>=2.2"]
 excel = ["openpyxl>=3.0.0"]
@@ -293,10 +293,10 @@ matrix.version.extra-dependencies = [
   { value = "spark-expectations>=2.1.0", if = [
     "pyspark34",
   ] },
-  { value = "pyspark>=3.5,<3.6", if = [
+  { value = "pyspark==3.5.4", if = [
     "pyspark35",
   ] },
-  { value = "pyspark[connect]>=3.5,<3.6", if = [
+  { value = "pyspark[connect]==3.5.4", if = [
     "pyspark35r",
   ] },
 ]
@@ -431,9 +431,7 @@ features = [
   "test",
   "docs",
 ]
-extra-dependencies = [
-  "pyspark[connect]==3.5.4",
-]
+extra-dependencies = ["pyspark[connect]==3.5.4"]
 
 # Enable this if you want Spark Connect in your dev environment
 [tool.hatch.envs.dev.env-vars]
