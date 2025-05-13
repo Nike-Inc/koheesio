@@ -413,7 +413,7 @@ Available scripts:
 - `spark-tests` - run the Spark test suite.
 - `coverage` or `cov` - run the test suite with coverage.
 """
-path = ".venv"
+path = ".venv/koheesio"
 python = "3.12"
 template = "default"
 features = [
