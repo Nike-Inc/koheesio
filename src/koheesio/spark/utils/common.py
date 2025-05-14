@@ -120,6 +120,19 @@ def check_if_pyspark_connect_module_is_available() -> bool:
         return False
 
 
+def check_if_pyspark_connect_is_supported() -> bool:
+    warnings.warn(
+        message=(
+            "The `check_if_pyspark_connect_is_supported` function has been"
+            " replaced by `check_if_pyspark_connect_module_is_available`."
+            " Import it instead. Current function will be deprecated in the future."
+        ),
+        category=DeprecationWarning,
+        stacklevel=2,
+    )
+    return check_if_pyspark_connect_module_is_available()
+
+
 if check_if_pyspark_connect_module_is_available():
     """Only import the connect module if the current version of PySpark supports it"""
     from pyspark.errors.exceptions.captured import (
