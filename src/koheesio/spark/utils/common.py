@@ -8,6 +8,7 @@ import importlib
 import inspect
 import os
 from types import ModuleType
+import warnings
 
 from pyspark import sql
 from pyspark.sql.types import (
@@ -52,6 +53,7 @@ __all__ = [
     "DataStreamWriter",
     "StreamingQuery",
     "get_active_session",
+    "check_if_pyspark_connect_module_is_available",
     "check_if_pyspark_connect_is_supported",
     "get_column_name",
 ]
@@ -77,42 +79,62 @@ def get_spark_minor_version() -> float:
 SPARK_MINOR_VERSION: float = get_spark_minor_version()
 
 
-def check_if_pyspark_connect_is_supported() -> bool:
-    """Check if the current version of PySpark supports the connect module
+class PysparkConnectModuleNotAvailableWarning(Warning):
+    """Warning to be raised when the pyspark connect module is not available"""
+
+    def __init__(self):
+        message = (
+            "It looks like the required modules for Spark Connect (e.g. grpcio) are not installed. "
+            "If not, you can install them using `pip install pyspark[connect]` or `koheesio[pyspark_connect]`. "
+        )
+        super().__init__(message)
+
+
+def check_if_pyspark_connect_module_is_available() -> bool:
+    """Check if the pyspark connect module is available
 
     Returns
     -------
     bool
-        True if the current version of PySpark supports the connect module, False otherwise.
-        If the required modules for Spark Connect (grpcio and protobuf) are not importable.
+        True if the pyspark connect module is available, False otherwise.
 
     Raises
     ------
     ImportError
-        If the required modules for Spark Connect (grpcio and protobuf) are not importable while Spark Connect is being
-        accessed.
+        If the required modules for Spark Connect are not importable.
     """
+
     # before pyspark 3.4, connect was not supported
     if SPARK_MINOR_VERSION < 3.4:
         return False
 
-    # we can assume that Spark Connect is available if either of these environment variables are set
-    if os.environ.get("SPARK_CONNECT_MODE_ENABLED") == "1" or os.environ.get("SPARK_REMOTE"):
+    try:
+        importlib.import_module("pyspark.sql.connect")
+        # check extras: grpcio package is needed for pyspark[connect] to work
         try:
-            importlib.import_module("pyspark.sql.connect")
-            # check extras: grpcio package is needed for pyspark[connect] to work
             importlib.import_module("grpc")
-            return True
-        except (ImportError, ModuleNotFoundError) as e:
-            raise ImportError(
-                "It looks like the required modules for Spark Connect (e.g. grpcio) are not installed. "
-                "If not, you can install them using `pip install pyspark[connect]` or `koheesio[pyspark_connect]`. "
-            ) from e
-
-    return False
+        except (ImportError, ModuleNotFoundError) as e_import:
+            raise e_import
+        return True
+    except (ImportError, ModuleNotFoundError):
+        warnings.warn(PysparkConnectModuleNotAvailableWarning())
+        return False
 
 
-if check_if_pyspark_connect_is_supported():
+def check_if_pyspark_connect_is_supported() -> bool:
+    warnings.warn(
+        message=(
+            "The `check_if_pyspark_connect_is_supported` function has been"
+            " replaced by `check_if_pyspark_connect_module_is_available`."
+            " Import it instead. Current function will be removed in the future."
+        ),
+        category=DeprecationWarning,
+        stacklevel=2,
+    )
+    return check_if_pyspark_connect_module_is_available()
+
+
+if check_if_pyspark_connect_module_is_available():
     """Only import the connect module if the current version of PySpark supports it"""
     from pyspark.errors.exceptions.captured import (
         ParseException as CapturedParseException,
@@ -175,12 +197,13 @@ else:
 
 def get_active_session() -> SparkSession:  # type: ignore
     """Get the active Spark session"""
-    if check_if_pyspark_connect_is_supported():
+    if check_if_pyspark_connect_module_is_available():
         from pyspark.sql.connect.session import SparkSession as _ConnectSparkSession
 
         session = _ConnectSparkSession.getActiveSession() or sql.SparkSession.getActiveSession()  # type: ignore
+
     else:
-        session = sql.SparkSession.getActiveSession()  # type: ignore
+        session = sql.SparkSession.getActiveSession()
 
     if not session:
         raise RuntimeError(

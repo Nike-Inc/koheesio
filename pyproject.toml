@@ -17,8 +17,8 @@ authors = [
   { name = "Danny Meijer", git = "https://github.com/dannymeijer" },
   { name = "Mikita Sakalouski", git = "https://github.com/mikita-sakalouski" },
   { name = "Maxim Mityutko", git = "https://github.com/maxim-mityutko" },
-  { name = "Tone Vanden Bergh", git = "https://github.com/ToneVDB"},
-  { name = "Pariksheet Barapatre", git = "https://github.com/pariksheet"},
+  { name = "Tone Vanden Bergh", git = "https://github.com/ToneVDB" },
+  { name = "Pariksheet Barapatre", git = "https://github.com/pariksheet" },
   { name = "Riccardo Iacomini", git = "https://github.com/riccamini" },
 
 ]
@@ -431,9 +431,7 @@ features = [
   "test",
   "docs",
 ]
-extra-dependencies = [
-  "pyspark[connect]==3.5.4",
-]
+extra-dependencies = ["pyspark[connect]==3.5.4"]
 
 # Enable this if you want Spark Connect in your dev environment
 [tool.hatch.envs.dev.env-vars]
