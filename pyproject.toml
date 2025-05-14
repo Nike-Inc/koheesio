@@ -85,7 +85,6 @@ test = [
   "time_machine",
   "freezegun",
 ]
-
 docs = [
   "markdown>=3.5.2",
   "mike>=2.0.0",
