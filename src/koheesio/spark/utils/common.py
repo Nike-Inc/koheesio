@@ -126,7 +126,7 @@ def check_if_pyspark_connect_is_supported() -> bool:
         message=(
             "The `check_if_pyspark_connect_is_supported` function has been"
             " replaced by `check_if_pyspark_connect_module_is_available`."
-            " Import it instead. Current function will be deprecated in the future."
+            " Import it instead. Current function will be removed in the future."
         ),
         category=DeprecationWarning,
         stacklevel=2,
