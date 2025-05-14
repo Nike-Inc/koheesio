@@ -52,6 +52,8 @@ __all__ = [
     "DataFrameWriter",
     "DataStreamWriter",
     "StreamingQuery",
+    "Window",
+    "WindowSpec",
     "get_active_session",
     "check_if_pyspark_connect_module_is_available",
     "check_if_pyspark_connect_is_supported",
@@ -151,8 +153,11 @@ if check_if_pyspark_connect_module_is_available():
         DataStreamReader,
         DataStreamWriter,
     )
+    from pyspark.sql.connect.window import Window as ConnectWindow
+    from pyspark.sql.connect.window import WindowSpec as ConnectWindowSpec
     from pyspark.sql.streaming.query import StreamingQuery
     from pyspark.sql.types import DataType as SqlDataType
+    from pyspark.sql.window import Window, WindowSpec
 
     Column = Union[sql.Column, ConnectColumn]
     DataFrame = Union[sql.DataFrame, ConnectDataFrame]
@@ -164,6 +169,8 @@ if check_if_pyspark_connect_module_is_available():
     DataFrameWriter = Union[sql.readwriter.DataFrameWriter, DataFrameWriter]  # type: ignore
     DataStreamWriter = Union[sql.streaming.readwriter.DataStreamWriter, DataStreamWriter]  # type: ignore
     StreamingQuery = StreamingQuery
+    Window = Union[Window, ConnectWindow]
+    WindowSpec = Union[WindowSpec, ConnectWindowSpec]
 else:
     """Import the regular PySpark modules if the current version of PySpark does not support the connect module"""
     try:
@@ -178,6 +185,7 @@ else:
     from pyspark.sql.readwriter import DataFrameReader, DataFrameWriter  # type: ignore
     from pyspark.sql.session import SparkSession  # type: ignore
     from pyspark.sql.types import DataType  # type: ignore
+    from pyspark.sql.window import Window, WindowSpec  # type: ignore
 
     try:
         from pyspark.sql.streaming.query import StreamingQuery  # type: ignore
@@ -193,6 +201,8 @@ else:
     DataFrameWriter = DataFrameWriter
     DataStreamWriter = DataStreamWriter
     StreamingQuery = StreamingQuery
+    Window = Window
+    WindowSpec = WindowSpec
 
 
 def get_active_session() -> SparkSession:  # type: ignore
