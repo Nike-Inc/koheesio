@@ -54,6 +54,7 @@ __all__ = [
     "StreamingQuery",
     "get_active_session",
     "check_if_pyspark_connect_module_is_available",
+    "check_if_pyspark_connect_is_supported",
     "get_column_name",
 ]
 

@@ -1,6 +1,7 @@
 from koheesio.spark.utils.common import (
     SPARK_MINOR_VERSION,
     SparkDatatype,
+    check_if_pyspark_connect_is_supported,
     check_if_pyspark_connect_module_is_available,
     get_column_name,
     get_spark_minor_version,
@@ -23,5 +24,6 @@ __all__ = [
     "get_spark_minor_version",
     "SPARK_MINOR_VERSION",
     "check_if_pyspark_connect_module_is_available",
+    "check_if_pyspark_connect_is_supported",
     "get_column_name",
 ]
