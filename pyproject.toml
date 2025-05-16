@@ -14,10 +14,13 @@ keywords = [
 ]
 authors = [
   # TODO: add other contributors
-  { name = "Danny Meijer", email = "danny.meijer@nike.com" },
-  { name = "Mikita Sakalouski", email = "mikita.sakalouski@nike.com" },
-  { name = "Maxim Mityutko", email = "maxim.mityutko@nike.com" },
-  { name = "Tone Vanden Bergh", email = "tone.vandenbergh@nike.com"},
+  { name = "Danny Meijer", git = "https://github.com/dannymeijer" },
+  { name = "Mikita Sakalouski", git = "https://github.com/mikita-sakalouski" },
+  { name = "Maxim Mityutko", git = "https://github.com/maxim-mityutko" },
+  { name = "Tone Vanden Bergh", git = "https://github.com/ToneVDB" },
+  { name = "Pariksheet Barapatre", git = "https://github.com/pariksheet" },
+  { name = "Riccardo Iacomini", git = "https://github.com/riccamini" },
+
 ]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
@@ -431,9 +434,7 @@ features = [
   "test",
   "docs",
 ]
-extra-dependencies = [
-  "pyspark[connect]==3.5.4",
-]
+extra-dependencies = ["pyspark[connect]==3.5.4"]
 
 # Enable this if you want Spark Connect in your dev environment
 [tool.hatch.envs.dev.env-vars]
