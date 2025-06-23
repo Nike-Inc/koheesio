@@ -13,7 +13,8 @@ from koheesio.spark.utils import (
     show_string,
 )
 from koheesio.spark.utils.common import (
-    check_if_pyspark_connect_is_supported,
+    PysparkConnectModuleNotAvailableWarning,
+    check_if_pyspark_connect_module_is_available,
     get_active_session,
     get_spark_minor_version,
 )
@@ -25,7 +26,7 @@ class TestGetActiveSession:
         with (
             # ensure that we are forcing the code to think that we are using spark connect
             patch(
-                "koheesio.spark.utils.common.check_if_pyspark_connect_is_supported",
+                "koheesio.spark.utils.common.check_if_pyspark_connect_module_is_available",
                 return_value=True,
             ),
             # make sure that spark session is not found
@@ -44,7 +45,7 @@ class TestGetActiveSession:
         """Test that get_active_session raises an error when no active session is found."""
         with (
             patch(
-                "koheesio.spark.utils.common.check_if_pyspark_connect_is_supported",
+                "koheesio.spark.utils.common.check_if_pyspark_connect_module_is_available",
                 return_value=False,
             ),
             patch("pyspark.sql.SparkSession.getActiveSession", return_value=None),
@@ -63,8 +64,8 @@ class TestGetActiveSession:
 
 
 class TestCheckIfPysparkConnectIsSupported:
-    def test_if_pyspark_connect_is_not_supported(self, mocker):
-        """Test that check_if_pyspark_connect_is_supported returns False or raises an ImportError when pyspark connect
+    def test_if_pyspark_connect_is_not_available(self, mocker):
+        """Test that check_if_pyspark_connect_module_is_available returns False or raises an ImportError when pyspark connect
         is not supported irregardless of the pyspark version used."""
         mocker.patch.dict(
             "sys.modules",
@@ -80,11 +81,11 @@ class TestCheckIfPysparkConnectIsSupported:
             },
             clear=True,
         )
-        assert check_if_pyspark_connect_is_supported() is False
+        assert check_if_pyspark_connect_module_is_available() is False
 
     @pytest.mark.parametrize("spark_minor_version", [3.3, 3.4, 3.5])
-    def test_check_if_pyspark_connect_is_supported(self, spark_minor_version: float, mocker):
-        """Test that check_if_pyspark_connect_is_supported returns True when pyspark connect is supported."""
+    def test_check_if_pyspark_connect_module_is_available(self, spark_minor_version: float, mocker):
+        """Test that check_if_pyspark_connect_module_is_available returns True when pyspark connect is supported."""
         # Arrange
         mocker.patch("koheesio.spark.utils.common.SPARK_MINOR_VERSION", spark_minor_version)
         mocker.patch.dict(
@@ -98,7 +99,7 @@ class TestCheckIfPysparkConnectIsSupported:
         mocker.patch.dict(os.environ, {"SPARK_REMOTE": "UNIT_TEST"})
 
         # Act
-        actual_check = check_if_pyspark_connect_is_supported()
+        actual_check = check_if_pyspark_connect_module_is_available()
 
         # Assert
         assert os.environ["SPARK_REMOTE"] == "UNIT_TEST"
@@ -109,25 +110,17 @@ class TestCheckIfPysparkConnectIsSupported:
 
     @pytest.mark.parametrize("spark_minor_version", [3.3, 3.4, 3.5])
     def test_pyspark_connect_set_without_partial_deps(self, spark_minor_version: float, mocker):
-        """Test that check_if_pyspark_connect_is_supported raises an ImportError if pyspark connect is accessed without
+        """Test that check_if_pyspark_connect_is_available raises an ImportError if pyspark connect is accessed without
         the dependencies being available"""
-        # Arrange
         mocker.patch("koheesio.spark.utils.common.SPARK_MINOR_VERSION", spark_minor_version)
-        mocker.patch.dict(
-            "sys.modules",
-            {
-                "pyspark.sql.connect": MagicMock(Column=MagicMock()),  # pyspark module exists
-                "grpc": None,  # but extras are not installed
-            },
-        )
-        mocker.patch.dict(os.environ, {"SPARK_CONNECT_MODE_ENABLED": "1"})
 
-        # Act & Assert
-        if spark_minor_version < 3.4:
-            assert check_if_pyspark_connect_is_supported() is False
-        else:
-            with pytest.raises(ImportError):
-                check_if_pyspark_connect_is_supported()
+        with patch.dict("sys.modules", {"grpc": None}):
+            # Act & Assert
+            if spark_minor_version < 3.4:
+                assert check_if_pyspark_connect_module_is_available() is False
+            else:
+                with pytest.warns(PysparkConnectModuleNotAvailableWarning):
+                    assert check_if_pyspark_connect_module_is_available() is False
 
 
 def test_get_spark_minor_version():
