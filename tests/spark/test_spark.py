@@ -51,6 +51,14 @@ class TestSparkStep:
         step = SparkStep()
         assert step.spark is spark
 
+    def test_get_active_session(self):
+        from koheesio.spark.utils.common import get_active_session
+
+        SparkSession.builder.appName("pytest-pyspark-local-testing-active-session").master("local[*]").getOrCreate()
+
+        session = get_active_session()
+        assert session
+
     def test_transformation(self):
         from pyspark.sql import functions as F
 
