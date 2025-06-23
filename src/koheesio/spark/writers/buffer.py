@@ -22,6 +22,8 @@ import gzip
 from os import linesep
 from tempfile import SpooledTemporaryFile
 
+from packaging import version
+
 # noinspection PyProtectedMember
 from pandas._typing import CompressionOptions as PandasCompressionOptions
 
@@ -279,12 +281,13 @@ class PandasCsvBufferWriter(BufferWriter, ExtraParamsMixin):
             import pandas as _pd
 
             # Get the pandas version as a tuple of integers
-            pandas_version = tuple(int(i) for i in _pd.__version__.split("."))
+
+            pandas_version = version.parse(_pd.__version__)
         except ImportError:
             raise ImportError("Pandas is required to use this writer")
 
         # Use line_separator for pandas 2.0.0 and later
-        line_sep_option_naming = "line_separator" if pandas_version >= (2, 0, 0) else "line_terminator"
+        line_sep_option_naming = "line_separator" if pandas_version >= version.parse("2.0.0") else "line_terminator"
 
         csv_options = {
             "header": self.header,
