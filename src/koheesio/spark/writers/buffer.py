@@ -280,8 +280,6 @@ class PandasCsvBufferWriter(BufferWriter, ExtraParamsMixin):
         try:
             import pandas as _pd
 
-            # Get the pandas version as a tuple of integers
-
             pandas_version = version.parse(_pd.__version__)
         except ImportError:
             raise ImportError("Pandas is required to use this writer")
