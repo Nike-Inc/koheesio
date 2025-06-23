@@ -88,12 +88,7 @@ log = LoggingFactory.get_logger(name="test_http", inherit_from_koheesio=True)
 )
 def test_http_step(endpoint: str, step: HttpStep, method: str, return_value: dict, expected_status_code: int) -> None:
     """Test basic HTTP methods with success and error responses"""
-    responses.add(
-        getattr(responses, method.upper()),
-        endpoint,
-        json=return_value,
-        status=expected_status_code
-    )
+    responses.add(getattr(responses, method.upper()), endpoint, json=return_value, status=expected_status_code)
 
     step = step(url=endpoint)
 
@@ -200,7 +195,7 @@ def test_get_headers(params: dict, expected: str, caplog: pytest.LogCaptureFixtu
     ],
 )
 def test_max_retries(
-        max_retries: int, endpoint: str, status_code: int, expected_count: int, error_type: Type[Exception]
+    max_retries: int, endpoint: str, status_code: int, expected_count: int, error_type: Type[Exception]
 ) -> None:
     """Test retry behavior for different status codes"""
     request_count = 0
@@ -208,13 +203,9 @@ def test_max_retries(
     def request_callback(request):
         nonlocal request_count
         request_count += 1
-        return (status_code, {}, 'Error')
+        return (status_code, {}, "Error")
 
-    responses.add_callback(
-        responses.GET,
-        endpoint,
-        callback=request_callback
-    )
+    responses.add_callback(responses.GET, endpoint, callback=request_callback)
 
     step = HttpGetStep(url=endpoint, max_retries=max_retries)
 

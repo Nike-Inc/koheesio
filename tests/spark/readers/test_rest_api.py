@@ -1,17 +1,16 @@
 from aiohttp import ClientSession, TCPConnector
 from aiohttp_retry import ExponentialRetry
 from aioresponses import aioresponses
-
+import pytest
 import responses
 from responses.registries import OrderedRegistry
-import pytest
 from yarl import URL
 
 from pyspark.sql.types import MapType, StringType, StructField, StructType
 
 from koheesio.asyncio.http import AsyncHttpStep
 from koheesio.spark.readers.rest_api import AsyncHttpGetStep, RestApiReader
-from koheesio.steps.http import PaginatedHttpGetStep, HttpGetStep
+from koheesio.steps.http import HttpGetStep, PaginatedHttpGetStep
 
 ASYNC_BASE_URL = "https://42.koheesio.test"
 ASYNC_GET_ENDPOINT = URL(f"{ASYNC_BASE_URL}/get")
@@ -58,7 +57,7 @@ async def test_async_rest_api_reader(mock_aiohttp):
         url=[URL(ASYNC_GET_ENDPOINT), URL(ASYNC_GET_ENDPOINT)],
         retry_options=ExponentialRetry(),
         connector=TCPConnector(limit=10),
-        headers={"Content-Type": "application/json", "X-type": "Koheesio RestApiReader Test"}
+        headers={"Content-Type": "application/json", "X-type": "Koheesio RestApiReader Test"},
     )
 
     spark_schema = StructType(
@@ -86,12 +85,16 @@ def test_rest_api_reader(mock_aiohttp):
     """
     Testing the AsyncHttpStep class.
     """
+
     def request_callback(request):
         import json
-        body=[{
-            "headers":  dict(request.headers),
-            "url": str(ASYNC_GET_ENDPOINT),
-        }]
+
+        body = [
+            {
+                "headers": dict(request.headers),
+                "url": str(ASYNC_GET_ENDPOINT),
+            }
+        ]
         return (200, request.headers, json.dumps(body))
 
     responses.add_callback(
@@ -126,7 +129,6 @@ def test_rest_api_reader(mock_aiohttp):
         ]
     )
 
-
     task = RestApiReader(transport=transport, spark_schema=spark_schema)
 
     assert isinstance(task.transport, HttpGetStep)
@@ -134,7 +136,7 @@ def test_rest_api_reader(mock_aiohttp):
     task.execute()
 
     rows = [row.asDict() for row in task.output.df.collect()]
-    all_data = [{row["url"]: row.get("headers",{}).asDict()["X-Type"]} for row in rows]
+    all_data = [{row["url"]: row.get("headers", {}).asDict()["X-Type"]} for row in rows]
 
     # Assert the responses_urls
     assert len(all_data) == 1
