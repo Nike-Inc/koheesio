@@ -103,7 +103,7 @@ class TestCheckIfPysparkConnectIsSupported:
 
         # Assert
         assert os.environ["SPARK_REMOTE"] == "UNIT_TEST"
-        if spark_minor_version >= 3.4:
+        if spark_minor_version > 3.4:
             assert actual_check is True
         else:
             assert actual_check is False
@@ -116,7 +116,7 @@ class TestCheckIfPysparkConnectIsSupported:
 
         with patch.dict("sys.modules", {"grpc": None}):
             # Act & Assert
-            if spark_minor_version < 3.4:
+            if spark_minor_version <= 3.4:
                 assert check_if_pyspark_connect_module_is_available() is False
             else:
                 with pytest.warns(PysparkConnectModuleNotAvailableWarning):
