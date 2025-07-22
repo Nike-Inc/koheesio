@@ -42,7 +42,7 @@ from py4j.protocol import Py4JError
 
 from pyspark.sql import DataFrameWriter
 
-from koheesio.models import ExtraParamsMixin, Field, field_validator
+from koheesio.models import ExtraParamsMixin, Field, ListOfColumns, field_validator, model_validator
 from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.utils import on_databricks
 from koheesio.spark.writers import BatchOutputMode, StreamingOutputMode, Writer
@@ -149,6 +149,13 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
 
     partition_by: Optional[List[str]] = Field(
         default=None, alias="partitionBy", description="The list of fields to partition the Delta table on"
+    )
+
+    cluster_by: Optional[ListOfColumns] = Field(
+        default=None,
+        alias="clusterBy",
+        description="The list of fields to cluster the Delta table on. This option is available only when running on "
+        "Databricks",
     )
     format: str = "delta"  # The format to use for writing the dataframe to the Delta table
 
@@ -335,6 +342,20 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
 
         return params
 
+    @field_validator("cluster_by")
+    def _validate_cluster_by(cls, cluster_by: ListOfColumns) -> dict:
+        """Validates if we are running on Databricks, otherwise the `cluster_by` parameter is not supported."""
+        if cluster_by and not on_databricks():
+            raise ValueError("Cluster by option is only available when running on Databricks")
+        return cluster_by
+
+    @model_validator(mode="after")
+    def _validate_table_layout_parameters(self) -> "DeltaTableWriter":
+        """ Only one of `cluster_by` or `partition_by` can be specified at a time."""
+        if self.cluster_by and self.partition_by:
+            raise ValueError("Only one of `cluster_by` or `partition_by` can be specified at a time.")
+        return self
+
     @classmethod
     def get_output_mode(cls, choice: str, options: Set[Type]) -> Union[BatchOutputMode, StreamingOutputMode]:
         """Retrieve an OutputMode by validating `choice` against a set of option OutputModes.
@@ -368,6 +389,8 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
         _writer = self.df.write.format(self.format)
         if self.partition_by:
             _writer = _writer.partitionBy(self.partition_by)
+        if self.cluster_by:
+            _writer = _writer.clusterBy(self.cluster_by)
         return _writer.mode(self.output_mode)
 
     @property
