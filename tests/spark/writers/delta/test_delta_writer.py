@@ -537,8 +537,12 @@ def test_delta_table_writer_with_clustering(spark, mocker):
     # Pretending to be on Databricks
     mocker.patch("koheesio.spark.writers.delta.batch.on_databricks", return_value=True)
 
-    # Mocking dataframe writer and methods called in write
-    mock_writer = mocker.patch("pyspark.sql.DataFrame.write")
+    # Mocking write method for the DataFrame class for both PySpark and PySpark Connect
+    if spark.__module__ == 'pyspark.sql.connect.session':
+        mock_writer = mocker.patch("pyspark.sql.connect.dataframe.DataFrame.write")
+    else:
+        mock_writer = mocker.patch("pyspark.sql.DataFrame.write")
+
     mock_writer.format.return_value = mock_writer
     mock_writer.clusterBy.return_value = mock_writer
     mock_writer.mode.return_value = mock_writer
