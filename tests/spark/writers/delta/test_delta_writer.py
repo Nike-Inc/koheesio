@@ -531,3 +531,67 @@ def test_merge_builder_type__invalid_merge_builder(mocker, spark):
             output_mode=BatchOutputMode.MERGE,
             output_mode_params={"merge_builder": merge_builder},
         )
+
+
+def test_delta_table_writer_with_clustering(spark, mocker):
+    # Pretending to be on Databricks
+    mocker.patch("koheesio.spark.writers.delta.batch.on_databricks", return_value=True)
+
+    # Mocking write method for the DataFrame class for both PySpark and PySpark Connect
+    if spark.__module__ == 'pyspark.sql.connect.session':
+        mock_writer = mocker.patch("pyspark.sql.connect.dataframe.DataFrame.write")
+    else:
+        mock_writer = mocker.patch("pyspark.sql.DataFrame.write")
+
+    mock_writer.format.return_value = mock_writer
+    mock_writer.clusterBy.return_value = mock_writer
+    mock_writer.mode.return_value = mock_writer
+
+    table_name = "test_cluster_by"
+    df = spark.createDataFrame(
+        [
+            (
+                "col1",
+                "col2",
+                "col3",
+                "col4",
+            ),
+            (
+                "col1",
+                "col2",
+                "col3",
+                "col4",
+            ),
+            (
+                "col1",
+                "col2",
+                "col3",
+                "col4",
+            ),
+        ],
+        schema=["col1", "col2", "col3", "col4"],
+    )
+
+    writer = DeltaTableWriter(table=table_name, cluster_by=["col1", "col2"], df=df)
+
+    writer.execute()
+    mock_writer.clusterBy.assert_called_once_with(["col1", "col2"])
+
+
+def test_cluster_by_validation(spark, mocker):
+    """Not running DeltaTableWriter with cluster_by specified in Databricks should raise an error"""
+
+    mocker.patch("koheesio.spark.writers.delta.batch.on_databricks", return_value=False)
+
+    with pytest.raises(ValueError):
+        DeltaTableWriter(table="test_table", cluster_by="col1", df=None)
+
+
+def test_validate_table_layout_parameters(spark):
+    """Only one of cluster by or partition by should be specified"""
+    with pytest.raises(ValueError):
+        DeltaTableWriter(
+            table="test_table",
+            cluster_by=["col1"],
+            partition_by=["col2"],
+        )
