@@ -574,12 +574,15 @@ def test_delta_table_writer_with_clustering(spark, mocker):
 
     writer = DeltaTableWriter(table=table_name, cluster_by=["col1", "col2"], df=df)
 
-    writer.writer
+    writer.execute()
     mock_writer.clusterBy.assert_called_once_with(["col1", "col2"])
 
 
-def test_cluster_by_validation(spark):
+def test_cluster_by_validation(spark, mocker):
     """Not running DeltaTableWriter with cluster_by specified in Databricks should raise an error"""
+
+    mocker.patch("koheesio.spark.writers.delta.batch.on_databricks", return_value=False)
+
     with pytest.raises(ValueError):
         DeltaTableWriter(table="test_table", cluster_by="col1", df=None)
 
