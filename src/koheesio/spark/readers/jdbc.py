@@ -124,7 +124,7 @@ class JdbcReader(Reader, ExtraParamsMixin):
     def execute(self) -> "JdbcReader.Output":
         """Wrapper around Spark's jdbc read format"""
         options = self.get_options()
-
+        
         if pw := self.password:
             options["password"] = pw.get_secret_value()
 
