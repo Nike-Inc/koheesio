@@ -107,7 +107,7 @@ def check_if_pyspark_connect_module_is_available() -> bool:
     """
 
     # before pyspark 3.4, connect was not supported
-    if SPARK_MINOR_VERSION < 3.4:
+    if SPARK_MINOR_VERSION <= 3.4:
         return False
 
     try:
@@ -207,7 +207,7 @@ else:
 
 def get_active_session() -> SparkSession:  # type: ignore
     """Get the active Spark session"""
-    if check_if_pyspark_connect_module_is_available():
+    if check_if_pyspark_connect_module_is_available() and SPARK_MINOR_VERSION >= 3.5:
         from pyspark.sql.connect.session import SparkSession as _ConnectSparkSession
 
         session = _ConnectSparkSession.getActiveSession() or sql.SparkSession.getActiveSession()  # type: ignore

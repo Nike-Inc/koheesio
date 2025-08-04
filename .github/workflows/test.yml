@@ -69,18 +69,30 @@ jobs:
       fail-fast: false
       matrix:
 #        os: [ubuntu-latest, windows-latest, macos-latest]  # FIXME: Add Windows and macOS
-        os: [ubuntu-22.04]
+        os: [ubuntu-latest]
         python-version: ['3.9', '3.10', '3.11', '3.12']
-        pyspark-version: ['33', '34', '35', '35r']
+        pyspark-version: ['33', '34', '35', '35r', '352', '352r']
         exclude:
           - python-version: '3.9'
             pyspark-version: '35'
           - python-version: '3.9'
+            pyspark-version: '352'
+          - python-version: '3.9'
             pyspark-version: '35r'
+          - python-version: '3.9'
+            pyspark-version: '352r'
+          - python-version: '3.10'
+            pyspark-version: '352'
+          - python-version: '3.10'
+            pyspark-version: '352r'
           - python-version: '3.11'
             pyspark-version: '33'
           - python-version: '3.11'
             pyspark-version: '34'
+          - python-version: '3.11'
+            pyspark-version: '352'
+          - python-version: '3.11'
+            pyspark-version: '352r'
           - python-version: '3.12'
             pyspark-version: '33'
           - python-version: '3.12'

@@ -279,29 +279,24 @@ version = ["pyspark33", "pyspark34", "pyspark35", "pyspark35r"]
 python = ["3.11", "3.12"]
 version = ["pyspark35", "pyspark35r"]
 
+[[tool.hatch.envs.hatch-test.matrix]]
+# Follow Databricks 16.4 LTS: https://docs.databricks.com/aws/en/release-notes/runtime/16.4lts#system-environment
+python = ["3.12"]
+version = ["pyspark352", "pyspark352r"]
+
 [tool.hatch.envs.hatch-test.overrides]
 matrix.version.extra-dependencies = [
-  { value = "pyspark>=3.3,<3.4", if = [
-    "pyspark33",
-  ] },
-  { value = "spark-expectations>=2.1.0", if = [
-    "pyspark33",
-  ] },
-  { value = "pandas<2", if = [
-    "pyspark33",
-  ] },
-  { value = "pyspark>=3.4,<3.5", if = [
-    "pyspark34",
-  ] },
-  { value = "spark-expectations>=2.1.0", if = [
-    "pyspark34",
-  ] },
-  { value = "pyspark>=3.5,<3.6", if = [
-    "pyspark35",
-  ] },
-  { value = "pyspark[connect]>=3.5,<3.6", if = [
-    "pyspark35r",
-  ] },
+  { value = "pyspark>=3.3,<3.4", if = ["pyspark33"] },
+  { value = "spark-expectations>=2.1.0", if = ["pyspark33"] },
+  { value = "pandas<2", if = ["pyspark33"] },
+  { value = "pyspark>=3.4,<3.5", if = ["pyspark34"] },
+  { value = "spark-expectations>=2.1.0", if = ["pyspark34"] },
+  # FIXME: Delta with PySpark 3.5.6 has a bug with overwrite: 
+  # https://github.com/delta-io/delta/issues/4671
+  { value = "pyspark>=3.5,<3.5.6", if = ["pyspark35"] },
+  { value = "pyspark[connect]>=3.5,<3.5.6", if = ["pyspark35r"] },
+  { value = "pyspark==3.5.2", if = ["pyspark352"] },
+  { value = "pyspark[connect]==3.5.2", if = ["pyspark352r"] },
 ]
 
 name.".*".env-vars = [
