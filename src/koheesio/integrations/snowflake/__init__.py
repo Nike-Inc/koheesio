@@ -235,6 +235,10 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
         """Ensure at least one of password or private_key is provided."""
         if not self.password and not self.private_key:
             raise ValueError("You must provide either 'password' or 'private_key'.")
+        if self.password and self.private_key:
+            raise ValueError(
+                "You must provide either 'password' or 'private_key', not both."
+            )
         return self
 
     @property
@@ -279,18 +283,18 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
             exclude=exclude_set,
         )
 
+        fields.update({ "sfSchema" if by_alias else "schema": self.sfSchema })
+
         # handle schema and password
         if self.password:
             fields.update(
                 {
-                    "sfSchema" if by_alias else "schema": self.sfSchema,
                     "sfPassword" if by_alias else "password": self.password.get_secret_value(),
                 }
             )
-        else:
+        elif self.private_key:
             fields.update(
                 {
-                    "sfSchema" if by_alias else "schema": self.sfSchema,
                     "private_key": self.private_key.get_secret_value(),
                     "pem_private_key": self.private_key.get_secret_value(),
                 }
