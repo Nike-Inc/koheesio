@@ -127,5 +127,9 @@ class JdbcReader(Reader, ExtraParamsMixin):
         
         if pw := self.password:
             options["password"] = pw.get_secret_value()
+        if pk := self.private_key:
+            options["pem_private_key"] = pk.get_secret_value()
+            options["private_key"] = pk.get_secret_value()
+
 
         self.output.df = self.spark.read.format(self.format).options(**options).load()
