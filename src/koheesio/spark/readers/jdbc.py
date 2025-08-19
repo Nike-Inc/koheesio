@@ -75,7 +75,8 @@ class JdbcReader(Reader, ExtraParamsMixin):
         "the hostname of the server.",
     )
     user: str = Field(default=..., description="User to authenticate to the server")
-    password: SecretStr = Field(default=..., description="Password belonging to the username")
+    password: Optional[SecretStr] = Field(default=None, description="Password belonging to the username")
+    private_key: Optional[SecretStr] = Field(default=None, alias="pem_private_key", description="Private key for authentication")
     dbtable: Optional[str] = Field(
         default=None,
         description="Database table name, also include schema name",
@@ -114,6 +115,14 @@ class JdbcReader(Reader, ExtraParamsMixin):
         if self.query and self.dbtable:
             self.log.warning("Query is filled in, dbtable will be ignored!")
 
+        """Ensure at least one of password or private_key is provided."""
+        if not self.password and not self.private_key:
+            raise ValueError("You must provide either 'password' or 'private_key'.")
+        if self.password and self.private_key:
+            raise ValueError(
+                "You must provide either 'password' or 'private_key', not both."
+            )
+
         return self
 
     @property
@@ -124,8 +133,11 @@ class JdbcReader(Reader, ExtraParamsMixin):
     def execute(self) -> "JdbcReader.Output":
         """Wrapper around Spark's jdbc read format"""
         options = self.get_options()
-
+        
         if pw := self.password:
             options["password"] = pw.get_secret_value()
+        if pk := self.private_key:
+            options["pem_private_key"] = pk.get_secret_value()
+            options["private_key"] = pk.get_secret_value()
 
         self.output.df = self.spark.read.format(self.format).options(**options).load()

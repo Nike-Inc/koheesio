@@ -12,6 +12,7 @@ enhancing productivity and code maintainability.
 
 LICENSE_INFO = "Licensed as Apache 2.0"
 SOURCE = "https://github.com/Nike-Inc/koheesio"
+
 __version__ = "0.10.6"
 __logo__ = (
     75,
