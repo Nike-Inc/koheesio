@@ -36,7 +36,7 @@ jobs:
       toml_changed: ${{ steps.check.outputs.toml_changed }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -99,7 +99,7 @@ jobs:
             pyspark-version: '34'
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
