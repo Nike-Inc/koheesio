@@ -640,7 +640,10 @@ class SnowflakeWriter(SnowflakeBaseModel, Writer):
     def execute(self) -> SnowflakeWriter.Output:
         """Write to Snowflake"""
         self.log.debug(f"writing to {self.table} with mode {self.insert_type}")
-        self.df.write.format(self.format).options(**self.get_options()).option("dbtable", self.table).mode(
+        
+        options = self.get_options()
+        
+        self.df.write.format(self.format).options(**options).option("dbtable", self.table).mode(
             self.insert_type
         ).save()
 

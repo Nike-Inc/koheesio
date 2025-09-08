@@ -18,8 +18,9 @@ user : str
     Login name for the Snowflake user.
     Alias for `sfUser`.
 password : SecretStr
-    Password for the Snowflake user.
-    Alias for `sfPassword`.
+    The password for the snowflake user. Alias for `sfPassword`. Either this or private_key must be provided.
+private_key : SecretStr
+    The private_key for the snowflake user. Either this or password must be provided.
 database : str
     The database to use for the session after connecting.
     Alias for `sfDatabase`.
@@ -172,8 +173,9 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
         Login name for the Snowflake user.
         Alias for `sfUser`.
     password : SecretStr
-        Password for the Snowflake user.
-        Alias for `sfPassword`.
+        The password for the snowflake user. Alias for `sfPassword`. Either this or private_key must be provided.
+    private_key : SecretStr
+        The private_key for the snowflake user. Either this or password must be provided.
     role : str
         The default security role to use for the session after connecting.
         Alias for `sfRole`.
@@ -199,7 +201,8 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
         examples=["example.snowflakecomputing.com"],
     )
     user: str = Field(default=..., alias="sfUser", description="Login name for the Snowflake user")
-    password: SecretStr = Field(default=..., alias="sfPassword", description="Password for the Snowflake user")
+    password: Optional[SecretStr] = Field(default=None, alias="sfPassword", description="Password for the Snowflake user")
+    private_key: Optional[SecretStr] = Field(default=None, alias="pem_private_key", description="PEM private key for the Snowflake user")
     role: str = Field(
         default=..., alias="sfRole", description="The default security role to use for the session after connecting"
     )
@@ -226,6 +229,17 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
         alias="options",
         examples=[{"sfCompress": "on", "continue_on_error": "off"}],
     )
+
+    @model_validator(mode="after")
+    def check_authentication_method(self) -> "SnowflakeBaseModel":
+        """Ensure at least one of password or private_key is provided."""
+        if not self.password and not self.private_key:
+            raise ValueError("You must provide either 'password' or 'private_key'.")
+        if self.password and self.private_key:
+            raise ValueError(
+                "You must provide either 'password' or 'private_key', not both."
+            )
+        return self
 
     @property
     def options(self) -> Dict[str, Any]:
@@ -260,6 +274,7 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
             # schema and password have to be handled separately
             "sfSchema",
             "password",
+            "private_key",
         } - (include or set())
 
         fields = self.model_dump(
@@ -268,13 +283,22 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
             exclude=exclude_set,
         )
 
+        fields.update({ "sfSchema" if by_alias else "schema": self.sfSchema })
+
         # handle schema and password
-        fields.update(
-            {
-                "sfSchema" if by_alias else "schema": self.sfSchema,
-                "sfPassword" if by_alias else "password": self.password.get_secret_value(),
-            }
-        )
+        if self.password:
+            fields.update(
+                {
+                    "sfPassword" if by_alias else "password": self.password.get_secret_value(),
+                }
+            )
+        elif self.private_key:
+            fields.update(
+                {
+                    "private_key": self.private_key.get_secret_value(),
+                    "pem_private_key": self.private_key.get_secret_value(),
+                }
+            )
 
         # handle include
         if include:
@@ -379,6 +403,7 @@ class SnowflakeRunQueryPython(SnowflakeStep):
                 "database",
                 "schema",
                 "password",
+                "private_key",
             }
         return super().get_options(by_alias=by_alias, include=include)
 
@@ -389,6 +414,8 @@ class SnowflakeRunQueryPython(SnowflakeStep):
             raise RuntimeError("Snowflake connector is not installed. Please install `snowflake-connector-python`.")
 
         sf_options = self.get_options()
+
+
         _conn = self._snowflake_connector.connect(**sf_options)
         self.log.info(f"Connected to Snowflake account: {sf_options['account']}")
 
@@ -442,7 +469,9 @@ class GrantPrivilegesOnObject(SnowflakeRunQueryPython):
     user : str
         The username. Alias for `sfUser`
     password : SecretStr
-        The password. Alias for `sfPassword`
+        The password for the snowflake user. Alias for `sfPassword`. Either this or private_key must be provided.
+    private_key : SecretStr
+        The private_key for the snowflake user. Either this or password must be provided.
     role : str
         The role name
     object : str
