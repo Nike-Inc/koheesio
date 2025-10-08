@@ -318,7 +318,7 @@ name.".*(pyspark35r).*".env-vars = [
 addopts = "-vv --color=yes --order-scope=module"
 log_level = "CRITICAL"
 testpaths = ["tests"]
-asyncio_default_fixture_loop_scope = "scope"
+asyncio_default_fixture_loop_scope = "function"
 markers = [
   "default: added to all tests by default if no other marker expect of standard pytest markers is present",
   "spark: mark a test as a Spark test",
