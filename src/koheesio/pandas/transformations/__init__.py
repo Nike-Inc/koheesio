@@ -2,7 +2,7 @@ from typing import Optional
 from abc import ABC, abstractmethod
 
 from koheesio.models import Field
-from koheesio.models.transformation import BaseTransformation
+from koheesio.models.dataframe import BaseTransformation
 from koheesio.pandas import PandasStep
 from koheesio.pandas import pandas as pd
 

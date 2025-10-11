@@ -28,7 +28,7 @@ from pyspark.sql import functions as f
 from pyspark.sql.types import DataType
 
 from koheesio.models import Field, ListOfColumns, field_validator
-from koheesio.models.transformation import BaseTransformation
+from koheesio.models.dataframe import BaseTransformation
 from koheesio.spark import Column, DataFrame, SparkStep
 from koheesio.spark.utils import SparkDatatype
 
