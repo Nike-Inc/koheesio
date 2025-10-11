@@ -26,7 +26,14 @@ class DataBricksSecret(Secret):
     ---------
 
     ```python
-    context = {"secrets": {"parent": {"webhook": SecretStr("**********"), "description": SecretStr("**********")}}}
+    context = {
+        "secrets": {
+            "parent": {
+                "webhook": SecretStr("**********"),
+                "description": SecretStr("**********"),
+            }
+        }
+    }
     ```
 
     Values can be decoded like this:
