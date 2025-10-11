@@ -20,7 +20,7 @@ jobs:
 
     steps:
     - name: Wait all checks
-      uses: lewagon/wait-on-check-action@v1.3.4
+      uses: lewagon/wait-on-check-action@v1.4.1
       with:
         ref: ${{ github.ref }}
         check-name: final_check

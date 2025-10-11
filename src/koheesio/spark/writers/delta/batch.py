@@ -102,7 +102,10 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
                 },
                 {
                     "clause": "whenNotMatchedInsert",
-                    "values": {"id": "source.id", "value": "source.value"},
+                    "values": {
+                        "id": "source.id",
+                        "value": "source.value",
+                    },
                     "condition": "<insert_condition>",
                 },
             ],
@@ -279,9 +282,11 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
         )
 
         for merge_clause in merge_clauses:
-            clause_type = merge_clause.pop("clause", None)
+            _merge_clause = merge_clause.copy()
+            clause_type = _merge_clause.pop("clause", None)
+            self.log.debug(f"Adding {clause_type} clause to the merge builder")
             method = getattr(builder, clause_type)
-            builder = method(**merge_clause)
+            builder = method(**_merge_clause)
 
         return builder
 
@@ -323,11 +328,10 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
                     clause = merge_conf.get("clause")
                     if clause not in valid_clauses:
                         raise ValueError(f"Invalid merge clause '{clause}' provided")
-            elif (
-                not isinstance(merge_builder, DeltaMergeBuilder)
-                or not type(merge_builder).__name__ == "DeltaMergeBuilder"
+            elif not (
+                isinstance(merge_builder, DeltaMergeBuilder) or type(merge_builder).__name__ == "DeltaMergeBuilder"
             ):
-                raise ValueError("merge_builder must be a list or merge clauses or a DeltaMergeBuilder instance")
+                raise ValueError("merge_builder must be a list of merge clauses or a DeltaMergeBuilder instance")
 
         return params
 
@@ -380,7 +384,11 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
 
         if self.table.create_if_not_exists and not self.table.exists:
             _writer = _writer.options(**self.table.default_create_properties)
-
+            message = (
+                f"Table `{self.table}` doesn't exist. The `create_if_not_exists` flag is set to True. "
+                "Therefore the table will be created."
+            )
+            self.log.info(message)
         if isinstance(_writer, DeltaMergeBuilder) or type(_writer).__name__ == "DeltaMergeBuilder":
             _writer.execute()
         else:

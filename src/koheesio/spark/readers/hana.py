@@ -46,9 +46,10 @@ class HanaReader(JdbcReader):
     password : SecretStr
     dbtable : str
         Database table name, also include schema name
-    options : Optional[Dict[str, Any]]
-        Extra options to pass to the SAP HANA JDBC driver. Refer to SAP HANA docs for the list of all available
-        connection string parameters. Example: {"fetchsize": 2000, "numPartitions": 10}
+    params : Optional[Dict[str, Any]], default={"fetchsize": 2000, "numPartitions": 10}
+        Extra options/params to pass to the SAP HANA JDBC driver. Refer to SAP HANA docs for the list of all available
+        connection string parameters. Also can be passed as arbitrary keyword arguments to the HanaReader class.
+        Default values: {"fetchsize": 2000, "numPartitions": 10}
     query : Optional[str]
         Query
     format : str
@@ -61,7 +62,8 @@ class HanaReader(JdbcReader):
         default="com.sap.db.jdbc.Driver",
         description="Make sure that the necessary JARs are available in the cluster: ngdbc-2-x.x.x.x",
     )
-    options: Optional[Dict[str, Any]] = Field(
+    params: Optional[Dict[str, Any]] = Field(
         default={"fetchsize": 2000, "numPartitions": 10},
         description="Extra options to pass to the SAP HANA JDBC driver",
+        alias="options",
     )

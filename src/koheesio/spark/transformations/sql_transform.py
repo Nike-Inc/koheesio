@@ -6,7 +6,7 @@ string or a file and may contain placeholders for templating.
 
 from koheesio.models.sql import SqlBaseStep
 from koheesio.spark.transformations import Transformation
-from koheesio.spark.utils import SPARK_MINOR_VERSION
+from koheesio.spark.utils import SPARK_MINOR_VERSION, on_databricks
 from koheesio.utils import get_random_string
 
 
@@ -33,7 +33,7 @@ class SqlTransform(SqlBaseStep, Transformation):
 
         from koheesio.spark.utils.connect import is_remote_session
 
-        if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session() and self.df.isStreaming:
+        if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session() and self.df.isStreaming and not on_databricks():
             raise RuntimeError(
                 "SQL Transform is not supported in remote sessions with streaming dataframes."
                 "See https://issues.apache.org/jira/browse/SPARK-45957"

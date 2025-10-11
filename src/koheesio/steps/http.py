@@ -1,5 +1,5 @@
 """
-This module contains a few simple HTTP Steps that can be used to perform API Calls to HTTP endpoints
+This module contains several HTTP Steps that can be used to perform API Calls to HTTP endpoints
 
 Example
 -------
@@ -14,12 +14,13 @@ response = (
 In the above example, the `response` variable will contain the JSON response from the HTTP request.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Generator, List, Optional, Union
 import contextlib
 from enum import Enum
 import json
 
 import requests  # type: ignore[import-untyped]
+from urllib3.util import Retry
 
 from koheesio import Step
 from koheesio.models import (
@@ -28,6 +29,7 @@ from koheesio.models import (
     SecretStr,
     field_serializer,
     field_validator,
+    model_validator,
 )
 
 __all__ = [
@@ -63,33 +65,85 @@ class HttpStep(Step, ExtraParamsMixin):
     """
     Can be used to perform API Calls to HTTP endpoints
 
+    Authorization
+    -------------
+    The optional `auth_header` parameter in HttpStep allows you to pass an authorization header, such as a bearer token.
+    For example: `auth_header = "Bearer <token>"`.
+
+    The `auth_header` value is stored as a `SecretStr` object to prevent sensitive information from being displayed in logs.
+
+    Of course, authorization can also just be passed as part of the regular `headers` parameter.
+
+    For example, either one of these parameters would semantically be the same:
+    ```python
+    headers = {
+        "Authorization": "Bearer <token>",
+        "Content-Type": "application/json",
+    }
+    ```
+    # or
+    auth_header = "Bearer <token>"
+    ```
+
+    The `auth_header` parameter is useful when you want to keep the authorization separate from the other headers, for
+    example when your implementation requires you to pass some custom headers in addition to the authorization header.
+
+    > Note: The `auth_header` parameter can accept any authorization header value, including basic authentication
+        tokens, digest authentication strings, NTLM, etc.
+
     Understanding Retries
     ----------------------
-
     This class includes a built-in retry mechanism for handling temporary issues, such as network errors or server
-    downtime, that might cause the HTTP request to fail. The retry mechanism is controlled by three parameters:
-    `max_retries`, `initial_delay`, and `backoff`.
+    downtime, that might cause the HTTP request to fail. The retry mechanism is controlled by two parameters:
+    `max_retries` and `backoff_factor`, and will only be triggered for error codes 502,503 and 504.
 
     - `max_retries` determines the number of retries after the initial request. For example, if `max_retries` is set to
         4, the request will be attempted a total of 5 times (1 initial attempt + 4 retries). If `max_retries` is set to
         0, no retries will be attempted, and the request will be tried only once.
 
-    - `initial_delay` sets the waiting period before the first retry. If `initial_delay` is set to 3, the delay before
-        the first retry will be 3 seconds. Changing the `initial_delay` value directly affects the amount of delay
-        before each retry.
+    - `backoff_factor` controls the rate at which the delay increases for each subsequent retry. If `backoff_factor` is
+        set to 2 (the default), the delay will double with each retry. If `backoff` is set to 1, the delay between
+        retries will remain constant. Changing the `backoff_factor` value affects how quickly the delay increases.
 
-    - `backoff` controls the rate at which the delay increases for each subsequent retry. If `backoff` is set to 2 (the
-        default), the delay will double with each retry. If `backoff` is set to 1, the delay between retries will
-        remain constant. Changing the `backoff` value affects how quickly the delay increases.
+    Given the default values of `max_retries=3` and `backoff=2`, the delays between retries would be 2 seconds,
+    4 seconds, and 8 seconds, respectively. This results in a total delay of 14 seconds before all retries are
+    exhausted.
 
-    Given the default values of `max_retries=3`, `initial_delay=2`, and `backoff=2`, the delays between retries would
-    be 2 seconds, 4 seconds, and 8 seconds, respectively. This results in a total delay of 14 seconds before all
-    retries are exhausted.
+    Parameters
+    ----------
+    url : str, required
+        API endpoint URL.
+    headers : Dict[str, Union[str, SecretStr]], optional, default={"Content-Type": "application/json"}
+        Request headers.
+    auth_header : Optional[SecretStr], optional, default=None
+        Authorization header. An optional parameter that can be used to pass an authorization, such as a bearer token.
+    data : Union[Dict[str, str], str], optional, default={}
+        Data to be sent along with the request.
+    timeout : int, optional, default=3
+        Request timeout. Defaults to 3 seconds.
+    method : Union[str, HttpMethod], required, default='get'
+        What type of Http call to perform. One of 'get', 'post', 'put', 'delete'. Defaults to 'get'.
+    session : requests.Session, optional, default=requests.Session()
+        Existing requests session object to be used for making HTTP requests. If not provided, a new session object
+        will be created.
+    params : Optional[Dict[str, Any]]
+        Set of extra parameters that should be passed to the HTTP request. Note: any kwargs passed to the class will be
+        added to this dictionary.
+    max_retries : int, optional, default=3
+        Maximum number of retries before giving up. Defaults to 3.
+    backoff_factor : float, optional, default=2
+        Backoff factor for retries. Defaults to 2.
 
-    For example, if you set `initial_delay=3` and `backoff=2`, the delays before the retries would be `3 seconds`,
-    `6 seconds`, and `12 seconds`. If you set `initial_delay=2` and `backoff=3`, the delays before the retries would be
-    `2 seconds`, `6 seconds`, and `18 seconds`. If you set `initial_delay=2` and `backoff=1`, the delays before the
-    retries would be `2 seconds`, `2 seconds`, and `2 seconds`.
+    Output
+    ------
+    response_raw : Optional[requests.Response]
+        The raw requests.Response object returned by the appropriate requests.request() call.
+    response_json : Optional[Union[Dict, List]]
+        The JSON response for the request.
+    raw_payload : Optional[str]
+        The raw response for the request.
+    status_code : Optional[int]
+        The status return code of the request.
     """
 
     url: str = Field(
@@ -97,28 +151,45 @@ class HttpStep(Step, ExtraParamsMixin):
         description="API endpoint URL",
         alias="uri",
     )
-    headers: Optional[Dict[str, Union[str, SecretStr]]] = Field(
-        default_factory=dict,
+    headers: Dict[str, Union[str, SecretStr]] = Field(
+        default={"Content-Type": "application/json"},
         description="Request headers",
         alias="header",
     )
-    data: Optional[Union[Dict[str, str], str]] = Field(
+    auth_header: Optional[SecretStr] = Field(
+        default=None,
+        description="[Optional] Authorization header",
+        alias="authorization_header",
+        examples=["Bearer <token>"],
+    )
+    data: Union[Dict[str, str], str] = Field(
         default_factory=dict, description="[Optional] Data to be sent along with the request", alias="body"
     )
     params: Optional[Dict[str, Any]] = Field(  # type: ignore[assignment]
         default_factory=dict,
         description="[Optional] Set of extra parameters that should be passed to HTTP request",
     )
-    timeout: Optional[int] = Field(default=3, description="[Optional] Request timeout")
+    timeout: int = Field(default=3, description="[Optional] Request timeout")
     method: Union[str, HttpMethod] = Field(
         default=HttpMethod.GET,
         description="What type of Http call to perform. One of 'get', 'post', 'put', 'delete'. Defaults to 'get'.",
     )
     session: requests.Session = Field(
         default_factory=requests.Session,
-        description="Requests session object to be used for making HTTP requests",
+        description=(
+            "Existing requests session object to be used for making HTTP requests. If not provided, a new session "
+            "object will be created."
+        ),
         exclude=True,
         repr=False,
+    )
+    max_retries: int = Field(
+        default=3,
+        description="Maximum number of retries before giving up. Defaults to 3.",
+    )
+    backoff_factor: float = Field(
+        default=2,
+        description="Backoff factor for retries. Defaults to 2.",
     )
 
     class Output(Step.Output):
@@ -156,15 +227,19 @@ class HttpStep(Step, ExtraParamsMixin):
 
         return method_value
 
-    @field_validator("headers", mode="before")
-    def encode_sensitive_headers(cls, headers: dict) -> dict:
+    @model_validator(mode="after")
+    def encode_sensitive_headers(self) -> "HttpStep":
         """
         Encode potentially sensitive data into pydantic.SecretStr class to prevent them
         being displayed as plain text in logs.
         """
-        if auth := headers.get("Authorization"):
-            headers["Authorization"] = auth if isinstance(auth, SecretStr) else SecretStr(auth)
-        return headers
+        if auth_header := self.auth_header:
+            # ensure the token is preceded with the word 'Bearer'
+            self.headers["Authorization"] = auth_header
+            del self.auth_header
+        if auth := self.headers.get("Authorization"):
+            self.headers["Authorization"] = auth if isinstance(auth, SecretStr) else SecretStr(auth)
+        return self
 
     @field_serializer("headers", when_used="json")
     def decode_sensitive_headers(self, headers: dict) -> dict:
@@ -213,8 +288,27 @@ class HttpStep(Step, ExtraParamsMixin):
             **self.params,  # type: ignore
         }
 
+    def _configure_session(self) -> None:
+        """Configure session with current retry settings"""
+        retries = Retry(
+            total=self.max_retries,
+            connect=None,  # Only retry on status codes
+            read=None,  # Only retry on status codes
+            redirect=0,  # No redirect retries
+            status=self.max_retries,
+            backoff_factor=self.backoff_factor,
+            status_forcelist=[502, 503, 504],
+            allowed_methods=frozenset(["GET", "POST", "PUT", "DELETE"]),
+            respect_retry_after_header=True,
+        )
+        adapter = requests.adapters.HTTPAdapter(max_retries=retries)
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
+
     @contextlib.contextmanager
-    def _request(self, method: Optional[HttpMethod] = None, stream: bool = False) -> requests.Response:
+    def _request(
+        self, method: Optional[HttpMethod] = None, stream: bool = False
+    ) -> Generator[requests.Response, None, None]:
         """
         Executes the HTTP request with retry logic.
 
@@ -222,9 +316,9 @@ class HttpStep(Step, ExtraParamsMixin):
         This is to avoid unnecessary code duplication. Allows to centrally log, set outputs, and validated.
 
         This method will try to execute `requests.request` up to `self.max_retries` times. If `self.request()` raises
-        an exception, it logs a warning message and the error message, then waits for
-        `self.initial_delay * (self.backoff ** i)` seconds before retrying. The delay increases exponentially
-        after each failed attempt due to the `self.backoff ** i` term.
+        an exception with error code 502,503 or 504, it logs a warning message and the error message, then waits for
+        `(self.backoff_factor ** i)` seconds before retrying, where the delay increases exponentially after each failed
+        attempt.
 
         If `self.request()` still fails after `self.max_retries` attempts, it logs an error message and re-raises the
         last exception that was caught.
@@ -247,9 +341,10 @@ class HttpStep(Step, ExtraParamsMixin):
             The last exception that was caught if `requests.request()` fails after `self.max_retries` attempts.
         """
         _method = (method or self.method).value.upper()
+        self.log.debug(f"Making {_method} request to {self.url} with headers {self.headers}")
         options = self.get_options()
 
-        self.log.debug(f"Making {_method} request to {options['url']} with headers {options['headers']}")
+        self._configure_session()
 
         with self.session.request(method=_method, **options, stream=stream) as response:
             response.raise_for_status()

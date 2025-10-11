@@ -14,10 +14,13 @@ keywords = [
 ]
 authors = [
   # TODO: add other contributors
-  { name = "Danny Meijer", email = "danny.meijer@nike.com" },
-  { name = "Mikita Sakalouski", email = "mikita.sakalouski@nike.com" },
-  { name = "Maxim Mityutko", email = "maxim.mityutko@nike.com" },
-  { name = "Tone Vanden Bergh", email = "tone.vandenbergh@nike.com"},
+  { name = "Danny Meijer", git = "https://github.com/dannymeijer" },
+  { name = "Mikita Sakalouski", git = "https://github.com/mikita-sakalouski" },
+  { name = "Maxim Mityutko", git = "https://github.com/maxim-mityutko" },
+  { name = "Tone Vanden Bergh", git = "https://github.com/ToneVDB" },
+  { name = "Pariksheet Barapatre", git = "https://github.com/pariksheet" },
+  { name = "Riccardo Iacomini", git = "https://github.com/riccamini" },
+
 ]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
@@ -81,8 +84,12 @@ test = [
   "pytest-randomly",
   "pytest-sftpserver",
   "pytest-xdist",
+  "flaky",
   "requests_mock",
   "time_machine",
+  "freezegun",
+  "aioresponses",
+  "responses",
 ]
 docs = [
   "markdown>=3.5.2",
@@ -275,29 +282,24 @@ version = ["pyspark33", "pyspark34", "pyspark35", "pyspark35r", "ml"]
 python = ["3.11", "3.12"]
 version = ["pyspark35", "pyspark35r", "ml"]
 
+[[tool.hatch.envs.hatch-test.matrix]]
+# Follow Databricks 16.4 LTS: https://docs.databricks.com/aws/en/release-notes/runtime/16.4lts#system-environment
+python = ["3.12"]
+version = ["pyspark352", "pyspark352r"]
+
 [tool.hatch.envs.hatch-test.overrides]
 matrix.version.extra-dependencies = [
-  { value = "pyspark>=3.3,<3.4", if = [
-    "pyspark33",
-  ] },
-  { value = "spark-expectations>=2.1.0", if = [
-    "pyspark33",
-  ] },
-  { value = "pandas<2", if = [
-    "pyspark33",
-  ] },
-  { value = "pyspark>=3.4,<3.5", if = [
-    "pyspark34",
-  ] },
-  { value = "spark-expectations>=2.1.0", if = [
-    "pyspark34",
-  ] },
-  { value = "pyspark>=3.5,<3.6", if = [
-    "pyspark35",
-  ] },
-  { value = "pyspark[connect]>=3.5,<3.6", if = [
-    "pyspark35r",
-  ] },
+  { value = "pyspark>=3.3,<3.4", if = ["pyspark33"] },
+  { value = "spark-expectations>=2.1.0", if = ["pyspark33"] },
+  { value = "pandas<2", if = ["pyspark33"] },
+  { value = "pyspark>=3.4,<3.5", if = ["pyspark34"] },
+  { value = "spark-expectations>=2.1.0", if = ["pyspark34"] },
+  # FIXME: Delta with PySpark 3.5.6 has a bug with overwrite: 
+  # https://github.com/delta-io/delta/issues/4671
+  { value = "pyspark>=3.5,<3.5.6", if = ["pyspark35"] },
+  { value = "pyspark[connect]>=3.5,<3.5.6", if = ["pyspark35r"] },
+  { value = "pyspark==3.5.2", if = ["pyspark352"] },
+  { value = "pyspark[connect]==3.5.2", if = ["pyspark352r"] },
 ]
 
 name.".*".env-vars = [
@@ -325,10 +327,10 @@ scripts.test = "pytest{env:HATCH_TEST_ARGS:} {args}"
 
 
 [tool.pytest.ini_options]
-addopts = "-q --color=yes --order-scope=module"
+addopts = "-vv --color=yes --order-scope=module"
 log_level = "CRITICAL"
 testpaths = ["tests"]
-asyncio_default_fixture_loop_scope = "scope"
+asyncio_default_fixture_loop_scope = "function"
 markers = [
   "default: added to all tests by default if no other marker expect of standard pytest markers is present",
   "spark: mark a test as a Spark test",
@@ -421,7 +423,7 @@ Available scripts:
 - `coverage` or `cov` - run the test suite with coverage.
 """
 path = ".venv"
-python = "3.10"
+python = "3.12"
 template = "default"
 features = [
   "async",
@@ -440,6 +442,12 @@ features = [
   "test",
   "docs",
 ]
+extra-dependencies = ["pyspark[connect]==3.5.4"]
+
+# Enable this if you want Spark Connect in your dev environment
+[tool.hatch.envs.dev.env-vars]
+SPARK_REMOTE = "local"
+SPARK_TESTING = "True"
 
 
 ###  ~~~~~~~~~~~~~~~~~~  ###

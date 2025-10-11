@@ -125,15 +125,9 @@ class TestSnowflakeSyncTask:
         task.execute()
         chispa.assert_df_equality(task.output.target_df, df)
 
-    @mock.patch.object(SnowflakeRunQueryPython, "execute")
-    def test_merge(
-        self,
-        mocked_sf_query_execute,
-        spark,
-        foreach_batch_stream_local,
-        snowflake_staging_file,
-    ):
+    def test_merge(self, spark, foreach_batch_stream_local, snowflake_staging_file, mocker):
         # Arrange - Prepare Delta requirements
+        mocker.patch("koheesio.integrations.spark.snowflake.SnowflakeRunQueryPython.execute")
         source_table = DeltaTableStep(database="klettern", table="test_merge")
         spark.sql(
             dedent(
@@ -167,9 +161,9 @@ class TestSnowflakeSyncTask:
 
         # Act - Run code
         # Note: We are using the foreach_batch_stream_local fixture to simulate writing to a live environment
-        with mock.patch.object(SynchronizeDeltaToSnowflakeTask, "writer", new=foreach_batch_stream_local):
-            task.execute()
-            task.writer.await_termination()
+        mocker.patch.object(SynchronizeDeltaToSnowflakeTask, "writer", new=foreach_batch_stream_local)
+        task.execute()
+        task.writer.await_termination()
 
         # Assert - Validate result
         df = spark.read.parquet(snowflake_staging_file).select("Country", "NumVaccinated", "AvailableDoses")
@@ -480,7 +474,7 @@ class TestMergeQuery:
             """
             MERGE INTO target_table target
             USING tmp_table temp ON target.Country = temp.Country
-            WHEN MATCHED AND temp._change_type = 'update_postimage'
+            WHEN MATCHED AND (temp._change_type = 'update_postimage' OR temp._change_type = 'insert')
                 THEN UPDATE SET NumVaccinated = temp.NumVaccinated, AvailableDoses = temp.AvailableDoses
             WHEN NOT MATCHED AND temp._change_type != 'delete'
                 THEN INSERT (Country, NumVaccinated, AvailableDoses)
@@ -501,7 +495,7 @@ class TestMergeQuery:
             """
             MERGE INTO target_table target
             USING tmp_table temp ON target.Country = temp.Country
-            WHEN MATCHED AND temp._change_type = 'update_postimage'
+            WHEN MATCHED AND (temp._change_type = 'update_postimage' OR temp._change_type = 'insert')
                 THEN UPDATE SET NumVaccinated = temp.NumVaccinated, AvailableDoses = temp.AvailableDoses
             WHEN NOT MATCHED AND temp._change_type != 'delete'
                 THEN INSERT (Country, NumVaccinated, AvailableDoses)

@@ -11,15 +11,14 @@ Prerequisites
 """
 
 from typing import IO, Any, Dict, Optional, Union
-from abc import ABC
-from io import BytesIO, StringIO
+from abc import ABC, abstractmethod
+from io import BytesIO
 from pathlib import PurePath
 import re
 
 from boxsdk import Client, JWTAuth
 from boxsdk.object.file import File
 from boxsdk.object.folder import Folder
-import pandas as pd
 
 from pyspark.sql.functions import expr, lit
 from pyspark.sql.types import StructType
@@ -27,6 +26,8 @@ from pyspark.sql.types import StructType
 from koheesio import Step, StepOutput
 from koheesio.models import (
     Field,
+    InstanceOf,
+    ListOfStrings,
     SecretBytes,
     SecretStr,
     SkipValidation,
@@ -36,6 +37,7 @@ from koheesio.models import (
 )
 from koheesio.spark.readers import Reader
 from koheesio.spark.readers.memory import InMemoryDataReader
+from koheesio.spark.writers.buffer import BufferWriter
 from koheesio.utils import utc_now
 
 
@@ -400,7 +402,7 @@ class BoxCsvFileReader(BoxReaderBase):
     ```
     """
 
-    file: Union[str, list[str]] = Field(default=..., description="ID or list of IDs for the files to read.")
+    files: ListOfStrings = Field(default=..., alias="file", description="ID or list of IDs for the files to read.")
 
     def execute(self) -> BoxReaderBase.Output:
         """
@@ -414,13 +416,14 @@ class BoxCsvFileReader(BoxReaderBase):
         DataFrame
         """
         df = None
-        for f in self.file:
-            self.log.debug(f"Reading contents of file with the ID '{f}' into Spark DataFrame")
+        for f in self.files:
+            self.log.debug(f"Currently processing file with ID '{f}'")
             file = self.client.file(file_id=f)
-            data = file.content().decode(self.file_encoding)
 
+            self.log.debug(f"Reading file with ID '{file.object_id}' and name '{file.get().name}' into Spark DataFrame")
+            data = file.content().decode(self.file_encoding)
             temp_df = InMemoryDataReader(data=data, schema=self.schema_, params=self.params, format="csv").read()
-            
+
             # type: ignore
             # noinspection PyUnresolvedReferences
             temp_df = (
@@ -459,7 +462,9 @@ class BoxCsvPathReader(BoxReaderBase):
     ...  # do something with the dataframe
     from koheesio.steps.integrations.box import BoxToBoxFileMove
 
-    bm = BoxToBoxFileMove(**auth_params, file=b.file_id, path="/foo/bar/archive")
+    bm = BoxToBoxFileMove(
+        **auth_params, file=b.file_id, path="/foo/bar/archive"
+    )
     ```
     """
 
@@ -546,12 +551,16 @@ class BoxToBoxFileCopy(BoxFileBase):
     from koheesio.steps.integrations.box import BoxToBoxFileCopy
 
     auth_params = {...}
-    BoxToBoxFileCopy(**auth_params, file=["1", "2"], path="/foo/bar").execute()
+    BoxToBoxFileCopy(
+        **auth_params, file=["1", "2"], path="/foo/bar"
+    ).execute()
     # or
     BoxToBoxFileCopy(**auth_params, file=["1", "2"], folder="1").execute()
     # or
     folder = BoxFolderGet(**auth_params, path="/foo/bar").execute().folder
-    BoxToBoxFileCopy(**auth_params, file=[File(), File()], folder=folder).execute()
+    BoxToBoxFileCopy(
+        **auth_params, file=[File(), File()], folder=folder
+    ).execute()
     ```
     """
 
@@ -582,12 +591,16 @@ class BoxToBoxFileMove(BoxFileBase):
     from koheesio.steps.integrations.box import BoxToBoxFileMove
 
     auth_params = {...}
-    BoxToBoxFileMove(**auth_params, file=["1", "2"], path="/foo/bar").execute()
+    BoxToBoxFileMove(
+        **auth_params, file=["1", "2"], path="/foo/bar"
+    ).execute()
     # or
     BoxToBoxFileMove(**auth_params, file=["1", "2"], folder="1").execute()
     # or
     folder = BoxFolderGet(**auth_params, path="/foo/bar").execute().folder
-    BoxToBoxFileMove(**auth_params, file=[File(), File()], folder=folder).execute()
+    BoxToBoxFileMove(
+        **auth_params, file=[File(), File()], folder=folder
+    ).execute()
     ```
     """
 
@@ -608,66 +621,25 @@ class BoxToBoxFileMove(BoxFileBase):
         )
 
 
-class BoxFileWriter(BoxFolderBase):
+class BoxBaseFileWriter(BoxFolderBase, ABC):
     """
-    Write file or a file-like object to Box.
-
-    Examples
-    --------
-    ```python
-    from koheesio.steps.integrations.box import BoxFileWriter
-
-    auth_params = {...}
-    f1 = BoxFileWriter(**auth_params, path="/foo/bar", file="path/to/my/file.ext").execute()
-    # or
-    import io
-
-    b = io.BytesIO(b"my-sample-data")
-    f2 = BoxFileWriter(**auth_params, path="/foo/bar", file=b, name="file.ext").execute()
-    ```
+    Base class for writing files to Box
     """
 
-    file: Union[str, BytesIO] = Field(default=..., description="Path to file or a file-like object")
-    file_name: Optional[str] = Field(
-        default=None,
-        description="When file path or name is provided to 'file' parameter, this will override the original name."
-        "When binary stream is provided, the 'name' should be used to set the desired name for the Box file.",
-    )
     overwrite: bool = Field(default=False, description="Overwrite the file if it exists on box")
     description: Optional[str] = Field(None, description="Optional description to add to the file in Box")
 
     class Output(StepOutput):
-        """Output class for BoxFileWriter."""
+        """Base Output class for Koheesio Box File Writers."""
 
         file: File = Field(default=..., description="File object in Box")
         shared_link: str = Field(default=..., description="Shared link for the Box file")
 
-    @model_validator(mode="before")
-    def validate_name_for_binary_data(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate 'file_name' parameter when providing a binary input for 'file'."""
-        file, file_name = values.get("file"), values.get("file_name")
-        if not isinstance(file, str) and not file_name:
-            raise AttributeError("The parameter 'file_name' is mandatory when providing a binary input for 'file'.")
-
-        return values
-
-    def action(self) -> None:
-        _file = self.file
-        _name = self.file_name
-
-        if isinstance(_file, str):
-            _name = _name if _name else PurePath(_file).name
-            with open(_file, "rb") as f:
-                _file = BytesIO(f.read())
-
-        folder: Folder = BoxFolderGet.from_step(self, create_sub_folders=True).execute().folder
-
-        # noinspection PyUnresolvedReferences
-        self.log.info(f"Uploading file '{_name}' to Box folder '{folder.get().name}'...")
-        _box_file: File = self.write_or_overwrite_file_with_stream(folder=folder, file_stream=_file, file_name=_name)
-
-        self.output.file = _box_file
-        self.output.shared_link = _box_file.get_shared_link()
+    @abstractmethod
+    def action(self):
+        raise NotImplementedError(
+            "You are not supposed to use this class directly, this serves as a base model for Koheesio Box file writers"
+        )
 
     def execute(self) -> Output:
         self.action()
@@ -703,3 +675,105 @@ class BoxFileWriter(BoxFolderBase):
             )
 
         return new_file
+
+    def write_file(self, file_stream: IO[bytes], file_name: str) -> File:
+        folder: Folder = BoxFolderGet.from_step(self, create_sub_folders=True).execute().folder
+
+        # noinspection PyUnresolvedReferences
+        self.log.info(f"Uploading file '{file_name}' to Box folder '{folder.get().name}'...")
+        _box_file: File = self.write_or_overwrite_file_with_stream(
+            folder=folder, file_stream=file_stream, file_name=file_name
+        )
+
+        self.output.file = _box_file
+        self.output.shared_link = _box_file.get_shared_link()
+
+
+class BoxFileWriter(BoxBaseFileWriter):
+    """
+    Write file or a file-like object to Box.
+
+    Examples
+    --------
+    ```python
+    from koheesio.steps.integrations.box import BoxFileWriter
+
+    auth_params = {...}
+    f1 = BoxFileWriter(
+        **auth_params, path="/foo/bar", file="path/to/my/file.ext"
+    ).execute()
+    # or
+    import io
+
+    b = io.BytesIO(b"my-sample-data")
+    f2 = BoxFileWriter(
+        **auth_params, path="/foo/bar", file=b, name="file.ext"
+    ).execute()
+    ```
+    """
+
+    file: Union[str, BytesIO] = Field(default=..., description="Path to file or a file-like object")
+    file_name: Optional[str] = Field(
+        default=None,
+        description="When file path or name is provided to 'file' parameter, this will override the original name."
+        "When binary stream is provided, the 'name' should be used to set the desired name for the Box file.",
+    )
+
+    @model_validator(mode="before")
+    def validate_name_for_binary_data(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate 'file_name' parameter when providing a binary input for 'file'."""
+        file, file_name = values.get("file"), values.get("file_name")
+        if not isinstance(file, str) and not file_name:
+            raise AttributeError("The parameter 'file_name' is mandatory when providing a binary input for 'file'.")
+
+        return values
+
+    def action(self) -> None:
+        _file = self.file
+        _name = self.file_name
+
+        if isinstance(_file, str):
+            _name = _name if _name else PurePath(_file).name
+            with open(_file, "rb") as f:
+                _file = BytesIO(f.read())
+
+        self.write_file(file_stream=_file, file_name=_name)
+
+
+class BoxBufferFileWriter(BoxBaseFileWriter):
+    """
+    Buffer version of the BoxFileWriter. This class relies on BufferWriter implementations class to write
+    the file content into a buffer first, and then it will reuse this to source data to be written to box.
+
+    Examples
+    --------
+    ```python
+    from koheesio.spark.writers.buffer import PandasCsvBufferWriter
+
+    df = spark.createDataFrame([("A", 1), ("B", 2)], ["foo", "bar"])
+    buffer_writer = PandasCsvBufferWriter(df=df)
+
+    auth_params = {...}
+
+    box_buffer_writer = BoxBufferFileWriter(
+        **auth_params,
+        path="/foo",
+        file_name="upload.txt",
+        buffer_writer=buffer_writer,
+    )
+
+    f = box_buffer_writer.execute()
+    ```
+    """
+
+    buffer_writer: InstanceOf[BufferWriter] = Field(
+        default=..., description="Koheesio buffer writer that will be used to produce the output"
+    )
+    file_name: str = Field(default=..., description="Name to be used for the Box file")
+
+    def action(self):
+        # Writes the data to the buffer using the provided buffer writer
+        self.buffer_writer.write()
+        self.buffer_writer.output.rewind_buffer()
+
+        self.write_file(file_stream=self.buffer_writer.output.buffer, file_name=self.file_name)

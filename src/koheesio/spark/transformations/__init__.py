@@ -27,10 +27,10 @@ from abc import ABC, abstractmethod
 from pyspark.sql import functions as f
 from pyspark.sql.types import DataType
 
-from koheesio.models import Field, ListOfColumns, field_validator
+from koheesio.models import Field, ListOfColumns, model_validator
 from koheesio.models.dataframe import BaseTransformation
 from koheesio.spark import Column, DataFrame, SparkStep
-from koheesio.spark.utils import SparkDatatype
+from koheesio.spark.utils import SparkDatatype, get_column_name
 
 __all__ = [
     "Transformation",
@@ -241,36 +241,39 @@ class ColumnsTransformation(Transformation, ABC):
             (default: False)
         """
 
-        run_for_all_data_type: Optional[List[SparkDatatype]] = [None]  # type: ignore
-        limit_data_type: Optional[List[SparkDatatype]] = [None]
+        run_for_all_data_type: Optional[List[SparkDatatype]] = None
+        limit_data_type: Optional[List[SparkDatatype]] = None
         data_type_strict_mode: bool = False
 
-    @field_validator("columns", mode="before")
-    def set_columns(cls, columns_value: ListOfColumns) -> ListOfColumns:
+    @model_validator(mode="after")
+    def set_columns(self) -> "ColumnsTransformation":
         """Validate columns through the columns configuration provided"""
-        columns = columns_value
-        run_for_all_data_type = cls.ColumnConfig.run_for_all_data_type
+        columns = self.columns
 
-        if run_for_all_data_type and len(columns) == 0:
-            columns = ["*"]
+        if len(columns) == 0:
+            if self.run_for_all_is_set:
+                columns = ["*"]
+        else:
+            if columns[0] == "*" and not self.run_for_all_is_set:
+                raise ValueError("Cannot use '*' as a column name when no run_for_all_data_type is set")
 
-        if columns[0] == "*" and not run_for_all_data_type:
-            raise ValueError("Cannot use '*' as a column name when no run_for_all_data_type is set")
+        self.columns = columns
+        return self
 
-        return columns
-
+    @classmethod
     @property
-    def run_for_all_is_set(self) -> bool:
+    def run_for_all_is_set(cls) -> bool:
         """Returns True if the transformation should be run for all columns of a given type"""
-        run_for_all_data_type = self.ColumnConfig.run_for_all_data_type
-        if run_for_all_data_type and self.columns[0] == "*":
-            return True
-        return False
+        rfadt = cls.ColumnConfig.run_for_all_data_type  # shorthand
+        return bool(rfadt and isinstance(rfadt, list) and rfadt[0] is not None)
 
+    @classmethod
     @property
-    def limit_data_type_is_set(self) -> bool:
+    def limit_data_type_is_set(cls) -> bool:
         """Returns True if limit_data_type is set"""
-        return self.ColumnConfig.limit_data_type[0] is not None  # type: ignore[index]
+        if (limit_data_type := cls.ColumnConfig.limit_data_type) is not None:
+            return limit_data_type[0] is not None  # type: ignore
+        return False
 
     @property
     def data_type_strict_mode_is_set(self) -> bool:
@@ -316,10 +319,10 @@ class ColumnsTransformation(Transformation, ABC):
             The column to check the type of
 
         df : Optional[DataFrame]
-            The DataFrame belonging to the column. If not provided, the DataFrame passed to the constructor
-            will be used.
+            The DataFrame belonging to the column. If not provided, the DataFrame passed to the constructor will be
+            used.
 
-        simple_return_mode : bool
+        simple_return_mode : bool, default=True
             If True, the return value will be a simple string. If False, the return value will be a SparkDatatype enum.
 
         Returns
@@ -331,18 +334,17 @@ class ColumnsTransformation(Transformation, ABC):
         if not df:
             raise RuntimeError("No valid Dataframe was passed")
 
+        # ensure that the column is a Column object
         if not isinstance(col, Column):  # type:ignore[misc, arg-type]
             col = f.col(col)  # type:ignore[arg-type]
-
-        # noinspection PyProtectedMember,PyUnresolvedReferences
-        col_name = (
-            col._expr._unparsed_identifier
-            if col.__class__.__module__ == "pyspark.sql.connect.column"
-            else col._jc.toString()  # type: ignore  # noqa: E721
-        )
+        col_name = get_column_name(col)
 
         # In order to check the datatype of the column, we have to ask the DataFrame its schema
-        df_col = [c for c in df.schema if c.name == col_name][0]
+        df_col = next((c for c in df.schema if c.name == col_name), None)
+
+        # Check if the column exists in the DataFrame schema
+        if df_col is None:
+            raise ValueError(f"Column '{col_name}' does not exist in the DataFrame schema")
 
         if simple_return_mode:
             return SparkDatatype(df_col.dataType.typeName()).value
@@ -376,6 +378,10 @@ class ColumnsTransformation(Transformation, ABC):
         columns_of_given_type: List[str] = [
             col for col in self.df.columns if self.df.schema[col].dataType.typeName() == expected_data_type
         ]
+
+        if not columns_of_given_type:
+            self.log.warning(f"No columns of type '{expected_data_type}' found in the DataFrame")
+
         return columns_of_given_type
 
     def is_column_type_correct(self, column: Union[Column, str]) -> bool:
@@ -403,13 +409,16 @@ class ColumnsTransformation(Transformation, ABC):
 
     def get_columns(self) -> Iterator[str]:
         """Return an iterator of the columns"""
-        # If `run_for_all_is_set` is True, we want to run the transformation for all columns of a given type
-        if self.run_for_all_is_set:
-            columns = []
-            for data_type in self.ColumnConfig.run_for_all_data_type:  # type: ignore
-                columns += self.get_all_columns_of_specific_type(data_type)
-        else:
-            columns = self.columns  # type:ignore[assignment]
+        columns = self.columns or self.df.columns
+
+        # If `run_for_all_is_set` to True, we want to run the transformation for all columns of a given type,
+        # unless the user has specified specific columns
+        if self.run_for_all_is_set and (not columns or columns[0] == "*"):
+            columns = [
+                col
+                for data_type in self.ColumnConfig.run_for_all_data_type  # type: ignore
+                for col in self.get_all_columns_of_specific_type(data_type)
+            ]
 
         for column in columns:
             if self.is_column_type_correct(column):

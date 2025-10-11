@@ -8,6 +8,7 @@ from pydantic import ValidationError
 
 from koheesio.integrations.box import (
     Box,
+    BoxBufferFileWriter,
     BoxCsvFileReader,
     BoxCsvPathReader,
     BoxFileBase,
@@ -24,6 +25,7 @@ from koheesio.integrations.box import (
     SecretStr,
     StructType,
 )
+from koheesio.spark.writers.buffer import PandasCsvBufferWriter
 
 pytestmark = pytest.mark.spark
 
@@ -251,6 +253,11 @@ class TestBoxCsvReader:
             ("meta_load_timestamp", "timestamp"),
         ]
 
+    def test_file_attribute_validation(self, dummy_box):
+        """Tests that if one single file id is provided, it will be converted to a list"""
+        bcr = BoxCsvFileReader(**COMMON_PARAMS, file="this-is-a-single-file-id")
+        assert bcr.files == ["this-is-a-single-file-id"]
+
 
 class TestBoxCsvPathReader:
     def test_execute_w_files(self, spark, dummy_box):
@@ -305,4 +312,21 @@ class TestBoxFileWriter:
             file=__file__,
             file_name="upload.txt",
         ).execute()
+        assert f.file.get().name == "upload.txt"
+
+
+class TestBoxBufferFileWriter:
+    def test_execute(self, dummy_box, spark):
+        df = spark.createDataFrame([("A", 1), ("B", 2)], ["foo", "bar"])
+        buffer_writer = PandasCsvBufferWriter(df=df)
+
+        f = BoxBufferFileWriter(
+            **COMMON_PARAMS,
+            path="/foo",
+            buffer_writer=buffer_writer,
+            file_name="upload.txt",
+        ).execute()
+
+        assert f.shared_link
+        assert isinstance(f.file, File)
         assert f.file.get().name == "upload.txt"

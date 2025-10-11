@@ -85,7 +85,7 @@ class Context(Mapping):
             if isinstance(arg, dict):
                 kwargs.update(arg)
             if isinstance(arg, Context):
-                kwargs = kwargs.update(arg.to_dict())
+                kwargs.update(arg.to_dict())
 
         if kwargs:
             for key, value in kwargs.items():
@@ -277,6 +277,8 @@ class Context(Mapping):
         # check if yaml_str is pathlike
         if (yaml_file := Path(yaml_file_or_str)).exists():
             yaml_str = yaml_file.read_text(encoding="utf-8")
+        else:
+            yaml_str = str(yaml_file_or_str)
 
         # Bandit: disable yaml.load warning
         yaml_dict = yaml.load(yaml_str, Loader=yaml.Loader)  # nosec B506: yaml_load
@@ -337,15 +339,20 @@ class Context(Mapping):
         Returns `c`
         """
         try:
-            if "." not in key:
+            # in case key is directly available, or is written in dotted notation
+            try:
                 return self.__dict__[key]
+            except KeyError:
+                pass
+            if "." in key:
+                # handle nested keys
+                nested_keys = key.split(".")
+                value = self  # parent object
+                for k in nested_keys:
+                    value = value[k]  # iterate through nested values
+                return value
 
-            # handle nested keys
-            nested_keys = key.split(".")
-            value = self  # parent object
-            for k in nested_keys:
-                value = value[k]  # iterate through nested values
-            return value
+            raise KeyError
 
         except (AttributeError, KeyError, TypeError) as e:
             if not safe:

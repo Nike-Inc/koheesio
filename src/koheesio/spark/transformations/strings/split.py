@@ -51,7 +51,9 @@ class SplitAll(ColumnsTransformationWithTarget):
     |              Beans|  1600|    USA|
 
     ```python
-    output_df = SplitColumn(column="product", target_column="split", split_pattern=" ").transform(input_df)
+    output_df = SplitColumn(
+        column="product", target_column="split", split_pattern=" "
+    ).transform(input_df)
     ```
 
     __output_df:__
@@ -107,7 +109,9 @@ class SplitAtFirstMatch(SplitAll):
     |              Beans|  1600|    USA|
 
     ```python
-    output_df = SplitColumn(column="product", target_column="split_first", split_pattern="an").transform(input_df)
+    output_df = SplitColumn(
+        column="product", target_column="split_first", split_pattern="an"
+    ).transform(input_df)
     ```
 
     __output_df:__
