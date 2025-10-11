@@ -201,8 +201,12 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
         examples=["example.snowflakecomputing.com"],
     )
     user: str = Field(default=..., alias="sfUser", description="Login name for the Snowflake user")
-    password: Optional[SecretStr] = Field(default=None, alias="sfPassword", description="Password for the Snowflake user")
-    private_key: Optional[SecretStr] = Field(default=None, alias="pem_private_key", description="PEM private key for the Snowflake user")
+    password: Optional[SecretStr] = Field(
+        default=None, alias="sfPassword", description="Password for the Snowflake user"
+    )
+    private_key: Optional[SecretStr] = Field(
+        default=None, alias="pem_private_key", description="PEM private key for the Snowflake user"
+    )
     role: str = Field(
         default=..., alias="sfRole", description="The default security role to use for the session after connecting"
     )
@@ -236,9 +240,7 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
         if not self.password and not self.private_key:
             raise ValueError("You must provide either 'password' or 'private_key'.")
         if self.password and self.private_key:
-            raise ValueError(
-                "You must provide either 'password' or 'private_key', not both."
-            )
+            raise ValueError("You must provide either 'password' or 'private_key', not both.")
         return self
 
     @property
@@ -273,24 +275,25 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
         """
         # Always exclude these fields unless explicitly included
         base_exclude = {
-            "name", "description",  # Koheesio specific
-            "params", "options",    # Handled separately
-            "sfSchema",            # Handled separately
-            "password",            # Handled separately
-            "private_key",         # Handled separately
-            "table",              # Prevent conflicts - this is our key fix!
+            # Koheesio specific
+            "name",
+            "description",
+            # Handled separately
+            "params",
+            "options",
+            "sfSchema",
+            "password",
+            "private_key",
+            # Prevent conflicts
+            "table",
         }
         exclude_set = base_exclude - (include or set())
 
         # Get base fields from model, excluding None values and specified fields
-        fields = self.model_dump(
-            by_alias=by_alias,
-            exclude_none=True,
-            exclude=exclude_set
-        )
+        fields = self.model_dump(by_alias=by_alias, exclude_none=True, exclude=exclude_set)
 
         # Add schema - always present for Snowflake
-        fields.update({ "sfSchema" if by_alias else "schema": self.sfSchema })
+        fields.update({"sfSchema" if by_alias else "schema": self.sfSchema})
 
         # Handle authentication - password or private_key
         if self.password:
@@ -414,7 +417,6 @@ class SnowflakeRunQueryPython(SnowflakeStep):
             raise RuntimeError("Snowflake connector is not installed. Please install `snowflake-connector-python`.")
 
         sf_options = self.get_options()
-
 
         _conn = self._snowflake_connector.connect(**sf_options)
         self.log.info(f"Connected to Snowflake account: {sf_options['account']}")

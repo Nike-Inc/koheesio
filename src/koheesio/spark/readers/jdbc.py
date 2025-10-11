@@ -76,7 +76,9 @@ class JdbcReader(Reader, ExtraParamsMixin):
     )
     user: str = Field(default=..., description="User to authenticate to the server")
     password: Optional[SecretStr] = Field(default=None, description="Password belonging to the username")
-    private_key: Optional[SecretStr] = Field(default=None, alias="pem_private_key", description="Private key for authentication")
+    private_key: Optional[SecretStr] = Field(
+        default=None, alias="pem_private_key", description="Private key for authentication"
+    )
     dbtable: Optional[str] = Field(
         default=None,
         description="Database table name, also include schema name",
@@ -95,12 +97,7 @@ class JdbcReader(Reader, ExtraParamsMixin):
         Note: override this method if driver requires custom names, e.g. Snowflake: `sfUrl`, `sfUser`, etc.
         """
         # Build base connection parameters
-        options = {
-            "driver": self.driver,
-            "url": self.url,
-            "user": self.user,
-            "password": self.password
-        }
+        options = {"driver": self.driver, "url": self.url, "user": self.user, "password": self.password}
 
         # Add extra params from params/options
         if self.params:
@@ -131,9 +128,7 @@ class JdbcReader(Reader, ExtraParamsMixin):
         if not self.password and not self.private_key:
             raise ValueError("You must provide either 'password' or 'private_key'.")
         if self.password and self.private_key:
-            raise ValueError(
-                "You must provide either 'password' or 'private_key', not both."
-            )
+            raise ValueError("You must provide either 'password' or 'private_key', not both.")
 
         return self
 
@@ -145,7 +140,7 @@ class JdbcReader(Reader, ExtraParamsMixin):
     def execute(self) -> "JdbcReader.Output":
         """Wrapper around Spark's jdbc read format"""
         options = self.get_options()
-        
+
         # Update password with secret value
         if pw := self.password:
             options["password"] = pw.get_secret_value()

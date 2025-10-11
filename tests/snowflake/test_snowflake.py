@@ -261,10 +261,10 @@ class TestSnowflakeBaseModel:
             role="role",
             warehouse="warehouse",
             schema="schema",
-            table="test_table"  # This should be excluded
+            table="test_table",  # This should be excluded
         )
         options = k.get_options()
-        
+
         # table parameter should not be present in options
         assert "table" not in options
         assert "sfTable" not in options  # Also check aliased form
