@@ -76,7 +76,9 @@ class JdbcReader(Reader, ExtraParamsMixin):
     )
     user: str = Field(default=..., description="User to authenticate to the server")
     password: Optional[SecretStr] = Field(default=None, description="Password belonging to the username")
-    private_key: Optional[SecretStr] = Field(default=None, alias="pem_private_key", description="Private key for authentication")
+    private_key: Optional[SecretStr] = Field(
+        default=None, alias="pem_private_key", description="Private key for authentication"
+    )
     dbtable: Optional[str] = Field(
         default=None,
         description="Database table name, also include schema name",
@@ -94,16 +96,23 @@ class JdbcReader(Reader, ExtraParamsMixin):
 
         Note: override this method if driver requires custom names, e.g. Snowflake: `sfUrl`, `sfUser`, etc.
         """
-        _options = {"driver": self.driver, "url": self.url, "user": self.user, "password": self.password, **self.params}
+        # Build base connection parameters
+        options = {"driver": self.driver, "url": self.url, "user": self.user, "password": self.password}
 
-        if query := self.query:
-            _options["query"] = query
-            self.log.info(f"Using query: {query}")
-        elif dbtable := self.dbtable:
-            _options["dbtable"] = dbtable
-            self.log.info(f"Using DBTable: {dbtable}")
+        # Add extra params from params/options
+        if self.params:
+            options.update(self.params)
 
-        return _options
+        # Handle query/dbtable parameters
+        # When query is present, dbtable is ignored as per documentation
+        if self.query:
+            options["query"] = self.query
+            self.log.info(f"Using query: {self.query}")
+        elif self.dbtable:
+            options["dbtable"] = self.dbtable
+            self.log.info(f"Using DBTable: {self.dbtable}")
+
+        return options
 
     @model_validator(mode="after")
     def check_dbtable_or_query(self) -> "JdbcReader":
@@ -119,9 +128,7 @@ class JdbcReader(Reader, ExtraParamsMixin):
         if not self.password and not self.private_key:
             raise ValueError("You must provide either 'password' or 'private_key'.")
         if self.password and self.private_key:
-            raise ValueError(
-                "You must provide either 'password' or 'private_key', not both."
-            )
+            raise ValueError("You must provide either 'password' or 'private_key', not both.")
 
         return self
 
@@ -133,11 +140,13 @@ class JdbcReader(Reader, ExtraParamsMixin):
     def execute(self) -> "JdbcReader.Output":
         """Wrapper around Spark's jdbc read format"""
         options = self.get_options()
-        
+
+        # Update password with secret value
         if pw := self.password:
             options["password"] = pw.get_secret_value()
         if pk := self.private_key:
             options["pem_private_key"] = pk.get_secret_value()
             options["private_key"] = pk.get_secret_value()
 
+        # Read the data
         self.output.df = self.spark.read.format(self.format).options(**options).load()

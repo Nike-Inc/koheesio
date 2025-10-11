@@ -201,8 +201,12 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
         examples=["example.snowflakecomputing.com"],
     )
     user: str = Field(default=..., alias="sfUser", description="Login name for the Snowflake user")
-    password: Optional[SecretStr] = Field(default=None, alias="sfPassword", description="Password for the Snowflake user")
-    private_key: Optional[SecretStr] = Field(default=None, alias="pem_private_key", description="PEM private key for the Snowflake user")
+    password: Optional[SecretStr] = Field(
+        default=None, alias="sfPassword", description="Password for the Snowflake user"
+    )
+    private_key: Optional[SecretStr] = Field(
+        default=None, alias="pem_private_key", description="PEM private key for the Snowflake user"
+    )
     role: str = Field(
         default=..., alias="sfRole", description="The default security role to use for the session after connecting"
     )
@@ -236,9 +240,7 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
         if not self.password and not self.private_key:
             raise ValueError("You must provide either 'password' or 'private_key'.")
         if self.password and self.private_key:
-            raise ValueError(
-                "You must provide either 'password' or 'private_key', not both."
-            )
+            raise ValueError("You must provide either 'password' or 'private_key', not both.")
         return self
 
     @property
@@ -249,13 +251,6 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
     def get_options(self, by_alias: bool = True, include: Optional[Set[str]] = None) -> Dict[str, Any]:
         """Get the sfOptions as a dictionary.
 
-        Note
-        ----
-        - Any parameters that are `None` are excluded from the output dictionary.
-        - `sfSchema` and `password` are handled separately.
-        - The values from both 'options' and 'params' (kwargs / extra params) are included as is.
-        - Koheesio specific fields are excluded by default (i.e. `name`, `description`, `format`).
-
         Parameters
         ----------
         by_alias : bool, optional, default=True
@@ -263,29 +258,44 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
         include : Optional[Set[str]], optional, default=None
             Set of keys to include in the output dictionary. When None is provided, all fields will be returned.
             Note: be sure to include all the keys you need.
+
+        Returns
+        -------
+        Dict[str, Any]
+            Dictionary of options with the following precedence:
+            1. Base fields (url, user, etc.)
+            2. Special fields (schema, password)
+            3. Extra parameters (params/options)
+
+        Notes
+        -----
+        - Any parameters that are `None` are excluded from the output
+        - Koheesio specific fields are excluded by default (name, description, format)
+        - 'table' parameter is excluded to prevent conflicts
         """
-        exclude_set = {
-            # Exclude koheesio specific fields
+        # Always exclude these fields unless explicitly included
+        base_exclude = {
+            # Koheesio specific
             "name",
             "description",
-            # params are separately implemented
+            # Handled separately
             "params",
             "options",
-            # schema and password have to be handled separately
             "sfSchema",
             "password",
             "private_key",
-        } - (include or set())
+            # Prevent conflicts
+            "table",
+        }
+        exclude_set = base_exclude - (include or set())
 
-        fields = self.model_dump(
-            by_alias=by_alias,
-            exclude_none=True,
-            exclude=exclude_set,
-        )
+        # Get base fields from model, excluding None values and specified fields
+        fields = self.model_dump(by_alias=by_alias, exclude_none=True, exclude=exclude_set)
 
-        fields.update({ "sfSchema" if by_alias else "schema": self.sfSchema })
+        # Add schema - always present for Snowflake
+        fields.update({"sfSchema" if by_alias else "schema": self.sfSchema})
 
-        # handle schema and password
+        # Handle authentication - password or private_key
         if self.password:
             fields.update(
                 {
@@ -300,25 +310,18 @@ class SnowflakeBaseModel(BaseModel, ExtraParamsMixin, ABC):  # type: ignore[misc
                 }
             )
 
-        # handle include
+        # If include is specified, filter fields to only included keys
         if include:
-            # user specified filter
-            fields = {key: value for key, value in fields.items() if key in include}
-        else:
-            # default filter
-            include = {"params"}
+            fields = {k: v for k, v in fields.items() if k in include}
 
-        # handle options
-        if "options" in include:
-            options = fields.pop("params", self.params)
-            fields.update(**options)
+        # Add extra parameters from params/options if requested
+        if not include or {"params", "options"} & include:
+            if params := self.params:
+                # Exclude 'table' from extra params to prevent conflicts
+                extra = {k: v for k, v in params.items() if k != "table"}
+                fields.update(extra)
 
-        # handle params
-        if "params" in include:
-            params = fields.pop("params", self.params)
-            fields.update(**params)
-
-        return {key: value for key, value in fields.items() if value}
+        return fields
 
 
 class SnowflakeStep(SnowflakeBaseModel, Step, ABC):
@@ -414,7 +417,6 @@ class SnowflakeRunQueryPython(SnowflakeStep):
             raise RuntimeError("Snowflake connector is not installed. Please install `snowflake-connector-python`.")
 
         sf_options = self.get_options()
-
 
         _conn = self._snowflake_connector.connect(**sf_options)
         self.log.info(f"Connected to Snowflake account: {sf_options['account']}")
