@@ -277,6 +277,8 @@ class Context(Mapping):
         # check if yaml_str is pathlike
         if (yaml_file := Path(yaml_file_or_str)).exists():
             yaml_str = yaml_file.read_text(encoding="utf-8")
+        else:
+            yaml_str = str(yaml_file_or_str)
 
         # Bandit: disable yaml.load warning
         yaml_dict = yaml.load(yaml_str, Loader=yaml.Loader)  # nosec B506: yaml_load
