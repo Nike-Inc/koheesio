@@ -38,14 +38,35 @@ if it isn't showing any activity.
 
 ### 🔨 Make commands
 
-We use `make` for managing different steps of setup and maintenance in the project. You can install make by following
-the instructions [here](https://formulae.brew.sh/formula/make)
+We use `make` for managing different steps of setup and maintenance in the project. The Makefile is designed around Koheesio's layered architecture, providing commands for each layer.
+
+You can install make by following the instructions [here](https://formulae.brew.sh/formula/make)
 
 For a full list of available make commands, you can run:
 
 ```bash
 make help
 ```
+
+#### Command Categories
+
+**Setup Commands:**
+- `make dev`, `make dev-core`, `make dev-pandas`, `make dev-ml`, `make dev-spark`
+- `make init` / `make hatch-install`
+
+**Testing Commands:**  
+- `make test-core`, `make test-pandas`, `make test-ml`, `make test-layered`
+- `make spark-tests`, `make all-tests`, `make test-integrations`
+- `make cov`, `make dev-test`
+
+**Code Quality Commands:**
+- `make check`, `make fmt`  
+- `make black-check`, `make ruff-check`, `make mypy-check`
+
+**Documentation Commands:**
+- `make docs`
+
+The layered approach allows you to work efficiently with only the dependencies and tests relevant to your changes.
 
 
 ### 📦 Package manager
@@ -71,14 +92,37 @@ If you are on a different OS, you can follow the instructions [here](https://hat
 
 ### 📌 Dev Environment Setup
 
-To ensure our standards, make sure to install the required packages.
+Koheesio uses a layered architecture that allows you to set up different development environments based on what you're working on.
 
+#### Full Development Environment
+For general development with all dependencies:
 ```bash
 make dev
 ```
 
-This will install all the required packages for development in the project under the `.venv` directory.
-Use this virtual environment to run the code and tests during local development.
+#### Layered Development Environments  
+For working on specific layers with minimal dependencies:
+
+```bash
+# Core layer only (minimal dependencies)
+make dev-core
+
+# Pandas layer (no Spark required)  
+make dev-pandas
+
+# ML layer (machine learning dependencies)
+make dev-ml
+
+# Spark layer (full Spark functionality)
+make dev-spark
+```
+
+**When to use each environment:**
+- **`dev-core`**: Working on core framework, Step classes, BaseModel, Context, Logger
+- **`dev-pandas`**: Data science work, pandas transformations, notebooks (works in Databricks without Spark)
+- **`dev-ml`**: Machine learning features, model training, feature engineering
+- **`dev-spark`**: Big data processing, Spark transformations, distributed computing
+- **`dev`**: Full development when working across multiple layers
 
 ### 🧹 Linting and Standards
 
@@ -100,19 +144,58 @@ Make sure that the linters and formatters do not report any errors or warnings b
 
 ### 🧪 Testing
 
-We use `pytest` to test our code. 
+Koheesio supports layered testing to match our architecture. You can run tests for specific layers or all tests.
 
-
-You can run the tests by running one of the following commands:
+#### Layer-Specific Testing
+Run tests for individual layers with minimal dependencies:
 
 ```bash
-make cov  # to run the tests and check the coverage
-make all-tests  # to run all the tests
-make spark-tests  # to run the spark tests
-make non-spark-tests  # to run the non-spark tests
+# Core framework tests only (fastest, minimal deps)
+make test-core
+
+# Pandas layer tests (no Spark required)  
+make test-pandas
+
+# ML layer tests
+make test-ml
+
+# All layered tests (core + pandas + ml, no Spark)
+make test-layered
+
+# Spark layer tests (requires PySpark)
+make spark-tests
+
+# Integration tests (external systems)
+make test-integrations
 ```
 
-Make sure that all tests pass and that you have adequate coverage before submitting a pull request.
+#### Full Test Suite
+Run all tests across all environments:
+```bash
+make all-tests
+```
+
+#### Coverage Testing
+Run tests with coverage reporting:
+```bash
+make cov
+```
+
+#### Development Testing
+Quick testing in development environment:
+```bash
+make dev-test              # All tests in dev environment
+make dev-test-spark        # Just Spark tests  
+make dev-test-non-spark    # Everything except Spark tests
+```
+
+**Testing Strategy:**
+- Use layer-specific tests during development for faster feedback
+- Run `make test-layered` to test non-Spark functionality quickly
+- Run `make all-tests` before submitting pull requests
+- Use appropriate test commands based on what layers you're modifying
+
+Make sure that all relevant tests pass and that you have adequate coverage before submitting a pull request.
 
 # Additional Resources
 

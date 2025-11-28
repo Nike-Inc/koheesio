@@ -6,30 +6,60 @@
 
 ## Installation
 
-<details>
-    <summary>hatch / hatchling</summary>
+Koheesio uses a layered architecture that allows you to install only the components you need:
 
-    If you're using hatch (or hatchling), simply add `koheesio` to the `dependencies` or section in your 
-    `pyproject.toml` file:
-    
-    ```toml title="pyproject.toml"
-    dependencies = [
-        "koheesio",
-    ]
-    ```
-</details>
+### Core Installation
+```bash
+pip install koheesio
+```
 
-<details>
-    <summary>pip</summary>
-    
-    If you're using pip, run the following command to install Koheesio:
-    
-    Requires [pip](https://pip.pypa.io/en/stable/).
-    
-    ```bash
-    pip install koheesio
-    ```
-</details>
+The core framework is a powerful foundation for building robust, type-safe applications. It includes:
+- **Step Framework**: Composable, testable units of work with built-in logging and error handling
+- **Pydantic Models**: Strong typing and validation for all components
+- **Context Management**: Flexible configuration and state management
+- **Logger**: Structured logging with automatic context tracking
+- **Utilities**: Common patterns for software engineering
+
+**Use cases for core-only installation:**
+- Building downstream libraries and frameworks
+- Creating API integrations and clients
+- Enhancing software applications with structured workflows
+- Developing type-safe business logic without data processing dependencies
+
+### Data Processing Installations
+
+#### For Pandas Data Processing
+```bash
+pip install "koheesio[pandas]"
+```
+Adds pandas DataFrame transformations and readers (independent of Spark).
+
+#### For Machine Learning (DBR ML Compatible)
+```bash
+pip install "koheesio[ml]"
+```
+Includes ML dependencies: numpy, scikit-learn, scipy, and pandas. Compatible with Databricks Runtime ML versions 13, 14, and 15.
+
+#### For Spark Big Data Processing  
+```bash
+pip install "koheesio[pyspark]"
+```
+Adds full Spark functionality including ETL, streaming, and distributed processing.
+
+#### Multiple Layers
+```bash
+# Common combinations
+pip install "koheesio[pandas,ml]"        # Data science workflow
+pip install "koheesio[pyspark,snowflake]" # Spark + Snowflake
+pip install "koheesio[ml,pyspark]"       # ML + Spark (full data platform)
+```
+
+### Using Hatch/Hatchling
+```toml title="pyproject.toml"
+dependencies = [
+    "koheesio[pandas,ml]",  # Choose appropriate layers
+]
+```
 
 ## Basic Usage
 

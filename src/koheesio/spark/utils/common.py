@@ -31,6 +31,8 @@ from pyspark.sql.types import (
 )
 from pyspark.version import __version__ as spark_version
 
+from koheesio.utils.pandas import import_pandas_with_version_check
+
 __all__ = [
     "SparkDatatype",
     "import_pandas_based_on_pyspark_version",
@@ -361,22 +363,19 @@ def import_pandas_based_on_pyspark_version() -> ModuleType:
     This function checks the installed version of PySpark and then tries to import the appropriate version of pandas.
     If the correct version of pandas is not installed, it raises an ImportError with a message indicating which version
     of pandas should be installed.
+    
+    .. deprecated:: 0.11.0
+        This function is deprecated and will be removed in a future release.
+        Use :func:`koheesio.utils.pandas.import_pandas_with_version_check` instead.
     """
-    try:
-        import pandas as pd
-
-        pyspark_version = get_spark_minor_version()
-        pandas_version = pd.__version__
-
-        if (pyspark_version < 3.4 and pandas_version >= "2") or (pyspark_version >= 3.4 and pandas_version < "2"):
-            raise ImportError(
-                f"For PySpark {pyspark_version}, "
-                f"please install Pandas version {'< 2' if pyspark_version < 3.4 else '>= 2'}"
-            )
-
-        return pd
-    except ImportError as e:
-        raise ImportError("Pandas module is not installed.") from e
+    warnings.warn(
+        "import_pandas_based_on_pyspark_version() is deprecated and will be removed in a future release. "
+        "Use koheesio.utils.pandas.import_pandas_with_version_check() instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    
+    return import_pandas_with_version_check()
 
 
 def show_string(df: DataFrame, n: int = 20, truncate: Union[bool, int] = True, vertical: bool = False) -> str:  # type: ignore

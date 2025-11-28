@@ -113,3 +113,7 @@ def utc_now() -> datetime.datetime:
     if PYTHON_MINOR_VERSION < 3.11:
         return datetime.datetime.utcnow()
     return datetime.datetime.now(datetime.timezone.utc)
+
+
+# Pandas utilities are available in koheesio.utils.pandas
+# They are not imported here to avoid import errors in core-only environments

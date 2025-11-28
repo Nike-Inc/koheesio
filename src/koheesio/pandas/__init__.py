@@ -10,9 +10,9 @@ from types import ModuleType
 
 from koheesio import Step, StepOutput
 from koheesio.models import Field
-from koheesio.spark.utils import import_pandas_based_on_pyspark_version
+from koheesio.utils.pandas import import_pandas_with_version_check
 
-pandas: ModuleType = import_pandas_based_on_pyspark_version()
+pandas: ModuleType = import_pandas_with_version_check()
 """pandas module"""
 pd = pandas
 

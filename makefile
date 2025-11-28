@@ -28,9 +28,30 @@ dev: hatch-version
 	@echo "\033[3m- Run\033[0m \033[0;36m'make help'\033[0m\033[3m to see all available commands\033[0m"
 	@echo
 	@echo "\033[3mThe virtual environment is available in the \033[0;95m'.venv'\033[0m\033[3m folder\033[0m"
-	@echo "\033[0;34mHappy coding! 🚀"
+	@echo "\033[0;34mHappy coding!"
 	@echo "\033[0m"
 	@hatch shell dev
+
+# Layered development environments
+.PHONY: dev-core  ## setup - Start core development environment (minimal dependencies)
+dev-core:
+	@echo "\033[1mStarting core development environment:\033[0m\n\033[35m Minimal dependencies for core framework\033[0m"
+	@hatch shell hatch-test.py3.12-core
+
+.PHONY: dev-pandas  ## setup - Start pandas development environment
+dev-pandas:
+	@echo "\033[1mStarting pandas development environment:\033[0m\n\033[35m Pandas support without Spark\033[0m"
+	@hatch shell hatch-test.py3.12-pandas
+
+.PHONY: dev-ml  ## setup - Start ML development environment
+dev-ml:
+	@echo "\033[1mStarting ML development environment:\033[0m\n\033[35m Machine learning dependencies\033[0m"
+	@hatch shell hatch-test.py3.12-ml
+
+.PHONY: dev-spark  ## setup - Start Spark development environment
+dev-spark:
+	@echo "\033[1mStarting Spark development environment:\033[0m\n\033[35m Full Spark functionality\033[0m"
+	@hatch shell hatch-test.py3.12-pyspark352
 
 .PHONY: init hatch-install  ## setup - Install Hatch (on Mac)
 hatch-install:
@@ -136,6 +157,32 @@ dev-test-spark:
 dev-test-non-spark:
 	@echo "\033[1mRunning pytest for non-Spark tests:\033[0m\n\033[35m This will run the test suite, excluding all spark tests\033[0m"
 	@hatch run dev:non-spark-tests -vv
+
+# Layered testing commands
+.PHONY: test-core  ## testing - Run core layer tests only (minimal dependencies)
+test-core:
+	@echo "\033[1mRunning core layer tests:\033[0m\n\033[35m This will run tests with minimal dependencies only\033[0m"
+	@hatch test -i version=core --no-header
+
+.PHONY: test-pandas  ## testing - Run pandas layer tests only (no Spark required)
+test-pandas:
+	@echo "\033[1mRunning pandas layer tests:\033[0m\n\033[35m This will run pandas tests without Spark dependencies\033[0m"
+	@hatch test -i version=pandas --no-header
+
+.PHONY: test-ml  ## testing - Run ML layer tests only
+test-ml:
+	@echo "\033[1mRunning ML layer tests:\033[0m\n\033[35m This will run machine learning tests\033[0m"
+	@hatch test -i version=ml --no-header
+
+.PHONY: test-layered  ## testing - Run all non-Spark layers (core+pandas+ml)
+test-layered:
+	@echo "\033[1mRunning layered tests:\033[0m\n\033[35m This will run core, pandas, and ML tests (no Spark)\033[0m"
+	@hatch test -i version=core -i version=pandas -i version=ml --no-header
+
+.PHONY: test-integrations  ## testing - Run integration tests (external systems)
+test-integrations:
+	@echo "\033[1mRunning integration tests:\033[0m\n\033[35m This will run tests for external integrations\033[0m"
+	@hatch test -k "snowflake or box or sftp or tableau" --no-header
 
 
 # Hatch commands

@@ -115,17 +115,18 @@ jobs:
     - name: Run tests
       run: hatch test --python=${{ matrix.python-version }} -i version=pyspark${{ matrix.pyspark-version }} --verbose
   
-  ml-tests:
+  layered-tests:
     needs: check_changes
     if: needs.check_changes.outputs.python_changed > 0 || needs.check_changes.outputs.toml_changed > 0 || github.event_name == 'workflow_dispatch' || ${{ github.event.pull_request.head.repo.owner.login }} != ${{ github.event.pull_request.base.repo.owner.login }}
-    name: Python ${{ matrix.python-version }} with ML feature on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
+    name: Python ${{ matrix.python-version }} with ${{ matrix.layer }} layer on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
     runs-on: ${{ matrix.os }}
 
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.10', '3.11', '3.12']  # Test core layers on key Python versions
+        layer: ['core', 'pandas', 'ml']
 
     steps:
     - uses: actions/checkout@v4
@@ -138,8 +139,8 @@ jobs:
     - name: Install Hatch
       uses: pypa/hatch@install
 
-    - name: Run ML tests
-      run: hatch test --python=${{ matrix.python-version }} -i version=ml --verbose
+    - name: Run layered tests
+      run: hatch test --python=${{ matrix.python-version }} -i version=${{ matrix.layer }} --verbose
 
   # https://github.com/marketplace/actions/alls-green#why
   final_check: # This job does nothing and is only used for the branch protection
@@ -148,7 +149,7 @@ jobs:
     needs:
     - check_changes
     - spark-tests
-    - ml-tests
+    - layered-tests
 
     runs-on: ubuntu-latest
 
