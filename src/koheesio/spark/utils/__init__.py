@@ -1,5 +1,6 @@
 from koheesio.spark.utils.common import (
     SPARK_MINOR_VERSION,
+    ListOfColumns,
     SparkDatatype,
     check_if_pyspark_connect_is_supported,
     check_if_pyspark_connect_module_is_available,
@@ -14,6 +15,7 @@ from koheesio.spark.utils.common import (
 )
 
 __all__ = [
+    "ListOfColumns",
     "SparkDatatype",
     "import_pandas_based_on_pyspark_version",
     "on_databricks",

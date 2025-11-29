@@ -7,7 +7,7 @@ name = "koheesio"
 dynamic = ["version"]
 description = 'The steps-based Koheesio framework'
 readme = "README.md"
-requires-python = ">=3.9, <3.13" # 3.10 is the minimum recommended version
+requires-python = ">=3.10, <3.13"
 license = "Apache-2.0"
 keywords = [
   # TODO: add keywords
@@ -29,7 +29,6 @@ classifiers = [
   "Natural Language :: English",
   "Operating System :: OS Independent",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -266,10 +265,6 @@ run-cov = "coverage run -m pytest{env:HATCH_TEST_ARGS:} {args}"
 cov-combine = "coverage combine"
 cov-report = "coverage report"
 
-
-[[tool.hatch.envs.hatch-test.matrix]]
-python = ["3.9"]
-version = ["pyspark33", "pyspark34"]
 
 [[tool.hatch.envs.hatch-test.matrix]]
 python = ["3.10"]
@@ -664,6 +659,7 @@ disable = [
   "too-many-statements",
   "useless-object-inheritance",
   "unnecessary-ellipsis",
+  "no-value-for-parameter",  # Pylint doesn't understand ParamSpec in decorators
 ]
 enable = ["logging-not-lazy", "c-extension-no-member"]
 

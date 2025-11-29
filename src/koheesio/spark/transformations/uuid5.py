@@ -5,8 +5,9 @@ import uuid
 
 from pyspark.sql import functions as f
 
-from koheesio.models import Field, ListOfColumns, field_validator
+from koheesio.models import Field, field_validator
 from koheesio.spark.transformations import Transformation
+from koheesio.spark.utils.common import ListOfColumns
 
 
 def uuid5_namespace(ns: Optional[Union[str, uuid.UUID]]) -> uuid.UUID:
@@ -120,14 +121,18 @@ class HashUUID5(Transformation):
     """
 
     target_column: str = Field(
-        default=..., description="The generated UUID will be written to the column name specified here"
+        default=...,
+        description="The generated UUID will be written to the column name specified here",
     )
     source_columns: ListOfColumns = Field(
         default=...,
         description="List of columns that should be hashed. Should contain the name of at least 1 column. A list of "
         "columns or a single column can be specified. For example: `['column1', 'column2']` or `'column1'`",
     )
-    delimiter: str = Field(default="|", description="Separator for the string that will eventually be hashed")
+    delimiter: str = Field(
+        default="|",
+        description="Separator for the string that will eventually be hashed",
+    )
     namespace: Optional[Union[str, uuid.UUID]] = Field(default="", description="Namespace DNS")
     extra_string: Optional[str] = Field(
         default="",

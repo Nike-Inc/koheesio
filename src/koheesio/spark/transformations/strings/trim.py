@@ -18,9 +18,10 @@ from typing import Literal
 from pyspark.sql import Column
 import pyspark.sql.functions as f
 
-from koheesio.models import Field, ListOfColumns
+from koheesio.models import Field
 from koheesio.spark.transformations import ColumnsTransformationWithTarget
 from koheesio.spark.utils import SparkDatatype
+from koheesio.spark.utils.common import ListOfColumns
 
 trim_type = Literal["left", "right", "left-right"]
 

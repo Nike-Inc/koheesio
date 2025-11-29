@@ -2,12 +2,17 @@
 
 Transform aims to provide an easy interface for calling transformations on a Spark DataFrame, where the transformation
 is a function that accepts a DataFrame (df) and any number of keyword args.
+
+.. deprecated:: 0.11
+   The `Transform` class is deprecated and will be removed in v1.0.
+   Use `Transformation.from_func()` instead for function-based transformations.
 """
 
 from __future__ import annotations
 
 from typing import Callable, Dict, Optional
 from functools import partial
+import warnings
 
 from koheesio.models import ExtraParamsMixin, Field
 from koheesio.spark import DataFrame
@@ -17,11 +22,28 @@ from koheesio.utils import get_args_for_func
 
 class Transform(Transformation, ExtraParamsMixin):
     """
+    .. deprecated:: 0.11
+       The `Transform` class is deprecated and will be removed in v1.0.
+       Use `Transformation.from_func()` instead.
+
     Transform aims to provide an easy interface for calling transformations on a Spark DataFrame,
     where the transformation is a function that accepts a DataFrame (df) and any number of keyword args.
 
     The implementation is inspired by and based upon:
     https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.DataFrame.transform.html
+
+    Migration Guide
+    ---------------
+    ### Old (v0.10) - using Transform:
+    ```python
+    Transform(func=some_func, a="foo", b="bar")
+    ```
+
+    ### New (v0.11+) - using Transformation.from_func():
+    ```python
+    SomeFunc = Transformation.from_func(some_func)
+    SomeFunc(a="foo", b="bar")
+    ```
 
     Parameters
     ----------
@@ -73,6 +95,13 @@ class Transform(Transformation, ExtraParamsMixin):
     func: Callable = Field(default=..., description="The function to be called on the DataFrame.")
 
     def __init__(self, func: Callable, params: Dict = None, df: Optional[DataFrame] = None, **kwargs: dict):
+        warnings.warn(
+            "Transform is deprecated and will be removed in v1.0. "
+            "Use Transformation.from_func() instead. "
+            "See https://github.com/Nike-Inc/koheesio/discussions/225 for migration guide.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         params = {**(params or {}), **kwargs}
         super().__init__(func=func, params=params, df=df)
 

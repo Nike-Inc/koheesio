@@ -2,13 +2,15 @@
 Spark Utility functions
 """
 
-from typing import Union
+from typing import Annotated, List, Union
 from enum import Enum
 import importlib
 import inspect
 import os
 from types import ModuleType
 import warnings
+
+from pydantic import BeforeValidator
 
 from pyspark import sql
 from pyspark.sql.types import (
@@ -58,6 +60,7 @@ __all__ = [
     "check_if_pyspark_connect_module_is_available",
     "check_if_pyspark_connect_is_supported",
     "get_column_name",
+    "ListOfColumns",
 ]
 
 try:
@@ -124,6 +127,7 @@ def check_if_pyspark_connect_module_is_available() -> bool:
 
 
 def check_if_pyspark_connect_is_supported() -> bool:
+    """See : check_if_pyspark_connect_module_is_available"""
     warnings.warn(
         message=(
             "The `check_if_pyspark_connect_is_supported` function has been"
@@ -137,7 +141,7 @@ def check_if_pyspark_connect_is_supported() -> bool:
 
 
 if check_if_pyspark_connect_module_is_available():
-    """Only import the connect module if the current version of PySpark supports it"""
+    # Only import the connect module if the current version of PySpark supports it
     from pyspark.errors.exceptions.captured import (
         ParseException as CapturedParseException,
     )
@@ -172,7 +176,7 @@ if check_if_pyspark_connect_module_is_available():
     Window = Union[Window, ConnectWindow]
     WindowSpec = Union[WindowSpec, ConnectWindowSpec]
 else:
-    """Import the regular PySpark modules if the current version of PySpark does not support the connect module"""
+    # Import the regular PySpark modules if the current version of PySpark does not support the connect module
     try:
         from pyspark.errors.exceptions.captured import ParseException  # type: ignore
     except (ImportError, ModuleNotFoundError):
@@ -203,6 +207,47 @@ else:
     StreamingQuery = StreamingQuery
     Window = Window
     WindowSpec = WindowSpec
+
+
+def _list_of_columns_validation(columns_value: Union[str, list, Column, List[Column]]) -> list:  # type: ignore
+    """
+    Performs validation for ListOfColumns type. Will ensure that there are no duplicate columns, empty strings, etc.
+    In case an individual column is passed, it will coerce it to a list.
+    Accepts both column names (str) and Column objects.
+    """
+    # Handle Column objects
+    if isinstance(columns_value, Column):
+        return [columns_value]
+
+    # Handle string or list of strings/Columns
+    columns = [columns_value] if isinstance(columns_value, str) else [*columns_value]
+
+    # Filter out None and empty strings, but preserve Column objects
+    # Use explicit checks to avoid PySpark's CANNOT_CONVERT_COLUMN_INTO_BOOL error
+    filtered_columns = []
+    for col in columns:
+        # Keep Column objects
+        if isinstance(col, Column):
+            filtered_columns.append(col)
+        # Keep non-empty strings
+        elif col is not None and col != "":
+            filtered_columns.append(col)
+    columns = filtered_columns
+
+    return list(
+        dict.fromkeys(columns)
+    )  # dict.fromkeys is used to dedup while maintaining order
+
+
+ListOfColumns = Annotated[
+    Union[str, List[str], Column, List[Column]],
+    BeforeValidator(_list_of_columns_validation),
+]
+""" Annotated type for a list of column names or Column objects.
+Will ensure that there are no duplicate columns, empty strings, etc.
+In case an individual column is passed, the value will be coerced to a list.
+Accepts both column names (str) and PySpark Column objects.
+"""
 
 
 def get_active_session() -> SparkSession:  # type: ignore
@@ -335,8 +380,12 @@ def on_databricks() -> bool:
     """Retrieve if we're running on databricks or elsewhere"""
     dbr_version = os.getenv("DATABRICKS_RUNTIME_VERSION", None)
     spark = get_active_session()
-    dbr_spark_version = spark.conf.get("spark.databricks.clusterUsageTags.effectiveSparkVersion", None)
-    return (dbr_version is not None and dbr_version != "") or (dbr_spark_version is not None)
+    dbr_spark_version = spark.conf.get(
+        "spark.databricks.clusterUsageTags.effectiveSparkVersion", None
+    )
+    return (dbr_version is not None and dbr_version != "") or (
+        dbr_spark_version is not None
+    )
 
 
 def spark_data_type_is_array(data_type: DataType) -> bool:  # type: ignore
@@ -346,14 +395,18 @@ def spark_data_type_is_array(data_type: DataType) -> bool:  # type: ignore
 
 def spark_data_type_is_numeric(data_type: DataType) -> bool:  # type: ignore
     """Check if the column's dataType is of type ArrayType"""
-    return isinstance(data_type, (IntegerType, LongType, FloatType, DoubleType, DecimalType))
+    return isinstance(
+        data_type, (IntegerType, LongType, FloatType, DoubleType, DecimalType)
+    )
 
 
 def schema_struct_to_schema_str(schema: StructType) -> str:
     """Converts a StructType to a schema str"""
     if not schema:
         return ""
-    return ",\n".join([f"{field.name} {field.dataType.typeName().upper()}" for field in schema.fields])
+    return ",\n".join(
+        [f"{field.name} {field.dataType.typeName().upper()}" for field in schema.fields]
+    )
 
 
 def import_pandas_based_on_pyspark_version() -> ModuleType:
@@ -368,7 +421,9 @@ def import_pandas_based_on_pyspark_version() -> ModuleType:
         pyspark_version = get_spark_minor_version()
         pandas_version = pd.__version__
 
-        if (pyspark_version < 3.4 and pandas_version >= "2") or (pyspark_version >= 3.4 and pandas_version < "2"):
+        if (pyspark_version < 3.4 and pandas_version >= "2") or (
+            pyspark_version >= 3.4 and pandas_version < "2"
+        ):
             raise ImportError(
                 f"For PySpark {pyspark_version}, "
                 f"please install Pandas version {'< 2' if pyspark_version < 3.4 else '>= 2'}"
@@ -433,7 +488,10 @@ def get_column_name(col: Column) -> str:  # type: ignore
         # In case of a 'regular' Column object, we can directly access the name attribute through the _jc attribute
         # noinspection PyProtectedMember
         name = col._jc.toString()  # type: ignore[operator]
-    elif any(cls.__module__ == "pyspark.sql.connect.column" for cls in inspect.getmro(col.__class__)):
+    elif any(
+        cls.__module__ == "pyspark.sql.connect.column"
+        for cls in inspect.getmro(col.__class__)
+    ):
         # noinspection PyProtectedMember
         name = col._expr.name()
     else:
