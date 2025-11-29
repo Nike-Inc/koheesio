@@ -55,7 +55,7 @@ Project = "https://github.com/orgs/Nike-Inc/projects/4"
 
 [project.optional-dependencies]
 async = ["nest-asyncio>=1.6.0"]
-async_http = [
+async-http = [
   "aiohttp[speedups]>=3.9.5",
   "aiohttp-retry>=2.8.3",
   "nest-asyncio>=1.6.0",
