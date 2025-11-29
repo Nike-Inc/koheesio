@@ -90,7 +90,10 @@ class Masked(Generic[T]):
             line
             for f in inspect.stack()
             for line in (f.code_context or [])
-            if any(e in line.strip() for e in [".debug(", ".info(", ".log(", ".warning(", "print("])
+            if any(
+                e in line.strip()
+                for e in [".debug(", ".info(", ".log(", ".warning(", ".error(", ".critical(", "print("]
+            )
         ]
         return repr(self._value if not used_as_output else "*" * len(str(self._value)) + "(Masked)")
 
@@ -180,8 +183,7 @@ class LoggingFactory:
     LOGGER_LEVEL: str = os.environ.get("KOHEESIO_LOGGING_LEVEL", "WARNING")
     LOGGER_ENV: str = "local"
     LOGGER_FORMAT: str = (
-        "[%(logger_id)s] [%(asctime)s] [%(levelname)s] [%(name)s] "
-        "{%(module)s.py:%(funcName)s:%(lineno)d} - %(message)s"
+        "[%(logger_id)s] [%(asctime)s] [%(levelname)s] [%(name)s] {%(module)s.py:%(funcName)s:%(lineno)d} - %(message)s"
     )
     LOGGER_FORMATTER: Formatter = Formatter(LOGGER_FORMAT)
     CONSOLE_HANDLER: Optional[logging.Handler] = None

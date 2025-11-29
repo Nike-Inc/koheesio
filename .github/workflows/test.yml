@@ -36,22 +36,21 @@ jobs:
       toml_changed: ${{ steps.check.outputs.toml_changed }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.ref }}
+        ref: ${{ github.event.pull_request.head.sha }}
         repository: ${{ github.event.pull_request.head.repo.full_name }}
-    - name: Fetch target branch
-      run: git fetch origin ${{ github.event.pull_request.head.ref || 'main'}}:${{ github.event.pull_request.base.ref || 'main'}}
+
     - name: Check changes
       id: check
       run: |
-          # Set the base reference for the git diff
-          BASE_REF=${{ github.event.pull_request.base.ref || 'main' }}
-        
-          # Check for changes in this PR / commit
-          git_diff_output=$(git diff --name-only $BASE_REF ${{ github.event.after }})
-        
+          # Fetch the base branch
+          git fetch origin ${{ github.event.pull_request.base.sha }}
+
+          # Get the diff between PR base and head
+          git_diff_output=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }})
+
           # Count the number of changes to Python and TOML files
           python_changed=$(echo "$git_diff_output" | grep '\.py$' | wc -l)
           toml_changed=$(echo "$git_diff_output" | grep '\.toml$' | wc -l)
@@ -72,26 +71,38 @@ jobs:
 #        os: [ubuntu-latest, windows-latest, macos-latest]  # FIXME: Add Windows and macOS
         os: [ubuntu-latest]
         python-version: ['3.9', '3.10', '3.11', '3.12']
-        pyspark-version: ['33', '34', '35', '35r']
+        pyspark-version: ['33', '34', '35', '35r', '352', '352r']
         exclude:
           - python-version: '3.9'
             pyspark-version: '35'
           - python-version: '3.9'
+            pyspark-version: '352'
+          - python-version: '3.9'
             pyspark-version: '35r'
+          - python-version: '3.9'
+            pyspark-version: '352r'
+          - python-version: '3.10'
+            pyspark-version: '352'
+          - python-version: '3.10'
+            pyspark-version: '352r'
           - python-version: '3.11'
             pyspark-version: '33'
           - python-version: '3.11'
             pyspark-version: '34'
+          - python-version: '3.11'
+            pyspark-version: '352'
+          - python-version: '3.11'
+            pyspark-version: '352r'
           - python-version: '3.12'
             pyspark-version: '33'
           - python-version: '3.12'
             pyspark-version: '34'
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
 

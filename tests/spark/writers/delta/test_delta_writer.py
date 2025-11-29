@@ -2,6 +2,7 @@ import os
 from unittest.mock import MagicMock, patch
 
 from conftest import await_job_completion
+from delta.tables import DeltaMergeBuilder
 import pytest
 
 from pydantic import ValidationError
@@ -44,7 +45,10 @@ def test_delta_table_writer(dummy_df, spark):
 def test_delta_partitioning(spark, sample_df_to_partition):
     table_name = "partition_table"
     DeltaTableWriter(
-        table=table_name, output_mode=BatchOutputMode.OVERWRITE, df=sample_df_to_partition, partition_by=["partition"]
+        table=table_name,
+        output_mode=BatchOutputMode.OVERWRITE,
+        df=sample_df_to_partition,
+        partition_by=["partition"],
     ).execute()
     output_df = spark.read.table(table_name)
     assert output_df.count() == 2
@@ -55,7 +59,11 @@ def test_delta_table_merge_all(spark):
 
     table_name = "test_merge_all_table"
     target_df = spark.createDataFrame(
-        [{"id": 1, "value": "no_merge"}, {"id": 2, "value": "expected_merge"}, {"id": 5, "value": "xxxx"}]
+        [
+            {"id": 1, "value": "no_merge"},
+            {"id": 2, "value": "expected_merge"},
+            {"id": 5, "value": "xxxx"},
+        ]
     )
     source_df = spark.createDataFrame(
         [
@@ -137,7 +145,10 @@ def test_delta_new_table_merge(spark):
         [
             {"id": 1, "value": "new_value"},
             {"id": 2, "value": "new_value"},
-            {"id": 3, "value": None},  # Will be not saved, because source.value IS NOT NULL,
+            {
+                "id": 3,
+                "value": None,
+            },  # Will be not saved, because source.value IS NOT NULL,
             {"id": 4, "value": "new_value"},
             {"id": 5, "value": "new_value"},
         ]
@@ -313,7 +324,11 @@ def test_merge_from_args(spark, dummy_df):
             output_mode=BatchOutputMode.MERGE,
             output_mode_params={
                 "merge_builder": [
-                    {"clause": "whenMatchedUpdate", "set": {"id": "source.id"}, "condition": "source.id=target.id"},
+                    {
+                        "clause": "whenMatchedUpdate",
+                        "set": {"id": "source.id"},
+                        "condition": "source.id=target.id",
+                    },
                     {
                         "clause": "whenNotMatchedInsert",
                         "values": {"id": "source.id"},
@@ -337,6 +352,9 @@ def test_merge_from_args(spark, dummy_df):
             mock_delta_builder.whenNotMatchedInsert.assert_called_once_with(
                 values={"id": "source.id"}, condition="source.id IS NOT NULL"
             )
+            assert ["clause" in c for c in writer.params["merge_builder"]] == [True] * len(
+                writer.params["merge_builder"]
+            )
 
 
 @pytest.mark.parametrize(
@@ -344,7 +362,11 @@ def test_merge_from_args(spark, dummy_df):
     [
         {
             "merge_builder": [
-                {"clause": "NOT-SUPPORTED-MERGE-CLAUSE", "set": {"id": "source.id"}, "condition": "source.id=target.id"}
+                {
+                    "clause": "NOT-SUPPORTED-MERGE-CLAUSE",
+                    "set": {"id": "source.id"},
+                    "condition": "source.id=target.id",
+                }
             ],
             "merge_cond": "source.id=target.id",
         },
@@ -365,7 +387,11 @@ def test_merge_no_table(spark):
 
     table_name = "test_merge_no_table"
     target_df = spark.createDataFrame(
-        [{"id": 1, "value": "no_merge"}, {"id": 2, "value": "expected_merge"}, {"id": 5, "value": "expected_merge"}]
+        [
+            {"id": 1, "value": "no_merge"},
+            {"id": 2, "value": "expected_merge"},
+            {"id": 5, "value": "expected_merge"},
+        ]
     )
     source_df = spark.createDataFrame(
         [
@@ -399,10 +425,16 @@ def test_merge_no_table(spark):
         "merge_cond": "source.id=target.id",
     }
     writer1 = DeltaTableWriter(
-        df=target_df, table=table_name, output_mode=BatchOutputMode.MERGE, output_mode_params=params
+        df=target_df,
+        table=table_name,
+        output_mode=BatchOutputMode.MERGE,
+        output_mode_params=params,
     )
     writer2 = DeltaTableWriter(
-        df=source_df, table=table_name, output_mode=BatchOutputMode.MERGE, output_mode_params=params
+        df=source_df,
+        table=table_name,
+        output_mode=BatchOutputMode.MERGE,
+        output_mode_params=params,
     )
     if 3.4 < SPARK_MINOR_VERSION < 4.0 and is_remote_session():
         writer1.execute()
@@ -446,3 +478,56 @@ def test_log_clauses(mocker):
 
     # Assert the result
     assert result == "Test will perform action:Test columns (test_column) if `source_alias == target_alias`"
+
+
+def test_merge_builder_type__list_of_merge_builders(mocker, spark):
+    table_name = "test_merge_builder_type"
+    df = spark.createDataFrame([{"id": 1, "value": "test"}])
+    merge_builder = mocker.MagicMock(spec=list)  # mocks a list of merge builders
+    # No ValueError should be raised
+    DeltaTableWriter(
+        df=df,
+        table=table_name,
+        output_mode=BatchOutputMode.MERGE,
+        output_mode_params={"merge_builder": merge_builder},
+    )
+
+
+def test_merge_builder_type___delta_merge_builder(mocker, spark):
+    table_name = "test_merge_builder_type"
+    df = spark.createDataFrame([{"id": 1, "value": "test"}])
+    merge_builder = mocker.MagicMock(spec=DeltaMergeBuilder)
+    # No ValueError should be raised
+    DeltaTableWriter(
+        df=df,
+        table=table_name,
+        output_mode=BatchOutputMode.MERGE,
+        output_mode_params={"merge_builder": merge_builder},
+    )
+
+
+def test_merge_builder_type__connect_delta_merge_builder(mocker, spark):
+    table_name = "test_merge_builder_type"
+    df = spark.createDataFrame([{"id": 1, "value": "test"}])
+    # Not a delta.tables.DeltaMergeBuilder instance but the name is DeltaMergeBuilder (as in delta.connect.tables.DeltaMergeBuilder)
+    merge_builder = mocker.MagicMock()
+    merge_builder.__class__.__name__ = "DeltaMergeBuilder"
+    DeltaTableWriter(
+        df=df,
+        table=table_name,
+        output_mode=BatchOutputMode.MERGE,
+        output_mode_params={"merge_builder": merge_builder},
+    )
+
+
+def test_merge_builder_type__invalid_merge_builder(mocker, spark):
+    table_name = "test_merge_builder_type"
+    df = spark.createDataFrame([{"id": 1, "value": "test"}])
+    merge_builder = mocker.MagicMock(spec=str)  # Not a DeltaMergeBuilder instance nor a list
+    with pytest.raises(ValueError):
+        DeltaTableWriter(
+            df=df,
+            table=table_name,
+            output_mode=BatchOutputMode.MERGE,
+            output_mode_params={"merge_builder": merge_builder},
+        )

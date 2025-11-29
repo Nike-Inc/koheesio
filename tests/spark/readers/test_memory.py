@@ -27,7 +27,10 @@ class TestInMemoryDataReader:
             ),
             pytest.param(
                 ['{"id": 1, "string": "hello"}', '{"id": 2, "string": "world"}'], DataFormat.JSON, {}, "id < 3"
-            )
+            ),
+            pytest.param(
+                [{"id": 1, "string": "hello"}, {"id": 2, "string": "world"}], DataFormat.JSON, {}, "id < 3"
+            ),
         ],
     )
     # fmt: on

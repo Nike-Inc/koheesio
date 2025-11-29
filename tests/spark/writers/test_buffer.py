@@ -66,7 +66,7 @@ def test_canary():
             test_data,
             test_schema,
             {"header": True, "index": True, "index_label": "i", "columns": ["email"]},
-            "i,email\n" "0,john.doe@email.com\n" "1,jane.doe@email.com\n" "2,foo@bar.baz",
+            "i,email\n0,john.doe@email.com\n1,jane.doe@email.com\n2,foo@bar.baz",
         ),
         (
             # test with compression

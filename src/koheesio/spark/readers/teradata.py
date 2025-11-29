@@ -67,6 +67,8 @@ class TeradataReader(JdbcReader):
         "com.teradata.jdbc.TeraDriver",
         description="Make sure that the necessary JARs are available in the cluster: terajdbc4-x.x.x.x",
     )
-    options: Optional[Dict[str, Any]] = Field(
-        {"fetchsize": 2000, "numPartitions": 10}, description="Extra options to pass to the Teradata JDBC driver"
+    params: Optional[Dict[str, Any]] = Field(
+        {"fetchsize": 2000, "numPartitions": 10},
+        description="Extra options to pass to the Teradata JDBC driver",
+        alias="options",
     )

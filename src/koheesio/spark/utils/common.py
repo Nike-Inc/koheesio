@@ -8,6 +8,7 @@ import importlib
 import inspect
 import os
 from types import ModuleType
+import warnings
 
 from pyspark import sql
 from pyspark.sql.types import (
@@ -51,7 +52,10 @@ __all__ = [
     "DataFrameWriter",
     "DataStreamWriter",
     "StreamingQuery",
+    "Window",
+    "WindowSpec",
     "get_active_session",
+    "check_if_pyspark_connect_module_is_available",
     "check_if_pyspark_connect_is_supported",
     "get_column_name",
 ]
@@ -77,21 +81,62 @@ def get_spark_minor_version() -> float:
 SPARK_MINOR_VERSION: float = get_spark_minor_version()
 
 
-def check_if_pyspark_connect_is_supported() -> bool:
-    """Check if the current version of PySpark supports the connect module"""
-    if SPARK_MINOR_VERSION >= 3.5:
+class PysparkConnectModuleNotAvailableWarning(Warning):
+    """Warning to be raised when the pyspark connect module is not available"""
+
+    def __init__(self):
+        message = (
+            "It looks like the required modules for Spark Connect (e.g. grpcio) are not installed. "
+            "If not, you can install them using `pip install pyspark[connect]` or `koheesio[pyspark_connect]`. "
+        )
+        super().__init__(message)
+
+
+def check_if_pyspark_connect_module_is_available() -> bool:
+    """Check if the pyspark connect module is available
+
+    Returns
+    -------
+    bool
+        True if the pyspark connect module is available, False otherwise.
+
+    Raises
+    ------
+    ImportError
+        If the required modules for Spark Connect are not importable.
+    """
+
+    # before pyspark 3.4, connect was not supported
+    if SPARK_MINOR_VERSION <= 3.4:
+        return False
+
+    try:
+        importlib.import_module("pyspark.sql.connect")
+        # check extras: grpcio package is needed for pyspark[connect] to work
         try:
-            importlib.import_module("pyspark.sql.connect")
-            from pyspark.sql.connect.column import Column
+            importlib.import_module("grpc")
+        except (ImportError, ModuleNotFoundError) as e_import:
+            raise e_import
+        return True
+    except (ImportError, ModuleNotFoundError):
+        warnings.warn(PysparkConnectModuleNotAvailableWarning())
+        return False
 
-            _col: Column  # type: ignore
-            return True
-        except (ModuleNotFoundError, ImportError):
-            return False
-    return False
+
+def check_if_pyspark_connect_is_supported() -> bool:
+    warnings.warn(
+        message=(
+            "The `check_if_pyspark_connect_is_supported` function has been"
+            " replaced by `check_if_pyspark_connect_module_is_available`."
+            " Import it instead. Current function will be removed in the future."
+        ),
+        category=DeprecationWarning,
+        stacklevel=2,
+    )
+    return check_if_pyspark_connect_module_is_available()
 
 
-if check_if_pyspark_connect_is_supported():
+if check_if_pyspark_connect_module_is_available():
     """Only import the connect module if the current version of PySpark supports it"""
     from pyspark.errors.exceptions.captured import (
         ParseException as CapturedParseException,
@@ -108,8 +153,11 @@ if check_if_pyspark_connect_is_supported():
         DataStreamReader,
         DataStreamWriter,
     )
+    from pyspark.sql.connect.window import Window as ConnectWindow
+    from pyspark.sql.connect.window import WindowSpec as ConnectWindowSpec
     from pyspark.sql.streaming.query import StreamingQuery
     from pyspark.sql.types import DataType as SqlDataType
+    from pyspark.sql.window import Window, WindowSpec
 
     Column = Union[sql.Column, ConnectColumn]
     DataFrame = Union[sql.DataFrame, ConnectDataFrame]
@@ -121,6 +169,8 @@ if check_if_pyspark_connect_is_supported():
     DataFrameWriter = Union[sql.readwriter.DataFrameWriter, DataFrameWriter]  # type: ignore
     DataStreamWriter = Union[sql.streaming.readwriter.DataStreamWriter, DataStreamWriter]  # type: ignore
     StreamingQuery = StreamingQuery
+    Window = Union[Window, ConnectWindow]
+    WindowSpec = Union[WindowSpec, ConnectWindowSpec]
 else:
     """Import the regular PySpark modules if the current version of PySpark does not support the connect module"""
     try:
@@ -135,6 +185,7 @@ else:
     from pyspark.sql.readwriter import DataFrameReader, DataFrameWriter  # type: ignore
     from pyspark.sql.session import SparkSession  # type: ignore
     from pyspark.sql.types import DataType  # type: ignore
+    from pyspark.sql.window import Window, WindowSpec  # type: ignore
 
     try:
         from pyspark.sql.streaming.query import StreamingQuery  # type: ignore
@@ -150,16 +201,19 @@ else:
     DataFrameWriter = DataFrameWriter
     DataStreamWriter = DataStreamWriter
     StreamingQuery = StreamingQuery
+    Window = Window
+    WindowSpec = WindowSpec
 
 
 def get_active_session() -> SparkSession:  # type: ignore
     """Get the active Spark session"""
-    if check_if_pyspark_connect_is_supported():
+    if check_if_pyspark_connect_module_is_available() and SPARK_MINOR_VERSION >= 3.5:
         from pyspark.sql.connect.session import SparkSession as _ConnectSparkSession
 
         session = _ConnectSparkSession.getActiveSession() or sql.SparkSession.getActiveSession()  # type: ignore
+
     else:
-        session = sql.SparkSession.getActiveSession()  # type: ignore
+        session = sql.SparkSession.getActiveSession()
 
     if not session:
         raise RuntimeError(
@@ -280,7 +334,9 @@ class SparkDatatype(Enum):
 def on_databricks() -> bool:
     """Retrieve if we're running on databricks or elsewhere"""
     dbr_version = os.getenv("DATABRICKS_RUNTIME_VERSION", None)
-    return dbr_version is not None and dbr_version != ""
+    spark = get_active_session()
+    dbr_spark_version = spark.conf.get("spark.databricks.clusterUsageTags.effectiveSparkVersion", None)
+    return (dbr_version is not None and dbr_version != "") or (dbr_spark_version is not None)
 
 
 def spark_data_type_is_array(data_type: DataType) -> bool:  # type: ignore
