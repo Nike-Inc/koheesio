@@ -300,6 +300,38 @@ def test_from_yaml(yaml_path_or_str):
     assert actual["foo"] == "bar"
 
 
+def test_from_yaml_path_object_nonexistent_file():
+    """Test that from_yaml handles Path objects for non-existent files gracefully.
+
+    This test verifies the fix for bug #226: When a Path object pointing to a non-existent
+    file is passed to from_yaml(), it should not raise AttributeError about 'read'.
+
+    After the fix, yaml.load() treats the stringified path as YAML content, which returns
+    a string. Context.__init__ then ignores non-dict/non-Context arguments, resulting in
+    an empty Context. This is acceptable behavior - the critical fix is preventing the
+    confusing AttributeError: 'PosixPath' object has no attribute 'read'.
+    """
+    from pathlib import Path
+
+    nonexistent_path = Path("/tmp/nonexistent_file_for_testing_12345.yaml")
+
+    # Ensure the file doesn't exist
+    assert not nonexistent_path.exists()
+
+    # This should not raise the AttributeError about 'read' that was in bug #226
+    # It may return an empty Context or raise a different error, but not the original bug
+    try:
+        result = Context.from_yaml(nonexistent_path)
+        # If it succeeds, it should return a Context (likely empty)
+        assert isinstance(result, Context)
+    except AttributeError as e:
+        # If it raises AttributeError, it should NOT be about 'read'
+        assert "'read'" not in str(e), (
+            f"Bug #226: from_yaml() should not raise AttributeError about 'read' when passed a Path object. "
+            f"Got: {e}"
+        )
+
+
 def test_to_yaml():
     """Test that to_yaml returns a string and that the string can be used to create a new Context object"""
     context = Context.from_yaml(SAMPLE_YAML)

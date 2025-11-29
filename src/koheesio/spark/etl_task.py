@@ -85,7 +85,7 @@ class EtlTask(Step):
     target: InstanceOf[Writer] = Field(default=..., description="Target to write to [load]")
 
     # private attrs
-    etl_date: datetime = Field(
+    etl_date: datetime.datetime = Field(
         default_factory=utc_now,
         description="Date time when this object was created as iso format. Example: '2023-01-24T09:39:23.632374'",
     )
