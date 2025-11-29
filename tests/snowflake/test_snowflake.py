@@ -251,6 +251,29 @@ class TestSnowflakeBaseModel:
         assert "warehouse" not in options
         assert "schema" not in options
 
+    def test_table_parameter_excluded(self):
+        """Test that the table parameter is excluded from get_options output to prevent duplicate parameters"""
+        k = SnowflakeBaseModel(
+            url="hostname.com",
+            user="user",
+            password="password",
+            database="database",
+            role="role",
+            warehouse="warehouse",
+            schema="schema",
+            table="test_table",  # This should be excluded
+        )
+        options = k.get_options()
+
+        # table parameter should not be present in options
+        assert "table" not in options
+        assert "sfTable" not in options  # Also check aliased form
+
+        # but other parameters should still be present
+        assert options["sfURL"] == "hostname.com"
+        assert options["sfUser"] == "user"
+        assert options["sfDatabase"] == "database"
+
 
 class TestSnowflakeStep:
     def test_initialization(self):
