@@ -41,6 +41,24 @@ hatch-install:
 	fi
 init: hatch-install
 
+.PHONY: hatch-upgrade  ## setup - Upgrade Hatch to the latest version
+hatch-upgrade:
+	@echo "Upgrading Hatch..."
+	@if command -v brew >/dev/null 2>&1 && brew list hatch >/dev/null 2>&1; then \
+		echo "Upgrading via Homebrew..."; \
+		brew upgrade hatch; \
+	elif command -v pipx >/dev/null 2>&1; then \
+		echo "Upgrading via pipx..."; \
+		pipx upgrade hatch; \
+	elif command -v pip >/dev/null 2>&1; then \
+		echo "Upgrading via pip..."; \
+		pip install --upgrade hatch; \
+	else \
+		echo "Could not find hatch installation method. Please upgrade manually."; \
+		exit 1; \
+	fi
+	@hatch --version
+
 .PHONY: sync  ## hatch - Update dependencies if you changed project dependencies in pyproject.toml
 .PHONY: update  ## hatch - alias for sync (if you are used to poetry, thi is similar to running `poetry update`)
 sync:
