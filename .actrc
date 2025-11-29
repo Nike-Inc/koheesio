@@ -1,0 +1,15 @@
+# act configuration
+# See: https://github.com/nektos/act
+
+# Use linux/amd64 architecture (important for M1/M2 Macs)
+--container-architecture linux/amd64
+
+# Use medium-sized runner images (balance between size and compatibility)
+-P ubuntu-latest=catthehacker/ubuntu:act-latest
+
+# Don't pull images every time (faster execution)
+--pull=false
+
+# Use .gitignore for determining files to copy
+--use-gitignore=true
+
