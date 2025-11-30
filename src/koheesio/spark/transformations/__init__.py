@@ -28,11 +28,18 @@ from pyspark.sql import functions as f
 from pyspark.sql.types import DataType
 
 from koheesio.models import Field, ListOfColumns, model_validator
+from koheesio.models.dataframe import BaseTransformation
 from koheesio.spark import Column, DataFrame, SparkStep
 from koheesio.spark.utils import SparkDatatype, get_column_name
 
+__all__ = [
+    "Transformation",
+    "ColumnsTransformation",
+    "ColumnsTransformationWithTarget",
+]
 
-class Transformation(SparkStep, ABC):
+
+class Transformation(BaseTransformation, SparkStep, ABC):
     """Base class for all transformations
 
     Concept
@@ -51,7 +58,7 @@ class Transformation(SparkStep, ABC):
     -------
     ### Implementing a transformation using the Transformation class:
     ```python
-    from koheesio.steps.transformations import Transformation
+    from koheesio.spark.transformations import Transformation
     from pyspark.sql import functions as f
 
 
@@ -125,71 +132,12 @@ class Transformation(SparkStep, ABC):
 
     @abstractmethod
     def execute(self) -> SparkStep.Output:
-        """Execute on a Transformation should handle self.df (input) and set self.output.df (output)
-
-        This method should be implemented in the child class. The input DataFrame is available as `self.df` and the
-        output DataFrame should be stored in `self.output.df`.
-
-        For example:
-        ```python
-        def execute(self):
-            self.output.df = self.df.withColumn(
-                "new_column", f.col("old_column") + 1
-            )
-        ```
-
-        The transform method will call this method and return the output DataFrame.
-        """
-        # self.df  # input dataframe
-        # self.output.df # output dataframe
+        # self.df  # input DataFrame
+        # self.output.df # output DataFrame
         self.output.df = ...  # implement the transformation logic
         raise NotImplementedError
 
-    def transform(self, df: Optional[DataFrame] = None) -> DataFrame:
-        """Execute the transformation and return the output DataFrame
-
-        Note: when creating a child from this, don't implement this transform method. Instead, implement execute!
-
-        See Also
-        --------
-        `Transformation.execute`
-
-        Parameters
-        ----------
-        df: Optional[DataFrame]
-            The DataFrame to apply the transformation to. If not provided, the DataFrame passed to the constructor
-            will be used.
-
-        Returns
-        -------
-        DataFrame
-            The transformed DataFrame
-        """
-        self.df = df or self.df
-        if not self.df:
-            raise RuntimeError("No valid Dataframe was passed")
-        self.execute()
-        return self.output.df
-
-    def __call__(self, *args, **kwargs):
-        """Allow the class to be called as a function.
-        This is especially useful when using a DataFrame's transform method.
-
-        Example
-        -------
-        ```python
-        input_df = spark.range(3)
-
-        output_df = input_df.transform(AddOne(target_column="foo")).transform(
-            AddOne(target_column="bar")
-        )
-        ```
-
-        In the above example, the `AddOne` transformation is applied to the `input_df` DataFrame using the `transform`
-        method. The `output_df` will now contain the original DataFrame with an additional columns called `foo` and
-        `bar', each with the values of `id` + 1.
-        """
-        return self.transform(*args, **kwargs)
+    execute.__doc__ = BaseTransformation.execute.__doc__
 
 
 class ColumnsTransformation(Transformation, ABC):

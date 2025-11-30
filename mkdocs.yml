@@ -45,6 +45,9 @@ nav:
       - Steps: reference/concepts/step.md
       - Context: reference/concepts/context.md
       - Logger: reference/concepts/logger.md
+      - Pandas:
+        - Overview: reference/pandas/index.md
+        - Transformations: reference/pandas/transformations.md
       - Spark:
         - Readers: reference/spark/readers.md
         - Writers: reference/spark/writers.md
@@ -54,6 +57,8 @@ nav:
   - API Reference: api_reference/
   - Community:  # community folder
     - Contribute: community/contribute.md
+    - Development Setup: community/development-setup.md
+    - Testing Guide: community/testing-guide.md
     - Approach to Documentation: community/approach-documentation.md
   - Release Notes: 
     - Release 0.11 (dev): releases/0.11.md

@@ -61,14 +61,17 @@ async_http = [
   "nest-asyncio>=1.6.0",
 ]
 box = ["boxsdk[jwt]==3.8.1"]
+delta = ["delta-spark>=2.2"]
+excel = ["openpyxl>=3.0.0"]
+ml = ["numpy>=1.21.5", "scikit-learn>=1.1.1", "scipy>=1.9.1", "pandas"]
 pandas = ["pandas>=1.3", "setuptools", "numpy<2.0.0", "pandas-stubs"]
 pyspark = ["pyspark>=3.2.0", "pyarrow>13"]
 pyspark_connect = ["pyspark[connect]>=3.5"]
+se = ["spark-expectations>=2.2.1,<2.3.0"]
 sftp = ["paramiko>=2.6.0"]
-delta = ["delta-spark>=2.2"]
-excel = ["openpyxl>=3.0.0"]
-tableau = ["tableauhyperapi>=0.0.19484", "tableauserverclient>=0.25"]
 snowflake = ["snowflake-connector-python>=3.12.0"]
+tableau = ["tableauhyperapi>=0.0.19484", "tableauserverclient>=0.25"]
+# development dependencies
 dev = ["ruff", "mypy", "pylint", "colorama", "types-PyYAML", "types-requests"]
 test = [
   "chispa",
@@ -107,7 +110,6 @@ docs = [
   "pymdown-extensions>=10.7.0",
   "black",
 ]
-se = ["spark-expectations>=2.2.1,<2.3.0"]
 
 [tool.hatch.metadata]
 allow-direct-references = true
@@ -183,16 +185,17 @@ installer = "uv"
 features = [
   "async",
   "async_http",
+  "box",
+  "delta",
+  "dev",
+  "excel",
+  "ml",
   "pandas",
   "pyspark",
-  "sftp",
-  "delta",
-  "excel",
   "se",
-  "box",
+  "sftp",
   "snowflake",
   "tableau",
-  "dev",
 ]
 
 
@@ -229,32 +232,21 @@ non-spark-tests = "test -m \"not spark\""
 #
 [tool.hatch.envs.hatch-test]
 description = """
-The test environment is used to run the test suite.
+Layered testing environments for koheesio architecture:
+- core: Core functionality only (Step, BaseModel, Context, Logger, etc.)  
+- pandas: Core + pandas functionality (no spark)
+- ml: Core + ML dependencies (numpy, scikit-learn, scipy, pandas)
+- pyspark*: Full spark environments with specific PySpark versions
 ---
-- Run `hatch run test:all-tests` to run the full test suite.
-- Run `hatch run test:spark-tests` to run the Spark test suite.
-- Run `hatch run test:log-versions` to log the Python and PySpark versions.
-- You can test against specific Python and PySpark versions by adding `+py=3.10` or `+version=pyspark34` to the command
-  (replace the versions with the desired ones).
-
-Note: Test env will run against all specified python and pyspark versions. Use the `dev` environment for development
-and general use.
+Run tests with: `hatch test -i version=VARIANT`
+Examples:
+- `hatch test -i version=core` - test core functionality only
+- `hatch test -i version=pandas` - test pandas without spark  
+- `hatch test -i version=ml` - test ML functionality
+- `hatch test -i version=pyspark35` - test with PySpark 3.5
 """
-features = [
-  "async",
-  "async_http",
-  "box",
-  "delta",
-  "dev",
-  "excel",
-  "pandas",
-  "pyspark",
-  "se",
-  "sftp",
-  "snowflake",
-  "tableau",
-  "test",
-]
+# Base environment is minimal - features added per matrix variant
+features = ["test"]
 
 parallel = true
 retries = 2
@@ -266,6 +258,11 @@ run-cov = "coverage run -m pytest{env:HATCH_TEST_ARGS:} {args}"
 cov-combine = "coverage combine"
 cov-report = "coverage report"
 
+
+[[tool.hatch.envs.hatch-test.matrix]]
+# Core and pandas testing across Python versions
+python = ["3.9", "3.10", "3.11", "3.12"]  
+version = ["core", "pandas", "ml"]
 
 [[tool.hatch.envs.hatch-test.matrix]]
 python = ["3.9"]
@@ -285,7 +282,39 @@ python = ["3.12"]
 version = ["pyspark352", "pyspark352r"]
 
 [tool.hatch.envs.hatch-test.overrides]
+# Features per environment layer - each feature needs individual override
+matrix.version.features = [
+  # Core layer: only test features
+  { value = "test", if = ["core"] },
+  
+  # Pandas layer: pandas + test
+  { value = "pandas", if = ["pandas"] },
+  { value = "test", if = ["pandas"] },
+  
+  # ML layer: ml + test  
+  { value = "ml", if = ["ml"] },
+  { value = "test", if = ["ml"] },
+  
+  # Spark layers: full feature set for compatibility
+  { value = "async", if = ["pyspark33", "pyspark34", "pyspark35", "pyspark35r", "pyspark352", "pyspark352r"] },
+  { value = "async_http", if = ["pyspark33", "pyspark34", "pyspark35", "pyspark35r", "pyspark352", "pyspark352r"] },
+  { value = "box", if = ["pyspark33", "pyspark34", "pyspark35", "pyspark35r", "pyspark352", "pyspark352r"] },
+  { value = "delta", if = ["pyspark33", "pyspark34", "pyspark35", "pyspark35r", "pyspark352", "pyspark352r"] },
+  { value = "dev", if = ["pyspark33", "pyspark34", "pyspark35", "pyspark35r", "pyspark352", "pyspark352r"] },
+  { value = "excel", if = ["pyspark33", "pyspark34", "pyspark35", "pyspark35r", "pyspark352", "pyspark352r"] },
+  { value = "pandas", if = ["pyspark33", "pyspark34", "pyspark35", "pyspark35r", "pyspark352", "pyspark352r"] },
+  { value = "pyspark", if = ["pyspark33", "pyspark34", "pyspark35", "pyspark35r", "pyspark352", "pyspark352r"] },
+  { value = "se", if = ["pyspark33", "pyspark34", "pyspark35", "pyspark35r", "pyspark352", "pyspark352r"] },
+  { value = "sftp", if = ["pyspark33", "pyspark34", "pyspark35", "pyspark35r", "pyspark352", "pyspark352r"] },
+  { value = "snowflake", if = ["pyspark33", "pyspark34", "pyspark35", "pyspark35r", "pyspark352", "pyspark352r"] },
+  { value = "tableau", if = ["pyspark33", "pyspark34", "pyspark35", "pyspark35r", "pyspark352", "pyspark352r"] },
+  { value = "test", if = ["pyspark33", "pyspark34", "pyspark35", "pyspark35r", "pyspark352", "pyspark352r"] },
+]
+
 matrix.version.extra-dependencies = [
+  # Core environment gets no extra dependencies (just base pyproject.toml deps)
+  
+  # Spark environments get PySpark versions
   { value = "pyspark>=3.3,<3.4", if = ["pyspark33"] },
   { value = "spark-expectations>=2.1.0", if = ["pyspark33"] },
   { value = "pandas<2", if = ["pyspark33"] },
@@ -313,6 +342,15 @@ name.".*(pyspark35r).*".env-vars = [
   { key = "SPARK_TESTING", value = "True" },
 ]
 
+[tool.hatch.envs.ml]
+description = """
+The ml environment is used for running machine learning related tests.
+---
+Run `hatch run ml:test` to run the ML test suite.
+"""
+features = ["ml"]
+scripts.test = "pytest{env:HATCH_TEST_ARGS:} {args}"
+
 
 [tool.pytest.ini_options]
 addopts = "-vv --color=yes --order-scope=module"
@@ -321,12 +359,20 @@ testpaths = ["tests"]
 asyncio_default_fixture_loop_scope = "function"
 markers = [
   "default: added to all tests by default if no other marker expect of standard pytest markers is present",
+  # Core layers
+  "core: tests for core koheesio functionality (Step, BaseModel, Context, Logger, etc.)",
+  "pandas: tests requiring pandas but not spark",
+  "ml: tests requiring ML dependencies (numpy, scikit-learn, scipy)", 
+  # Spark layer
   "spark: mark a test as a Spark test",
-  # "sftp: mark a test as an SFTP test",
-  # "se: mark a test as a Spark Expectations test",
-  # "box: mark a test as a Box test",
-  # "asyncio: mark a test as an asyncio test",
-  # "asyncio_http: mark a test as an asyncio HTTP test",
+  # Integration layers  
+  "asyncio: mark a test as an asyncio test",
+  "asyncio_http: mark a test as an asyncio HTTP test",
+  "box: mark a test as a Box test",
+  "sftp: mark a test as an SFTP test", 
+  "se: mark a test as a Spark Expectations test",
+  "snowflake: mark a test as a Snowflake test",
+  "tableau: mark a test as a Tableau test",
 ]
 filterwarnings = [
   # pyspark.pandas warnings
@@ -417,13 +463,14 @@ features = [
   "async",
   "async_http",
   "box",
+  "delta",
+  "excel",
+  "ml",
   "pandas",
   "pyspark",
   "se",
   "sftp",
   "snowflake",
-  "delta",
-  "excel",
   "tableau",
   "dev",
   "test",

@@ -206,6 +206,13 @@ the `pyproject.toml` entry mentioned above or installing through pip.
     - For more information, refer to the [Databricks documentation](https://docs.databricks.com/).
     - For more information on Apache Spark, refer to the [Apache Spark documentation](https://spark.apache.org/docs/latest/).
 
+- __Pandas & ML:__
+    Available through the `koheesio.pandas` module; installable through the `ml` and `pandas` extras.
+    - The `pandas` extra provides pandas DataFrame support.
+    - The `ml` extra includes pandas, numpy, scikit-learn, and scipy for ML workflows.
+    - Pandas transformations can be used independently or alongside Spark transformations.
+    - See [examples/ml_without_spark](examples/ml_without_spark/) for usage examples.
+
 [//]: # (- **Brickflow:** Available through the `koheesio.integrations.workflow` module; installable through the `bf` extra.)
 [//]: # (    - Brickflow is a workflow orchestration tool that allows you to define and execute workflows in a declarative way.)
 [//]: # (    - For more information, refer to the [Brickflow docs]&#40;https://engineering.nike.com/brickflow&#41;)

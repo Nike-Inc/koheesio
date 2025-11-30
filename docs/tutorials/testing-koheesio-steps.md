@@ -1,6 +1,76 @@
-# Testing Koheesio Tasks
+# Testing Koheesio Steps
 
-Testing is a crucial part of any software development process. Koheesio provides a structured way to define and execute data processing tasks, which makes it easier to build, test, and maintain complex data workflows. This guide will walk you through the process of testing Koheesio tasks.
+Testing is a crucial part of developing robust data processing pipelines. This guide will show you how to effectively test your Koheesio steps and transformations across the layered architecture.
+
+## Testing Strategy by Layer
+
+Koheesio's layered architecture allows for targeted testing:
+
+- **Core Layer**: Test step logic, validation, configuration
+- **Pandas Layer**: Test DataFrame transformations in isolation  
+- **ML Layer**: Test feature engineering and ML integrations
+- **Spark Layer**: Test distributed processing and integrations
+- **Integration Layers**: Test external system connections
+
+## Test Environment Setup
+
+### Running Tests by Layer
+
+Koheesio provides test markers to run specific test suites:
+
+```bash
+# Test only core functionality (minimal dependencies)
+hatch test -i version=core
+
+# Test pandas functionality (no Spark required)
+hatch test -i version=pandas  
+
+# Test ML functionality
+hatch test -i version=ml
+
+# Test Spark functionality (requires PySpark)
+hatch test -i version=pyspark35
+
+# Run all non-Spark tests
+pytest -m "not spark"
+
+# Run only pandas tests
+pytest -m pandas
+
+# Run ML + pandas tests  
+pytest -m "ml or pandas"
+```
+
+### Available Test Markers
+
+```python
+# Core framework tests
+@pytest.mark.core
+def test_step_functionality():
+    pass
+
+# Pandas-specific tests  
+@pytest.mark.pandas
+def test_pandas_transformation():
+    pass
+
+# ML-specific tests
+@pytest.mark.ml  
+def test_ml_preprocessing():
+    pass
+
+# Spark-specific tests
+@pytest.mark.spark
+def test_spark_transformation():
+    pass
+
+# Integration tests
+@pytest.mark.snowflake
+@pytest.mark.box
+@pytest.mark.sftp
+def test_integrations():
+    pass
+```
 
 ## Unit Testing
 

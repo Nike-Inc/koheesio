@@ -11,7 +11,7 @@ Transformation and Reader classes.
 
 from __future__ import annotations
 
-from typing import Annotated, Any, Dict, List, Optional, Union
+from typing import Annotated, Any, Dict, List, Optional, TypeVar, Union
 from abc import ABC
 from functools import cached_property, partial
 import inspect
