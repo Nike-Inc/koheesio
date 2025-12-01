@@ -76,7 +76,9 @@ class JdbcReader(Reader, ExtraParamsMixin):
     )
     user: str = Field(default=..., description="User to authenticate to the server")
     password: Optional[SecretStr] = Field(default=None, description="Password belonging to the username")
-    private_key: Optional[SecretStr] = Field(default=None, alias="pem_private_key", description="Private key for authentication")
+    private_key: Optional[SecretStr] = Field(
+        default=None, alias="pem_private_key", description="Private key for authentication"
+    )
     dbtable: Optional[str] = Field(
         default=None,
         description="Database table name, also include schema name",
@@ -119,9 +121,7 @@ class JdbcReader(Reader, ExtraParamsMixin):
         if not self.password and not self.private_key:
             raise ValueError("You must provide either 'password' or 'private_key'.")
         if self.password and self.private_key:
-            raise ValueError(
-                "You must provide either 'password' or 'private_key', not both."
-            )
+            raise ValueError("You must provide either 'password' or 'private_key', not both.")
 
         return self
 
@@ -133,7 +133,7 @@ class JdbcReader(Reader, ExtraParamsMixin):
     def execute(self) -> "JdbcReader.Output":
         """Wrapper around Spark's jdbc read format"""
         options = self.get_options()
-        
+
         if pw := self.password:
             options["password"] = pw.get_secret_value()
         if pk := self.private_key:

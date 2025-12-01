@@ -39,6 +39,7 @@ from pydantic import (
     field_serializer,
     field_validator,
     model_validator,
+    validate_call,
 )
 from pydantic import SecretBytes as PydanticSecretBytes
 from pydantic import SecretStr as PydanticSecretStr
@@ -56,12 +57,12 @@ __all__ = [
     "BaseModel",
     "ExtraParamsMixin",
     "Field",
-    "ListOfColumns",
     # Directly from pydantic
     "ConfigDict",
     "DirectoryPath",
     "FilePath",
     "InstanceOf",
+    "ListOfStrings",
     "ModelMetaclass",
     "PositiveInt",
     "PrivateAttr",
@@ -76,6 +77,7 @@ __all__ = [
     "field_serializer",
     "field_validator",
     "model_validator",
+    "validate_call",
 ]
 
 
@@ -749,24 +751,6 @@ class ExtraParamsMixin(PydanticBaseModel):
         """Move extra_params to params dict"""
         self.params = {**self.params, **self.extra_params}  # type: ignore[assignment]
         return self
-
-
-def _list_of_columns_validation(columns_value: Union[str, list]) -> list:
-    """
-    Performs validation for ListOfColumns type. Will ensure that there are no duplicate columns, empty strings, etc.
-    In case an individual column is passed, it will coerce it to a list.
-    """
-    columns = [columns_value] if isinstance(columns_value, str) else [*columns_value]
-    columns = [col for col in columns if col]  # remove empty strings, None, etc.
-
-    return list(dict.fromkeys(columns))  # dict.fromkeys is used to dedup while maintaining order
-
-
-ListOfColumns = Annotated[Union[str, List[str]], BeforeValidator(_list_of_columns_validation)]
-""" Annotated type for a list of column names. 
-Will ensure that there are no duplicate columns, empty strings, etc.
-In case an individual column is passed, the value will be coerced to a list.
-"""
 
 
 class _SecretMixin:

@@ -2,10 +2,8 @@
 Class for converting DataFrame column names from camel case to snake case.
 """
 
-from typing import Optional
 import re
 
-from koheesio.models import Field, ListOfColumns
 from koheesio.spark.transformations import ColumnsTransformation
 from koheesio.spark.utils import SPARK_MINOR_VERSION
 

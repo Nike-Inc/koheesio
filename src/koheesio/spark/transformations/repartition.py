@@ -2,8 +2,9 @@
 
 from typing import Optional
 
-from koheesio.models import Field, ListOfColumns, model_validator
+from koheesio.models import Field, model_validator
 from koheesio.spark.transformations import ColumnsTransformation
+from koheesio.spark.utils.common import ListOfColumns
 
 
 class Repartition(ColumnsTransformation):
