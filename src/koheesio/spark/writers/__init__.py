@@ -1,50 +1,169 @@
-"""The Writer class is used to write the DataFrame to a target."""
+"""The Writer class is used to write the DataFrame to a target.
 
-from typing import Optional
+The module provides output mode enums for both batch and streaming writes, organized in a nested
+structure for better organization and case-insensitive access.
+
+Examples
+--------
+Using the nested OutputMode structure (recommended):
+
+```python
+from koheesio.spark.writers import OutputMode
+
+# Case-insensitive access:
+mode = OutputMode.BATCH.APPEND
+mode = OutputMode.batch.APPEND  # Also works
+mode = OutputMode.Batch.OVERWRITE  # Also works
+
+stream_mode = OutputMode.STREAMING.COMPLETE
+stream_mode = OutputMode.streaming.COMPLETE  # Also works
+```
+
+Backward compatibility (deprecated but supported):
+
+```python
+from koheesio.spark.writers import BatchOutputMode, StreamingOutputMode
+
+mode = BatchOutputMode.APPEND
+stream_mode = StreamingOutputMode.COMPLETE
+```
+"""
+
+from typing import Optional, Union
 from abc import ABC, abstractmethod
 from enum import Enum
 
-from koheesio.models import Field
+from koheesio.models import Field, nested_enum
 from koheesio.spark import DataFrame, SparkStep
 
 
-# TODO: Investigate if we can clean various OutputModes into a more streamlined structure
-class BatchOutputMode(str, Enum):
-    """For Batch:
+@nested_enum
+class OutputMode:
+    """Container for batch and streaming output modes with case-insensitive access.
 
-    - append: Append the contents of the DataFrame to the output table, default option in Koheesio.
-    - overwrite: overwrite the existing data.
-    - ignore: ignore the operation (i.e. no-op).
-    - error or errorifexists: throw an exception at runtime.
-    - merge: update matching data in the table and insert rows that do not exist.
-    - merge_all: update matching data in the table and insert rows that do not exist.
+    This nested enum structure organizes output modes by type (batch vs streaming) and supports
+    case-insensitive attribute access for convenience.
+
+    Usage
+    -----
+    Access modes using any case variation:
+    - `OutputMode.BATCH.APPEND`
+    - `OutputMode.batch.APPEND`
+    - `OutputMode.Batch.OVERWRITE`
+    - `OutputMode.STREAMING.complete`
+    - `OutputMode.streaming.COMPLETE`
+
+    Examples
+    --------
+    Basic usage in a writer:
+
+    ```python
+    from koheesio.spark.writers import OutputMode, Writer
+
+
+    class MyWriter(Writer):
+        output_mode: str = Field(
+            default=OutputMode.BATCH.APPEND,
+            description="Output mode for writing"
+        )
+    ```
+
+    Using in DeltaTableWriter:
+
+    ```python
+    from koheesio.spark.writers import OutputMode
+    from koheesio.spark.writers.delta import DeltaTableWriter
+
+    writer = DeltaTableWriter(
+        table="my_table",
+        output_mode=OutputMode.batch.MERGE,  # Case-insensitive!
+        key_columns=["id"]
+    )
+    ```
+
+    See Also
+    --------
+    Writer : Base class for all writers
     """
 
-    # Batch only modes
-    APPEND = "append"
-    OVERWRITE = "overwrite"
-    IGNORE = "ignore"
-    ERROR = "error"
-    ERRORIFEXISTS = "error"
-    MERGE_ALL = "merge_all"
-    MERGEALL = "merge_all"
-    MERGE = "merge"
+    class BATCH(str, Enum):
+        """Output modes for Batch processing.
+
+        Available modes:
+        ---------------
+        - append: Append the contents of the DataFrame to the output table (default in Koheesio)
+        - overwrite: Overwrite the existing data
+        - ignore: Ignore the operation (no-op)
+        - error / errorifexists: Throw an exception at runtime if data exists
+        - merge: Update matching data and insert rows that do not exist (requires key columns)
+        - merge_all: Update all matching data and insert rows that do not exist (full table merge)
+
+        Note
+        ----
+        MERGE and MERGE_ALL modes are specific to certain writers (e.g., DeltaTableWriter) and require
+        additional configuration such as key columns for matching records.
+
+        Examples
+        --------
+        ```python
+        from koheesio.spark.writers import OutputMode
+
+        # All case variations work:
+        mode = OutputMode.BATCH.APPEND
+        mode = OutputMode.batch.APPEND
+        mode = OutputMode.Batch.OVERWRITE
+        ```
+        """
+
+        APPEND = "append"
+        OVERWRITE = "overwrite"
+        IGNORE = "ignore"
+        ERROR = "error"
+        ERRORIFEXISTS = "error"  # Alias for ERROR
+        MERGE = "merge"
+        MERGE_ALL = "merge_all"
+        MERGEALL = "merge_all"  # Alias for MERGE_ALL
+
+    class STREAMING(str, Enum):
+        """Output modes for Streaming processing.
+
+        Available modes:
+        ---------------
+        - append: Only new rows in the streaming DataFrame are written to the sink
+        - complete: All rows in the streaming DataFrame are written every time there are updates
+        - update: Only rows that were updated are written. Equivalent to append mode for non-aggregation queries
+
+        Note
+        ----
+        The choice of output mode depends on your streaming query:
+        - Use APPEND for queries without aggregations or with append-only aggregations
+        - Use COMPLETE for aggregation queries where you need the full result
+        - Use UPDATE for aggregation queries where you only want changed rows
+
+        Examples
+        --------
+        ```python
+        from koheesio.spark.writers import OutputMode
+
+        # All case variations work:
+        mode = OutputMode.STREAMING.APPEND
+        mode = OutputMode.streaming.APPEND
+        mode = OutputMode.Streaming.COMPLETE
+        ```
+        """
+
+        APPEND = "append"
+        COMPLETE = "complete"
+        UPDATE = "update"
 
 
-class StreamingOutputMode(str, Enum):
-    """For Streaming:
+# Backward compatibility aliases
+# These are maintained for existing code but new code should use OutputMode.BATCH and OutputMode.STREAMING
+BatchOutputMode = OutputMode.BATCH
+StreamingOutputMode = OutputMode.STREAMING
 
-    - append: only the new rows in the streaming DataFrame will be written to the sink.
-    - complete: all the rows in the streaming DataFrame/Dataset will be written to the sink every time there are some
-       updates.
-    - update: only the rows that were updated in the streaming DataFrame/Dataset will be written to the sink every time
-       there are some updates. If the query doesn't contain aggregations, it will be equivalent to append mode.
-    """
-
-    # Streaming only modes
-    APPEND = "append"
-    COMPLETE = "complete"
-    UPDATE = "update"
+# Type alias for type hints - can be used with Union[BatchOutputMode, StreamingOutputMode]
+OutputModeType = Union[OutputMode.BATCH, OutputMode.STREAMING]
 
 
 class Writer(SparkStep, ABC):
