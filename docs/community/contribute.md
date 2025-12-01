@@ -1,5 +1,3 @@
-<!-- TODO: add code of conduct -->
-
 # How to contribute
 
 There are a few guidelines that we need contributors to follow so that we are able to process requests as efficiently as possible. If you have any questions or concerns please feel free to contact us at [opensource@nike.com](mailto:opensource@nike.com).

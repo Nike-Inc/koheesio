@@ -51,12 +51,14 @@ from pydantic._internal._model_construction import ModelMetaclass
 
 from koheesio.context import Context
 from koheesio.logger import Logger, LoggingFactory
+from koheesio.models.nested_enum import NestedEnumMeta, nested_enum
 
 __all__ = [
     "BaseModel",
     "ExtraParamsMixin",
     "Field",
     "ListOfColumns",
+    "NestedEnumMeta",
     # Directly from pydantic
     "ConfigDict",
     "DirectoryPath",
@@ -76,6 +78,7 @@ __all__ = [
     "field_serializer",
     "field_validator",
     "model_validator",
+    "nested_enum",
 ]
 
 

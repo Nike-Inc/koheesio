@@ -10,17 +10,36 @@ readme = "README.md"
 requires-python = ">=3.9, <3.13" # 3.10 is the minimum recommended version
 license = "Apache-2.0"
 keywords = [
-  # TODO: add keywords
+  "data-engineering",
+  "data-pipeline",
+  "data-transformation",
+  "software-engineering",
+  "etl",
+  "pyspark",
+  "spark",
+  "pydantic",
+  "data-validation",
+  "data-processing",
+  "data-quality",
+  "step-based",
+  "modular",
+  "reusable",
+  "workflow",
 ]
 authors = [
-  # TODO: add other contributors
-  { name = "Danny Meijer", git = "https://github.com/dannymeijer" },
-  { name = "Mikita Sakalouski", git = "https://github.com/mikita-sakalouski" },
-  { name = "Maxim Mityutko", git = "https://github.com/maxim-mityutko" },
-  { name = "Tone Vanden Bergh", git = "https://github.com/ToneVDB" },
-  { name = "Pariksheet Barapatre", git = "https://github.com/pariksheet" },
-  { name = "Riccardo Iacomini", git = "https://github.com/riccamini" },
-
+  { name = "Danny Meijer", email = "danny.meijer@nike.com" },
+  { name = "Mikita Sakalouski", email = "38785549+mikita-sakalouski@users.noreply.github.com" },
+  { name = "Maxim Mityutko", email = "43565398+maxim-mityutko@users.noreply.github.com" },
+  { name = "Tone Vanden Bergh", email = "60358854+ToneVDB@users.noreply.github.com" },
+  { name = "Pariksheet Barapatre", email = "pbarapatre@gmail.com" },
+  { name = "Riccardo Iacomini", email = "iacomini.riccardo@gmail.com" },
+  { name = "Brend Braeckmans", email = "72923643+BrendBraeckmans@users.noreply.github.com" },
+  { name = "Bruno De Deken", email = "dedekenbruno@gmail.com" },
+  { name = "Nathan Melis", email = "nathanmelis@gmail.com" },
+  { name = "Tyler Richardett", email = "tyler.richardett@gmail.com" },
+  { name = "Federica Emiliani", email = "federica.emiliani1984@gmail.com" },
+  { name = "Louis-Paul Vlx", email = "90868690+louis-paulvlx@users.noreply.github.com" },
+  { name = "Tomasz Zaremba", email = "tomasz@zaremba.it" },
 ]
 classifiers = [
   "Development Status :: 5 - Production/Stable",

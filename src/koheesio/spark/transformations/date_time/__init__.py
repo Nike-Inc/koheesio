@@ -272,7 +272,7 @@ class ToTimestamp(ColumnsTransformationWithTarget):
     """
 
     format: str = Field(
-        default=...,  # TODO: should we set a logic default here? [future release]
+        default=...,  # TODO: 1.0.0 - should we set a logic default here?
         description="The date format for of the timestamp field. See "
         "https://spark.apache.org/docs/latest/sql-ref-datetime-pattern.html",
     )
