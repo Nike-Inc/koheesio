@@ -1,11 +1,11 @@
 """Tests for the NestedEnum utility."""
 
-import pytest
 from enum import Enum
+
+import pytest
 
 from koheesio.models import BaseModel, Field, NestedEnumMeta, nested_enum
 from koheesio.spark.writers import BatchOutputMode, OutputMode, OutputModeType, StreamingOutputMode
-
 
 # Test fixtures using different approaches
 
