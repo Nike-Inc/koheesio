@@ -55,7 +55,7 @@ def sha2_hash(columns: List[str], delimiter: Optional[str] = "|", num_bits: Opti
     return sha2(col=column, numBits=num_bits)  # type: ignore
 
 
-# TODO: convert this class to a ColumnsTransformationWithTarget
+# TODO: 1.0.0 - convert this class to a ColumnsTransformationWithTarget
 class Sha2Hash(ColumnsTransformation):
     """
     hash the value of 1 or more columns using SHA-2 family of hash functions
