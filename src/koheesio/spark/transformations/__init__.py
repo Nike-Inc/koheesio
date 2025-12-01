@@ -10,7 +10,7 @@ For a comprehensive guide on the usage, examples, and additional features of Tra
 documentation.
 
 Classes
--------
+--------
 Transformation
     Base class for all transformations
 
@@ -18,7 +18,18 @@ ColumnsTransformation
     Extended Transformation class with a preset validator for handling column(s) data
 
 ColumnsTransformationWithTarget
-    Extended ColumnsTransformation class with an additional `target_column` field
+    Extended ColumnsTransformation class with an additional `target_column` field (deprecated as of 0.11)
+
+Functions
+---------
+transformation
+    Decorator to create a Transformation from a function (DataFrame → DataFrame)
+    
+column_transformation
+    Decorator to create a ColumnsTransformation from a function (Column → Column)
+    
+multi_column_transformation
+    Decorator for multi-column transformations (multiple Columns → single Column)
 """
 
 from typing import (
@@ -51,6 +62,15 @@ from koheesio.models import (
 from koheesio.spark import Column, DataFrame, SparkStep
 from koheesio.spark.utils import ListOfColumns, SparkDatatype, get_column_name
 from koheesio.utils import get_args_for_func
+
+__all__ = [
+    "Transformation",
+    "ColumnsTransformation",
+    "ColumnsTransformationWithTarget",
+    "transformation",
+    "column_transformation",
+    "multi_column_transformation",
+]
 
 
 class Transformation(SparkStep, ABC):
@@ -328,9 +348,8 @@ class Transformation(SparkStep, ABC):
         return FunctionBasedTransformation
 
 
-# ParamSpec for capturing function parameters (excluding df)
 P = ParamSpec("P")
-
+"""ParamSpec for capturing function parameters (excluding df)"""
 
 @overload
 def transformation(
@@ -1030,9 +1049,6 @@ class ColumnsTransformation(Transformation, ABC):
 
             def execute(self) -> None:
                 """Execute the column transformation with target column support."""
-                from typing import get_type_hints
-                import inspect
-
                 df = self.df
                 columns = [*self.get_columns()]
 
@@ -1390,11 +1406,11 @@ def column_transformation(
     - Supports all from_func() features: paired parameters, variadic, multi-column
     """
 
-    def decorator(f: Callable) -> Type["ColumnsTransformation"]:
+    def decorator(func: Callable) -> Type["ColumnsTransformation"]:
         # Simply use from_func - validation happens via Pydantic BaseModel
         # The ExtraParamsMixin already provides parameter validation
         return ColumnsTransformation.from_func(
-            f,
+            func,
             run_for_all_data_type=run_for_all_data_type,
             limit_data_type=limit_data_type,
             data_type_strict_mode=data_type_strict_mode,
@@ -1535,11 +1551,11 @@ def multi_column_transformation(
     - Adds Pydantic validate_call for runtime type checking
     """
 
-    def decorator(f: Callable) -> Type["ColumnsTransformation"]:
+    def decorator(func: Callable) -> Type["ColumnsTransformation"]:
         # Simply use from_multi_column_func - validation happens via Pydantic BaseModel
         # The ExtraParamsMixin already provides parameter validation
         return ColumnsTransformation.from_multi_column_func(
-            f,
+            func,
             run_for_all_data_type=run_for_all_data_type,
             limit_data_type=limit_data_type,
             data_type_strict_mode=data_type_strict_mode,
@@ -1708,13 +1724,3 @@ class ColumnsTransformationWithTarget(ColumnsTransformation, ABC):
             )
 
         self.output.df = df
-
-
-__all__ = [
-    "Transformation",
-    "ColumnsTransformation",
-    "ColumnsTransformationWithTarget",
-    "transformation",
-    "column_transformation",
-    "multi_column_transformation",
-]
