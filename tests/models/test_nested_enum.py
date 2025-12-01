@@ -3,8 +3,8 @@
 import pytest
 from enum import Enum
 
-from koheesio.models import Field, NestedEnumMeta, nested_enum
-from koheesio.models import BaseModel
+from koheesio.models import BaseModel, Field, NestedEnumMeta, nested_enum
+from koheesio.spark.writers import BatchOutputMode, OutputMode, OutputModeType, StreamingOutputMode
 
 
 # Test fixtures using different approaches
@@ -172,13 +172,11 @@ class TestOutputModeRefactoring:
 
     def test_output_mode_import(self):
         """Test that OutputMode can be imported."""
-        from koheesio.spark.writers import OutputMode
 
         assert OutputMode is not None
 
     def test_output_mode_batch_access(self):
         """Test accessing batch modes."""
-        from koheesio.spark.writers import OutputMode
 
         assert OutputMode.BATCH.APPEND == "append"
         assert OutputMode.batch.APPEND == "append"
@@ -186,7 +184,6 @@ class TestOutputModeRefactoring:
 
     def test_output_mode_streaming_access(self):
         """Test accessing streaming modes."""
-        from koheesio.spark.writers import OutputMode
 
         assert OutputMode.STREAMING.APPEND == "append"
         assert OutputMode.streaming.COMPLETE == "complete"
@@ -194,7 +191,6 @@ class TestOutputModeRefactoring:
 
     def test_backward_compatibility_batch_output_mode(self):
         """Test that BatchOutputMode alias still works."""
-        from koheesio.spark.writers import BatchOutputMode, OutputMode
 
         # Backward compatibility alias should work
         assert BatchOutputMode.APPEND == OutputMode.BATCH.APPEND
@@ -203,7 +199,6 @@ class TestOutputModeRefactoring:
 
     def test_backward_compatibility_streaming_output_mode(self):
         """Test that StreamingOutputMode alias still works."""
-        from koheesio.spark.writers import StreamingOutputMode, OutputMode
 
         # Backward compatibility alias should work
         assert StreamingOutputMode.APPEND == OutputMode.STREAMING.APPEND
@@ -212,7 +207,6 @@ class TestOutputModeRefactoring:
 
     def test_all_batch_modes_preserved(self):
         """Test that all batch mode values are preserved."""
-        from koheesio.spark.writers import OutputMode
 
         # Check all modes exist
         assert hasattr(OutputMode.BATCH, "APPEND")
@@ -236,7 +230,6 @@ class TestOutputModeRefactoring:
 
     def test_all_streaming_modes_preserved(self):
         """Test that all streaming mode values are preserved."""
-        from koheesio.spark.writers import OutputMode
 
         # Check all modes exist
         assert hasattr(OutputMode.STREAMING, "APPEND")
@@ -250,7 +243,6 @@ class TestOutputModeRefactoring:
 
     def test_aliases_work_correctly(self):
         """Test that enum aliases work correctly."""
-        from koheesio.spark.writers import OutputMode
 
         # ERRORIFEXISTS should equal ERROR
         assert OutputMode.BATCH.ERRORIFEXISTS == OutputMode.BATCH.ERROR
@@ -262,7 +254,6 @@ class TestOutputModeRefactoring:
 
     def test_type_alias(self):
         """Test that the OutputModeType type alias exists."""
-        from koheesio.spark.writers import OutputModeType
 
         # Just verify it's importable and is a type
         assert OutputModeType is not None
