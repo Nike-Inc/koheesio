@@ -64,15 +64,11 @@ class TestTransformationDecorator:
         """Test transformation with multiple parameters"""
 
         @transformation
-        def filter_and_select(
-            df: DataFrame, column: str, threshold: int, select_cols: list
-        ) -> DataFrame:
+        def filter_and_select(df: DataFrame, column: str, threshold: int, select_cols: list) -> DataFrame:
             return df.filter(f.col(column) > threshold).select(*select_cols)
 
         df = spark.createDataFrame([(1, "a"), (2, "b"), (3, "c")], ["id", "value"])
-        output_df = filter_and_select(
-            column="id", threshold=1, select_cols=["value"]
-        ).transform(df)
+        output_df = filter_and_select(column="id", threshold=1, select_cols=["value"]).transform(df)
 
         assert output_df.columns == ["value"]
         assert output_df.count() == 2
@@ -104,9 +100,7 @@ class TestColumnTransformationDecorator:
         def trim_strings(col: Column) -> Column:
             return f.trim(col)
 
-        df = spark.createDataFrame(
-            [(" hello ", 123, " world ")], ["name", "value", "city"]
-        )
+        df = spark.createDataFrame([(" hello ", 123, " world ")], ["name", "value", "city"])
         output_df = trim_strings().transform(df)
 
         # Should apply to all string columns
@@ -125,9 +119,7 @@ class TestColumnTransformationDecorator:
         df = spark.createDataFrame([(100.0, 200.0)], ["food", "non_food"])
 
         # Valid: list of floats
-        output_df = add_tax(columns=["food", "non_food"], rate=[0.08, 0.13]).transform(
-            df
-        )
+        output_df = add_tax(columns=["food", "non_food"], rate=[0.08, 0.13]).transform(df)
         assert abs(output_df.select("food").collect()[0][0] - 108.0) < 0.01
         assert abs(output_df.select("non_food").collect()[0][0] - 226.0) < 0.01
 
@@ -166,9 +158,7 @@ class TestColumnTransformationDecorator:
             return a + b
 
         df = spark.createDataFrame([(1, 2)], ["col_a", "col_b"])
-        output_df = sum_two(columns=["col_a", "col_b"], target_column="sum").transform(
-            df
-        )
+        output_df = sum_two(columns=["col_a", "col_b"], target_column="sum").transform(df)
 
         assert output_df.select("sum").collect()[0][0] == 3
 
@@ -197,9 +187,7 @@ class TestMultiColumnTransformationDecorator:
             return a + b
 
         df = spark.createDataFrame([(1, 2)], ["col_a", "col_b"])
-        output_df = sum_two(columns=["col_a", "col_b"], target_column="sum").transform(
-            df
-        )
+        output_df = sum_two(columns=["col_a", "col_b"], target_column="sum").transform(df)
 
         assert output_df.select("sum").collect()[0][0] == 3
 
@@ -211,9 +199,7 @@ class TestMultiColumnTransformationDecorator:
             return reduce(lambda a, b: a + b, cols)
 
         df = spark.createDataFrame([(1, 2, 3, 4)], ["a", "b", "c", "d"])
-        output_df = sum_all(
-            columns=["a", "b", "c", "d"], target_column="sum"
-        ).transform(df)
+        output_df = sum_all(columns=["a", "b", "c", "d"], target_column="sum").transform(df)
 
         assert output_df.select("sum").collect()[0][0] == 10
 
@@ -225,9 +211,7 @@ class TestMultiColumnTransformationDecorator:
             return a * weights[0] + b * weights[1]
 
         df = spark.createDataFrame([(10, 20)], ["x", "y"])
-        output_df = weighted_sum(
-            columns=["x", "y"], weights=[0.3, 0.7], target_column="result"
-        ).transform(df)
+        output_df = weighted_sum(columns=["x", "y"], weights=[0.3, 0.7], target_column="result").transform(df)
 
         assert abs(output_df.select("result").collect()[0][0] - 17.0) < 0.01
 
@@ -239,9 +223,7 @@ class TestMultiColumnTransformationDecorator:
             return f.concat(first, f.lit(" "), last)
 
         df = spark.createDataFrame([("John", "Doe")], ["first_name", "last_name"])
-        output_df = concat_names(
-            columns=["first_name", "last_name"], target_column="full_name"
-        ).transform(df)
+        output_df = concat_names(columns=["first_name", "last_name"], target_column="full_name").transform(df)
 
         assert output_df.select("full_name").collect()[0][0] == "John Doe"
 
@@ -310,9 +292,7 @@ class TestDecoratorEquivalence:
         df = spark.createDataFrame([(1, 2)], ["a", "b"])
 
         # Both should produce same result
-        output_decorator = sum_decorator(
-            columns=["a", "b"], target_column="sum"
-        ).transform(df)
+        output_decorator = sum_decorator(columns=["a", "b"], target_column="sum").transform(df)
         output_func = SumFunc(columns=["a", "b"], target_column="sum").transform(df)
 
         assert output_decorator.collect() == output_func.collect()

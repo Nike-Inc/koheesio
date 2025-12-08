@@ -234,9 +234,7 @@ def _list_of_columns_validation(columns_value: Union[str, list, Column, List[Col
             filtered_columns.append(col)
     columns = filtered_columns
 
-    return list(
-        dict.fromkeys(columns)
-    )  # dict.fromkeys is used to dedup while maintaining order
+    return list(dict.fromkeys(columns))  # dict.fromkeys is used to dedup while maintaining order
 
 
 ListOfColumns = Annotated[
@@ -380,12 +378,8 @@ def on_databricks() -> bool:
     """Retrieve if we're running on databricks or elsewhere"""
     dbr_version = os.getenv("DATABRICKS_RUNTIME_VERSION", None)
     spark = get_active_session()
-    dbr_spark_version = spark.conf.get(
-        "spark.databricks.clusterUsageTags.effectiveSparkVersion", None
-    )
-    return (dbr_version is not None and dbr_version != "") or (
-        dbr_spark_version is not None
-    )
+    dbr_spark_version = spark.conf.get("spark.databricks.clusterUsageTags.effectiveSparkVersion", None)
+    return (dbr_version is not None and dbr_version != "") or (dbr_spark_version is not None)
 
 
 def spark_data_type_is_array(data_type: DataType) -> bool:  # type: ignore
@@ -395,18 +389,14 @@ def spark_data_type_is_array(data_type: DataType) -> bool:  # type: ignore
 
 def spark_data_type_is_numeric(data_type: DataType) -> bool:  # type: ignore
     """Check if the column's dataType is of type ArrayType"""
-    return isinstance(
-        data_type, (IntegerType, LongType, FloatType, DoubleType, DecimalType)
-    )
+    return isinstance(data_type, (IntegerType, LongType, FloatType, DoubleType, DecimalType))
 
 
 def schema_struct_to_schema_str(schema: StructType) -> str:
     """Converts a StructType to a schema str"""
     if not schema:
         return ""
-    return ",\n".join(
-        [f"{field.name} {field.dataType.typeName().upper()}" for field in schema.fields]
-    )
+    return ",\n".join([f"{field.name} {field.dataType.typeName().upper()}" for field in schema.fields])
 
 
 def import_pandas_based_on_pyspark_version() -> ModuleType:
@@ -421,9 +411,7 @@ def import_pandas_based_on_pyspark_version() -> ModuleType:
         pyspark_version = get_spark_minor_version()
         pandas_version = pd.__version__
 
-        if (pyspark_version < 3.4 and pandas_version >= "2") or (
-            pyspark_version >= 3.4 and pandas_version < "2"
-        ):
+        if (pyspark_version < 3.4 and pandas_version >= "2") or (pyspark_version >= 3.4 and pandas_version < "2"):
             raise ImportError(
                 f"For PySpark {pyspark_version}, "
                 f"please install Pandas version {'< 2' if pyspark_version < 3.4 else '>= 2'}"
@@ -488,10 +476,7 @@ def get_column_name(col: Column) -> str:  # type: ignore
         # In case of a 'regular' Column object, we can directly access the name attribute through the _jc attribute
         # noinspection PyProtectedMember
         name = col._jc.toString()  # type: ignore[operator]
-    elif any(
-        cls.__module__ == "pyspark.sql.connect.column"
-        for cls in inspect.getmro(col.__class__)
-    ):
+    elif any(cls.__module__ == "pyspark.sql.connect.column" for cls in inspect.getmro(col.__class__)):
         # noinspection PyProtectedMember
         name = col._expr.name()
     else:

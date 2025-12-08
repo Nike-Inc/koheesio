@@ -77,9 +77,7 @@ class TestColumnsTransformation:
 
     @pytest.fixture()
     def add_one_with_target(self, input_df):
-        yield self.AddOneWithTarget(
-            columns=["long_column"], df=input_df, target_column="target_column"
-        )
+        yield self.AddOneWithTarget(columns=["long_column"], df=input_df, target_column="target_column")
 
     def test_columns_transformation_with_target(self, add_one_with_target):
         expected = {"long_column": 1, "str_column": "a", "target_column": 2}
@@ -253,9 +251,7 @@ class TestFunctionBasedTransformations:
         """Test creating a parameterized DataFrame transformation"""
 
         def add_audit_columns(df, user: str, system: str = "koheesio"):
-            return df.withColumn("created_by", f.lit(user)).withColumn(
-                "system", f.lit(system)
-            )
+            return df.withColumn("created_by", f.lit(user)).withColumn("system", f.lit(system))
 
         AddAudit = Transformation.from_func(add_audit_columns)
 
@@ -271,9 +267,7 @@ class TestFunctionBasedTransformations:
         """Test using .partial() to create specialized transformations"""
 
         def add_audit_columns(df, user: str, system: str = "koheesio"):
-            return df.withColumn("created_by", f.lit(user)).withColumn(
-                "system", f.lit(system)
-            )
+            return df.withColumn("created_by", f.lit(user)).withColumn("system", f.lit(system))
 
         AddAudit = Transformation.from_func(add_audit_columns)
         AddMyAudit = AddAudit.partial(user="my_pipeline", system="production")
@@ -336,9 +330,7 @@ class TestFunctionBasedColumnsTransformations:
 
     @pytest.fixture(scope="class")
     def string_df(self, spark):
-        return spark.createDataFrame(
-            [("JOHN", "ENGINEER"), ("JANE", "MANAGER")], ["name", "title"]
-        )
+        return spark.createDataFrame([("JOHN", "ENGINEER"), ("JANE", "MANAGER")], ["name", "title"])
 
     def test_simple_column_transformation(self, string_df):
         """Test creating a simple column transformation"""
@@ -363,9 +355,7 @@ class TestFunctionBasedColumnsTransformations:
             limit_data_type=[SparkDatatype.STRING],
         )
 
-        output_df = LowerCase(columns=["name"], target_column="name_lower").transform(
-            string_df
-        )
+        output_df = LowerCase(columns=["name"], target_column="name_lower").transform(string_df)
 
         assert "name_lower" in output_df.columns
         assert output_df.select("name").first()[0] == "JOHN"  # original unchanged
@@ -443,9 +433,7 @@ class TestFunctionBasedColumnsTransformations:
         )
 
         # Check field defaults
-        assert LowerCase.model_fields["run_for_all_data_type"].default == [
-            SparkDatatype.STRING
-        ]
+        assert LowerCase.model_fields["run_for_all_data_type"].default == [SparkDatatype.STRING]
         assert LowerCase.model_fields["limit_data_type"].default == [
             SparkDatatype.STRING,
             SparkDatatype.INTEGER,
@@ -463,12 +451,8 @@ class TestFunctionBasedColumnsTransformations:
         )
 
         # Verify independence
-        assert LowerCase.model_fields["run_for_all_data_type"].default == [
-            SparkDatatype.STRING
-        ]
-        assert UpperCase.model_fields["run_for_all_data_type"].default == [
-            SparkDatatype.INTEGER
-        ]
+        assert LowerCase.model_fields["run_for_all_data_type"].default == [SparkDatatype.STRING]
+        assert UpperCase.model_fields["run_for_all_data_type"].default == [SparkDatatype.INTEGER]
 
     def test_multiple_columns_with_target_suffix(self, string_df):
         """Test that target_column becomes a suffix when multiple columns are given"""
@@ -476,9 +460,7 @@ class TestFunctionBasedColumnsTransformations:
             lambda col: f.lower(col), run_for_all_data_type=[SparkDatatype.STRING]
         )
 
-        output_df = LowerCase(
-            columns=["name", "title"], target_column="lower"
-        ).transform(string_df)
+        output_df = LowerCase(columns=["name", "title"], target_column="lower").transform(string_df)
 
         # Target column should be used as suffix
         assert "name_lower" in output_df.columns
@@ -524,12 +506,8 @@ class TestFunctionBasedColumnsTransformations:
 
         ConcatNames = ColumnsTransformation.from_func(concat_names)
 
-        df = spark.createDataFrame(
-            [("John", "Doe"), ("Jane", "Smith")], ["first_name", "last_name"]
-        )
-        output_df = ConcatNames(
-            columns=["first_name", "last_name"], target_column="full_name"
-        ).transform(df)
+        df = spark.createDataFrame([("John", "Doe"), ("Jane", "Smith")], ["first_name", "last_name"])
+        output_df = ConcatNames(columns=["first_name", "last_name"], target_column="full_name").transform(df)
 
         assert "full_name" in output_df.columns
         assert output_df.select("full_name").collect()[0][0] == "John Doe"
@@ -551,9 +529,7 @@ class TestFunctionBasedColumnsTransformations:
 
         # Test with 4 columns
         df = spark.createDataFrame([(1, 2, 3, 4)], ["a", "b", "c", "d"])
-        output_df = SumAll(columns=["a", "b", "c", "d"], target_column="sum").transform(
-            df
-        )
+        output_df = SumAll(columns=["a", "b", "c", "d"], target_column="sum").transform(df)
         assert output_df.select("sum").collect()[0][0] == 10
 
     def test_paired_parameters_exact_match(self, spark):
@@ -565,16 +541,12 @@ class TestFunctionBasedColumnsTransformations:
         AddTax = ColumnsTransformation.from_func(add_tax)
 
         df = spark.createDataFrame([(100.0, 200.0)], ["food_price", "non_food_price"])
-        output_df = AddTax(
-            columns=["food_price", "non_food_price"], rate=[0.08, 0.13]
-        ).transform(df)
+        output_df = AddTax(columns=["food_price", "non_food_price"], rate=[0.08, 0.13]).transform(df)
 
         # food_price: 100 * 1.08 = 108.0
         # non_food_price: 200 * 1.13 = 226.0
         assert output_df.select("food_price").collect()[0][0] == pytest.approx(108.0)
-        assert output_df.select("non_food_price").collect()[0][0] == pytest.approx(
-            226.0
-        )
+        assert output_df.select("non_food_price").collect()[0][0] == pytest.approx(226.0)
 
     def test_paired_parameters_length_mismatch(self, spark):
         """Test that mismatched list length raises error (strict=True)"""
@@ -613,9 +585,7 @@ class TestFunctionBasedColumnsTransformations:
         ScaleOffset = ColumnsTransformation.from_func(scale_offset)
 
         df = spark.createDataFrame([(10.0, 20.0)], ["a", "b"])
-        output_df = ScaleOffset(
-            columns=["a", "b"], scale=[2.0, 3.0], offset=[5.0, 10.0]
-        ).transform(df)
+        output_df = ScaleOffset(columns=["a", "b"], scale=[2.0, 3.0], offset=[5.0, 10.0]).transform(df)
 
         # a: 10 * 2.0 + 5.0 = 25.0
         # b: 20 * 3.0 + 10.0 = 70.0
@@ -696,9 +666,7 @@ class TestFunctionBasedColumnsTransformations:
         ConcatThree = ColumnsTransformation.from_multi_column_func(concat_three)
 
         df = spark.createDataFrame([("a", "b", "c")], ["col1", "col2", "col3"])
-        output_df = ConcatThree(
-            columns=["col1", "col2", "col3"], target_column="result"
-        ).transform(df)
+        output_df = ConcatThree(columns=["col1", "col2", "col3"], target_column="result").transform(df)
 
         assert output_df.select("result").collect()[0][0] == "a-b-c"
 

@@ -24,10 +24,10 @@ Functions
 ---------
 transformation
     Decorator to create a Transformation from a function (DataFrame → DataFrame)
-    
+
 column_transformation
     Decorator to create a ColumnsTransformation from a function (Column → Column)
-    
+
 multi_column_transformation
     Decorator for multi-column transformations (multiple Columns → single Column)
 """
@@ -233,9 +233,7 @@ class Transformation(SparkStep, ABC):
         return self.transform(*args, **kwargs)
 
     @classmethod
-    def from_func(
-        cls, func: Callable, **kwargs: Dict[str, Any]
-    ) -> Callable[..., "Transformation"]:
+    def from_func(cls, func: Callable, **kwargs: Dict[str, Any]) -> Callable[..., "Transformation"]:
         """Create a Transformation from a function.
 
         This method enables function-based transformations for DataFrame operations, providing a simpler alternative
@@ -339,9 +337,7 @@ class Transformation(SparkStep, ABC):
 
         # Set a meaningful name for the class based on the function name
         func_name = getattr(_func, "__name__", "Transformation")
-        FunctionBasedTransformation.__name__ = (
-            func_name if func_name != "<lambda>" else "FunctionBasedTransformation"
-        )
+        FunctionBasedTransformation.__name__ = func_name if func_name != "<lambda>" else "FunctionBasedTransformation"
         FunctionBasedTransformation.__qualname__ = FunctionBasedTransformation.__name__
 
         # Return the class itself (can be used with .partial() for further customization)
@@ -350,6 +346,7 @@ class Transformation(SparkStep, ABC):
 
 P = ParamSpec("P")
 """ParamSpec for capturing function parameters (excluding df)"""
+
 
 @overload
 def transformation(
@@ -363,9 +360,7 @@ def transformation(
 @overload
 def transformation(
     func: None = None, *, validate: bool = True, **kwargs
-) -> Callable[
-    [Callable[Concatenate[DataFrame, P], DataFrame]], Type["Transformation"]
-]: ...
+) -> Callable[[Callable[Concatenate[DataFrame, P], DataFrame]], Type["Transformation"]]: ...
 
 
 def transformation(
@@ -588,9 +583,7 @@ class ColumnsTransformation(Transformation, ABC):
                 columns = ["*"]
         else:
             if columns[0] == "*" and not self.run_for_all_is_set:
-                raise ValueError(
-                    "Cannot use '*' as a column name when no run_for_all_data_type is set"
-                )
+                raise ValueError("Cannot use '*' as a column name when no run_for_all_data_type is set")
 
         self.columns = columns
         return self
@@ -690,18 +683,14 @@ class ColumnsTransformation(Transformation, ABC):
 
         # Check if the column exists in the DataFrame schema
         if df_col is None:
-            raise ValueError(
-                f"Column '{col_name}' does not exist in the DataFrame schema"
-            )
+            raise ValueError(f"Column '{col_name}' does not exist in the DataFrame schema")
 
         if simple_return_mode:
             return SparkDatatype(df_col.dataType.typeName()).value
 
         return df_col.dataType
 
-    def get_all_columns_of_specific_type(
-        self, data_type: Union[str, SparkDatatype]
-    ) -> List[str]:
+    def get_all_columns_of_specific_type(self, data_type: Union[str, SparkDatatype]) -> List[str]:
         """Get all columns from the dataframe of a given type
 
         A DataFrame needs to be available in order to get the columns. If no DataFrame is available, a ValueError will
@@ -723,22 +712,14 @@ class ColumnsTransformation(Transformation, ABC):
         if not self.df:
             raise ValueError("No dataframe available - cannot get columns")
 
-        expected_data_type = (
-            SparkDatatype.from_string(data_type)
-            if isinstance(data_type, str)
-            else data_type
-        ).value
+        expected_data_type = (SparkDatatype.from_string(data_type) if isinstance(data_type, str) else data_type).value
 
         columns_of_given_type: List[str] = [
-            col
-            for col in self.df.columns
-            if self.df.schema[col].dataType.typeName() == expected_data_type
+            col for col in self.df.columns if self.df.schema[col].dataType.typeName() == expected_data_type
         ]
 
         if not columns_of_given_type:
-            self.log.warning(
-                f"No columns of type '{expected_data_type}' found in the DataFrame"
-            )
+            self.log.warning(f"No columns of type '{expected_data_type}' found in the DataFrame")
 
         return columns_of_given_type
 
@@ -747,9 +728,7 @@ class ColumnsTransformation(Transformation, ABC):
         if not self.limit_data_type_is_set:
             return True
 
-        if self.column_type_of_col(column) in (
-            limit_data_types := self.get_limit_data_types()
-        ):
+        if self.column_type_of_col(column) in (limit_data_types := self.get_limit_data_types()):
             return True
 
         # Raises a ValueError if the Column object is not of a given type and data_type_strict_mode is set
@@ -760,18 +739,14 @@ class ColumnsTransformation(Transformation, ABC):
             )
 
         # Otherwise, throws a warning that the Column object is not of a given type
-        self.log.warning(
-            f"Column `{column}` is not of type `{limit_data_types}` and will be skipped."
-        )
+        self.log.warning(f"Column `{column}` is not of type `{limit_data_types}` and will be skipped.")
         return False
 
     def get_limit_data_types(self) -> list:
         """Get the limit_data_type as a list of strings"""
         # Check instance field first (for function-based transformations), then fall back to ColumnConfig
         limit_data_type = (
-            self.limit_data_type
-            if self.limit_data_type is not None
-            else self.ColumnConfig.limit_data_type
+            self.limit_data_type if self.limit_data_type is not None else self.ColumnConfig.limit_data_type
         )
         # Handle both SparkDatatype enums and string values
         return [dt.value if hasattr(dt, "value") else dt for dt in limit_data_type]  # type: ignore
@@ -845,9 +820,7 @@ class ColumnsTransformation(Transformation, ABC):
                     continue  # Skip return type hint
                 # Direct Column type - check both by identity and by name
                 # (Column might be a string annotation or actual type)
-                if type_ == Column or (
-                    isinstance(type_, type) and type_.__name__ == "Column"
-                ):
+                if type_ == Column or (isinstance(type_, type) and type_.__name__ == "Column"):
                     column_params.append(name)
                 # Handle string annotations
                 elif isinstance(type_, str) and type_ == "Column":
@@ -856,13 +829,7 @@ class ColumnsTransformation(Transformation, ABC):
                 elif hasattr(type_, "__origin__"):
                     if type_.__origin__ in (list, tuple):
                         args = get_args(type_)
-                        if args and (
-                            args[0] == Column
-                            or (
-                                isinstance(args[0], type)
-                                and args[0].__name__ == "Column"
-                            )
-                        ):
+                        if args and (args[0] == Column or (isinstance(args[0], type) and args[0].__name__ == "Column")):
                             return False  # Sequence of Columns → multi-column
 
             if len(column_params) > 1:
@@ -1018,26 +985,18 @@ class ColumnsTransformation(Transformation, ABC):
                         values["params"] = merged_params
 
                     # Set ColumnConfig defaults if not provided
-                    if (
-                        "run_for_all_data_type" not in values
-                        and run_for_all_data_type is not None
-                    ):
+                    if "run_for_all_data_type" not in values and run_for_all_data_type is not None:
                         values["run_for_all_data_type"] = run_for_all_data_type
                     if "limit_data_type" not in values and limit_data_type is not None:
                         values["limit_data_type"] = limit_data_type
-                    if (
-                        "data_type_strict_mode" not in values
-                        and data_type_strict_mode is not False
-                    ):
+                    if "data_type_strict_mode" not in values and data_type_strict_mode is not False:
                         values["data_type_strict_mode"] = data_type_strict_mode
                 return values
 
             def func(self, column: Column) -> Column:
                 """Apply the function to a column."""
                 # Get the function with bound parameters
-                func_with_args, func_kwargs = get_args_for_func(
-                    self.wrapped_func, self.params
-                )
+                func_with_args, func_kwargs = get_args_for_func(self.wrapped_func, self.params)
 
                 # If the function accepts a column parameter, pass it
                 # Otherwise, call the partial function with the column
@@ -1057,25 +1016,19 @@ class ColumnsTransformation(Transformation, ABC):
                     # Multi-column: Pass ALL columns to function at once
                     target_col = self.target_column or "_".join(columns)
 
-                    func_with_args, func_kwargs = get_args_for_func(
-                        self.wrapped_func, self.params
-                    )
+                    func_with_args, func_kwargs = get_args_for_func(self.wrapped_func, self.params)
 
                     # Inspect function signature to determine how to pass columns
                     sig = inspect.signature(self.wrapped_func)
                     params = list(sig.parameters.values())
 
                     # Check for variadic *args
-                    has_var_positional = any(
-                        p.kind == inspect.Parameter.VAR_POSITIONAL for p in params
-                    )
+                    has_var_positional = any(p.kind == inspect.Parameter.VAR_POSITIONAL for p in params)
 
                     # Check for ListOfColumns parameter
                     try:
                         hints = get_type_hints(self.wrapped_func)
-                        has_list_of_columns = any(
-                            t == ListOfColumns for t in hints.values()
-                        )
+                        has_list_of_columns = any(t == ListOfColumns for t in hints.values())
                     except (NameError, TypeError, AttributeError, ValueError):
                         has_list_of_columns = False
 
@@ -1090,13 +1043,9 @@ class ColumnsTransformation(Transformation, ABC):
                     else:
                         # Multiple positional params: pass as separate arguments
                         positional_params = [
-                            p
-                            for p in params
-                            if p.kind in (p.POSITIONAL_OR_KEYWORD, p.POSITIONAL_ONLY)
+                            p for p in params if p.kind in (p.POSITIONAL_OR_KEYWORD, p.POSITIONAL_ONLY)
                         ]
-                        column_objs = [
-                            f.col(c) for c in columns[: len(positional_params)]
-                        ]
+                        column_objs = [f.col(c) for c in columns[: len(positional_params)]]
                         result_col = func_with_args(*column_objs, **func_kwargs)
 
                     df = df.withColumn(target_col, result_col)
@@ -1110,9 +1059,7 @@ class ColumnsTransformation(Transformation, ABC):
                             _cols = [column, target_col]
                             target_col = "_".join(list(dict.fromkeys(_cols)))
 
-                        func_with_args, func_kwargs = get_args_for_func(
-                            self.wrapped_func, self.params
-                        )
+                        func_with_args, func_kwargs = get_args_for_func(self.wrapped_func, self.params)
 
                         # Handle paired parameters (strict zip matching)
                         indexed_kwargs = {}
@@ -1129,9 +1076,7 @@ class ColumnsTransformation(Transformation, ABC):
                             else:
                                 indexed_kwargs[key] = value
 
-                        df = df.withColumn(
-                            target_col, func_with_args(f.col(column), **indexed_kwargs)
-                        )
+                        df = df.withColumn(target_col, func_with_args(f.col(column), **indexed_kwargs))
 
                 self.output.df = df
 
@@ -1142,27 +1087,17 @@ class ColumnsTransformation(Transformation, ABC):
             FunctionBasedColumnsTransformation.__name__ = func_name
         else:
             # For lambdas, use a generic name
-            FunctionBasedColumnsTransformation.__name__ = (
-                "FunctionBasedColumnsTransformation"
-            )
-        FunctionBasedColumnsTransformation.__qualname__ = (
-            FunctionBasedColumnsTransformation.__name__
-        )
+            FunctionBasedColumnsTransformation.__name__ = "FunctionBasedColumnsTransformation"
+        FunctionBasedColumnsTransformation.__qualname__ = FunctionBasedColumnsTransformation.__name__
 
         # Set default values by modifying the FieldInfo objects directly
         # Pydantic will use these when instantiating the class
         if run_for_all_data_type is not None:
-            FunctionBasedColumnsTransformation.model_fields[
-                "run_for_all_data_type"
-            ].default = run_for_all_data_type
+            FunctionBasedColumnsTransformation.model_fields["run_for_all_data_type"].default = run_for_all_data_type
         if limit_data_type is not None:
-            FunctionBasedColumnsTransformation.model_fields[
-                "limit_data_type"
-            ].default = limit_data_type
+            FunctionBasedColumnsTransformation.model_fields["limit_data_type"].default = limit_data_type
         if data_type_strict_mode is not False:
-            FunctionBasedColumnsTransformation.model_fields[
-                "data_type_strict_mode"
-            ].default = data_type_strict_mode
+            FunctionBasedColumnsTransformation.model_fields["data_type_strict_mode"].default = data_type_strict_mode
 
         return FunctionBasedColumnsTransformation
 
@@ -1303,9 +1238,7 @@ def column_transformation(
     data_type_strict_mode: bool = False,
     for_each: Optional[bool] = None,
     **kwargs,
-) -> Callable[
-    [Callable[Concatenate[Column, PC], Column]], Type["ColumnsTransformation"]
-]: ...
+) -> Callable[[Callable[Concatenate[Column, PC], Column]], Type["ColumnsTransformation"]]: ...
 
 
 def column_transformation(
@@ -1317,9 +1250,7 @@ def column_transformation(
     data_type_strict_mode: bool = False,
     for_each: Optional[bool] = None,
     **kwargs,
-) -> Union[
-    Type["ColumnsTransformation"], Callable[[Callable], Type["ColumnsTransformation"]]
-]:
+) -> Union[Type["ColumnsTransformation"], Callable[[Callable], Type["ColumnsTransformation"]]]:
     """Decorator to create a ColumnsTransformation with runtime type validation.
 
     This is syntactic sugar over ColumnsTransformation.from_func() that adds Pydantic
@@ -1461,9 +1392,7 @@ def multi_column_transformation(
     limit_data_type: Optional[List[SparkDatatype]] = None,
     data_type_strict_mode: bool = False,
     **kwargs,
-) -> Union[
-    Type["ColumnsTransformation"], Callable[[Callable], Type["ColumnsTransformation"]]
-]:
+) -> Union[Type["ColumnsTransformation"], Callable[[Callable], Type["ColumnsTransformation"]]]:
     """Decorator for multi-column transformations (N columns → 1 result).
 
     This is syntactic sugar over ColumnsTransformation.from_multi_column_func()
@@ -1701,9 +1630,7 @@ class ColumnsTransformationWithTarget(ColumnsTransformation, ABC):
             # ensures that we at least use the original column name
             target_column = self.target_column or column
 
-            if (
-                len(columns) > 1
-            ):  # target_column becomes a suffix when more than 1 column is given
+            if len(columns) > 1:  # target_column becomes a suffix when more than 1 column is given
                 # dict.fromkeys is used to avoid duplicates in the name while maintaining order
                 _cols = [column, target_column]
                 target_column = "_".join(list(dict.fromkeys(_cols)))

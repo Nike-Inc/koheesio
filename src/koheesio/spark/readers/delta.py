@@ -86,9 +86,7 @@ class DeltaTableReader(Reader):
 
     """
 
-    table: Union[DeltaTableStep, str] = Field(
-        default=..., description="The table to read"
-    )
+    table: Union[DeltaTableStep, str] = Field(default=..., description="The table to read")
     filter_cond: Optional[Union[Column, str]] = Field(
         default=None,
         alias="filterCondition",
@@ -103,9 +101,7 @@ class DeltaTableReader(Reader):
     )
 
     # sql: Optional[str, Path]  # TODO: add support for SQL file, or advanced SQL expression
-    streaming: Optional[bool] = Field(
-        default=False, description="Whether to read the table as a Stream or not"
-    )
+    streaming: Optional[bool] = Field(default=False, description="Whether to read the table as a Stream or not")
     read_change_feed: bool = Field(
         default=False,
         alias="readChangeFeed",
@@ -165,15 +161,12 @@ class DeltaTableReader(Reader):
         alias="schemaTrackingLocation",
         description="schemaTrackingLocation: Track the location of source schema. "
         "Note: Recommend to enable Delta reader version: 3 and writer version: 7 for this option. "
-        "For more info see https://docs.delta.io/latest/delta-column-mapping.html"
-        + STREAMING_SCHEMA_WARNING,
+        "For more info see https://docs.delta.io/latest/delta-column-mapping.html" + STREAMING_SCHEMA_WARNING,
     )
 
     # private attrs
     __temp_view_name__: Optional[str] = None
-    __reader: Optional[Union[DataStreamReader, DataFrameReader]] = PrivateAttr(
-        default=None
-    )
+    __reader: Optional[Union[DataStreamReader, DataFrameReader]] = PrivateAttr(default=None)
 
     @property
     def temp_view_name(self) -> str:
@@ -187,9 +180,7 @@ class DeltaTableReader(Reader):
             return DeltaTableStep(table=tbl)
         if isinstance(tbl, DeltaTableStep):
             return tbl
-        raise AttributeError(
-            f"Table name provided cannot be processed as a Table : {tbl}"
-        )
+        raise AttributeError(f"Table name provided cannot be processed as a Table : {tbl}")
 
     @model_validator(mode="after")
     def _validate_starting_version_and_timestamp(self) -> "DeltaTableReader":
@@ -205,11 +196,7 @@ class DeltaTableReader(Reader):
                 f"provided values: ({starting_version=}, {starting_timestamp=})"
             )
 
-        if (
-            not streaming
-            and read_change_feed
-            and all([starting_version is None, starting_timestamp is None])
-        ):
+        if not streaming and read_change_feed and all([starting_version is None, starting_timestamp is None]):
             raise ValueError(
                 "Specify either a 'starting_version' or a 'starting_timestamp' "
                 "when reading change data feed in a batch mode."
@@ -237,15 +224,11 @@ class DeltaTableReader(Reader):
     @model_validator(mode="before")
     def _warn_on_streaming_options_without_streaming(cls, options: Dict) -> Dict:
         """throws a warning if streaming options were provided, but streaming was not set to true"""
-        streaming_options = [
-            val for opt, val in options.items() if opt in STREAMING_ONLY_OPTIONS
-        ]
+        streaming_options = [val for opt, val in options.items() if opt in STREAMING_ONLY_OPTIONS]
         streaming_toggled_on = options.get("streaming")
 
         if any(streaming_options) and not streaming_toggled_on:
-            log = LoggingFactory.get_logger(
-                name=cls.__name__, inherit_from_koheesio=True
-            )
+            log = LoggingFactory.get_logger(name=cls.__name__, inherit_from_koheesio=True)
             log.warning(
                 f"Streaming options were provided, but streaming was not toggled on. Was this intended?\n{options = }"
             )
@@ -320,11 +303,7 @@ class DeltaTableReader(Reader):
     def reader(self) -> Union[DataStreamReader, DataFrameReader]:
         """Return the reader for the DeltaTableReader based on the `streaming` attribute"""
         if not self.__reader:
-            self.__reader = (
-                self.__get_stream_reader()
-                if self.streaming
-                else self.__get_batch_reader()
-            )
+            self.__reader = self.__get_stream_reader() if self.streaming else self.__get_batch_reader()
             self.__reader = self.__reader.options(**self.get_options())
 
         return self.__reader
