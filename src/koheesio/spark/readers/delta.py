@@ -13,7 +13,6 @@ from __future__ import annotations
 from typing import Any, Dict, Optional, Union
 
 from pydantic import PrivateAttr
-
 from pyspark.sql import DataFrameReader
 from pyspark.sql import functions as f
 
@@ -205,9 +204,7 @@ class DeltaTableReader(Reader):
         return self
 
     @model_validator(mode="after")
-    def _validate_ignore_deletes_and_changes_and_skip_commits(
-        self,
-    ) -> "DeltaTableReader":
+    def _validate_ignore_deletes_and_changes_and_skip_commits(self) -> "DeltaTableReader":
         """Validate 'ignore_deletes' and 'ignore_changes' - Only one of each should be provided"""
         ignore_deletes = self.ignore_deletes
         ignore_changes = self.ignore_changes
