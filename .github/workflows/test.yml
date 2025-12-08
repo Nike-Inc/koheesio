@@ -36,7 +36,7 @@ jobs:
       toml_changed: ${{ steps.check.outputs.toml_changed }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -70,17 +70,9 @@ jobs:
       matrix:
 #        os: [ubuntu-latest, windows-latest, macos-latest]  # FIXME: Add Windows and macOS
         os: [ubuntu-latest]
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.10', '3.11', '3.12']
         pyspark-version: ['33', '34', '35', '35r', '352', '352r']
         exclude:
-          - python-version: '3.9'
-            pyspark-version: '35'
-          - python-version: '3.9'
-            pyspark-version: '352'
-          - python-version: '3.9'
-            pyspark-version: '35r'
-          - python-version: '3.9'
-            pyspark-version: '352r'
           - python-version: '3.10'
             pyspark-version: '352'
           - python-version: '3.10'
@@ -99,7 +91,7 @@ jobs:
             pyspark-version: '34'
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v6
