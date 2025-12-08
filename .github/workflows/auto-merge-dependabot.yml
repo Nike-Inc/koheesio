@@ -6,6 +6,8 @@ on:
     - opened
     - reopened
     - synchronize
+    - auto_merge_enabled
+    - auto_merge_disabled
     branches:
     - main
 
