@@ -47,7 +47,7 @@ jobs:
       #   e.g. version-update:semver-major. 
       #   For all possible values, see the ignore documentation. 
       #   https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#ignore
-      if: steps.metadata.outputs.update-type == 'version-update:semver-patch'
+      if: contains(steps.metadata.outputs.update-type, 'version-update:semver')
       run: gh pr merge --auto --squash ${{ github.event.pull_request.html_url }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
