@@ -41,6 +41,24 @@ hatch-install:
 	fi
 init: hatch-install
 
+.PHONY: hatch-upgrade  ## setup - Upgrade Hatch to the latest version
+hatch-upgrade:
+	@echo "Upgrading Hatch..."
+	@if command -v brew >/dev/null 2>&1 && brew list hatch >/dev/null 2>&1; then \
+		echo "Upgrading via Homebrew..."; \
+		brew upgrade hatch; \
+	elif command -v pipx >/dev/null 2>&1; then \
+		echo "Upgrading via pipx..."; \
+		pipx upgrade hatch; \
+	elif command -v pip >/dev/null 2>&1; then \
+		echo "Upgrading via pip..."; \
+		pip install --upgrade hatch; \
+	else \
+		echo "Could not find hatch installation method. Please upgrade manually."; \
+		exit 1; \
+	fi
+	@hatch --version
+
 .PHONY: sync  ## hatch - Update dependencies if you changed project dependencies in pyproject.toml
 .PHONY: update  ## hatch - alias for sync (if you are used to poetry, thi is similar to running `poetry update`)
 sync:
@@ -136,6 +154,72 @@ dev-test-spark:
 dev-test-non-spark:
 	@echo "\033[1mRunning pytest for non-Spark tests:\033[0m\n\033[35m This will run the test suite, excluding all spark tests\033[0m"
 	@hatch run dev:non-spark-tests -vv
+
+
+# CI Testing - Local GitHub Actions
+.PHONY: act-install  ## setup - Install act for local GitHub Actions testing
+act-install:
+	@echo "\033[1mInstalling act for local GitHub Actions testing...\033[0m"
+	@echo ""
+	@if [ `uname -s` = "Darwin" ]; then \
+		echo "📦 Installing via Homebrew..."; \
+		brew install act; \
+	elif [ `uname -s` = "Linux" ]; then \
+		echo "📦 Installing via installation script..."; \
+		curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash; \
+	else \
+		echo "⚠️  Windows detected. Please install act manually:"; \
+		echo "  • Using winget: winget install nektos.act"; \
+		echo "  • Using choco: choco install act-cli"; \
+		echo "  • Using scoop: scoop install act"; \
+		echo "  • Manual download: https://github.com/nektos/act#installation"; \
+		exit 1; \
+	fi
+	@echo ""
+	@echo "✅ Installation complete!"
+	@act --version
+
+.PHONY: act-check  ## setup - Check if act and Docker-compatible runtime are available
+act-check:
+	@echo "\033[1m🔍 Checking prerequisites for local GitHub Actions testing...\033[0m"
+	@echo ""
+	@command -v act >/dev/null 2>&1 || (echo "❌ act is not installed" && echo "   \033[36mRun: make act-install\033[0m" && echo "" && exit 1)
+	@echo "✅ act is installed: $$(act --version)"
+	@echo ""
+	@command -v docker >/dev/null 2>&1 || (echo "❌ Docker-compatible runtime not found" && echo "   You need one of: Colima (recommended), Docker Desktop, Podman, or OrbStack" && echo "   \033[36mSee: docs/development/local-github-actions.md#prerequisites\033[0m" && echo "" && exit 1)
+	@docker info >/dev/null 2>&1 || (echo "❌ Container runtime is not running" && echo "   Start your container runtime:" && echo "   • Colima: \033[36mcolima start\033[0m" && echo "   • Docker Desktop: Start the application" && echo "   • Podman: \033[36mpodman machine start\033[0m" && echo "" && exit 1)
+	@echo "✅ Docker-compatible runtime is available"
+	@echo ""
+	@echo "\033[32m🎉 All prerequisites met! Ready to run GitHub Actions locally.\033[0m"
+
+.PHONY: ci-list  ## testing - List all GitHub Actions workflows and jobs
+ci-list:
+	@echo "\033[1mAvailable GitHub Actions workflows and jobs:\033[0m"
+	@act -l
+
+.PHONY: ci-test  ## testing - Run full GitHub Actions test workflow locally
+ci-test: act-check
+	@echo "\033[1m🚀 Running full GitHub Actions test workflow locally...\033[0m"
+	@echo "\033[33m⚠️  This will run ALL test matrix combinations and may take 30+ minutes\033[0m"
+	@echo ""
+	@act pull_request -j tests --container-architecture linux/amd64
+
+.PHONY: ci-test-matrix  ## testing - Test specific matrix (usage: make ci-test-matrix PYTHON=3.12 PYSPARK=352r)
+ci-test-matrix: act-check
+	@if [ -z "$(PYTHON)" ] || [ -z "$(PYSPARK)" ]; then \
+		echo "Usage: \033[36mmake ci-test-matrix PYTHON=3.12 PYSPARK=352r\033[0m"; \
+		echo ""; \
+		echo "Available Python versions: 3.10, 3.11, 3.12"; \
+		echo "Available PySpark versions: 33, 34, 35, 35r, 352, 352r"; \
+		exit 1; \
+	fi
+	@echo "\033[1m🧪 Testing: Python $(PYTHON) + PySpark $(PYSPARK)\033[0m"
+	@act pull_request -j tests --matrix python-version:$(PYTHON) --matrix pyspark-version:$(PYSPARK) --container-architecture linux/amd64
+
+.PHONY: ci-dry-run  ## testing - Dry run to see what would execute
+ci-dry-run: act-check
+	@echo "\033[1m👁️  Dry run of GitHub Actions (no actual execution):\033[0m"
+	@act pull_request -n
 
 
 # Hatch commands
