@@ -2,17 +2,15 @@ from datetime import datetime
 from textwrap import dedent
 from unittest import mock
 
-import chispa
 from conftest import await_job_completion
 import pytest
 
 import pydantic
 
+from pyspark.testing import assertDataFrameEqual
+
 from koheesio.integrations.snowflake import SnowflakeRunQueryPython
-from koheesio.integrations.spark.snowflake import (
-    SnowflakeWriter,
-    SynchronizeDeltaToSnowflakeTask,
-)
+from koheesio.integrations.spark.snowflake import SnowflakeWriter, SynchronizeDeltaToSnowflakeTask
 from koheesio.spark import DataFrame
 from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.readers.delta import DeltaTableReader
@@ -92,7 +90,7 @@ class TestSnowflakeSyncTask:
             task.execute()
         # Ensure that this call doesn't raise an exception if called on a batch job
         task.writer.await_termination()
-        chispa.assert_df_equality(task.output.target_df, df)
+        assertDataFrameEqual(task.output.target_df, df)
 
     @mock.patch.object(SynchronizeDeltaToSnowflakeTask, "writer")
     def test_overwrite_with_persist(self, mock_writer, spark):
@@ -123,7 +121,7 @@ class TestSnowflakeSyncTask:
             pass
 
         task.execute()
-        chispa.assert_df_equality(task.output.target_df, df)
+        assertDataFrameEqual(task.output.target_df, df)
 
     def test_merge(self, spark, foreach_batch_stream_local, snowflake_staging_file, mocker):
         # Arrange - Prepare Delta requirements
@@ -167,12 +165,7 @@ class TestSnowflakeSyncTask:
 
         # Assert - Validate result
         df = spark.read.parquet(snowflake_staging_file).select("Country", "NumVaccinated", "AvailableDoses")
-        chispa.assert_df_equality(
-            df,
-            spark.sql(f"SELECT * FROM {source_table.table_name}"),
-            ignore_row_order=True,
-            ignore_column_order=True,
-        )
+        assertDataFrameEqual(df, spark.sql(f"SELECT * FROM {source_table.table_name}"))
         assert df.count() == 3
 
         # Perform update
@@ -189,12 +182,7 @@ class TestSnowflakeSyncTask:
         # Validate result
         df = spark.read.parquet(snowflake_staging_file).select("Country", "NumVaccinated", "AvailableDoses")
 
-        chispa.assert_df_equality(
-            df,
-            spark.sql(f"SELECT * FROM {source_table.table_name}"),
-            ignore_row_order=True,
-            ignore_column_order=True,
-        )
+        assertDataFrameEqual(df, spark.sql(f"SELECT * FROM {source_table.table_name}"))
         assert df.count() == 4
 
     def test_writer(self, spark):
@@ -356,12 +344,7 @@ class TestMerge:
             df, ["Country"], ["NumVaccinated", "AvailableDoses"]
         )
 
-        chispa.assert_df_equality(
-            result_df,
-            expected_staging_df,
-            ignore_row_order=True,
-            ignore_column_order=True,
-        )
+        assertDataFrameEqual(result_df, expected_staging_df)
 
 
 class TestValidations:
