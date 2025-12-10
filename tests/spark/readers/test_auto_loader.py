@@ -1,7 +1,7 @@
-from chispa import assert_df_equality
 import pytest
 
 from pyspark.sql.types import *
+from pyspark.testing import assertDataFrameEqual
 
 from koheesio.spark.readers.databricks.autoloader import AutoLoader
 
@@ -40,18 +40,18 @@ def test_read_json_infer_schema(spark, mocker, data_path):
 
     schema_expected = StructType(
         [
-            StructField("string", StringType(), True),
-            StructField("int", LongType(), True),
             StructField("array", ArrayType(LongType()), True),
+            StructField("int", LongType(), True),
+            StructField("string", StringType(), True),
         ]
     )
 
     data_expected = [
-        {"string": "string1", "int": 1, "array": [1, 11, 111]},
-        {"string": "string2", "int": 2, "array": [2, 22, 222]},
+        {"array": [1, 11, 111], "int": 1, "string": "string1"},
+        {"array": [2, 22, 222], "int": 2, "string": "string2"},
     ]
     expected_df = spark.createDataFrame(data_expected, schema_expected)
-    assert_df_equality(result, expected_df, ignore_column_order=True)
+    assertDataFrameEqual(result, expected_df)
 
 
 def test_read_json_exact_explicit_schema_struct(spark, mocker, data_path):
@@ -78,7 +78,7 @@ def test_read_json_exact_explicit_schema_struct(spark, mocker, data_path):
         {"string": "string2", "int": 2, "array": [2, 22, 222]},
     ]
     expected_df = spark.createDataFrame(data_expected, schema)
-    assert_df_equality(result, expected_df, ignore_column_order=True)
+    assertDataFrameEqual(result, expected_df)
 
 
 def test_read_json_different_explicit_schema_string(spark, mocker, data_path):
@@ -99,4 +99,4 @@ def test_read_json_different_explicit_schema_string(spark, mocker, data_path):
         {"string": "string2", "array": [2, 22, 222]},
     ]
     expected_df = spark.createDataFrame(data_expected, schema)
-    assert_df_equality(result, expected_df, ignore_column_order=True)
+    assertDataFrameEqual(result, expected_df)
