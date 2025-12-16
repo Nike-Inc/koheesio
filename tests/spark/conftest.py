@@ -240,12 +240,15 @@ SparkContextData = namedtuple("SparkContextData", ["spark", "options_dict"])
 """A named tuple containing the Spark session and the options dictionary used to create the DataFrame"""
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="function")
 def dummy_spark(spark, sample_df_with_strings) -> SparkContextData:
     """SparkSession fixture that makes any call to SparkSession.read.load() return a DataFrame with strings.
 
     Because of the use of `type(spark.read)`, this fixture automatically alters its behavior for either a remote or
     regular Spark session.
+
+    Note: This fixture uses function scope to ensure each test gets a fresh options_dict,
+    preventing state leakage between tests.
 
     Example
     -------

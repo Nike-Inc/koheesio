@@ -4,6 +4,7 @@ import pyspark.sql.functions as F
 from pyspark.sql.types import ArrayType, MapType, StringType, StructField, StructType
 
 from koheesio.spark.transformations.renames import RenameMapKeys
+from koheesio.spark.utils.common import Column
 
 
 class TestRenameMapKeys:
@@ -140,8 +141,6 @@ class TestRenameMapKeys:
 
     def test_custom_rename_function(self, spark):
         """Test using a custom rename function."""
-        from pyspark.sql import Column
-
         data = [
             ("value1", {"firstName": "John", "lastName": "Doe"}),
         ]

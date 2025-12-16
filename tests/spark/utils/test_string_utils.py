@@ -2,10 +2,10 @@
 
 import pytest
 
-from pyspark.sql import Column
 import pyspark.sql.functions as F
 from pyspark.sql.types import MapType, StringType, StructField, StructType
 
+from koheesio.spark.utils.common import Column
 from koheesio.spark.utils.string import AnyToSnakeConverter
 
 
