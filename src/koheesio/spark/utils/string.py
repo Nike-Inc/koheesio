@@ -3,8 +3,9 @@
 from functools import singledispatchmethod
 import re
 
-from pyspark.sql import Column
 from pyspark.sql import functions as F
+
+from koheesio.spark.utils.common import Column
 
 
 class AnyToSnakeConverter:
