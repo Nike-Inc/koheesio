@@ -3,9 +3,9 @@
 from functools import singledispatchmethod
 import re
 
+from pyspark.sql import Column
 from pyspark.sql import functions as F
-
-from koheesio.spark.utils.common import Column
+from pyspark.sql.connect.column import Column as ConnectColumn
 
 
 class AnyToSnakeConverter:
@@ -110,8 +110,7 @@ class AnyToSnakeConverter:
 
         return result
 
-    @convert.register
-    def _(self, column_name: Column) -> Column:
+    def __spark_column_convert(self, column_name: Column) -> Column:
         """Convert various naming conventions to snake_case using PySpark functions.
 
         The conversion works by first replacing dashes with underscores (to handle kebab-case),
@@ -139,3 +138,25 @@ class AnyToSnakeConverter:
         result = F.regexp_replace(s2, self.PATTERN_3, "_")
 
         return result
+
+    @convert.register
+    def _(self, column_name: Column) -> Column:
+        """Convert various naming conventions to snake_case using PySpark functions.
+
+        The conversion works by first replacing dashes with underscores (to handle kebab-case),
+        then inserting underscores before uppercase letters that follow lowercase letters or digits,
+        converting everything to lowercase, and finally collapsing any consecutive separators
+        into a single underscore. This implementation uses PySpark functions for optimal
+        performance in distributed data processing.
+
+        Args:
+            column_name: The PySpark Column expression to convert
+
+        Returns:
+            A PySpark Column expression with the converted snake_case values
+        """
+        return self.__spark_column_convert(column_name)
+
+    @convert.register
+    def _(self, column_name: ConnectColumn) -> ConnectColumn:
+        return self.__spark_column_convert(column_name)
