@@ -2,12 +2,10 @@ from datetime import datetime
 from textwrap import dedent
 from unittest import mock
 
-from conftest import await_job_completion
 import pytest
+from spark.conftest import await_job_completion
 
 import pydantic
-
-from tests.spark._testing import assertDataFrameEqual
 
 from koheesio.integrations.snowflake import SnowflakeRunQueryPython
 from koheesio.integrations.spark.snowflake import SnowflakeWriter, SynchronizeDeltaToSnowflakeTask
@@ -17,6 +15,7 @@ from koheesio.spark.readers.delta import DeltaTableReader
 from koheesio.spark.writers import BatchOutputMode, StreamingOutputMode
 from koheesio.spark.writers.delta import DeltaTableWriter
 from koheesio.spark.writers.stream import ForEachBatchStreamWriter
+from tests.spark._testing import assertDataFrameEqual
 
 pytestmark = pytest.mark.spark
 

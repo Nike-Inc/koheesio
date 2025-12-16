@@ -1,9 +1,9 @@
 import os
 from unittest.mock import MagicMock, patch
 
-from conftest import await_job_completion
 from delta.tables import DeltaMergeBuilder
 import pytest
+from spark.conftest import await_job_completion
 
 from pydantic import ValidationError
 
@@ -14,10 +14,7 @@ from koheesio.spark.delta import DeltaTableStep
 from koheesio.spark.utils import SPARK_MINOR_VERSION
 from koheesio.spark.writers import BatchOutputMode, StreamingOutputMode
 from koheesio.spark.writers.delta import DeltaTableStreamWriter, DeltaTableWriter
-from koheesio.spark.writers.delta.utils import (
-    SparkConnectDeltaTableException,
-    log_clauses,
-)
+from koheesio.spark.writers.delta.utils import SparkConnectDeltaTableException, log_clauses
 from koheesio.spark.writers.stream import Trigger
 
 pytestmark = pytest.mark.spark
