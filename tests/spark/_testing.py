@@ -48,6 +48,9 @@ else:
         """Assert that two DataFrames are equal.
 
         This is a compatibility wrapper that works with both PySpark 3.5+ and earlier versions.
+        Default behavior matches pyspark.testing.assertDataFrameEqual:
+        - Row order is NOT checked by default
+        - Nullability is ignored by default
 
         Parameters
         ----------
@@ -58,12 +61,15 @@ else:
         **kwargs
             Additional keyword arguments passed to the underlying comparison function.
             For PySpark < 3.5 (chispa), common options include:
-            - ignore_nullable: bool - Ignore nullability in schema comparison
+            - ignore_nullable: bool - Ignore nullability in schema comparison (default: True)
             - ignore_column_order: bool - Ignore column order
-            - ignore_row_order: bool - Ignore row order
+            - ignore_row_order: bool - Ignore row order (default: True)
         """
-        # Map pyspark.testing kwargs to chispa kwargs where possible
-        chispa_kwargs = {}
+        # Set defaults to match pyspark.testing behavior
+        chispa_kwargs = {
+            "ignore_row_order": True,  # pyspark.testing doesn't check row order by default
+            "ignore_nullable": True,  # pyspark.testing is lenient with nullability
+        }
 
         # Handle checkRowOrder (pyspark.testing) -> ignore_row_order (chispa)
         if "checkRowOrder" in kwargs:
@@ -79,7 +85,7 @@ else:
                 # but we can use allow_nan_equality for some cases
                 pass
 
-        # Pass through any remaining kwargs
+        # Pass through any remaining kwargs (will override defaults if specified)
         chispa_kwargs.update(kwargs)
 
         _chispa_assert_df_equality(actual, expected, **chispa_kwargs)
@@ -88,6 +94,7 @@ else:
         """Assert that two schemas are equal.
 
         This is a compatibility wrapper that works with both PySpark 3.5+ and earlier versions.
+        Default behavior matches pyspark.testing.assertSchemaEqual which ignores nullability.
 
         Parameters
         ----------
@@ -97,8 +104,11 @@ else:
             The expected schema to compare against.
         **kwargs
             Additional keyword arguments passed to the underlying comparison function.
+            - ignore_nullable: bool - Ignore nullability differences (default: True)
         """
-        _chispa_assert_schema_equality(actual, expected)
+        # Default to ignoring nullable to match pyspark.testing behavior
+        ignore_nullable = kwargs.pop("ignore_nullable", True)
+        _chispa_assert_schema_equality(actual, expected, ignore_nullable=ignore_nullable)
 
 
 # Also export the original function names for backward compatibility
