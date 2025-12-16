@@ -1,5 +1,6 @@
 """Utilities for string transformations and formatting."""
 
+from typing import Union
 from functools import singledispatchmethod
 import re
 
@@ -111,7 +112,7 @@ class AnyToSnakeConverter:
         return result
 
     @convert.register
-    def _(self, column_name: Column | ConnectColumn) -> Column:
+    def _(self, column_name: Union[Column, ConnectColumn]) -> Column:
         """Convert various naming conventions to snake_case using PySpark functions.
 
         The conversion works by first replacing dashes with underscores (to handle kebab-case),
