@@ -6,7 +6,16 @@ import re
 
 from pyspark.sql import Column
 from pyspark.sql import functions as F
-from pyspark.sql.connect.column import Column as ConnectColumn
+
+from koheesio.spark.utils.common import SPARK_MINOR_VERSION
+
+# ConnectColumn is only available in PySpark 3.4+
+ConnectColumn = None
+if SPARK_MINOR_VERSION >= 3.4:
+    try:
+        from pyspark.sql.connect.column import Column as ConnectColumn
+    except ImportError:
+        pass
 
 
 class AnyToSnakeConverter:
@@ -111,7 +120,7 @@ class AnyToSnakeConverter:
 
         return result
 
-    def _spark_convert(self, column_name: Column | ConnectColumn) -> Column:
+    def _spark_convert(self, column_name) -> Column:
         """Convert various naming conventions to snake_case using PySpark functions.
 
         The conversion works by first replacing dashes with underscores (to handle kebab-case),
@@ -144,6 +153,10 @@ class AnyToSnakeConverter:
     def _(self, column_name: Column) -> Column:
         return self._spark_convert(column_name)
 
-    @convert.register
-    def _(self, column_name: ConnectColumn) -> ConnectColumn:
+
+# Register ConnectColumn handler only if available (PySpark 3.4+)
+if ConnectColumn is not None:
+
+    @AnyToSnakeConverter.convert.register(ConnectColumn)
+    def _convert_connect_column(self, column_name):
         return self._spark_convert(column_name)
