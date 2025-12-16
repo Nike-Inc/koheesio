@@ -2,7 +2,7 @@ from pyspark.sql.types import FloatType, IntegerType, StringType, StructField, S
 from pyspark.testing import assertDataFrameEqual
 
 from koheesio.spark.readers import Reader
-from koheesio.spark.transformations.cast_dataframe.cast_to_target import CastToTarget
+from koheesio.spark.transformations.dataframe.cast_to_target import CastToTarget
 
 
 def test_get_schema_with_reader(spark, mocker):
