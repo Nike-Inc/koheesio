@@ -7,7 +7,7 @@ and earlier versions (which require chispa library).
 Usage
 -----
 ```python
-from tests.spark._testing import (
+from spark._testing import (
     assert_df_equality,
     assert_schema_equality,
 )

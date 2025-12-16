@@ -3,6 +3,7 @@ from textwrap import dedent
 from unittest import mock
 
 import pytest
+from spark._testing import assertDataFrameEqual
 from spark.conftest import await_job_completion
 
 import pydantic
@@ -15,7 +16,6 @@ from koheesio.spark.readers.delta import DeltaTableReader
 from koheesio.spark.writers import BatchOutputMode, StreamingOutputMode
 from koheesio.spark.writers.delta import DeltaTableWriter
 from koheesio.spark.writers.stream import ForEachBatchStreamWriter
-from tests.spark._testing import assertDataFrameEqual
 
 pytestmark = pytest.mark.spark
 

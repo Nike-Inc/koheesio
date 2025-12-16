@@ -1,6 +1,6 @@
-from pyspark.sql.types import FloatType, IntegerType, StringType, StructField, StructType
+from spark._testing import assertDataFrameEqual
 
-from tests.spark._testing import assertDataFrameEqual
+from pyspark.sql.types import FloatType, IntegerType, StringType, StructField, StructType
 
 from koheesio.spark.readers import Reader
 from koheesio.spark.transformations.dataframe.cast_to_target import CastToTarget

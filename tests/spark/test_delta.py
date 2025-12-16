@@ -12,8 +12,8 @@ from pyspark.sql.types import LongType
 
 from koheesio.logger import LoggingFactory
 from koheesio.spark.delta import DeltaTableStep, StaleDataCheckStep
+from spark._testing import assertDataFrameEqual
 from spark.conftest import setup_test_data
-from tests.spark._testing import assertDataFrameEqual
 
 pytestmark = pytest.mark.spark
 
