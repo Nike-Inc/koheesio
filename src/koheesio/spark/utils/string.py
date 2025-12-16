@@ -111,8 +111,7 @@ class AnyToSnakeConverter:
 
         return result
 
-    @convert.register
-    def _(self, column_name: Union[Column, ConnectColumn]) -> Column:
+    def _spark_convert(self, column_name: Column | ConnectColumn) -> Column:
         """Convert various naming conventions to snake_case using PySpark functions.
 
         The conversion works by first replacing dashes with underscores (to handle kebab-case),
@@ -140,3 +139,11 @@ class AnyToSnakeConverter:
         result = F.regexp_replace(s2, self.PATTERN_3, "_")
 
         return result
+
+    @convert.register
+    def _(self, column_name: Column) -> Column:
+        return self._spark_convert(column_name)
+
+    @convert.register
+    def _(self, column_name: ConnectColumn) -> ConnectColumn:
+        return self._spark_convert(column_name)
