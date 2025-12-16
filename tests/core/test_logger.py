@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from io import StringIO
 import logging
 from logging import Logger
@@ -5,13 +6,31 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from koheesio.logger import (
-    LoggingFactory,
-    MaskedDict,
-    MaskedFloat,
-    MaskedInt,
-    MaskedString,
-)
+from koheesio.logger import LoggingFactory, MaskedDict, MaskedFloat, MaskedInt, MaskedString
+
+
+@contextmanager
+def isolated_logging_factory():
+    """Context manager to isolate LoggingFactory state for testing.
+
+    This ensures that tests don't interfere with each other when they modify
+    the shared LoggingFactory state or the underlying Python logger.
+    """
+    # Save original state
+    original_factory_logger = LoggingFactory.LOGGER
+    koheesio_logger = logging.getLogger(LoggingFactory.LOGGER_NAME)
+    original_koheesio_level = koheesio_logger.level
+
+    # Reset to clean state
+    LoggingFactory.LOGGER = None
+    koheesio_logger.setLevel(logging.NOTSET)
+
+    try:
+        yield
+    finally:
+        # Restore original state
+        LoggingFactory.LOGGER = original_factory_logger
+        koheesio_logger.setLevel(original_koheesio_level)
 
 
 class TestLoggingFactory:
@@ -20,20 +39,10 @@ class TestLoggingFactory:
         assert isinstance(logger, Logger)
 
     def test_get_logger(self):
-        # Save original state that may have been modified by other tests
-        original_factory_logger = LoggingFactory.LOGGER
-        koheesio_logger = logging.getLogger(LoggingFactory.LOGGER_NAME)
-        original_koheesio_level = koheesio_logger.level
+        with isolated_logging_factory():
+            child_name = "child_logger"
+            ind_name = "independent_logger"
 
-        # Reset LoggingFactory to ensure clean state for this test
-        LoggingFactory.LOGGER = None
-        # Also reset the actual Python logger's level to ensure it gets re-initialized properly
-        koheesio_logger.setLevel(logging.NOTSET)
-
-        child_name = "child_logger"
-        ind_name = "independent_logger"
-
-        try:
             logger = LoggingFactory.get_logger(name=child_name, inherit_from_koheesio=True)
             logger.debug("Test Child DEBUG")
             logger_independent = LoggingFactory.get_logger(name=ind_name)
@@ -43,17 +52,10 @@ class TestLoggingFactory:
             assert logger.name == f"{LoggingFactory.LOGGER_NAME}.{child_name}"
             # Check parent level matches the expected LOGGER_LEVEL (default is WARNING)
             expected_level = logging._nameToLevel[LoggingFactory.LOGGER_LEVEL]
-            assert logger.parent.level == expected_level, (
-                f"Parent logger level {logger.parent.level} != expected {expected_level}. "
-                f"LOGGER_LEVEL is '{LoggingFactory.LOGGER_LEVEL}'"
-            )
+            assert logger.parent.level == expected_level
             assert isinstance(logger_independent, Logger)
             assert logger_independent.name == ind_name
             assert logger_independent.level == logging.INFO
-        finally:
-            # Restore original state
-            LoggingFactory.LOGGER = original_factory_logger
-            koheesio_logger.setLevel(original_koheesio_level)
 
 
 class TestAddHandlers:
