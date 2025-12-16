@@ -7,7 +7,7 @@ import pytest
 
 import pydantic
 
-from pyspark.testing import assertDataFrameEqual
+from tests.spark._testing import assertDataFrameEqual
 
 from koheesio.integrations.snowflake import SnowflakeRunQueryPython
 from koheesio.integrations.spark.snowflake import SnowflakeWriter, SynchronizeDeltaToSnowflakeTask

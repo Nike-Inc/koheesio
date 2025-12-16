@@ -89,6 +89,7 @@ tableau = ["tableauhyperapi>=0.0.19484", "tableauserverclient>=0.25"]
 snowflake = ["snowflake-connector-python>=3.12.0"]
 dev = ["ruff", "mypy", "pylint", "colorama", "types-PyYAML", "types-requests"]
 test = [
+  "chispa>=0.10.1",
   "coverage[toml]",
   "pytest",
   "pytest-asyncio",

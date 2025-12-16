@@ -1,7 +1,8 @@
 import pytest
 
 from pyspark.sql.types import StructType
-from pyspark.testing import assertDataFrameEqual
+
+from tests.spark._testing import assertDataFrameEqual
 
 from koheesio.spark.readers.memory import DataFormat, InMemoryDataReader
 

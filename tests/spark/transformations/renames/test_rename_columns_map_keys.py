@@ -3,7 +3,8 @@
 from pyspark.sql import Column
 import pyspark.sql.functions as F
 from pyspark.sql.types import ArrayType, MapType, StringType, StructField, StructType
-from pyspark.testing.utils import assertSchemaEqual
+
+from tests.spark._testing import assertSchemaEqual
 
 from koheesio.spark.transformations.renames import RenameColumnsMapKeys
 

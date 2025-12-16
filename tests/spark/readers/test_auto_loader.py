@@ -1,7 +1,8 @@
 import pytest
 
 from pyspark.sql.types import *
-from pyspark.testing import assertDataFrameEqual
+
+from tests.spark._testing import assertDataFrameEqual
 
 from koheesio.spark.readers.databricks.autoloader import AutoLoader
 

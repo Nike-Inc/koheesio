@@ -1,5 +1,6 @@
 from pyspark.sql.types import ArrayType, IntegerType, StringType, StructField, StructType
-from pyspark.testing.utils import assertSchemaEqual
+
+from tests.spark._testing import assertSchemaEqual
 
 from koheesio.spark.transformations.renames import RenameColumns
 

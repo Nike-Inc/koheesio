@@ -10,10 +10,10 @@ import pytest
 from pydantic import ValidationError
 
 from pyspark.sql.types import LongType
-from pyspark.testing import assertDataFrameEqual
 
 from koheesio.logger import LoggingFactory
 from koheesio.spark.delta import DeltaTableStep, StaleDataCheckStep
+from tests.spark._testing import assertDataFrameEqual
 
 pytestmark = pytest.mark.spark
 
