@@ -20,19 +20,40 @@ class TestLoggingFactory:
         assert isinstance(logger, Logger)
 
     def test_get_logger(self):
+        # Save original state that may have been modified by other tests
+        original_factory_logger = LoggingFactory.LOGGER
+        koheesio_logger = logging.getLogger(LoggingFactory.LOGGER_NAME)
+        original_koheesio_level = koheesio_logger.level
+
+        # Reset LoggingFactory to ensure clean state for this test
+        LoggingFactory.LOGGER = None
+        # Also reset the actual Python logger's level to ensure it gets re-initialized properly
+        koheesio_logger.setLevel(logging.NOTSET)
+
         child_name = "child_logger"
         ind_name = "independent_logger"
-        logger = LoggingFactory.get_logger(name=child_name, inherit_from_koheesio=True)
-        logger.debug("Test Child DEBUG")
-        logger_independent = LoggingFactory.get_logger(name=ind_name)
-        logger_independent.setLevel("INFO")
 
-        assert isinstance(logger, Logger)
-        assert logger.name == f"{LoggingFactory.LOGGER_NAME}.{child_name}"
-        assert logger.parent.level == logging._nameToLevel[LoggingFactory.LOGGER_LEVEL]
-        assert isinstance(logger_independent, Logger)
-        assert logger_independent.name == ind_name
-        assert logger_independent.level == logging.INFO
+        try:
+            logger = LoggingFactory.get_logger(name=child_name, inherit_from_koheesio=True)
+            logger.debug("Test Child DEBUG")
+            logger_independent = LoggingFactory.get_logger(name=ind_name)
+            logger_independent.setLevel("INFO")
+
+            assert isinstance(logger, Logger)
+            assert logger.name == f"{LoggingFactory.LOGGER_NAME}.{child_name}"
+            # Check parent level matches the expected LOGGER_LEVEL (default is WARNING)
+            expected_level = logging._nameToLevel[LoggingFactory.LOGGER_LEVEL]
+            assert logger.parent.level == expected_level, (
+                f"Parent logger level {logger.parent.level} != expected {expected_level}. "
+                f"LOGGER_LEVEL is '{LoggingFactory.LOGGER_LEVEL}'"
+            )
+            assert isinstance(logger_independent, Logger)
+            assert logger_independent.name == ind_name
+            assert logger_independent.level == logging.INFO
+        finally:
+            # Restore original state
+            LoggingFactory.LOGGER = original_factory_logger
+            koheesio_logger.setLevel(original_koheesio_level)
 
 
 class TestAddHandlers:
