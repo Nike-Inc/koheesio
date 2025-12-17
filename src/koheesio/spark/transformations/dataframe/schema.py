@@ -66,29 +66,12 @@ class SchemaTransformation(Transformation, ABC):
     ```
     """
 
-    columns: ListOfColumns = Field(
-        default="",
+    columns: ListOfColumns | None = Field(
+        default=None,
         alias="column",
         description="The column (or list of columns) to apply the transformation to. "
         "If not provided, all columns will be processed. Alias: column",
     )
-
-    def get_columns(self) -> List[str]:
-        """Get the list of columns to process.
-
-        Returns the columns specified in the `columns` field if provided,
-        otherwise returns all columns from the DataFrame.
-
-        Returns
-        -------
-        List[str]
-            List of column names to process.
-        """
-        if self.columns:
-            return list(self.columns)
-        if self.df is not None:
-            return self.df.columns
-        return []
 
     def process_schema(
         self,
@@ -156,12 +139,14 @@ class SchemaTransformation(Transformation, ABC):
         ```
         """
         # Determine which columns to process at root level
-        columns_to_process = columns or self.get_columns()
+        # Use passed columns parameter if provided, otherwise use self.columns
+        # columns=[] means "process all" (used in recursive calls for nested structures)
+        columns_filter = columns if columns is not None else self.columns
         new_fields = []
 
         for field in schema.fields:
-            # If columns filter is set, only transform matching fields
-            if columns_to_process is not None and field.name not in columns_to_process:
+            # If columns filter is set (non-empty), only transform matching fields
+            if columns_filter and field.name not in columns_filter:
                 # Keep the field unchanged
                 new_fields.append(field)
             else:
@@ -196,17 +181,18 @@ class SchemaTransformation(Transformation, ABC):
         data_type = field.dataType
 
         # Handle nested StructType
+        # Pass columns=[] to process all nested fields (filter only applies at root level)
         if isinstance(data_type, StructType):
-            return self.process_schema(data_type, name_func, type_func)
+            return self.process_schema(data_type, name_func, type_func, columns=[])
 
         # Handle ArrayType containing StructType
         if isinstance(data_type, ArrayType) and isinstance(data_type.elementType, StructType):
-            nested_schema = self.process_schema(data_type.elementType, name_func, type_func)
+            nested_schema = self.process_schema(data_type.elementType, name_func, type_func, columns=[])
             return ArrayType(nested_schema, data_type.containsNull)
 
         # Handle MapType containing StructType values
         if isinstance(data_type, MapType) and isinstance(data_type.valueType, StructType):
-            nested_schema = self.process_schema(data_type.valueType, name_func, type_func)
+            nested_schema = self.process_schema(data_type.valueType, name_func, type_func, columns=[])
             return MapType(data_type.keyType, nested_schema, data_type.valueContainsNull)
 
         # For non-nested types, apply type_func if provided

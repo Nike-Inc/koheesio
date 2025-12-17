@@ -1,2 +1,1 @@
-# Spark tests package
-
+"""Spark tests package"""

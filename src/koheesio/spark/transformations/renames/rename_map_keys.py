@@ -34,9 +34,7 @@ class RenameMapKeys(Transformation):
     -------
     ```python
     # DataFrame with map column containing {"firstName": "John", "lastName": "Doe"}
-    renamer = RenameMapKeys()
-    renamer.df = input_df
-    renamer.execute()
+    output_df = RenameMapKeys().transform(input_df)
 
     # Result: map column containing {"first_name": "John", "last_name": "Doe"}
     ```

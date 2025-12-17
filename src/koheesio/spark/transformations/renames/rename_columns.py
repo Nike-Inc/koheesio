@@ -104,7 +104,7 @@ class RenameColumns(SchemaTransformation):
         renaming_func = self._get_rename_func()
 
         # Determine which columns should be renamed
-        columns_to_rename = set(self.get_columns()) if self.columns else None
+        columns_to_rename = set(self.columns) if self.columns else None
 
         # Apply the new schema by casting each column to the new type
         select_exprs = []

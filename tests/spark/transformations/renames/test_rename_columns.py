@@ -35,6 +35,35 @@ class TestRenameColumns:
 
         assertSchemaEqual(new_schema, expected_schema)
 
+    def test_rename_schema_filter_columns(self, spark):
+        schema = StructType(
+            [
+                StructField("camelCaseField", StringType(), True),
+                StructField("nestedField", StructType([StructField("innerCamelCaseField", IntegerType(), True)]), True),
+                StructField(
+                    "arrayField", ArrayType(StructType([StructField("arrayCamelCaseField", StringType(), True)])), True
+                ),
+            ]
+        )
+        rename_columns = RenameColumns(columns=["nestedField"])
+        new_schema = rename_columns.rename_schema(schema)
+
+        expected_schema = StructType(
+            [
+                StructField("camelCaseField", StringType(), True),
+                StructField(
+                    "nested_field", StructType([StructField("inner_camel_case_field", IntegerType(), True)]), True
+                ),
+                StructField(
+                    "arrayField",
+                    ArrayType(StructType([StructField("arrayCamelCaseField", StringType(), True)])),
+                    True,
+                ),
+            ]
+        )
+
+        assertSchemaEqual(new_schema, expected_schema)
+
     def test_execute(self, spark):
         data = [("value1", 1), ("value2", 2)]
         schema = StructType(

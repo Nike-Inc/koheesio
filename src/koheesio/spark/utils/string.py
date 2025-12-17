@@ -22,6 +22,7 @@ class AnyToSnakeConverter:
     """Converter class that transforms any naming convention to snake_case.
 
     Supported Formats:
+
     - camelCase (dromedaryCase): `firstName` -> `first_name`
     - PascalCase (UpperCamelCase): `FirstName` -> `first_name`
     - Ada_Case (Pascal_Snake_Case): `First_Name` -> `first_name`
@@ -35,32 +36,42 @@ class AnyToSnakeConverter:
     - snake_case: `first_name` -> `first_name` (already in target format)
 
     The class uses singledispatchmethod to automatically dispatch to the appropriate implementation:
+
     - Python regex implementation for str (fast for schema/column names)
     - PySpark functions implementation for Column (optimized for data transformations)
 
     For more information on naming conventions, see:
     https://en.wikipedia.org/wiki/Naming_convention_(programming)#Examples_of_multiple-word_identifier_formats
 
-    Class Attributes:
-        PATTERN_1: Regex pattern to separate lowercase/digit followed by uppercase letter with lowercase
-        PATTERN_2: Regex pattern to separate lowercase/digit followed by uppercase letter
-        PATTERN_3: Regex pattern to remove consecutive underscores
+    Attributes
+    ----------
+    PATTERN_1 : str
+        Regex pattern to separate lowercase/digit followed by uppercase letter with lowercase
+    PATTERN_2 : str
+        Regex pattern to separate lowercase/digit followed by uppercase letter
+    PATTERN_3 : str
+        Regex pattern to remove consecutive underscores
 
-    Example:
-        ```python
-        converter = AnyToSnakeConverter()
+    Examples
+    --------
+    >>> converter = AnyToSnakeConverter()
 
-        # Automatically uses Python implementation for strings
-        converter.convert("camelCase")  # -> "camel_case"
-        converter.convert("PascalCase")  # -> "pascal_case"
-        converter.convert("Ada_Case")  # -> "ada_case"
-        converter.convert("CONSTANT_CASE")  # -> "constant_case"
+    Automatically uses Python implementation for strings:
 
-        # Automatically uses PySpark implementation for Columns
-        df = df.select(
-            F.transform_keys(map_col, lambda k, v: converter.convert(k))
-        )
-        ```
+    >>> converter.convert("camelCase")
+    'camel_case'
+    >>> converter.convert("PascalCase")
+    'pascal_case'
+    >>> converter.convert("Ada_Case")
+    'ada_case'
+    >>> converter.convert("CONSTANT_CASE")
+    'constant_case'
+
+    Automatically uses PySpark implementation for Columns:
+
+    >>> df = df.select(
+    ...     F.transform_keys(map_col, lambda k, v: converter.convert(k))
+    ... )
     """
 
     # Regex patterns for PySpark (strings passed to Spark SQL engine)
@@ -80,14 +91,20 @@ class AnyToSnakeConverter:
         Dispatches to the appropriate implementation based on input type.
         See class docstring for supported naming conventions.
 
-        Args:
-            name: Either a Python string or a PySpark Column expression
+        Parameters
+        ----------
+        name : str or Column
+            Either a Python string or a PySpark Column expression
 
-        Returns:
+        Returns
+        -------
+        str or Column
             Converted snake_case string or Column expression (same type as input)
 
-        Raises:
-            NotImplementedError: If called with an unsupported type
+        Raises
+        ------
+        NotImplementedError
+            If called with an unsupported type
         """
         raise NotImplementedError(f"convert not implemented for type {type(name)}")
 
@@ -100,10 +117,14 @@ class AnyToSnakeConverter:
         converting everything to lowercase, and finally collapsing any consecutive separators
         into a single underscore.
 
-        Args:
-            name: The string to convert
+        Parameters
+        ----------
+        name : str
+            The string to convert
 
-        Returns:
+        Returns
+        -------
+        str
             The converted snake_case string
         """
         # Replace dashes with underscores (handles kebab-case variants)
@@ -129,10 +150,14 @@ class AnyToSnakeConverter:
         into a single underscore. This implementation uses PySpark functions for optimal
         performance in distributed data processing.
 
-        Args:
-            column_name: The PySpark Column expression to convert
+        Parameters
+        ----------
+        column_name : Column
+            The PySpark Column expression to convert
 
-        Returns:
+        Returns
+        -------
+        Column
             A PySpark Column expression with the converted snake_case values
         """
         # Replace dashes with underscores (handles kebab-case variants)
