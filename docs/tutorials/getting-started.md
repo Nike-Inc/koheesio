@@ -21,7 +21,7 @@
 
 <details>
     <summary>pip</summary>
-    
+
     If you're using pip, run the following command to install Koheesio:
     
     Requires [pip](https://pip.pypa.io/en/stable/).
@@ -59,7 +59,7 @@ from pyspark.sql import DataFrame, SparkSession
 # Step 1: import Koheesio dependencies
 from koheesio.context import Context
 from koheesio.spark.readers.dummy import DummyReader
-from koheesio.spark.transformations.camel_to_snake import CamelToSnakeTransformation
+from koheesio.spark.transformations.renames.camel_to_snake import CamelToSnakeTransformation
 from koheesio.spark.writers.dummy import DummyWriter
 from koheesio.spark.etl_task import EtlTask
 
@@ -88,10 +88,12 @@ task.run()
 ```
 
 ### Contributing
+
 If you want to contribute to Koheesio, check out the `CONTRIBUTING.md` file in this repository. It contains guidelines
 for contributing, including how to submit issues and pull requests.
 
 ### Testing
+
 To run the tests for Koheesio, use the following command:
 
 ```bash

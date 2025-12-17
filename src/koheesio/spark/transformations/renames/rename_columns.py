@@ -15,7 +15,7 @@ from koheesio.spark.utils.string import AnyToSnakeConverter
 class RenameColumns(SchemaTransformation):
     """Rename DataFrame column names using a custom renaming function.
 
-    This transformation renames all column names (including nested fields in
+    This transformation renames column names (including nested fields in
     structs and arrays) using the provided renaming function. By default, it
     converts any naming convention to snake_case (camelCase, PascalCase,
     Ada_Case, kebab-case, CONSTANT_CASE, etc.) using AnyToSnakeConverter.
@@ -25,6 +25,9 @@ class RenameColumns(SchemaTransformation):
 
     Parameters
     ----------
+    columns : Optional[ListOfColumns]
+        The column or list of columns to rename. If not provided, all columns
+        will be renamed. Alias: column
     rename_func : Optional[Callable[[str], str]]
         Custom function to rename columns. Defaults to AnyToSnakeConverter().convert
         if not provided.
@@ -34,12 +37,16 @@ class RenameColumns(SchemaTransformation):
     ```python
     from koheesio.spark.transformations.renames import RenameColumns
 
-    # Using default snake_case conversion
+    # Using default snake_case conversion on all columns
     transform = RenameColumns()
     output_df = transform.transform(input_df)
 
     # Using custom rename function
     transform = RenameColumns(rename_func=str.upper)
+    output_df = transform.transform(input_df)
+
+    # Rename only specific columns
+    transform = RenameColumns(columns=["camelCaseCol", "PascalCaseCol"])
     output_df = transform.transform(input_df)
     ```
     """
@@ -89,12 +96,25 @@ class RenameColumns(SchemaTransformation):
         1. Renames the schema using the renaming function (handles nested structures)
         2. Applies the new schema to the DataFrame by casting and aliasing columns
         3. Sets the output DataFrame
+
+        If specific columns are specified via the `columns` parameter, only those
+        columns will be renamed while others remain unchanged.
         """
-        self.df: DataFrame
         new_schema = self.rename_schema(self.df.schema)
         renaming_func = self._get_rename_func()
 
+        # Determine which columns should be renamed
+        columns_to_rename = set(self.get_columns()) if self.columns else None
+
         # Apply the new schema by casting each column to the new type
-        self.output.df = self.df.select(
-            [F.col(c).cast(new_schema[renaming_func(c)].dataType).alias(renaming_func(c)) for c in self.df.columns]
-        )
+        select_exprs = []
+        for c in self.df.columns:
+            if columns_to_rename is None or c in columns_to_rename:
+                # Rename this column
+                new_name = renaming_func(c)
+                select_exprs.append(F.col(c).cast(new_schema[new_name].dataType).alias(new_name))
+            else:
+                # Keep column unchanged
+                select_exprs.append(F.col(c))
+
+        self.output.df = self.df.select(select_exprs)

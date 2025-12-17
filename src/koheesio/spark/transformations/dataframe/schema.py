@@ -10,12 +10,13 @@ SchemaTransformation
     Base class for transformations that modify DataFrame schemas.
 """
 
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Callable, List, Optional, Set, Tuple, Union
 from abc import ABC
 
 from pyspark.sql import functions as sf
 from pyspark.sql.types import ArrayType, DataType, MapType, StructField, StructType
 
+from koheesio.models import Field, ListOfColumns
 from koheesio.spark.transformations import Transformation
 from koheesio.spark.utils.common import DataFrame
 
@@ -29,9 +30,16 @@ class SchemaTransformation(Transformation, ABC):
     Subclasses must implement the `execute` method and can use the provided
     schema utilities for their transformation logic.
 
+    Parameters
+    ----------
+    columns : Optional[ListOfColumns]
+        The column or list of columns to apply the transformation to.
+        If not provided, all columns will be processed.
+        Alias: column
+
     Methods
     -------
-    process_schema(schema, name_func, type_func)
+    process_schema(schema, name_func, type_func, columns)
         Recursively process a schema, transforming field names and/or types.
 
     build_select_expressions(target_schema, source_columns, column_mapping)
@@ -48,14 +56,46 @@ class SchemaTransformation(Transformation, ABC):
                 name_func=lambda name: name.lower(),
             )
             # Apply transformation...
+
+
+    # Transform all columns
+    transform = MySchemaTransform()
+
+    # Transform only specific columns
+    transform = MySchemaTransform(columns=["col1", "col2"])
     ```
     """
+
+    columns: ListOfColumns = Field(
+        default="",
+        alias="column",
+        description="The column (or list of columns) to apply the transformation to. "
+        "If not provided, all columns will be processed. Alias: column",
+    )
+
+    def get_columns(self) -> List[str]:
+        """Get the list of columns to process.
+
+        Returns the columns specified in the `columns` field if provided,
+        otherwise returns all columns from the DataFrame.
+
+        Returns
+        -------
+        List[str]
+            List of column names to process.
+        """
+        if self.columns:
+            return list(self.columns)
+        if self.df is not None:
+            return self.df.columns
+        return []
 
     def process_schema(
         self,
         schema: StructType,
         name_func: Optional[Callable[[str], str]] = None,
         type_func: Optional[Callable[[StructField], DataType]] = None,
+        columns: Optional[List[str]] = None,
     ) -> StructType:
         """Recursively process a schema, transforming field names and/or types.
 
@@ -74,6 +114,11 @@ class SchemaTransformation(Transformation, ABC):
             Function to transform field types. Receives the full StructField
             and returns the new DataType. If None, types are unchanged.
             Note: For nested structures, this is applied AFTER recursive processing.
+        columns : Optional[List[str]]
+            List of column names to process at the root level. If None, uses
+            self.get_columns() which returns self.columns if set, otherwise all columns.
+            This parameter only affects root-level fields; nested fields are always
+            processed recursively.
 
         Returns
         -------
@@ -87,6 +132,13 @@ class SchemaTransformation(Transformation, ABC):
         new_schema = self.process_schema(
             df.schema,
             name_func=to_snake_case,
+        )
+
+        # Rename only specific columns
+        new_schema = self.process_schema(
+            df.schema,
+            name_func=to_snake_case,
+            columns=["col1", "col2"],
         )
 
 
@@ -103,12 +155,19 @@ class SchemaTransformation(Transformation, ABC):
         )
         ```
         """
+        # Determine which columns to process at root level
+        columns_to_process = columns or self.get_columns()
         new_fields = []
 
         for field in schema.fields:
-            new_name = name_func(field.name) if name_func else field.name
-            new_type = self._process_field_type(field, name_func, type_func)
-            new_fields.append(StructField(new_name, new_type, field.nullable, field.metadata))
+            # If columns filter is set, only transform matching fields
+            if columns_to_process is not None and field.name not in columns_to_process:
+                # Keep the field unchanged
+                new_fields.append(field)
+            else:
+                new_name = name_func(field.name) if name_func else field.name
+                new_type = self._process_field_type(field, name_func, type_func)
+                new_fields.append(StructField(new_name, new_type, field.nullable, field.metadata))
 
         return StructType(new_fields)
 
@@ -159,7 +218,7 @@ class SchemaTransformation(Transformation, ABC):
     def build_select_expressions(
         self,
         target_schema: Union[StructType, List[Tuple[str, DataType]]],
-        source_columns: List[str],
+        source_columns: ListOfColumns,
         column_mapping: Optional[Callable[[str], str]] = None,
     ) -> List:
         """Build select expressions to transform a DataFrame to match a target schema.
