@@ -326,10 +326,9 @@ def test_from_yaml_path_object_nonexistent_file():
         assert isinstance(result, Context)
     except AttributeError as e:
         # If it raises AttributeError, it should NOT be about 'read'
-        assert "'read'" not in str(e), (
-            f"Bug #226: from_yaml() should not raise AttributeError about 'read' when passed a Path object. "
-            f"Got: {e}"
-        )
+        assert "'read'" not in str(
+            e
+        ), f"Bug #226: from_yaml() should not raise AttributeError about 'read' when passed a Path object. Got: {e}"
 
 
 def test_to_yaml():
