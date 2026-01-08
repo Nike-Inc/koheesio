@@ -22,7 +22,10 @@ stream_mode = OutputMode.streaming.COMPLETE  # Also works
 Backward compatibility (deprecated but supported):
 
 ```python
-from koheesio.spark.writers import BatchOutputMode, StreamingOutputMode
+from koheesio.spark.writers import (
+    BatchOutputMode,
+    StreamingOutputMode,
+)
 
 mode = BatchOutputMode.APPEND
 stream_mode = StreamingOutputMode.COMPLETE
@@ -64,7 +67,7 @@ class OutputMode:
     class MyWriter(Writer):
         output_mode: str = Field(
             default=OutputMode.BATCH.APPEND,
-            description="Output mode for writing"
+            description="Output mode for writing",
         )
     ```
 
@@ -77,7 +80,7 @@ class OutputMode:
     writer = DeltaTableWriter(
         table="my_table",
         output_mode=OutputMode.batch.MERGE,  # Case-insensitive!
-        key_columns=["id"]
+        key_columns=["id"],
     )
     ```
 

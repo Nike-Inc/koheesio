@@ -3,7 +3,7 @@ import pytest
 from pyspark.sql import functions as F
 
 from koheesio.spark.readers.dummy import DummyReader
-from koheesio.spark.transformations.camel_to_snake import CamelToSnakeTransformation
+from koheesio.spark.transformations.renames.camel_to_snake import CamelToSnakeTransformation
 
 pytestmark = pytest.mark.spark
 

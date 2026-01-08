@@ -131,9 +131,7 @@ class TestNestedEnumWithPydantic:
         """Test using nested enum in Pydantic Field."""
 
         class MyModel(BaseModel):
-            mode: SampleMode.BATCH = Field(
-                default=SampleMode.BATCH.APPEND, description="The batch mode"
-            )
+            mode: SampleMode.BATCH = Field(default=SampleMode.BATCH.APPEND, description="The batch mode")
 
         model = MyModel()
         assert model.mode == SampleMode.BATCH.APPEND
