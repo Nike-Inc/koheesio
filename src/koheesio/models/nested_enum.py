@@ -36,9 +36,9 @@ class NestedEnumMeta(type):
 
     Note
     ----
-    While primarily designed for organizing Enum classes, this metaclass works with any 
-    nested class structure. The nested classes don't need to be Enum subclasses, but 
-    using it with Enums is the recommended and primary use case. The case-insensitive 
+    While primarily designed for organizing Enum classes, this metaclass works with any
+    nested class structure. The nested classes don't need to be Enum subclasses, but
+    using it with Enums is the recommended and primary use case. The case-insensitive
     access mechanism is agnostic to the type of nested class.
 
     Examples
@@ -48,6 +48,7 @@ class NestedEnumMeta(type):
     ```python
     from enum import Enum
     from koheesio.models import NestedEnumMeta
+
 
     class OutputMode(metaclass=NestedEnumMeta):
         '''Container for output modes'''
@@ -59,6 +60,7 @@ class NestedEnumMeta(type):
         class STREAMING(str, Enum):
             APPEND = "append"
             COMPLETE = "complete"
+
 
     # All of these work:
     mode = OutputMode.BATCH.APPEND
@@ -72,6 +74,7 @@ class NestedEnumMeta(type):
     from enum import Enum
     from koheesio.models import nested_enum
 
+
     @nested_enum
     class OutputMode:
         '''Container for output modes'''
@@ -83,6 +86,7 @@ class NestedEnumMeta(type):
         class STREAMING(str, Enum):
             APPEND = "append"
             COMPLETE = "complete"
+
 
     # Case-insensitive access works:
     OutputMode.batch.APPEND == OutputMode.BATCH.APPEND  # True
@@ -223,6 +227,7 @@ def nested_enum(cls: Type[T]) -> Type[T]:
     from enum import Enum
     from koheesio.models import nested_enum
 
+
     @nested_enum
     class Status:
         '''Status codes grouped by category'''
@@ -236,10 +241,11 @@ def nested_enum(cls: Type[T]) -> Type[T]:
             CONNECTED = "connected"
             DISCONNECTED = "disconnected"
 
+
     # Case-insensitive access:
-    Status.HTTP.OK             # Works
-    Status.http.OK             # Works
-    Status.Http.OK             # Works
+    Status.HTTP.OK  # Works
+    Status.http.OK  # Works
+    Status.Http.OK  # Works
     Status.DATABASE.CONNECTED  # Works
     Status.database.CONNECTED  # Works
     ```
@@ -251,20 +257,24 @@ def nested_enum(cls: Type[T]) -> Type[T]:
     from pydantic import Field
     from koheesio.models import BaseModel, nested_enum
 
+
     @nested_enum
     class OutputMode:
         class BATCH(str, Enum):
             APPEND = "append"
             OVERWRITE = "overwrite"
 
+
     class MyWriter(BaseModel):
         mode: OutputMode.BATCH = Field(
-            default=OutputMode.BATCH.APPEND,
-            description="The output mode"
+            default=OutputMode.BATCH.APPEND, description="The output mode"
         )
 
+
     # Usage:
-    writer = MyWriter(mode=OutputMode.batch.OVERWRITE)  # Case-insensitive!
+    writer = MyWriter(
+        mode=OutputMode.batch.OVERWRITE
+    )  # Case-insensitive!
     ```
 
     See Also

@@ -3,8 +3,6 @@ import os
 from pathlib import Path
 from unittest.mock import patch
 
-from chispa import assert_df_equality
-from conftest import setup_test_data
 from freezegun import freeze_time
 import pytest
 
@@ -14,6 +12,8 @@ from pyspark.sql.types import LongType
 
 from koheesio.logger import LoggingFactory
 from koheesio.spark.delta import DeltaTableStep, StaleDataCheckStep
+from spark._testing import assertDataFrameEqual
+from spark.conftest import setup_test_data
 
 pytestmark = pytest.mark.spark
 
@@ -180,7 +180,7 @@ def test_describe_history__no_limit(mocker, spark, test_describe_history_df):
             {"version": 0, "timestamp": "2024-12-30 12:00:00", "tableName": "test_table", "operation": "CREATE TABLE"},
         ]
     )
-    assert_df_equality(result, expected_df, ignore_column_order=True)
+    assertDataFrameEqual(result, expected_df)
 
 
 def test_describe_history__with_limit(mocker, spark, test_describe_history_df):
@@ -193,7 +193,7 @@ def test_describe_history__with_limit(mocker, spark, test_describe_history_df):
             {"version": 2, "timestamp": "2025-01-01 11:12:19", "tableName": "test_table", "operation": "MERGE"},
         ]
     )
-    assert_df_equality(result, expected_df, ignore_column_order=True)
+    assertDataFrameEqual(result, expected_df)
 
 
 def test_describe_history__no_table(mocker):

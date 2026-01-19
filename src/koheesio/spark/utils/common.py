@@ -138,21 +138,14 @@ def check_if_pyspark_connect_is_supported() -> bool:
 
 if check_if_pyspark_connect_module_is_available():
     """Only import the connect module if the current version of PySpark supports it"""
-    from pyspark.errors.exceptions.captured import (
-        ParseException as CapturedParseException,
-    )
-    from pyspark.errors.exceptions.connect import (
-        ParseException as ConnectParseException,
-    )
+    from pyspark.errors.exceptions.captured import ParseException as CapturedParseException
+    from pyspark.errors.exceptions.connect import ParseException as ConnectParseException
     from pyspark.sql.connect.column import Column as ConnectColumn
     from pyspark.sql.connect.dataframe import DataFrame as ConnectDataFrame
     from pyspark.sql.connect.proto.types_pb2 import DataType as ConnectDataType
     from pyspark.sql.connect.readwriter import DataFrameReader, DataFrameWriter
     from pyspark.sql.connect.session import SparkSession as ConnectSparkSession
-    from pyspark.sql.connect.streaming.readwriter import (
-        DataStreamReader,
-        DataStreamWriter,
-    )
+    from pyspark.sql.connect.streaming.readwriter import DataStreamReader, DataStreamWriter
     from pyspark.sql.connect.window import Window as ConnectWindow
     from pyspark.sql.connect.window import WindowSpec as ConnectWindowSpec
     from pyspark.sql.streaming.query import StreamingQuery
@@ -191,11 +184,7 @@ else:
         from pyspark.sql.streaming.query import StreamingQuery  # type: ignore
         from pyspark.sql.streaming.readwriter import DataStreamReader, DataStreamWriter  # type: ignore
     except (ImportError, ModuleNotFoundError):
-        from pyspark.sql.streaming import (  # type: ignore
-            DataStreamReader,
-            DataStreamWriter,
-            StreamingQuery,
-        )
+        from pyspark.sql.streaming import DataStreamReader, DataStreamWriter, StreamingQuery  # type: ignore
     DataFrameReader = DataFrameReader
     DataStreamReader = DataStreamReader
     DataFrameWriter = DataFrameWriter
