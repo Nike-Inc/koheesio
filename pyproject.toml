@@ -80,6 +80,14 @@ async-http = [
 ]
 box = ["boxsdk[jwt]==3.8.1"]
 pandas = ["pyspark[pandas-on-spark]>=3.2.0"]
+# NOTE: pyspark<4.0 imports the private `pandas.core.common._builtin_table`
+# symbol (see `pyspark/pandas/groupby.py:50`), which pandas removed in 2.2.0.
+# We intentionally do NOT cap pandas here — instead the upper bound is added
+# in the places where we actually pin pyspark<4.0 (the `dev` env's
+# `extra-dependencies` and the per-pyspark-version test matrix overrides
+# below). End users installing `koheesio[pandas]` alongside pyspark<4 should
+# pin `pandas<2.2` themselves until pyspark 4.0 ships and that constraint
+# is no longer needed.
 pyspark = [
   "pyspark>=3.2.0",
   "pyarrow>13",
@@ -324,6 +332,9 @@ matrix.version.extra-dependencies = [
   { value = "pyspark==3.5.2", if = ["pyspark352"] },
   { value = "pyspark[connect]==3.5.2", if = ["pyspark352r"] },
   { value = "delta-spark>=3.0", if = ["pyspark352", "pyspark352r"] },
+  # pyspark<4.0 needs pandas<2.2 (private `_builtin_table` import). pyspark33
+  # already has the stricter `pandas<2` above, so it doesn't need this entry.
+  { value = "pandas<2.2", if = ["pyspark34", "pyspark35", "pyspark35r", "pyspark352", "pyspark352r"] },
 ]
 
 name.".*".env-vars = [
@@ -456,7 +467,12 @@ features = [
   "test",
   "docs",
 ]
-extra-dependencies = ["pyspark[connect]==3.5.4"]
+extra-dependencies = [
+  "pyspark[connect]==3.5.4",
+  # pyspark<4.0 imports `pandas.core.common._builtin_table` (removed in
+  # pandas 2.2.0). Drop alongside the pyspark pin once we upgrade.
+  "pandas<2.2",
+]
 
 # Enable this if you want Spark Connect in your dev environment
 [tool.hatch.envs.dev.env-vars]
