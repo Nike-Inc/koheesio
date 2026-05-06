@@ -30,7 +30,11 @@ dev: hatch-version
 	@echo "\033[3mThe virtual environment is available in the \033[0;95m'.venv'\033[0m\033[3m folder\033[0m"
 	@echo "\033[0;34mHappy coding! 🚀"
 	@echo "\033[0m"
-	@hatch shell dev
+	@if [ "$$HATCH_ENV_ACTIVE" = "dev" ]; then \
+		echo "\033[3mAlready inside hatch dev shell — skipping \033[0;36m'hatch shell dev'\033[0m"; \
+	else \
+		hatch shell dev; \
+	fi
 
 .PHONY: init hatch-install  ## setup - Install Hatch (on Mac)
 hatch-install:
