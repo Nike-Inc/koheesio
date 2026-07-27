@@ -68,14 +68,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-#        os: [ubuntu-22.04, windows-latest, macos-latest]  # FIXME: Add Windows and macOS
-        # Pinned to ubuntu-22.04 because `ubuntu-latest` now resolves to
-        # ubuntu-24.04, whose default JDK is Java 21 — pyspark <=3.5 tops out
-        # at Java 17 and pyspark 3.3 at Java 11, so the Spark driver was
-        # dying at startup with `Java gateway process exited before sending
-        # its port number` across every matrix leg. Revisit once we drop
-        # pyspark <=3.5 support (or add an explicit `actions/setup-java` step).
-        os: [ubuntu-22.04]
+#        os: [ubuntu-latest, windows-latest, macos-latest]  # FIXME: Add Windows and macOS
+        os: [ubuntu-latest]
         python-version: ['3.10', '3.11', '3.12']
         pyspark-version: ['33', '34', '35', '35r', '352', '352r']
         exclude:
