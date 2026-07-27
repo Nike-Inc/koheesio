@@ -120,7 +120,6 @@ test = [
   "requests_mock",
   "time_machine",
   "freezegun",
-  "aioresponses",
   "responses",
 ]
 docs = [
@@ -291,7 +290,15 @@ features = [
   "test",
 ]
 
-parallel = true
+# xdist parallelism is opted in via `-n auto` in `[tool.pytest.ini_options]
+# .addopts` (combined with `PYTEST_XDIST_AUTO_NUM_WORKERS = "2"` in the
+# `env-vars` block below). Keeping it as a pytest concern means both
+# `hatch test` and a direct `pytest` invocation get the same worker
+# count, and hatch doesn't double it up. The two Spark drivers are kept
+# from colliding on `~/.ivy2` (Delta JAR resolution), `spark.local.dir`,
+# and the Spark UI port by the per-xdist-worker isolation in
+# `tests/spark/conftest.py::spark`.
+parallel = false
 retries = 2
 retry-delay = 3
 
@@ -339,7 +346,7 @@ matrix.version.extra-dependencies = [
 
 name.".*".env-vars = [
   # set number of workes for parallel testing
-  { key = "PYTEST_XDIST_AUTO_NUM_WORKERS", value = "2" },
+  { key = "PYTEST_XDIST_AUTO_NUM_WORKERS", value = "5" },
   # disables Koheesio logo being printed during testing
   { key = "KOHEESIO__PRINT_LOGO", value = "False" },
 ]
@@ -353,7 +360,7 @@ name.".*(pyspark35r).*".env-vars = [
 
 
 [tool.pytest.ini_options]
-addopts = "-vv --color=yes --order-scope=module"
+addopts = "-vv -n auto --color=yes --order-scope=module"
 log_level = "CRITICAL"
 testpaths = ["tests"]
 asyncio_default_fixture_loop_scope = "function"

@@ -1,6 +1,5 @@
 from aiohttp import ClientSession, TCPConnector
 from aiohttp_retry import ExponentialRetry
-from aioresponses import aioresponses
 import pytest
 import responses
 from responses.registries import OrderedRegistry
@@ -12,16 +11,12 @@ from koheesio.asyncio.http import AsyncHttpStep
 from koheesio.spark.readers.rest_api import AsyncHttpGetStep, RestApiReader
 from koheesio.steps.http import HttpGetStep, PaginatedHttpGetStep
 
-ASYNC_BASE_URL = "https://42.koheesio.test"
-ASYNC_GET_ENDPOINT = URL(f"{ASYNC_BASE_URL}/get")
-
 pytestmark = pytest.mark.spark
 
 
-@pytest.fixture(scope="function", name="mock_aiohttp")
-def mock_aiohttp():
-    with aioresponses() as m:
-        yield m
+@pytest.fixture
+def async_get_endpoint(fake_http_server: str) -> URL:
+    return URL(f"{fake_http_server}/get")
 
 
 @responses.activate(registry=OrderedRegistry)
@@ -46,15 +41,13 @@ def test_paginated_api():
 
 
 @pytest.mark.asyncio
-async def test_async_rest_api_reader(mock_aiohttp):
+async def test_async_rest_api_reader(async_get_endpoint: URL) -> None:
     """
     Testing the AsyncHttpStep class.
     """
-    mock_aiohttp.get(str(ASYNC_GET_ENDPOINT), status=200, repeat=True, payload={"url": str(ASYNC_GET_ENDPOINT)})
-
     transport = AsyncHttpGetStep(
         client_session=ClientSession(),
-        url=[URL(ASYNC_GET_ENDPOINT), URL(ASYNC_GET_ENDPOINT)],
+        url=[async_get_endpoint, async_get_endpoint],
         retry_options=ExponentialRetry(),
         connector=TCPConnector(limit=10),
         headers={"Content-Type": "application/json", "X-type": "Koheesio RestApiReader Test"},
@@ -77,14 +70,15 @@ async def test_async_rest_api_reader(mock_aiohttp):
 
     # Assert the responses_urls
     assert len(all_data) == 2
-    assert all_data == [f"{ASYNC_BASE_URL}/get"] * 2
+    assert all_data == [str(async_get_endpoint)] * 2
 
 
 @responses.activate
-def test_rest_api_reader(mock_aiohttp):
+def test_rest_api_reader():
     """
     Testing the AsyncHttpStep class.
     """
+    endpoint = URL("https://42.koheesio.test/get")
 
     def request_callback(request):
         import json
@@ -92,20 +86,20 @@ def test_rest_api_reader(mock_aiohttp):
         body = [
             {
                 "headers": dict(request.headers),
-                "url": str(ASYNC_GET_ENDPOINT),
+                "url": str(endpoint),
             }
         ]
         return (200, request.headers, json.dumps(body))
 
     responses.add_callback(
         responses.GET,
-        str(ASYNC_GET_ENDPOINT),
+        str(endpoint),
         callback=request_callback,
         content_type="application/json",
     )
 
     transport = HttpGetStep(
-        url=str(ASYNC_GET_ENDPOINT),
+        url=str(endpoint),
         headers={"Content-Type": "application/json", "X-Type": "Koheesio RestApiReader Test"},
     )
 
@@ -140,4 +134,4 @@ def test_rest_api_reader(mock_aiohttp):
 
     # Assert the responses_urls
     assert len(all_data) == 1
-    assert all_data == [{f"{ASYNC_BASE_URL}/get": "Koheesio RestApiReader Test"}]
+    assert all_data == [{str(endpoint): "Koheesio RestApiReader Test"}]
