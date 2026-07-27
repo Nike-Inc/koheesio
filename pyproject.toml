@@ -346,7 +346,7 @@ matrix.version.extra-dependencies = [
 
 name.".*".env-vars = [
   # set number of workes for parallel testing
-  { key = "PYTEST_XDIST_AUTO_NUM_WORKERS", value = "2" },
+  { key = "PYTEST_XDIST_AUTO_NUM_WORKERS", value = "5" },
   # disables Koheesio logo being printed during testing
   { key = "KOHEESIO__PRINT_LOGO", value = "False" },
 ]
