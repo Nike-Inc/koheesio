@@ -120,7 +120,6 @@ test = [
   "requests_mock",
   "time_machine",
   "freezegun",
-  "aioresponses",
   "responses",
 ]
 docs = [
