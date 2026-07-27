@@ -213,13 +213,19 @@ class LoggingFactory:
         console_handler = logging.StreamHandler(sys.stdout if LoggingFactory.ENV == "local" else sys.stderr)
         console_handler.setFormatter(LoggingFactory.LOGGER_FORMATTER)
         console_handler.addFilter(LoggingFactory.LOGGER_FILTER)
-        # WARNING is default level for root logger in python
-        logging.basicConfig(level=logging.WARNING, handlers=[console_handler], force=True)
-
-        LoggingFactory.CONSOLE_HANDLER = console_handler
 
         logger = getLogger(LoggingFactory.LOGGER_NAME)
+        # Attach our handler only to the koheesio named logger; never touch the root logger.
+        # Remove the previously installed koheesio-managed handler (if any) to avoid duplicates on re-init.
+        previous_handler = LoggingFactory.CONSOLE_HANDLER
+        if previous_handler is not None and previous_handler in logger.handlers:
+            logger.removeHandler(previous_handler)
+        logger.addHandler(console_handler)
         logger.setLevel(level or LoggingFactory.LOGGER_LEVEL)
+        # Isolate koheesio's logging from the user's root logger configuration.
+        logger.propagate = False
+
+        LoggingFactory.CONSOLE_HANDLER = console_handler
         LoggingFactory.LOGGER = logger
 
     @classmethod

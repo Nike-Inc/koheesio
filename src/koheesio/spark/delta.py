@@ -4,19 +4,19 @@ Module for creating and managing Delta tables.
 
 from typing import Dict, List, Optional, Union
 from datetime import datetime, timedelta
+import logging
 import warnings
 
 from py4j.protocol import Py4JJavaError  # type: ignore
 
 from pyspark.sql.types import DataType
 
-from koheesio.logger import LoggingFactory
 from koheesio.models import Field, field_validator, model_validator
 from koheesio.spark import AnalysisException, DataFrame, SparkStep
 from koheesio.spark.utils import on_databricks
 from koheesio.steps import Step, StepOutput
 
-log = LoggingFactory.get_logger(name=__name__, inherit_from_koheesio=True)
+log = logging.getLogger(__name__)
 
 
 class DeltaTableStep(SparkStep):
