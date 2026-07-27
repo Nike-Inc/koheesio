@@ -89,6 +89,23 @@ jobs:
             pyspark-version: '33'
           - python-version: '3.12'
             pyspark-version: '34'
+        include:
+          # PySpark 3.3.x supports Java 8/11 only; 3.4+ supports up to Java 17.
+          # Neither supports Java 21 (the current `ubuntu-latest` default on
+          # ubuntu-24.04), which is why the JVM was dying with
+          # `Java gateway process exited before sending its port number`.
+          - pyspark-version: '33'
+            java-version: '11'
+          - pyspark-version: '34'
+            java-version: '17'
+          - pyspark-version: '35'
+            java-version: '17'
+          - pyspark-version: '35r'
+            java-version: '17'
+          - pyspark-version: '352'
+            java-version: '17'
+          - pyspark-version: '352r'
+            java-version: '17'
 
     steps:
     - uses: actions/checkout@v6
@@ -97,6 +114,12 @@ jobs:
       uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
+
+    - name: Set up JDK ${{ matrix.java-version }} (required by PySpark ${{ matrix.pyspark-version }})
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: ${{ matrix.java-version }}
 
     - name: Install Hatch (for local act)
       if: ${{ env.ACT }}
