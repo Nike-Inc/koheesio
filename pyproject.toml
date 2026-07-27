@@ -290,13 +290,14 @@ features = [
   "test",
 ]
 
-# Kept disabled: each hatch-test matrix pair already runs on its own
-# isolated GitHub Actions runner VM, so we don't need a second layer of
-# parallelism inside it. With `parallel = true`, hatch adds `-n auto` to
-# pytest and two xdist workers race to start their own Spark JVM on the
-# same runner — they collide on `~/.ivy2` (Delta JAR resolution) and on
-# scratch dirs, and one JVM dies with
-#   `RuntimeError: Java gateway process exited before sending its port number`.
+# xdist parallelism is opted in via `-n auto` in `[tool.pytest.ini_options]
+# .addopts` (combined with `PYTEST_XDIST_AUTO_NUM_WORKERS = "2"` in the
+# `env-vars` block below). Keeping it as a pytest concern means both
+# `hatch test` and a direct `pytest` invocation get the same worker
+# count, and hatch doesn't double it up. The two Spark drivers are kept
+# from colliding on `~/.ivy2` (Delta JAR resolution), `spark.local.dir`,
+# and the Spark UI port by the per-xdist-worker isolation in
+# `tests/spark/conftest.py::spark`.
 parallel = false
 retries = 2
 retry-delay = 3
@@ -359,7 +360,7 @@ name.".*(pyspark35r).*".env-vars = [
 
 
 [tool.pytest.ini_options]
-addopts = "-vv --color=yes --order-scope=module"
+addopts = "-vv -n auto --color=yes --order-scope=module"
 log_level = "CRITICAL"
 testpaths = ["tests"]
 asyncio_default_fixture_loop_scope = "function"
