@@ -342,6 +342,8 @@ matrix.version.extra-dependencies = [
   # pyspark<4.0 needs pandas<2.2 (private `_builtin_table` import). pyspark33
   # already has the stricter `pandas<2` above, so it doesn't need this entry.
   { value = "pandas<2.2", if = ["pyspark34", "pyspark35", "pyspark35r", "pyspark352", "pyspark352r"] },
+  # pyarrow>=26 requires NumPy>=2, while pyspark<4 / pandas<2.2 resolve to NumPy 1.x.
+  { value = "pyarrow<26", if = ["pyspark33", "pyspark34", "pyspark35", "pyspark35r", "pyspark352", "pyspark352r"] },
 ]
 
 name.".*".env-vars = [
