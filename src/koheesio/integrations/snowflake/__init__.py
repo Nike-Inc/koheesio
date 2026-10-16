@@ -49,6 +49,7 @@ from abc import ABC
 from contextlib import contextmanager
 from functools import partial
 import os
+import sys
 import tempfile
 from importlib.metadata import PackageNotFoundError, version
 from types import ModuleType
@@ -428,18 +429,18 @@ class SnowflakeRunQueryPython(SnowflakeStep):
         _conn = self._snowflake_connector.connect(**sf_options)
         self.log.info(f"Connected to Snowflake account: {sf_options['account']}")
 
+        # `logger` exists on `snowflake.connector.connection` for connector <5 only; skip the swap when it's absent.
+        sf_connection_module = sys.modules.get("snowflake.connector.connection")
+        original_logger = getattr(sf_connection_module, "logger", None)
         try:
-            from snowflake.connector.connection import logger as snowflake_logger
-
-            _preserve_snowflake_logger = snowflake_logger
-            snowflake_logger = self.log
-            snowflake_logger.debug("Replace snowflake logger with Koheesio logger")
+            if original_logger is not None:
+                sf_connection_module.logger = self.log
+                self.log.debug("Replace snowflake logger with Koheesio logger")
             yield _conn
         finally:
-            if _preserve_snowflake_logger:
-                if snowflake_logger:
-                    snowflake_logger.debug("Restore snowflake logger")
-                snowflake_logger = _preserve_snowflake_logger
+            if original_logger is not None:
+                self.log.debug("Restore snowflake logger")
+                sf_connection_module.logger = original_logger
 
             if _conn:
                 _conn.close()
