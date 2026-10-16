@@ -50,6 +50,7 @@ from contextlib import contextmanager
 from functools import partial
 import os
 import tempfile
+from importlib.metadata import PackageNotFoundError, version
 from types import ModuleType
 from urllib.parse import urlparse
 
@@ -84,6 +85,15 @@ __all__ = [
 # Turning off too-many-lines because we are defining a lot of classes in this file
 
 
+def __connector_uses_sf_dirs() -> bool:
+    """Return True if the installed snowflake-connector-python still ships `sf_dirs` (major version < 5)."""
+    try:
+        major = int(version("snowflake-connector-python").split(".")[0])
+    except (PackageNotFoundError, ValueError):
+        return False
+    return major < 5
+
+
 def __check_access_snowflake_config_dir() -> bool:
     """Check if the Snowflake configuration directory is accessible.
 
@@ -96,6 +106,9 @@ def __check_access_snowflake_config_dir() -> bool:
     bool
         True if the Snowflake configuration directory is accessible, otherwise False.
     """
+    if not __connector_uses_sf_dirs():
+        return True
+
     check_result = False
 
     try:
