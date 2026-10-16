@@ -68,10 +68,19 @@ class TestOktaToken:
         oat = o.OktaAccessToken(url="url", client_id="client", client_secret=SecretStr("secret"), params={"foo": "bar"})
         assert oat.get_options() == {"foo": "bar", "auth": ("client", "secret"), **self.default_options}
 
-    def test_log_extra_params_secret_happy(self, caplog: pytest.FixtureRequest) -> None:
+    def test_log_extra_params_secret_happy(self, caplog: pytest.LogCaptureFixture) -> None:
         """Test that secret values are masked in logs"""
         # Arrange
-        with caplog.at_level("DEBUG"):
+        # Koheesio loggers have propagate=False, so caplog's root handler never sees records unless attached directly.
+        log.addHandler(caplog.handler)
+        try:
+            self._assert_secret_masked(caplog)
+        finally:
+            log.removeHandler(caplog.handler)
+
+    @staticmethod
+    def _assert_secret_masked(caplog: pytest.LogCaptureFixture) -> None:
+        with caplog.at_level("DEBUG", logger=log.name):
             secret_val = "secret_value"
             # Act
             oat = o.OktaAccessToken(
