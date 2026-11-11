@@ -75,8 +75,8 @@ class FileWriteMode(str, Enum):
     @property
     def write_mode(self) -> str:
         """Return the write mode for the given FileWriteMode."""
-        if self in {FileWriteMode.OVERWRITE, FileWriteMode.BACKUP, FileWriteMode.EXCLUSIVE}:
-            # OVERWRITE, BACKUP, and EXCLUSIVE modes set the file to be written from the beginning
+        if self in {FileWriteMode.OVERWRITE, FileWriteMode.BACKUP, FileWriteMode.EXCLUSIVE, FileWriteMode.IGNORE}:
+            # IGNORE reaches the write path only when the destination does not exist.
             return "wb"
         if self == FileWriteMode.APPEND:
             # APPEND mode sets the file to be written from the end
