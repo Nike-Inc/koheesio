@@ -39,6 +39,7 @@ class TestFileWriteMode:
             (FileWriteMode.OVERWRITE, "wb"),
             (FileWriteMode.BACKUP, "wb"),
             (FileWriteMode.EXCLUSIVE, "wb"),
+            (FileWriteMode.IGNORE, "wb"),
             (FileWriteMode.APPEND, "ab"),
         ],
     )
@@ -148,6 +149,20 @@ class TestDownloadFileStep:
         assert "Ignoring testfile.txt based on IGNORE mode." in caplog.text
         assert downloaded_file.exists()
         assert downloaded_file.read_bytes() == b"foo"
+
+    def test_download_file_step_ignore_mode_missing_file(self, download_path: Path) -> None:
+        """In IGNORE mode, the file should be downloaded if it does not exist yet"""
+        # Arrange
+        destination = download_path / "testfile.txt"
+
+        with Mocker() as mocker:
+            mocker.get(URL, content=b"foo")
+
+            # Act
+            DownloadFileStep(url=URL, download_path=download_path, mode="ignore").execute()
+
+        # Assert
+        assert destination.read_bytes() == b"foo"
 
     def test_download_file_step_exclusive_mode(self, download_path: Path, downloaded_file: Any) -> None:
         """In EXCLUSIVE mode, an error should be raised if the file exists"""
