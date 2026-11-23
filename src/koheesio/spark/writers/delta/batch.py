@@ -220,7 +220,7 @@ class DeltaTableWriter(Writer, ExtraParamsMixin):
         update_cond = self.params.get("update_cond", None)
         insert_cond = self.params.get("insert_cond", None)
         target_alias = self.params.get("target_alias", "target")
-        source_alias = self.params.get("target_alias", "source")
+        source_alias = self.params.get("source_alias", "source")
 
         if self.table.exists:
             builder = (
